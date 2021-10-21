@@ -1,0 +1,16 @@
+﻿<?xml version="1.0"?>
+<SOUI name="mainWindow" title="@string/title" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="appMain" appWnd="1" translucent="0" colorBkgnd="#000000ff">
+	<root cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF">@string/title</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
+			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
+			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+		</caption>
+		<window pos="0,30,-0,-0" colorBkgnd="#000000ff" cache="1">
+			<include src="layout:page_list" />
+		</window>
+	</root>
+</SOUI>
