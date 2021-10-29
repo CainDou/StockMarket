@@ -53,7 +53,7 @@ namespace SOUI
 		~SFenShiPic();
 
 		void		SetShowData(int nIndex,bool nGroup);
-		void		SetShowData(int nDataCount, vector<TimeLineData>* data[], vector<BOOL>& bRightVec);
+		void		SetShowData(int nDataCount, vector<TimeLineData>* data[], vector<BOOL>& bRightVec,SStringA StockID ,SStringA StockName);
 		void		OnDbClickedFenshi(UINT nFlags, CPoint point);
 		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 
@@ -99,6 +99,8 @@ namespace SOUI
 		vector<COLORREF> m_colorVec;
 		vector<CAutoRefPtr<IPen>>	m_penVec;
 		BOOL		m_bPaintInit;
+		SStringA	m_StockName;
+		SStringA	m_StockID;
 		int			m_nPaintTick;
 		int			m_nMouseX;
 		int			m_nMouseY;

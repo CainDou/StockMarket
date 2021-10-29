@@ -40,15 +40,16 @@ int SendMsg(unsigned uThreadId, unsigned MsgType, char *SendBuf, unsigned BufLen
 		memcpy(buf, SendBuf, BufLen);
 	}
 
-	return PostThreadMessage(uThreadId, MsgType, (WPARAM)buf, 0);
+	return PostThreadMessage(uThreadId, MsgType, (WPARAM)buf, (LPARAM)BufLen);
 }
 
-int	RecvMsg(int  msgQId, char** buf, int length, int timeout)
+int	RecvMsg(int  msgQId, char** buf, int& length, int timeout)
 {
 	MSG l_msg;
 	if (GetMessage(&l_msg, 0, 0, 0))
 	{
 		*buf = (char *)l_msg.wParam;
+		length = (int)l_msg.lParam;
 	}
 	return l_msg.message;
 }

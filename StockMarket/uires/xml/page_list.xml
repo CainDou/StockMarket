@@ -1,8 +1,8 @@
 ﻿<include>
 	<window pos ="5,5,%50,%60" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" >
-	  <text pos="5,0" colorText="#FF0000FF">申万1级行业</text>
-	  <color_listctrlex name="List_Ind1" cache="1" bkgndBlend="0" pos="0,20,-0,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-	    <headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+	  <text pos="5,2" colorText="#FF0000FF">申万1级行业</text>
+	  <color_listctrlex name="List_Ind1" cache="1" bkgndBlend="0" pos="5,20,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 		 <items>
 		   <item width="50">序号</item>
 			<item width="65">证券代码</item>
@@ -17,12 +17,12 @@
 		  </items>
 		</headerex>
 	  </color_listctrlex>
-	<fenshiPic  name="FSPic_Ind1" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
+	<fenshiPic  name="FSPic_Ind1" pos="5,20,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
 	</window>
 	<window pos ="%50,5,-5,%60" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" >
-	  <text pos="5,0" colorText="#FF0000FF">申万2级行业</text>
-	  <color_listctrlex name="List_Ind2" cache="1" bkgndBlend="0" pos="0,20,-0,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-	    <headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+	  <text pos="5,2" colorText="#FF0000FF">申万2级行业</text>
+	  <color_listctrlex name="List_Ind2" cache="1" bkgndBlend="0" pos="5,20,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 		 <items>
 		   <item width="50">序号</item>
 			<item width="65">证券代码</item>
@@ -37,12 +37,12 @@
 		  </items>
 		</headerex>
 	  </color_listctrlex>
-	<fenshiPic  name="FSPic_Ind2" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
+	<fenshiPic  name="FSPic_Ind2" pos="5,20,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
 	</window>
 	<window pos ="5,%60,-5,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" >
-	  <text pos="5,0" colorText="#FF0000FF">1级2级行业</text>
-	  <color_listctrlex name="List_Ind3" cache="1" bkgndBlend="0" pos="0,20,-0,-0" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-	    <headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+	  <text pos="5,2" colorText="#FF0000FF">全市场</text>
+	  <color_listctrlex name="List_Ind3" cache="1" bkgndBlend="0" pos="5,20,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 		 <items>
 		   <item width="50">序号</item>
 			<item width="65">证券代码</item>
@@ -57,7 +57,7 @@
 		  </items>
 		</headerex>
 	  </color_listctrlex>
-	<fenshiPic  name="FSPic_Ind3" pos="5,25,-10,-10" visible="0" colorBKgnd="#000000" font="size:12"/>
+	<fenshiPic  name="FSPic_Ind3" pos="5,20,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
 	</window>
 
 </include>

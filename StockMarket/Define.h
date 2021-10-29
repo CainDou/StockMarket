@@ -6,12 +6,18 @@
 typedef char SecurityID[8];
 
 
-enum MsgType
+enum RecvMsgType
 {
-	Msg_StockInfo = 182433,
-	Msg_FactorInfo,
-	Msg_FactorExp,
-	Msg_FactorUpdate,
+	RecvMsg_StockInfo = 182433,
+	RecvMsg_UpdateIndex,
+	RecvMsg_TodayData,
+	RecvMsg_HisData,
+};
+
+enum SendMsgType
+{
+	SendType_Connect = 0,
+	SendMsg_GetHisData = 100,
 };
 
 typedef struct _TimeLineData
@@ -77,21 +83,40 @@ typedef struct SendInfo
 	int  EndDate;
 }SendInfo;
 
-enum SendMsgType
-{
-	SendType_Connect = 0,
-};
 
 SStringW StrA2StrW(const SStringA &sstrSrcA);
 
 SStringA StrW2StrA(const SStringW &cstrSrcW);
 
 int SendMsg(unsigned uThreadId, unsigned MsgType, char *SendBuf, unsigned BufLen);
-int	RecvMsg(int  msgQId, char** buf, int length, int timeout);
+int	RecvMsg(int  msgQId, char** buf, int& length, int timeout);
 
 enum DataProcType
 {
 	UpdateData=10000,
+	UpdateTodayData,
 	UpdateRPS,
+	UpdateHisData,
 
 };
+
+enum StockInfoType
+{
+	StockInfo_Stock,
+	StockInfo_SWL1,
+	StockInfo_SWL2,
+	StockInfo_Index,
+};
+
+enum MAINMSG
+{
+	MAINMSG_UpdateList,
+};
+
+typedef struct sendInfo
+{
+	int MsgType;
+	char InsID[10];
+	int  StartDate;
+	int  EndDate;
+}ReceiveInfo_t;

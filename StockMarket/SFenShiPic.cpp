@@ -11,12 +11,15 @@ using std::vector;
 //extern bool g_bDataInited;
 
 #define MARGIN 20
-#define PER_CHAR_WIDTH 8
+#define PER_CHAR_WIDTH 7
 #define MAX_LINE 10
 
 #define MIN_LINE_NUM 60
 #define MAX_LINE_NUM 5000
+#define DEFAULT_LINE_NUM 240
 #define ZOOMRATIO 1.5
+
+#define RIGHT_BLANK 50
 
 SFenShiPic::SFenShiPic()
 {
@@ -26,7 +29,7 @@ SFenShiPic::SFenShiPic()
 	m_nIndex = -1;
 	m_pData = nullptr;
 
-	m_nAllLineNum = MIN_LINE_NUM;
+	m_nAllLineNum = DEFAULT_LINE_NUM;
 
 	m_nPaintTick = GetTickCount();
 	m_bDataInited = false;
@@ -66,7 +69,7 @@ void SFenShiPic::SetShowData(int nIndex, bool bGroup)
 	m_bIsFirstKey = true;
 }
 
-void SOUI::SFenShiPic::SetShowData(int nDataCount, vector<TimeLineData>* data[], vector<BOOL>& bRightVec)
+void SOUI::SFenShiPic::SetShowData(int nDataCount, vector<TimeLineData>* data[], vector<BOOL>& bRightVec ,SStringA StockID, SStringA StockName)
 {
 	if (m_pData)
 	{
@@ -77,6 +80,8 @@ void SOUI::SFenShiPic::SetShowData(int nDataCount, vector<TimeLineData>* data[],
 	m_nShowDataCount = nDataCount;
 	m_pData = new vector<TimeLineData>*[nDataCount];
 	m_bRightArr = bRightVec;
+	m_StockID = StockID;
+	m_StockName = StockName;
 	for (int i = 0; i < nDataCount; ++i)
 		m_pData[i] = data[i];
 	m_bDataInited = true;
@@ -376,7 +381,7 @@ void SOUI::SFenShiPic::OnMouseLeave()
 }
 
 int SFenShiPic::GetXPos(int n) {	//获取id对应的x坐标
-	double fx = m_rcImage.left + ((n + 0.5)*(double)(m_rcImage.Width() - 2) / (double)m_nAllLineNum + 0.5);
+	double fx = m_rcImage.left + ((n + 0.5)*(double)(m_rcImage.Width()- RIGHT_BLANK - 2) / (double)m_nAllLineNum + 0.5);
 	int nx = (int)fx;
 	if (nx < m_rcImage.left || nx > m_rcImage.right)
 		nx = m_rcImage.left;
@@ -384,7 +389,7 @@ int SFenShiPic::GetXPos(int n) {	//获取id对应的x坐标
 }
 
 int SFenShiPic::GetXData(int nx) {	//获取鼠标下的数据id
-	double fn = (double)(nx - m_rcImage.left) / ((double)(m_rcImage.Width() - 2) / (double)m_nAllLineNum) - 0.5;
+	double fn = (double)(nx - m_rcImage.left) / ((double)(m_rcImage.Width() - RIGHT_BLANK - 2) / (double)m_nAllLineNum) - 0.5;
 	int n = (int)fn;
 	if (n < 0 || n >= (int)m_pData[0]->size())
 		n = -1;
@@ -462,9 +467,17 @@ void SOUI::SFenShiPic::DrawTime(IRenderTarget * pRT, CRect rc, int date, int tim
 
 void SOUI::SFenShiPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 {
-	if (xPos < 0)
-		return;
 	SStringW sl;
+	int left = m_rcImage.left + 5;
+	int top = m_rcImage.top + 5;
+	int bottom = m_rcImage.top + MARGIN;
+	int right = m_rcImage.right;
+	sl.Format(L"%s %s", StrA2StrW(m_StockID), StrA2StrW(m_StockName));
+	DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, RGBA(255, 255, 0, 255));
+	left += sl.GetLength()*PER_CHAR_WIDTH *1.5;
+
+	if (xPos < 0 || xPos>=m_nAllLineNum)
+		return;
 	TimeLineData* pData = new TimeLineData[m_nShowDataCount];
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
@@ -473,14 +486,10 @@ void SOUI::SFenShiPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 		else if (xPos == -1 && !m_pData[i]->empty())
 			pData[i] = m_pData[i]->at(m_pData[i]->size() - 1);
 	}
-	int left = m_rcImage.left + 5;
-	int top = m_rcImage.top + 5;
-	int bottom = m_rcImage.top + MARGIN;
-	int right = m_rcImage.right;
-	sl.Format(L"%s %d-%02d-%02d %02d:%02d",StrA2StrW(pData[0].securityID) ,pData[0].date / 10000, pData[0].date % 10000 / 100, pData[0].date % 100,
+	sl.Format(L"%d-%02d-%02d %02d:%02d", pData[0].date / 10000, pData[0].date % 10000 / 100, pData[0].date % 100,
 		pData[0].time / 100, pData[0].time % 100);
 	DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, RGBA(255, 255, 0, 255));
-	left += 150;
+	left += 110;
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
 		sl = StrA2StrW(pData[i].dataName);
@@ -606,7 +615,7 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 	int x = 0;
 	CAutoRefPtr<IPen> penWhite, penYellow, oldPen, penRed, penBlue, penGreen, penPurple;
 	CAutoRefPtr<IBrush> bBrush, bOldBrush;
-	int width = int(m_rcImage.Width() / m_nAllLineNum / 2 + 0.5);
+	int width = int((m_rcImage.Width() - RIGHT_BLANK) / m_nAllLineNum / 2 + 0.5);
 
 
 	int nYoNum = 9;		//y轴标示数量 3 代表画两根线
@@ -741,7 +750,8 @@ void SFenShiPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		{
 			m_nAllLineNum *= ZOOMRATIO;
 			m_nAllLineNum = min(m_nAllLineNum, MAX_LINE_NUM);
-			m_nAllLineNum = min(m_nAllLineNum, m_pData[0]->size());
+			//if(m_nAllLineNum > DEFAULT_LINE_NUM*5)
+			//	m_nAllLineNum = min(m_nAllLineNum, m_pData[0]->size());
 			if (m_bKeyDown)
 			{
 				m_nNowPosition *= ZOOMRATIO;
@@ -770,10 +780,8 @@ void SOUI::SFenShiPic::DataInit()
 void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT/*, UINT nChar*/)
 {
 
-	SStringW trace;
-	OutputDebugString(trace);
-	int width = int(m_rcImage.Width() / m_nAllLineNum / 2 + 0.5);
-	int left = max(m_pData[0]->size() - m_nAllLineNum, 0);
+	int left = m_pData[0]->size() - m_nAllLineNum;
+	left = max(left , 0);
 	int dataPos = m_nNowPosition + left - m_nOffset;
 
 	//画鼠标线

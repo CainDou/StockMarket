@@ -284,7 +284,6 @@ namespace SOUI
 		CSize size = rcClient.Size();
 		//  关闭滚动条
 		m_wBarVisible = SSB_NULL;
-
 		if (size.cy < szView.cy || (size.cy < szView.cy + GetSbWidth() && size.cx < szView.cx))
 		{
 			//  需要纵向滚动条
@@ -341,6 +340,7 @@ namespace SOUI
 			}
 		}
 
+
 		SetScrollPos(TRUE, m_siVer.nPos, TRUE);
 		SetScrollPos(FALSE, m_siHoz.nPos, TRUE);
 
@@ -369,7 +369,8 @@ namespace SOUI
 		CRect rcHeader(rcClient);
 		rcHeader.bottom = rcHeader.top + m_nHeaderHeight;
 		rcHeader.left -= m_ptOrigin.x;
-		if (m_pHeader) m_pHeader->Move(rcHeader);
+		if (m_pHeader) m_pHeader->SetOffSet(-m_ptOrigin.x);
+
 	}
 
 	void SColorListCtrlEx::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -381,7 +382,7 @@ namespace SOUI
 			if (nChar == VK_UP)
 			{
 				if (GetItemCount() < GetCountPerPage(false))
-					m_nSelectItem = GetItemCount() ;
+					m_nSelectItem = GetItemCount();
 				else
 					m_nSelectItem = GetTopIndex() + GetCountPerPage(false);
 
@@ -568,10 +569,10 @@ namespace SOUI
 		void * pContext
 	)
 	{
-		if(m_nSelectItem>0)
-			m_arrItems[m_nSelectItem].checked =FALSE;
+		if (m_nSelectItem > 0)
+			m_arrItems[m_nSelectItem].checked = FALSE;
 		qsort_s(m_arrItems.GetData(), m_arrItems.GetCount(), sizeof(DXLVITEMEX), pfnCompare, pContext);
-		if (m_nSelectItem>0)
+		if (m_nSelectItem > 0)
 			m_arrItems[m_nSelectItem].checked = TRUE;
 		InvalidateRect(GetListRect());
 		return TRUE;
@@ -627,12 +628,12 @@ namespace SOUI
 
 	void SColorListCtrlEx::EnsureVisible(int iItem)
 	{
-		if (iItem<0 || iItem >= GetItemCount()) return;
+		if (iItem < 0 || iItem >= GetItemCount()) return;
 
 		int iFirstVisible = GetTopIndex();
 		int iLastVisible = iFirstVisible + GetCountPerPage(false);
 
-		if (iItem >= iFirstVisible && iItem<iLastVisible)
+		if (iItem >= iFirstVisible && iItem < iLastVisible)
 		{
 			if (iItem == iFirstVisible)
 			{
@@ -645,7 +646,7 @@ namespace SOUI
 					OnScroll(TRUE, SB_BOTTOM, 0);
 				else
 				{
-					int pos = (iItem+1)*m_nItemHeight - m_siVer.nPage;
+					int pos = (iItem + 1)*m_nItemHeight - m_siVer.nPage;
 					OnScroll(TRUE, SB_THUMBPOSITION, pos);
 				}
 			}
@@ -747,12 +748,12 @@ namespace SOUI
 		int right = 0;
 		bool bFirst = true;
 		int nNoMoveCol = m_pHeader ? m_pHeader->GetNoMoveCol() : 0;
-
 		for (int nCol = 0; nCol < GetColumnCount(); nCol++)
 		{
 			if (m_pHeader)
 				if (!m_pHeader->isItemShowVisble(nCol))
 					continue;
+
 
 			CRect rcVisiblePart;
 
@@ -778,6 +779,7 @@ namespace SOUI
 				rcCol.right -= diff;
 				bFirst = false;
 			}
+
 			rcVisiblePart.IntersectRect(rcItem, rcCol);
 			if (rcCol.right  > rcClient.right + ITEM_MARGIN) break;
 
@@ -990,6 +992,7 @@ namespace SOUI
 	void SColorListCtrlEx::SetHoverSelected()
 	{
 		SetSelectedItem(m_nHoverItem);
+
 	}
 
 	void SColorListCtrlEx::OnLButtonDbClick(UINT nFlags, CPoint pt)
