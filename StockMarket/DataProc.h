@@ -3,9 +3,13 @@
 #include "Define.h"
 #include <map>
 #include <vector>
+#include<unordered_map>
 
 using std::vector;
 using std::map;
+using std::unordered_map;
+using std::pair;
+using std::make_pair;
 
 class CDataProc
 {
@@ -15,23 +19,32 @@ public:
 
 public:
 	double  EMA(int nCount, double preEMA, double data) const;
-	bool CalcRps(map<SStringA,map<SStringA,vector<TimeLineData>>>& comData);
-	bool CalcHisRps(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData);
-	void UpdateTmData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, TimeLineData& data);
-	void UpdateHisData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, TimeLineData* dataArr, int dataCount);
-	bool RankPoint(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, map<SStringA, map<SStringA, vector<TimeLineData>>>&uniData, 
-		vector<SStringA>& StockIDVec);
-	bool RankPointHisData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, map<SStringA, map<SStringA, vector<TimeLineData>>>&uniData,
-		vector<SStringA>& StockIDVec);
-	bool UpdateShowData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, map<SStringA, map<SStringA, vector<TimeLineData>>>&uniData, 
-		map<SStringA,map<SStringA, TimeLineData>>&ShowData, vector<SStringA>& dataNameVec , vector<SStringA>& StockIDVec);
+	bool CalcRps(TimeLineArrMap& comData);
+	bool CalcHisRps(TimeLineArrMap& comData);
+	void UpdateTmData(TimeLineArrMap& comData, TimeLineData& data);
+	void UpdateTmData(TimeLineArrMap& comData, CoreData& data, SStringA SecurityID, SStringA dataName);
+	void UpdateTmData(vector<CoreData>& comData, TimeLineData& data);
+	void UpdateTmData(vector<CoreData>& comData, CoreData& data);
+
+	void UpdateClose(TimeLineArrMap& comData, TimeLineData& data, int nPeriod);
+	void UpdateClose(vector<CoreData>& comData, TimeLineData& data, int nPeriod);
+	void UpdateHisData(TimeLineArrMap& comData, TimeLineData* dataArr, int dataCount,int Period);
+
+	bool RankPoint(TimeLineArrMap& comData, TimeLineArrMap& uniData,vector<SStringA>& StockIDVec);
+
+	bool RankPointHisData(TimeLineArrMap& comData, TimeLineArrMap& uniData,vector<SStringA>& StockIDVec);
+
+	bool UpdateShowData(TimeLineArrMap& comData, TimeLineArrMap& uniData,TimeLineMap& ShowData,
+		vector<SStringA>& comDataNameVec , vector<SStringA>& uniDataNameVec, vector<SStringA>& StockIDVec);
 protected:
-	void SetEMA(map<SStringA, vector<TimeLineData>>& dataMap,const TimeLineData& close, int nCount, SStringA dataName);
-	void SetDEA(map<SStringA, vector<TimeLineData>>& dataMap, const TimeLineData& close, int nCount, SStringA dataName);
-	bool RankPoint(vector<TimeLineData>& dataVec, map<SStringA, map<SStringA, vector<TimeLineData>>>& uniData, 
+	void SetEMA(map<SStringA, vector<CoreData>>& dataMap,const CoreData& close, int nCount, SStringA dataName);
+	void SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData& close, int nCount, SStringA dataName);
+	bool RankPoint(vector<pair<SStringA,CoreData>>& dataVec, TimeLineArrMap& uniData,
 		SStringA dataName, SStringA rankName, SStringA pointName);
-	bool ClearCalcData(map<SStringA, vector<TimeLineData>> &dataMap);
-	bool ClearRankPointData(map<SStringA, vector<TimeLineData>> &dataMap);
+	bool ClearCalcData(map<SStringA, vector<CoreData>> &dataMap);
+	bool ClearRankPointData(map<SStringA, vector<CoreData>> &dataMap);
+	void UpdateOnceTmData(TimeLineArrMap& comData, CoreData& data, SStringA SecurityID, SStringA dataName);
+	void UpdateOnceTmData(vector<CoreData>& comData, CoreData& data);
 };
 
 inline double CDataProc::EMA(int nCount, double preEMA, double data) const

@@ -3,7 +3,56 @@
 
 #define InvalidThreadId       0
 
+#include<unordered_map>
+#include<string>
+#include<vector>
+#include<map>
+
+using std::unordered_map;
+using std::hash;
+using std::string;
+using std::vector;
+using std::map;
+
+
 typedef char SecurityID[8];
+
+
+struct hash_SStringA
+{
+	size_t operator()(const SStringA& str) const
+	{
+		return hash<string>()((string)str);
+	}
+};
+
+
+//typedef struct _TimeLineData
+//{
+//	char dataName[24];
+//	SecurityID securityID;
+//	double value;
+//	int time;
+//	int date;
+//}TimeLineData;
+
+typedef struct _coreData
+{
+	double value;
+	int time;
+	int date;
+}CoreData;
+
+typedef struct  _TimeLineData
+{
+	CoreData data;
+	char dataName[12];
+	SecurityID securityID;
+}TimeLineData;
+
+
+typedef unordered_map<SStringA, map<SStringA, CoreData>, hash_SStringA> TimeLineMap;
+typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> TimeLineArrMap;
 
 
 enum RecvMsgType
@@ -17,17 +66,9 @@ enum RecvMsgType
 enum SendMsgType
 {
 	SendType_Connect = 0,
-	SendMsg_GetHisData = 100,
+	SendType_GetHisData = 100,
 };
 
-typedef struct _TimeLineData
-{
-	char dataName[24];
-	SecurityID securityID;
-	double value;
-	int time;
-	int date;
-}TimeLineData;
 
 typedef struct _SortPara
 {
@@ -68,9 +109,11 @@ enum SListHead
 	SHead_Name,
 	SHead_LastPx,
 	SHead_RPS520,
+	SHead_MACD520,
 	SHead_Point520,
 	SHead_Rank520,
 	SHead_RPS2060,
+	SHead_MACD2060,
 	SHead_Point2060,
 	SHead_Rank2060,
 };
@@ -97,7 +140,8 @@ enum DataProcType
 	UpdateTodayData,
 	UpdateRPS,
 	UpdateHisData,
-
+	UpdateSingleListData,
+	Msg_Exit = 88888,
 };
 
 enum StockInfoType
@@ -111,6 +155,7 @@ enum StockInfoType
 enum MAINMSG
 {
 	MAINMSG_UpdateList,
+	MAINMSG_ShowPic,
 };
 
 typedef struct sendInfo

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0"?>
+<SOUI name="键盘精灵" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="300" height="350" margin="1,5,5,5" wndType="8" toolWindow="1">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(0,0,0)" colorText="#ffffff">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">键盘精灵</text>
+				<imgbtn name="btn_kbElfClose" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<edit name="edit_kbElf" pos="4,32" size="292,24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000ff" autoSel="1" notifyChange="1" />
+			<color_listctrlex name="list_kbElf" pos="4,56" size="292, 280" hotTrack="0" itemHeight="20" headerHeight="0" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#ffffffff">
+				<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1">
+					<items>
+						<item width="80">代码</item>
+						<item width="150">名称</item>
+						<item width="45">分类</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+	</root>
+</SOUI>

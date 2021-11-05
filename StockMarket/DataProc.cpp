@@ -14,164 +14,312 @@ CDataProc::~CDataProc()
 
 }
 
-bool CDataProc::CalcRps(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData)
+bool CDataProc::CalcRps(TimeLineArrMap & comData)
 {
 	for (auto &TMap : comData)
 	{
 		const SStringA& StockID = TMap.first;
-		map<SStringA, vector<TimeLineData>> &dataMap = TMap.second;
-		if (dataMap["close"].empty())
+		map<SStringA, vector<CoreData>> &dataMap = TMap.second;
+		auto & closeVec = dataMap["close"];
+		if (closeVec.empty())
 			continue;
-		SetEMA(dataMap, dataMap["close"].back(), 5, "EMA5");
-		SetEMA(dataMap, dataMap["close"].back(), 20, "EMA20");
-		SetEMA(dataMap, dataMap["close"].back(), 60, "EMA60");
-		
-		TimeLineData data(dataMap["close"].back());
-		data.value = dataMap["EMA5"].back().value - dataMap["EMA20"].back().value;
+		SetEMA(dataMap, closeVec.back(), 5, "EMA5");
+		SetEMA(dataMap, closeVec.back(), 20, "EMA20");
+		SetEMA(dataMap, closeVec.back(), 60, "EMA60");
+
+		auto& EMA5Vec = dataMap["EMA5"];
+		auto & EMA20Vec = dataMap["EMA20"];
+		auto & EMA60Vec = dataMap["EMA60"];
+		auto & DEA520Vec = dataMap["DEA520"];
+		auto & DEA2060Vec = dataMap["DEA2060"];
+
+
+		CoreData data(closeVec.back());
+		data.value = EMA5Vec.back().value - EMA20Vec.back().value;
 		SetDEA(dataMap, data, 10, "DEA520");
-		strcpy_s(data.dataName, "RPS520");
-		data.value = dataMap["DEA520"].back().value / dataMap["EMA20"].back().value *100;
-		UpdateTmData(comData, data);
-		data.value = dataMap["EMA20"].back().value - dataMap["EMA60"].back().value;
+		data.value = DEA520Vec.back().value / EMA20Vec.back().value * 100;
+		UpdateOnceTmData(comData, data, StockID, "RPS520");
+		data.value = (EMA5Vec.back().value - EMA20Vec.back().value - DEA520Vec.back().value) * 2;
+		UpdateOnceTmData(comData, data, StockID, "MACD520");
+		data.value = EMA20Vec.back().value - EMA60Vec.back().value;
 		SetDEA(dataMap, data, 10, "DEA2060");
-		strcpy_s(data.dataName, "RPS2060");
-		data.value = dataMap["DEA2060"].back().value / dataMap["EMA60"].back().value * 100;
-		UpdateTmData(comData, data);
+		data.value = DEA2060Vec.back().value / EMA60Vec.back().value * 100;
+		UpdateOnceTmData(comData, data, StockID, "RPS2060");
+		data.value = (EMA20Vec.back().value - EMA60Vec.back().value - DEA2060Vec.back().value) * 2;
+		UpdateOnceTmData(comData, data, StockID, "MACD2060");
 	}
 	return true;
 }
 
-bool CDataProc::CalcHisRps(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData)
+bool CDataProc::CalcHisRps(TimeLineArrMap& comData)
 {
 	for (auto &TMap : comData)
 	{
 
 		const SStringA& StockID = TMap.first;
-		map<SStringA, vector<TimeLineData>> &dataMap = TMap.second;
-		if (dataMap["close"].empty())
+		auto &dataMap = TMap.second;
+		auto & closeVec = dataMap["close"];
+		if (closeVec.empty())
 			continue;
-		if (!dataMap["EMA5"].empty())
+		auto& EMA5Vec = dataMap["EMA5"];
+		if (!EMA5Vec.empty())
 			continue;
-		for (int i = 0; i < dataMap["close"].size(); ++i)
+
+		auto & EMA20Vec = dataMap["EMA20"];
+		auto & EMA60Vec = dataMap["EMA60"];
+
+		auto &DEA520Vec = dataMap["DEA520"];
+		auto &DEA2060Vec = dataMap["DEA2060"];
+
+		auto & RPS520Vec = dataMap["RPS520"];
+		auto & RPS2060Vec = dataMap["RPS2060"];
+
+
+		for (int i = 0; i < closeVec.size(); ++i)
 		{
-			SetEMA(dataMap, dataMap["close"][i], 5, "EMA5");
-			SetEMA(dataMap, dataMap["close"][i], 20, "EMA20");
-			SetEMA(dataMap, dataMap["close"][i], 60, "EMA60");
-			TimeLineData data(dataMap["close"][i]);
-			data.value = dataMap["EMA5"][i].value - dataMap["EMA20"][i].value;
+			SetEMA(dataMap, closeVec[i], 5, "EMA5");
+			SetEMA(dataMap, closeVec[i], 20, "EMA20");
+			SetEMA(dataMap, closeVec[i], 60, "EMA60");
+
+			CoreData data(closeVec[i]);
+			data.value = EMA5Vec.back().value - EMA20Vec.back().value;
 			SetDEA(dataMap, data, 10, "DEA520");
-			strcpy_s(data.dataName, "RPS520");
-			data.value = dataMap["DEA520"][i].value / dataMap["EMA20"][i].value * 100;
-			UpdateTmData(comData, data);
-			data.value = dataMap["EMA20"][i].value - dataMap["EMA60"][i].value;
+			data.value = DEA520Vec.back().value / EMA20Vec.back().value * 100;
+			UpdateTmData(RPS520Vec, data);
+			data.value = EMA20Vec.back().value - EMA60Vec.back().value;
 			SetDEA(dataMap, data, 10, "DEA2060");
-			strcpy_s(data.dataName, "RPS2060");
-			data.value = dataMap["DEA2060"][i].value / dataMap["EMA60"][i].value * 100;
-			UpdateTmData(comData, data);
+			data.value = DEA2060Vec.back().value / EMA60Vec.back().value * 100;
+			UpdateTmData(RPS2060Vec, data);
 		}
+		CoreData data(EMA5Vec.back());
+		data.value = (EMA5Vec.back().value - EMA20Vec.back().value - DEA520Vec.back().value) * 2;
+		UpdateOnceTmData(comData, data, StockID, "MACD520");
+		data.value = (EMA20Vec.back().value - EMA60Vec.back().value - DEA2060Vec.back().value) * 2;
+		UpdateOnceTmData(comData, data, StockID, "MACD2060");
+
 
 	}
 	return true;
 }
 
-void CDataProc::UpdateTmData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, TimeLineData & data)
+void CDataProc::UpdateTmData(TimeLineArrMap& comData, TimeLineData & data)
 {
-	if (comData[data.securityID][data.dataName].empty() || comData[data.securityID][data.dataName].back().time != data.time)
-		comData[data.securityID][data.dataName].emplace_back(data);
-	else
-		comData[data.securityID][data.dataName].back() = data;
+	auto & dataVec = comData[data.securityID][data.dataName];
+	if (dataVec.empty())
+		dataVec.emplace_back(data.data);
+	else if (dataVec.back().date < data.data.date)
+		dataVec.emplace_back(data.data);
+	else if (dataVec.back().date == data.data.date)
+	{
+		if (dataVec.back().time < data.data.time)
+			dataVec.emplace_back(data.data);
+		else if (dataVec.back().time == data.data.time)
+			dataVec.back() = data.data;
+	}
 }
 
-void CDataProc::UpdateHisData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, TimeLineData * dataArr,int dataCount)
+void CDataProc::UpdateTmData(TimeLineArrMap & comData, CoreData & data, SStringA SecurityID, SStringA dataName)
 {
-	map<SStringA, map<SStringA, vector<TimeLineData>>> dataMap;
-	for (int i = 0; i < dataCount; ++i)
-		UpdateTmData(dataMap, dataArr[i]);
+	auto & dataVec = comData[SecurityID][SecurityID];
+	if (dataVec.empty())
+		dataVec.emplace_back(data);
+	else if (dataVec.back().date < data.date)
+		dataVec.emplace_back(data);
+	else if (dataVec.back().date == data.date)
+	{
+		if (dataVec.back().time < data.time)
+			dataVec.emplace_back(data);
+		else if (dataVec.back().time == data.time)
+			dataVec.back() = data;
+	}
+
+}
+
+void CDataProc::UpdateTmData(vector<CoreData>& comData, TimeLineData & data)
+{
+	if (comData.empty())
+		comData.emplace_back(data.data);
+	else if (comData.back().date < data.data.date)
+		comData.emplace_back(data.data);
+	else if (comData.back().date == data.data.date)
+	{
+		if (comData.back().time <  data.data.time)
+			comData.emplace_back(data.data);
+		else if (comData.back().time == data.data.time)
+			comData.back() = data.data;
+	}
+}
+
+void CDataProc::UpdateTmData(vector<CoreData>& comData, CoreData & data)
+{
+	if (comData.empty())
+		comData.emplace_back(data);
+	else if (comData.back().date < data.date)
+		comData.emplace_back(data);
+	else if (comData.back().date == data.date)
+	{
+		if (comData.back().time <  data.time)
+			comData.emplace_back(data);
+		else if (comData.back().time == data.time)
+			comData.back() = data;
+	}
+
+}
+
+void CDataProc::UpdateClose(TimeLineArrMap& comData, TimeLineData & data, int nPeriod)
+{
+	auto & dataVec = comData[data.securityID][data.dataName];
+	if (nPeriod != 1)
+	{
+		int timeLeft = (data.data.time % 100) % nPeriod;
+		data.data.time -= timeLeft;
+	}
+	if (dataVec.empty())
+		dataVec.emplace_back(data.data);
+	else if (dataVec.back().date < data.data.date)
+		dataVec.emplace_back(data.data);
+	else if (dataVec.back().date == data.data.date)
+	{
+		if (dataVec.back().time < data.data.time)
+			dataVec.emplace_back(data.data);
+		else if (dataVec.back().time == data.data.time)
+			dataVec.back() = data.data;
+	}
+}
+
+void CDataProc::UpdateClose(vector<CoreData>& comData, TimeLineData & data, int nPeriod)
+{
+	if (nPeriod != 1)
+	{
+		int timeLeft = (data.data.time % 100) % nPeriod;
+		data.data.time -= timeLeft;
+	}
+	if (comData.empty())
+		comData.emplace_back(data.data);
+	else if (comData.back().date < data.data.date)
+		comData.emplace_back(data.data);
+	else if (comData.back().date == data.data.date)
+	{
+		if (comData.back().time < data.data.time)
+			comData.emplace_back(data.data);
+		else if (comData.back().time == data.data.time)
+			comData.back() = data.data;
+	}
+
+}
+
+void CDataProc::UpdateHisData(TimeLineArrMap& comData, TimeLineData * dataArr, int dataCount, int Period)
+{
+	TimeLineArrMap dataMap;
+	SStringA nowStockID = "";
+	vector<CoreData> * pDataVec = nullptr;
+	for (int j = 0; j < dataCount; ++j)
+	{
+		if (nowStockID != dataArr[j].securityID)
+		{
+			nowStockID = dataArr[j].securityID;
+			pDataVec = &dataMap[nowStockID]["close"];
+		}
+		UpdateClose(*pDataVec, dataArr[j], Period);
+
+	}
+
 	for (auto &it : dataMap)
 	{
 		const SStringA &StockID = it.first;
-		ClearCalcData(it.second);
-		vector<TimeLineData>& dataVec = it.second["close"];
-		comData[StockID]["close"].insert(comData[StockID]["close"].begin(), dataVec.begin(), dataVec.end());
+		auto &comMap = comData[StockID];
+		ClearCalcData(comMap);
+		auto & dataVec = it.second["close"];
+		comMap["close"].insert(comMap["close"].begin(), dataVec.begin(), dataVec.end());
 	}
 }
 
-bool CDataProc::RankPoint(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, 
-	map<SStringA, map<SStringA, vector<TimeLineData>>>& uniData, vector<SStringA>& StockIDVec)
+bool CDataProc::RankPoint(TimeLineArrMap& comData, TimeLineArrMap& uniData, vector<SStringA>& StockIDVec)
 {
-	vector<TimeLineData> rpsData;
+	vector<pair<SStringA,CoreData>> rpsData;
 	rpsData.reserve(StockIDVec.size());
 	for (auto &stockID : StockIDVec)
 		if (!comData[stockID]["RPS520"].empty())
-			rpsData.emplace_back(comData[stockID]["RPS520"].back());
+			rpsData.emplace_back(make_pair(stockID,comData[stockID]["RPS520"].back()));
 	RankPoint(rpsData, uniData, "RPS520", "Rank520", "Point520");
 	rpsData.clear();
 	for (auto &stockID : StockIDVec)
 		if (!comData[stockID]["RPS2060"].empty())
-			rpsData.emplace_back(comData[stockID]["RPS2060"].back());
+			rpsData.emplace_back(make_pair(stockID, comData[stockID]["RPS2060"].back()));
 	RankPoint(rpsData, uniData, "RPS2060", "Rank2060", "Point2060");
 	return true;
 }
 
-bool CDataProc::RankPointHisData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, 
-	map<SStringA, map<SStringA, vector<TimeLineData>>>& uniData, vector<SStringA>& StockIDVec)
+bool CDataProc::RankPointHisData(TimeLineArrMap& comData, TimeLineArrMap& uniData, vector<SStringA>& StockIDVec)
 {
-	map<int64_t, vector<TimeLineData>> rps520Data;
-	map<int64_t, vector<TimeLineData>> rps2060Data;
+	map<int64_t, vector<pair<SStringA,CoreData>>> rpsData;
 	for (auto &it : StockIDVec)
 	{
 		ClearRankPointData(uniData[it]);
-		vector<TimeLineData> &data520Vec = comData[it]["RPS520"];
+		auto &data520Vec = comData[it]["RPS520"];
 		for (auto &itor : data520Vec)
 		{
 			int64_t datetime = (int64_t)itor.date * 10000 + (int64_t)itor.time;
-			rps520Data[datetime].emplace_back(itor);
+			rpsData[datetime].emplace_back(make_pair(it,itor));
 		}
-		vector<TimeLineData> &data2060Vec = comData[it]["RPS2060"];
+	}
+	for (auto &it : rpsData)
+		RankPoint(it.second, uniData, "RPS520", "Rank520", "Point520");
+
+	rpsData.clear();
+	for (auto &it : StockIDVec)
+	{
+		auto &data2060Vec = comData[it]["RPS2060"];
 		for (auto &itor : data2060Vec)
 		{
 			int64_t datetime = (int64_t)itor.date * 10000 + (int64_t)itor.time;
-			rps2060Data[datetime].emplace_back(itor);
+			rpsData[datetime].emplace_back(make_pair(it, itor));
 		}
 	}
-	for (auto &it : rps520Data)
-		RankPoint(it.second, uniData, "RPS520", "Rank520", "Point520");
-	for (auto &it : rps2060Data)
+	for (auto &it : rpsData)
 		RankPoint(it.second, uniData, "RPS2060", "Rank2060", "Point2060");
 	return true;
 }
 
-bool CDataProc::UpdateShowData(map<SStringA, map<SStringA, vector<TimeLineData>>>& comData, map<SStringA, map<SStringA, vector<TimeLineData>>>& uniData,
-	map<SStringA, map<SStringA, TimeLineData>>& ShowData, vector<SStringA>& dataNameVec, vector<SStringA>& StockIDVec)
+bool CDataProc::UpdateShowData(TimeLineArrMap& comData, TimeLineArrMap& uniData,
+	TimeLineMap& ShowData, vector<SStringA>& comDataNameVec, vector<SStringA>& uniDataNameVec, vector<SStringA>& StockIDVec)
 {
 	for (auto &stockID : StockIDVec)
 	{
-		for (auto &dataName : dataNameVec)
+		auto & ShowMap = ShowData[stockID];
+		auto & comMap = comData[stockID];
+		auto & uniMap = uniData[stockID];
+		for (auto &dataName : comDataNameVec)
 		{
-			if (!comData[stockID][dataName].empty())
-				ShowData[stockID][dataName] = comData[stockID][dataName].back();
-			else if (!uniData[stockID][dataName].empty())
-				ShowData[stockID][dataName] = uniData[stockID][dataName].back();
+			if (!comMap[dataName].empty())
+				ShowMap[dataName] = comMap[dataName].back();
+		}
+
+		for (auto &dataName : uniDataNameVec)
+		{
+			if (!uniMap[dataName].empty())
+				ShowMap[dataName] = uniMap[dataName].back();
 		}
 	}
 	return true;
 }
 
-bool CDataProc::RankPoint(vector<TimeLineData>& dataVec, map<SStringA, map<SStringA, vector<TimeLineData>>>& uniData, 
-	SStringA dataName, SStringA rankName, SStringA pointName)
+bool CDataProc::RankPoint(vector<pair<SStringA, CoreData>>& dataVec, TimeLineArrMap& uniData, SStringA dataName, SStringA rankName, SStringA pointName)
 {
-	sort(dataVec.begin(), dataVec.end(), [&](const TimeLineData & data1, const TimeLineData & data2) {return data1.value > data2.value; });
+	sort(dataVec.begin(), dataVec.end(), 
+		[&](const pair<SStringA, CoreData> & data1, const pair<SStringA, CoreData> & data2)
+	{return data1.second.value > data2.second.value; });
+
 	int i = 1;
 	int rank = 1;
 	double preValue = NAN;
 	int size = dataVec.size();
 	for (auto &it : dataVec)
 	{
-		TimeLineData rankData(it);
-		TimeLineData pointData(it);
-		strcpy_s(rankData.dataName, rankName);
-		strcpy_s(pointData.dataName, pointName);
-		if (it.value == preValue)
+		CoreData rankData(it.second);
+		CoreData pointData(it.second);
+		auto & dataMap = uniData[it.first];
+		if (it.second.value == preValue)
 		{
 			rankData.value = rank;
 			pointData.value = (size - rank)* 1.0 / (size - 1) * 100;
@@ -180,19 +328,21 @@ bool CDataProc::RankPoint(vector<TimeLineData>& dataVec, map<SStringA, map<SStri
 		else
 		{
 			rank = i;
-			preValue = it.value;
+			preValue = it.second.value;
 			rankData.value = rank;
 			pointData.value = (size - rank)* 1.0 / (size - 1) * 100;
 			++i;
 		}
-		UpdateTmData(uniData, rankData);
-		UpdateTmData(uniData, pointData);
+		//UpdateTmData(uniData, rankData);
+		//UpdateTmData(uniData, pointData);
+		UpdateTmData(dataMap[rankName], rankData);
+		UpdateTmData(dataMap[pointName], pointData);
 
 	}
 	return true;
 }
 
-bool CDataProc::ClearCalcData(map<SStringA, vector<TimeLineData>>& dataMap)
+bool CDataProc::ClearCalcData(map<SStringA, vector<CoreData>>& dataMap)
 {
 	dataMap["EMA5"].clear();
 	dataMap["EMA20"].clear();
@@ -205,7 +355,7 @@ bool CDataProc::ClearCalcData(map<SStringA, vector<TimeLineData>>& dataMap)
 	return true;
 }
 
-bool CDataProc::ClearRankPointData(map<SStringA, vector<TimeLineData>>& dataMap)
+bool CDataProc::ClearRankPointData(map<SStringA, vector<CoreData>>& dataMap)
 {
 	dataMap["Rank520"].clear();
 	dataMap["Rank2060"].clear();
@@ -214,64 +364,142 @@ bool CDataProc::ClearRankPointData(map<SStringA, vector<TimeLineData>>& dataMap)
 	return true;
 }
 
-void CDataProc::SetEMA(map<SStringA, vector<TimeLineData>>& dataMap, const TimeLineData & close, int nCount, SStringA dataName)
+void CDataProc::UpdateOnceTmData(TimeLineArrMap & comData, CoreData & data, SStringA SecurityID, SStringA dataName)
 {
-	TimeLineData data(close);
-	strcpy_s(data.dataName, dataName);
-	if (dataMap[dataName].empty())
-		dataMap[dataName].emplace_back(data);
+	vector<CoreData>& dataVec = comData[SecurityID][dataName];
+	if (dataVec.empty())
+	{
+		dataVec.reserve(1);
+		dataVec.emplace_back(data);
+	}
+	else
+		dataVec[0] = data;
+}
+
+void CDataProc::UpdateOnceTmData(vector<CoreData>& comData, CoreData & data)
+{
+	if (comData.empty())
+	{
+		comData.reserve(1);
+		comData.emplace_back(data);
+	}
+	else
+		comData[0] = data;
+}
+
+void CDataProc::SetEMA(map<SStringA, vector<CoreData>>& dataMap, const CoreData& close, int nCount, SStringA dataName)
+{
+	auto & dataVec = dataMap[dataName];
+	if (dataVec.empty())
+	{
+		CoreData data(close);
+		dataVec.reserve(2);
+		dataVec.emplace_back(data);
+		dataVec.emplace_back(data);
+
+	}
 	else
 	{
-		if (dataMap[dataName].back().time == data.time)
+		if (dataVec[1].time == close.time)
 		{
-			size_t size = dataMap[dataName].size();
-			if (size == 1)
-				dataMap[dataName].back() = data;
+			if (dataVec[0].time == dataVec[1].time)
+				dataVec[1].value = close.value;
 			else
-			{
-				data.value = EMA(nCount, dataMap[dataName][size - 2].value, close.value);
-				dataMap[dataName].back() = data;
-			}
+				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
 		}
 		else
 		{
-			data.value = EMA(nCount, dataMap[dataName].back().value, close.value);
-			dataMap[dataName].emplace_back(data);
-		}
+			dataVec[0] = dataVec[1];
+			dataVec[1] = close;
+			dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
 
+		}
 	}
+	//	if (dataVec[0].time == dataVec[1].time)
+	//	{
+
+	//	}
+
+	//	if (dataVec.back().time == data.time)
+	//	{
+	//		size_t size = dataVec.size();
+	//		if (size == 1)
+	//			dataVec[0] = data;
+	//		else
+	//		{
+	//			data.value = EMA(nCount, dataVec[0].value, close.value);
+	//			dataVec[1] = data;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		dataVec[0] = dataVec[1];
+	//		data.value = EMA(nCount, dataVec.back().value, close.value);
+	//		dataVec.emplace_back(data);
+	//	}
+
 
 }
 
-void CDataProc::SetDEA(map<SStringA, vector<TimeLineData>>& dataMap, const TimeLineData & close, int nCount, SStringA dataName)
+
+void CDataProc::SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData & close, int nCount, SStringA dataName)
 {
-	TimeLineData data(close);
-	strcpy_s(data.dataName, dataName);
-	if (dataMap[dataName].empty())
+
+	auto & dataVec = dataMap[dataName];
+	if (dataVec.empty())
 	{
+		CoreData data(close);
 		data.value = 0;
-		dataMap[dataName].emplace_back(data);
+		dataVec.reserve(2);
+		dataVec.emplace_back(data);
+		dataVec.emplace_back(data);
+
 	}
 	else
 	{
-		if (dataMap[dataName].back().time == data.time)
+		if (dataVec[1].time == close.time)
 		{
-			size_t size = dataMap[dataName].size();
-			if (size == 1)
-				dataMap[dataName].back() = data;
+			if (dataVec[0].time == dataVec[1].time)
+				dataVec[1].value = 0;
 			else
-			{
-				data.value = EMA(nCount, dataMap[dataName][size - 2].value, close.value);
-				dataMap[dataName].back() = data;
-			}
+				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
 		}
 		else
 		{
-			data.value = EMA(nCount, dataMap[dataName].back().value, close.value);
-			dataMap[dataName].emplace_back(data);
+			dataVec[0] = dataVec[1];
+			dataVec[1] = close;
+			dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
 		}
-
 	}
+
+	//TimeLineData data(close);
+	//strcpy_s(data.dataName, dataName);
+	//auto & dataVec = dataMap[dataName];
+	//if (dataVec.empty())
+	//{
+	//	data.value = 0;
+	//	dataVec.emplace_back(data);
+	//}
+	//else
+	//{
+	//	if (dataVec.back().time == data.time)
+	//	{
+	//		size_t size = dataVec.size();
+	//		if (size == 1)
+	//			dataVec.back() = data;
+	//		else
+	//		{
+	//			data.value = EMA(nCount, dataVec[size - 2].value, close.value);
+	//			dataVec.back() = data;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		data.value = EMA(nCount, dataVec.back().value, close.value);
+	//		dataVec.emplace_back(data);
+	//	}
+
+	//}
 
 }
 

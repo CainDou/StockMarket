@@ -42,19 +42,19 @@ SFenShiPic::SFenShiPic()
 
 	m_bPaintInit = FALSE;
 
-	m_fMaxL = MININT;
-	m_fMinL = MAXINT;
-	m_fMaxR = MININT;
-	m_fMinR = MAXINT;
-	m_fDeltaL = NAN;
-	m_fDeltaR = NAN;
+	m_StockID = "";
+
+	m_fMaxL = 100;
+	m_fMinL = 0;
+	m_fMaxR = 100;
+	m_fMinR = 0;
+	m_fDeltaL = 100;
+	m_fDeltaR = 100;
 
 	m_nOffset = 0;
 	m_nFirst = 0;
 	//m_pRTBuffer = nullptr;
 }
-
-
 
 SFenShiPic::~SFenShiPic()
 {
@@ -69,8 +69,11 @@ void SFenShiPic::SetShowData(int nIndex, bool bGroup)
 	m_bIsFirstKey = true;
 }
 
-void SOUI::SFenShiPic::SetShowData(int nDataCount, vector<TimeLineData>* data[], vector<BOOL>& bRightVec ,SStringA StockID, SStringA StockName)
+void SOUI::SFenShiPic::SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec, 
+	vector<SStringA> dataNameVec,SStringA StockID, SStringA StockName)
 {
+	m_bDataInited = false;
+
 	if (m_pData)
 	{
 		delete[]m_pData;
@@ -78,12 +81,20 @@ void SOUI::SFenShiPic::SetShowData(int nDataCount, vector<TimeLineData>* data[],
 	}
 
 	m_nShowDataCount = nDataCount;
-	m_pData = new vector<TimeLineData>*[nDataCount];
+	m_pData = new vector<CoreData>*[nDataCount];
 	m_bRightArr = bRightVec;
 	m_StockID = StockID;
 	m_StockName = StockName;
+	m_dataNameVec = dataNameVec;
 	for (int i = 0; i < nDataCount; ++i)
 		m_pData[i] = data[i];
+	//m_fMaxL = MININT;
+	//m_fMinL = MAXINT;
+	//m_fMaxR = MININT;
+	//m_fMinR = MAXINT;
+	//m_fDeltaL = NAN;
+	//m_fDeltaR = NAN;
+
 	m_bDataInited = true;
 }
 
@@ -478,7 +489,7 @@ void SOUI::SFenShiPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 
 	if (xPos < 0 || xPos>=m_nAllLineNum)
 		return;
-	TimeLineData* pData = new TimeLineData[m_nShowDataCount];
+	CoreData* pData = new CoreData[m_nShowDataCount];
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
 		if (xPos >= 0 && xPos < m_pData[0]->size())
@@ -492,7 +503,7 @@ void SOUI::SFenShiPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 	left += 110;
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
-		sl = StrA2StrW(pData[i].dataName);
+		sl = StrA2StrW(m_dataNameVec[i]);
 		DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, m_colorVec[i]);
 		left += sl.GetLength()*PER_CHAR_WIDTH;
 		sl.Format(L"%.2f", pData[i].value);
@@ -578,7 +589,7 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 			dataPosMouse = nx >= 0 ? nx + m_nFirst : -1;
 			if (dataPosMouse >= 0 && dataPosMouse < m_pData[0]->size())
 			{
-				const TimeLineData &data = m_pData[0]->at(dataPosMouse);
+				const CoreData &data = m_pData[0]->at(dataPosMouse);
 				DrawTime(pRT, CRect(m_nMouseX - 35, m_rcImage.bottom + 2, m_nMouseX + 35, m_rcImage.bottom + 40), data.date, data.time);
 			}
 
@@ -590,7 +601,7 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 			dataPosPoint = nx >= 0 ? nx + m_nFirst : -1;
 			if (dataPosPoint >= 0 && dataPosPoint < m_pData[0]->size())
 			{
-				const TimeLineData &data = m_pData[0]->at(dataPosPoint);
+				const CoreData &data = m_pData[0]->at(dataPosPoint);
 				DrawTime(pRT, CRect(po.x - 35, m_rcImage.bottom + 2, po.x + 35, m_rcImage.bottom + 40), data.date, data.time);
 			}
 
@@ -746,7 +757,7 @@ void SFenShiPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	break;
 	case VK_DOWN:
-		if (m_nAllLineNum < MAX_LINE_NUM&&m_nAllLineNum < m_pData[0]->size())
+		if (m_nAllLineNum < MAX_LINE_NUM)
 		{
 			m_nAllLineNum *= ZOOMRATIO;
 			m_nAllLineNum = min(m_nAllLineNum, MAX_LINE_NUM);
@@ -767,14 +778,40 @@ void SFenShiPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 }
 
+void SOUI::SFenShiPic::ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec)
+{
+	m_bDataInited = false;
+	if (m_pData)
+	{
+		delete[]m_pData;
+		m_pData = nullptr;
+	}
+
+	m_nShowDataCount = nDataCount;
+	m_pData = new vector<CoreData>*[nDataCount];
+	m_bRightArr = bRightVec;
+	for (int i = 0; i < nDataCount; ++i)
+		m_pData[i] = data[i];
+
+	//m_fMaxL = MININT;
+	//m_fMinL = MAXINT;
+	//m_fMaxR = MININT;
+	//m_fMinR = MAXINT;
+	//m_fDeltaL = NAN;
+	//m_fDeltaR = NAN;
+
+	m_bDataInited = true;
+
+}
+
 void SOUI::SFenShiPic::DataInit()
 {
-	m_fMaxL = MININT;
-	m_fMinL = MAXINT;
-	m_fMaxR = MININT;
-	m_fMinR = MAXINT;
-	m_fDeltaL = NAN;
-	m_fDeltaR = NAN;
+	//m_fMaxL = MININT;
+	//m_fMinL = MAXINT;
+	//m_fMaxR = MININT;
+	//m_fMinR = MAXINT;
+	//m_fDeltaL = NAN;
+	//m_fDeltaR = NAN;
 }
 
 void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT/*, UINT nChar*/)
@@ -785,7 +822,7 @@ void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT/*, UINT nChar*/)
 	int dataPos = m_nNowPosition + left - m_nOffset;
 
 	//»­Êó±êÏß
-	const TimeLineData &data = m_pData[0]->at(dataPos);
+	const CoreData &data = m_pData[0]->at(dataPos);
 	CPoint nowPoint;
 	nowPoint.x = GetXPos(m_nNowPosition);
 	nowPoint.y = GetYPos(data.value, m_bRightArr[0]);

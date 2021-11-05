@@ -624,7 +624,7 @@ namespace SOUI
 			MSG_WM_MOUSEMOVE(OnMouseMove)
 			MSG_WM_MOUSELEAVE(OnMouseLeave)
 			MSG_WM_MOUSEWHEEL(OnMouseWheel)
-	//		MSG_WM_KEYDOWN(OnKeyDown)
+			MSG_WM_KEYDOWN(OnKeyDown)
 			SOUI_MSG_MAP_END()
 	};
 

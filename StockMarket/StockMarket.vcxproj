@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -188,6 +188,7 @@
   <ItemGroup>
     <ClCompile Include="DataProc.cpp" />
     <ClCompile Include="Define.cpp" />
+    <ClCompile Include="DlgKbElf.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="NetWorkClient.cpp" />
@@ -208,6 +209,7 @@
   <ItemGroup>
     <ClInclude Include="DataProc.h" />
     <ClInclude Include="Define.h" />
+    <ClInclude Include="DlgKbElf.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="NetWorkClient.h" />

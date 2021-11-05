@@ -53,10 +53,12 @@ namespace SOUI
 		~SFenShiPic();
 
 		void		SetShowData(int nIndex,bool nGroup);
-		void		SetShowData(int nDataCount, vector<TimeLineData>* data[], vector<BOOL>& bRightVec,SStringA StockID ,SStringA StockName);
+		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec,vector<SStringA> dataNameVec,
+			SStringA StockID ,SStringA StockName);
 		void		OnDbClickedFenshi(UINT nFlags, CPoint point);
 		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-
+		void		ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
+		SStringA	GetShowStock() const;
 
 	protected:
 		void		InitColorAndPen(IRenderTarget *pRT);
@@ -94,7 +96,8 @@ namespace SOUI
 		double		m_fMinR;
 		double		m_fDeltaL;
 		double		m_fDeltaR;
-		vector<TimeLineData> **m_pData;
+		vector<CoreData> **m_pData;
+		vector<SStringA> m_dataNameVec;
 		vector<BOOL> m_bRightArr;
 		vector<COLORREF> m_colorVec;
 		vector<CAutoRefPtr<IPen>>	m_penVec;
@@ -132,4 +135,11 @@ namespace SOUI
 			SOUI_MSG_MAP_END()
 
 	};
+
+	inline SStringA SOUI::SFenShiPic::GetShowStock() const
+	{
+		return m_StockID;
+	}
 }
+
+
