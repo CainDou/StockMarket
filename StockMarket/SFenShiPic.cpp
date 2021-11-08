@@ -11,7 +11,7 @@ using std::vector;
 //extern bool g_bDataInited;
 
 #define MARGIN 20
-#define PER_CHAR_WIDTH 7
+#define PER_CHAR_WIDTH 8
 #define MAX_LINE 10
 
 #define MIN_LINE_NUM 60
@@ -304,7 +304,7 @@ BOOL SFenShiPic::IsInRect(int x, int y, int nMode)	//ÊÇ·ñÔÚ×ø±êÖÐ,0ÎªÈ«²¿,1ÎªÉÏ·
 	default:
 		return FALSE;
 	}
-	if (x >= prc->left && x <= prc->right &&
+	if (x >= prc->left && x <= prc->right&&
 		y >= prc->top  && y <= prc->bottom)
 		return TRUE;
 	return FALSE;
@@ -485,9 +485,9 @@ void SOUI::SFenShiPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 	int right = m_rcImage.right;
 	sl.Format(L"%s %s", StrA2StrW(m_StockID), StrA2StrW(m_StockName));
 	DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, RGBA(255, 255, 0, 255));
-	left += sl.GetLength()*PER_CHAR_WIDTH *1.5;
+	left += sl.GetLength()* 7 *1.5;
 
-	if (xPos < 0 || xPos>=m_nAllLineNum)
+	if (xPos < 0 || xPos>=m_pData[0]->size())
 		return;
 	CoreData* pData = new CoreData[m_nShowDataCount];
 	for (int i = 0; i < m_nShowDataCount; ++i)
@@ -583,7 +583,7 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 		//ÏÔÊ¾×Ý×ø±êÊýÖµ
 		int left = max(0, m_pData[0]->size() - m_nAllLineNum);
 		int dataPosMouse = -1;
-		if (IsInRect(m_nMouseX, m_nMouseY, 0))
+		if (IsInRect(m_nMouseX, m_nMouseY, 0)&& m_nMouseX<=m_rcImage.right - RIGHT_BLANK)
 		{
 			int nx = GetXData(m_nMouseX);
 			dataPosMouse = nx >= 0 ? nx + m_nFirst : -1;
@@ -595,7 +595,7 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 
 		}
 		int dataPosPoint = -1;
-		if (IsInRect(po.x, po.y, 0))
+		if (IsInRect(po.x, po.y, 0)&& po.x <= m_rcImage.right - RIGHT_BLANK)
 		{
 			int nx = GetXData(po.x);
 			dataPosPoint = nx >= 0 ? nx + m_nFirst : -1;
@@ -610,9 +610,19 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 
 
 		if (IsInRect(m_nMouseX, m_nMouseY, 0) && m_bShowMouseLine)
-			DrawMouseData(pRT, dataPosMouse);
+		{
+			if(m_nMouseX>m_rcImage.right-RIGHT_BLANK)
+				DrawMouseData(pRT, m_nEnd -1);
+			else
+				DrawMouseData(pRT, dataPosMouse);
+		}
 		if (IsInRect(po.x, po.y, 0) && m_bShowMouseLine)
-			DrawMouseData(pRT, dataPosPoint);
+		{
+			if (po.x>m_rcImage.right - RIGHT_BLANK)
+				DrawMouseData(pRT, m_nEnd - 1);
+			else
+				DrawMouseData(pRT, dataPosPoint);
+		}
 	}
 	m_nMouseX = po.x;
 	m_nMouseY = po.y;
@@ -662,6 +672,16 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 		for (int j = 0; j < m_nShowDataCount; ++j)
 			LineVec[j][i].SetPoint(x + width, GetYPos(m_pData[j]->at(i + m_nFirst).value, m_bRightArr[j]));
 		//¼Ó×îºóµÄÊýÖµ
+	}
+
+	SStringW strTemp;
+	for (int i = 0; i < m_nShowDataCount; ++i)
+	{
+		strTemp.Format(L"%.02f", m_pData[i]->at(m_nEnd - 1).value);
+		pRT->SetTextColor(m_colorVec[i]);
+		int y = GetYPos(m_pData[i]->at(m_nEnd - 1).value,m_bRightArr[i]);
+		pRT->TextOut(x + width + 2, y - 5, strTemp, -1);
+
 	}
 
 	if (!m_bShowMouseLine)
@@ -822,6 +842,8 @@ void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT/*, UINT nChar*/)
 	int dataPos = m_nNowPosition + left - m_nOffset;
 
 	//»­Êó±êÏß
+	if (dataPos >= m_pData[0]->size())
+		return;
 	const CoreData &data = m_pData[0]->at(dataPos);
 	CPoint nowPoint;
 	nowPoint.x = GetXPos(m_nNowPosition);

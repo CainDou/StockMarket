@@ -6,6 +6,7 @@
 	  <imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind1M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
 	  <imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind1M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
 	  <imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind1M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
+	  <imgbtn pos="[0,0" size="35,22" tip="日频图" animate="0" text="日" name="btn_Ind1Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
 	  <color_listctrlex name="List_Ind1" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
 	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 		 <items>
@@ -33,6 +34,7 @@
 	  <imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind2M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
 	  <imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind2M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
 	  <imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind2M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
+	  <imgbtn pos="[0,0" size="35,22" tip="日频图" animate="0" text="日" name="btn_Ind2Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
 	  <color_listctrlex name="List_Ind2" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
 	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 		 <items>
@@ -60,6 +62,7 @@
 	  <imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind3M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
 	  <imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind3M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
 	  <imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind3M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
+	  <imgbtn pos="[0,0" size="35,22" tip="日频图" animate="0" text="日" name="btn_Ind3Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
 	  <color_listctrlex name="List_Ind3" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
 	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 		 <items>

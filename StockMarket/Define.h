@@ -79,6 +79,7 @@ typedef struct _SortPara
 	int nCol;
 	int nShowCol;
 	int nFlag;
+	int nDec;
 }SortPara;
 
 typedef struct _StockInfo

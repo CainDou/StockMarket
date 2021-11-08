@@ -20,7 +20,7 @@ CDlgKbElf::~CDlgKbElf()
 
 void CDlgKbElf::OnClose()
 {
-	CSimpleWnd::DestroyWindow();
+	ShowWindow(SW_HIDE);
 }
 
 void CDlgKbElf::OnInit(EventArgs * e)
