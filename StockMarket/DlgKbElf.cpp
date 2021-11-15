@@ -109,7 +109,6 @@ bool CDlgKbElf::OnEditChange(EventArgs * e)
 			}
 		}
 
-
 		if (InsCount == -1)
 			m_pList->InsertItem(0, L"ÎŞÆ¥ÅäÏî");
 

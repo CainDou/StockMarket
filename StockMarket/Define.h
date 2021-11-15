@@ -61,12 +61,15 @@ enum RecvMsgType
 	RecvMsg_UpdateIndex,
 	RecvMsg_TodayData,
 	RecvMsg_HisData,
+	RecvMsg_HisPoint,
+	RecvMsg_LastDayEma,
 };
 
 enum SendMsgType
 {
 	SendType_Connect = 0,
 	SendType_GetHisData = 100,
+	SendType_GetHisPoint,
 };
 
 
@@ -142,6 +145,8 @@ enum DataProcType
 	UpdateRPS,
 	UpdateHisData,
 	UpdateSingleListData,
+	UpdateHisPoint,
+	UpdateLastDayEma,
 	Msg_Exit = 88888,
 };
 
@@ -157,6 +162,7 @@ enum MAINMSG
 {
 	MAINMSG_UpdateList,
 	MAINMSG_ShowPic,
+	MAINMSG_UpdatePic,
 };
 
 typedef struct sendInfo
@@ -166,3 +172,10 @@ typedef struct sendInfo
 	int  StartDate;
 	int  EndDate;
 }ReceiveInfo_t;
+
+enum RpsGroup
+{
+	Group_SWL1 = 0,
+	Group_SWL2,
+	Group_Stock,
+};

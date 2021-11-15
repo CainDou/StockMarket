@@ -59,6 +59,7 @@ namespace SOUI
 		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void		ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		SStringA	GetShowStock() const;
+		void		SetOffset2Zero();
 
 	protected:
 		void		InitColorAndPen(IRenderTarget *pRT);
@@ -139,6 +140,11 @@ namespace SOUI
 	inline SStringA SOUI::SFenShiPic::GetShowStock() const
 	{
 		return m_StockID;
+	}
+
+	inline void SOUI::SFenShiPic::SetOffset2Zero()
+	{
+		m_nOffset = 0;
 	}
 }
 

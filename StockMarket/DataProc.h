@@ -21,6 +21,7 @@ public:
 	double  EMA(int nCount, double preEMA, double data) const;
 	bool CalcRps(TimeLineArrMap& comData);
 	bool CalcHisRps(TimeLineArrMap& comData);
+	bool SetPreEMAData(TimeLineArrMap& comData, TimeLineData& data);
 	void UpdateTmData(TimeLineArrMap& comData, TimeLineData& data);
 	void UpdateTmData(TimeLineArrMap& comData, CoreData& data, SStringA SecurityID, SStringA dataName);
 	void UpdateTmData(vector<CoreData>& comData, TimeLineData& data);

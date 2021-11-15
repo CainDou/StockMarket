@@ -65,8 +65,8 @@ bool CDataProc::CalcHisRps(TimeLineArrMap& comData)
 		if (closeVec.empty())
 			continue;
 		auto& EMA5Vec = dataMap["EMA5"];
-		if (!EMA5Vec.empty())
-			continue;
+		//if (!EMA5Vec.empty())
+		//	continue;
 
 		auto & EMA20Vec = dataMap["EMA20"];
 		auto & EMA60Vec = dataMap["EMA60"];
@@ -104,6 +104,15 @@ bool CDataProc::CalcHisRps(TimeLineArrMap& comData)
 
 
 	}
+	return true;
+}
+
+bool CDataProc::SetPreEMAData(TimeLineArrMap & comData, TimeLineData& data)
+{
+	auto &dataVec = comData[data.securityID][data.dataName];
+	dataVec.reserve(2);
+	dataVec.emplace_back(data.data);
+	dataVec.emplace_back(data.data);
 	return true;
 }
 
@@ -173,11 +182,18 @@ void CDataProc::UpdateTmData(vector<CoreData>& comData, CoreData & data)
 
 void CDataProc::UpdateClose(TimeLineArrMap& comData, TimeLineData & data, int nPeriod)
 {
+	if (data.data.value == 0)
+		return;
 	auto & dataVec = comData[data.securityID][data.dataName];
 	if (nPeriod != 1)
 	{
-		int timeLeft = (data.data.time % 100) % nPeriod;
-		data.data.time -= timeLeft;
+		if (nPeriod / 1440 == 0)
+		{
+			int timeLeft = (data.data.time % 100) % nPeriod;
+			data.data.time -= timeLeft;
+		}
+		else
+			data.data.time = 0;
 	}
 	if (dataVec.empty())
 		dataVec.emplace_back(data.data);
@@ -194,10 +210,17 @@ void CDataProc::UpdateClose(TimeLineArrMap& comData, TimeLineData & data, int nP
 
 void CDataProc::UpdateClose(vector<CoreData>& comData, TimeLineData & data, int nPeriod)
 {
+	if (data.data.value == 0)
+		return;
 	if (nPeriod != 1)
 	{
-		int timeLeft = (data.data.time % 100) % nPeriod;
-		data.data.time -= timeLeft;
+		if (nPeriod / 1440 == 0)
+		{
+			int timeLeft = (data.data.time % 100) % nPeriod;
+			data.data.time -= timeLeft;
+		}
+		else
+			data.data.time = 0;
 	}
 	if (comData.empty())
 		comData.emplace_back(data.data);
@@ -315,9 +338,6 @@ bool CDataProc::RankPoint(vector<pair<SStringA, CoreData>>& dataVec, TimeLineArr
 		[&](const pair<SStringA, CoreData> & data1, const pair<SStringA, CoreData> & data2)
 	{return data1.second.value > data2.second.value; });
 
-	if(!dataVec.empty())
-		if (dataVec.back().second.time == 1459)
-			OutputDebugString(L"hh");
 	int i = 1;
 	int rank = 1;
 	double preValue = NAN;
@@ -343,7 +363,7 @@ bool CDataProc::RankPoint(vector<pair<SStringA, CoreData>>& dataVec, TimeLineArr
 		}
 		//UpdateTmData(uniData, rankData);
 		//UpdateTmData(uniData, pointData);
-		UpdateTmData(dataMap[rankName], rankData);
+		UpdateOnceTmData(dataMap[rankName], rankData);
 		UpdateTmData(dataMap[pointName], pointData);
 
 	}
@@ -408,19 +428,18 @@ void CDataProc::SetEMA(map<SStringA, vector<CoreData>>& dataMap, const CoreData&
 	}
 	else
 	{
-		if (dataVec[1].time == close.time)
-		{
-			if (dataVec[0].time == dataVec[1].time)
-				dataVec[1].value = close.value;
-			else
-				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
-		}
-		else
+		if (dataVec[1].date != close.date || dataVec[1].time != close.time)
 		{
 			dataVec[0] = dataVec[1];
 			dataVec[1] = close;
 			dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
-
+		}
+		else
+		{
+			if (dataVec[0].time == dataVec[1].time && dataVec[0].time != 0)
+				dataVec[1].value = close.value;
+			else
+				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
 		}
 	}
 	//	if (dataVec[0].time == dataVec[1].time)
@@ -465,18 +484,18 @@ void CDataProc::SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData 
 	}
 	else
 	{
-		if (dataVec[1].time == close.time)
-		{
-			if (dataVec[0].time == dataVec[1].time)
-				dataVec[1].value = 0;
-			else
-				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
-		}
-		else
+		if (dataVec[1].date != close.date || dataVec[1].time != close.time)
 		{
 			dataVec[0] = dataVec[1];
 			dataVec[1] = close;
 			dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
+		}
+		else
+		{
+			if (dataVec[0].time == dataVec[1].time && dataVec[0].time!=0)
+				dataVec[1].value = close.value;
+			else
+				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
 		}
 	}
 

@@ -677,6 +677,8 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 	SStringW strTemp;
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
+		if (m_pData[i]->empty()||m_nEnd -1 <0)
+			continue;
 		strTemp.Format(L"%.02f", m_pData[i]->at(m_nEnd - 1).value);
 		pRT->SetTextColor(m_colorVec[i]);
 		int y = GetYPos(m_pData[i]->at(m_nEnd - 1).value,m_bRightArr[i]);
