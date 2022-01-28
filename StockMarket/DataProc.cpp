@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "DataProc.h"
 #include <algorithm>
+#include <numeric>
 
+using std::accumulate;
 
 CDataProc::CDataProc()
 {
@@ -12,6 +14,142 @@ CDataProc::CDataProc()
 CDataProc::~CDataProc()
 {
 
+}
+
+bool CDataProc::CalcKline(vector<KlineType>& klineVec, CommonIndexMarket & indexMarket, int nPeriod, long long& LastVol)
+{
+	int time = indexMarket.UpdateTime / 100;
+	if (time == 925)
+		time = 930;
+	if (time >= 1130 && time < 1300)
+		time = 1129;
+	if (time >= 1500)
+		time = 1459;
+
+	if (nPeriod != 1)
+	{
+		if (nPeriod / 1440 == 0)
+		{
+			if (nPeriod != 60)
+			{
+				int timeLeft = (time % 100) % nPeriod;
+				time -= timeLeft;
+			}
+			else
+			{
+				if (time >= 930 && time < 1030)
+					time = 930;
+				else if (time >= 1030 && time < 1130)
+					time = 1030;
+				else
+				{
+					int timeLeft = (time % 100) % nPeriod;
+					time -= timeLeft;
+				}
+			}
+		}
+		else
+			time = 0;
+	}
+	if (klineVec.empty() || klineVec.back().time != time || klineVec.back().date != indexMarket.TradingDay)
+	{
+		KlineType data = { 0 };
+		data.time = time;
+		data.date = indexMarket.TradingDay;
+		data.open = indexMarket.LastPrice;
+		data.high = indexMarket.LastPrice;
+		data.low = indexMarket.LastPrice;
+		data.close = indexMarket.LastPrice;
+		data.vol = indexMarket.Volume - LastVol;
+		LastVol = indexMarket.Volume;
+		klineVec.emplace_back(data);
+	}
+	else
+	{
+		auto &lastData = klineVec.back();
+		lastData.close = indexMarket.LastPrice;
+		lastData.high = max(indexMarket.LastPrice, lastData.high);
+		lastData.low = min(indexMarket.LastPrice, lastData.low);
+		lastData.vol += indexMarket.Volume - LastVol;
+		LastVol = indexMarket.Volume;
+	}
+	return true;
+}
+
+bool CDataProc::CalcKline(vector<KlineType>& klineVec, CommonStockMarket & indexMarket, int nPeriod, long long& LastVol, int nTradingDay)
+{
+	int time = indexMarket.UpdateTime / 100;
+	if (time == 925)
+		time = 930;
+	if (time >= 1130 && time < 1300)
+		time = 1129;
+	if (time >= 1500)
+		time = 1459;
+	if (nPeriod != 1)
+	{
+		if (nPeriod / 1440 == 0)
+		{
+			if (nPeriod != 60)
+			{
+				int timeLeft = (time % 100) % nPeriod;
+				time -= timeLeft;
+			}
+			else
+			{
+				if (time >= 930 && time < 1030)
+					time = 930;
+				else if (time >= 1030 && time < 1130)
+					time = 1030;
+				else
+				{
+					int timeLeft = (time % 100) % nPeriod;
+					time -= timeLeft;
+				}
+			}
+		}
+		else
+			time = 0;
+	}
+	if (klineVec.empty() || klineVec.back().time != time || klineVec.back().date != nTradingDay)
+	{
+		KlineType data = { 0 };
+		data.time = time;
+		data.date = nTradingDay;
+		data.open = indexMarket.LastPrice;
+		data.high = indexMarket.LastPrice;
+		data.low = indexMarket.LastPrice;
+		data.close = indexMarket.LastPrice;
+		data.vol = indexMarket.Volume - LastVol;
+		LastVol = indexMarket.Volume;
+		klineVec.emplace_back(data);
+	}
+	else
+	{
+		auto &lastData = klineVec.back();
+		lastData.close = indexMarket.LastPrice;
+		lastData.high = max(indexMarket.LastPrice, lastData.high);
+		lastData.low = min(indexMarket.LastPrice, lastData.low);
+		lastData.vol += indexMarket.Volume - LastVol;
+		LastVol = indexMarket.Volume;
+	}
+	return true;
+}
+
+bool CDataProc::CalcMA(vector<MAType>& MaVec, const vector<KlineType>& klineVec, int Period[4])
+{
+	auto size = klineVec.size();
+	MAType data = { 0 };
+	data.date = klineVec.back().date;
+	data.time = klineVec.back().time;
+	data.MA1 = size < Period[0] ? NAN : accumulate(klineVec.begin() + size - Period[0], klineVec.end(), 0.0,
+		[&](double a, const KlineType &b) {return a + b.close; }) / Period[0];
+	data.MA2 = size < Period[1] ? NAN : accumulate(klineVec.begin() + size - Period[1], klineVec.end(), 0.0,
+		[&](double a, const KlineType &b) {return a + b.close; }) / Period[1];
+	data.MA3 = size < Period[2] ? NAN : accumulate(klineVec.begin() + size - Period[2], klineVec.end(), 0.0,
+		[&](double a, const KlineType &b) {return a + b.close; }) / Period[2];
+	data.MA4 = size < Period[3] ? NAN : accumulate(klineVec.begin() + size - Period[3], klineVec.end(), 0.0,
+		[&](double a, const KlineType &b) {return a + b.close; }) / Period[3];
+	return true;
 }
 
 bool CDataProc::CalcRps(TimeLineArrMap & comData)
@@ -157,7 +295,7 @@ void CDataProc::UpdateTmData(vector<CoreData>& comData, TimeLineData & data)
 		comData.emplace_back(data.data);
 	else if (comData.back().date == data.data.date)
 	{
-		if (comData.back().time <  data.data.time)
+		if (comData.back().time < data.data.time)
 			comData.emplace_back(data.data);
 		else if (comData.back().time == data.data.time)
 			comData.back() = data.data;
@@ -172,7 +310,7 @@ void CDataProc::UpdateTmData(vector<CoreData>& comData, CoreData & data)
 		comData.emplace_back(data);
 	else if (comData.back().date == data.date)
 	{
-		if (comData.back().time <  data.time)
+		if (comData.back().time < data.time)
 			comData.emplace_back(data);
 		else if (comData.back().time == data.time)
 			comData.back() = data;
@@ -185,12 +323,29 @@ void CDataProc::UpdateClose(TimeLineArrMap& comData, TimeLineData & data, int nP
 	if (data.data.value == 0)
 		return;
 	auto & dataVec = comData[data.securityID][data.dataName];
+
+
 	if (nPeriod != 1)
 	{
 		if (nPeriod / 1440 == 0)
 		{
-			int timeLeft = (data.data.time % 100) % nPeriod;
-			data.data.time -= timeLeft;
+			if (nPeriod != 60)
+			{
+				int timeLeft = (data.data.time % 100) % nPeriod;
+				data.data.time -= timeLeft;
+			}
+			else
+			{
+				if (data.data.time >= 930 && data.data.time < 1030)
+					data.data.time = 930;
+				else if (data.data.time >= 1030 && data.data.time < 1130)
+					data.data.time = 1030;
+				else
+				{
+					int timeLeft = (data.data.time % 100) % nPeriod;
+					data.data.time -= timeLeft;
+				}
+			}
 		}
 		else
 			data.data.time = 0;
@@ -216,8 +371,23 @@ void CDataProc::UpdateClose(vector<CoreData>& comData, TimeLineData & data, int 
 	{
 		if (nPeriod / 1440 == 0)
 		{
-			int timeLeft = (data.data.time % 100) % nPeriod;
-			data.data.time -= timeLeft;
+			if (nPeriod != 60)
+			{
+				int timeLeft = (data.data.time % 100) % nPeriod;
+				data.data.time -= timeLeft;
+			}
+			else
+			{
+				if (data.data.time >= 930 && data.data.time < 1030)
+					data.data.time = 930;
+				else if (data.data.time >= 1030 && data.data.time < 1130)
+					data.data.time = 1030;
+				else
+				{
+					int timeLeft = (data.data.time % 100) % nPeriod;
+					data.data.time -= timeLeft;
+				}
+			}
 		}
 		else
 			data.data.time = 0;
@@ -492,7 +662,7 @@ void CDataProc::SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData 
 		}
 		else
 		{
-			if (dataVec[0].time == dataVec[1].time && dataVec[0].time!=0)
+			if (dataVec[0].time == dataVec[1].time && dataVec[0].time != 0)
 				dataVec[1].value = close.value;
 			else
 				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);

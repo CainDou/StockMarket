@@ -13,27 +13,21 @@ namespace SOUI
 	public:
 		CPriceList();
 //		void SetShowData(int nIndex, bool bGroup);
-		void SetShowData(InsIDType strSubIns, bool bGroup);
+		void		SetShowData(SStringA StockID, vector<CommonStockMarket>* pStkMarketVec);
+		void		SetShowData(SStringA StockID, vector<CommonIndexMarket>* pIdxMarketVec);
 		~CPriceList();
 
-		InsIDType		m_strSubIns;
-		bool			m_bGroup;
+		SStringA		m_strSubIns;
 		int				m_nWorkMode;			//1:1档行情,2:5档行情
 		float			m_fPreSettle;
 		bool			m_bIsStockIndex;
-		RestoreTickType	m_Tick;
-		StockIndex_t	m_IndexTick;
-		GroupDataType		m_Group;
-
-		double				m_groupSettle;
-		double				m_groupSettleRatio;
+		CommonIndexMarket	m_IndexTick;
+		CommonStockMarket   m_StockTick;
+		vector<CommonStockMarket> *m_pStkMarketVec;
+		vector<CommonIndexMarket> *m_pIdxMarketVec;
+		double m_fMaxChgPct;
 		//	double			m_fPreClose;			//前收
 		int				m_nListNum;				//数据数量
-		int				m_nDecimal;				//小数位数
-		TCHAR			m_sDecimal[10];			//用来格式化
-		int				m_nDecimalXi;			//10的m_nDecimal次方
-
-		int				*m_pGroupDataType;
 
 		BOOL			m_bInit;
 
@@ -44,11 +38,9 @@ namespace SOUI
 		void		Paint(IRenderTarget *pRT);
 
 	protected:
-		void		DrawModeOne(IRenderTarget * pRT);
+		void		DrawStockModeOne(IRenderTarget * pRT);
 		void		DrawIndexModeOne(IRenderTarget * pRT);
-		void		DrawModeGroup(IRenderTarget * pRT);
 		COLORREF	GetTextColor(double price);
-		COLORREF    GetGroupColor(double price);
 	};
 }
 

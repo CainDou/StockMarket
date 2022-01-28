@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -187,14 +187,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataProc.cpp" />
+    <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
     <ClCompile Include="DlgKbElf.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="NetWorkClient.cpp" />
+    <ClCompile Include="PriceList.cpp" />
     <ClCompile Include="SColorListCtrlEx.cpp" />
     <ClCompile Include="SFenShiPic.cpp" />
+    <ClCompile Include="SKlinePic.cpp" />
+    <ClCompile Include="SSubPic.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
+    <ClCompile Include="SKlineTip.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -208,15 +213,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataProc.h" />
+    <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="DlgKbElf.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="NetWorkClient.h" />
+    <ClInclude Include="PriceList.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SColorListCtrlEx.h" />
     <ClInclude Include="SFenShiPic.h" />
+    <ClInclude Include="SKlinePic.h" />
+    <ClInclude Include="SSubPic.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
+    <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

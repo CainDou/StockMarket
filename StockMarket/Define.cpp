@@ -53,3 +53,8 @@ int	RecvMsg(int  msgQId, char** buf, int& length, int timeout)
 	}
 	return l_msg.message;
 }
+
+bool GetFileKlineData(SStringA InsID, vector<KlineType>& dataVec, bool bIsDay)
+{
+	return false;
+}

@@ -16,23 +16,24 @@ namespace SOUI
 
 		int						m_nComboSelect;	//显示那个数据
 												//	double			m_fPreClose;			//前收
-		InsIDType	m_strSubIns;
 //		int			m_nIndex;
+		SStringA	m_strSubID;
 		bool		m_bGroup;
 		double		m_dPreSettle;
 		double      m_dSettleRatio;
-		void		SetShowData(int nIndex, bool bGroup);
-		void		SetShowData(InsIDType strSubIns,bool bGroup);
+		void		SetShowData(SStringA StockID, vector<CommonStockMarket>* pStkMarketVec);
+		void		SetShowData(SStringA StockID, vector<CommonIndexMarket>* pIdxMarketVec);
 		CRect		m_rect;
 		bool		m_bIsStockIndex;
 		void		Paint(IRenderTarget *pRT);
 
 		int			*m_pGroupDataType;
+		vector<CommonStockMarket> *m_pStkMarketVec;
+		vector<CommonIndexMarket> *m_pIdxMarketVec;
 
 	protected:
-		void		DrawOneCode(IRenderTarget * pRT);		//画单个合约
+		void		DrawStockOneCode(IRenderTarget * pRT);		//画单个合约
 		void		DrawIndexOneCode(IRenderTarget * pRT);
-		void		DrawGroupCode(IRenderTarget * pRT);		//画组合合约
 
 		std::vector<TICK_INFO>	m_vTick;		//显示用的数据
 

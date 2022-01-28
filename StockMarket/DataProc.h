@@ -18,7 +18,9 @@ public:
 	~CDataProc();
 
 public:
-	double  EMA(int nCount, double preEMA, double data) const;
+	bool CalcKline(vector<KlineType> &klineVec, CommonIndexMarket &indexMarket, int nPeriod, long long& LastVol);
+	bool CalcKline(vector<KlineType> &klineVec, CommonStockMarket &indexMarket, int nPeriod, long long& LastVol, int nTradingDay);
+	bool CalcMA(vector<MAType>& MaVec, const vector<KlineType>& klineVec, int Period[4]);
 	bool CalcRps(TimeLineArrMap& comData);
 	bool CalcHisRps(TimeLineArrMap& comData);
 	bool SetPreEMAData(TimeLineArrMap& comData, TimeLineData& data);
@@ -37,6 +39,7 @@ public:
 
 	bool UpdateShowData(TimeLineArrMap& comData, TimeLineArrMap& uniData,TimeLineMap& ShowData,
 		vector<SStringA>& comDataNameVec , vector<SStringA>& uniDataNameVec, vector<SStringA>& StockIDVec);
+	double  EMA(int nCount, double preEMA, double data) const;
 protected:
 	void SetEMA(map<SStringA, vector<CoreData>>& dataMap,const CoreData& close, int nCount, SStringA dataName);
 	void SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData& close, int nCount, SStringA dataName);
@@ -52,4 +55,6 @@ inline double CDataProc::EMA(int nCount, double preEMA, double data) const
 {
 	return preEMA*(nCount - 1) / (nCount + 1) + data * 2 / (nCount + 1);
 }
+
+
 

@@ -17,7 +17,9 @@ using std::map;
 
 typedef char SecurityID[8];
 
-
+#define MAX_BAR_COUNT		10000
+#define MAX_DATA_COUNT		10000
+#define MAX_MA_COUNT		4
 struct hash_SStringA
 {
 	size_t operator()(const SStringA& str) const
@@ -63,6 +65,12 @@ enum RecvMsgType
 	RecvMsg_HisData,
 	RecvMsg_HisPoint,
 	RecvMsg_LastDayEma,
+	RecvMsg_RTIndexMarket,
+	RecvMsg_RTStockMarket,
+	RecvMsg_IndexMarket,
+	RecvMsg_StockMarket,
+	RecvMsg_HisKline,
+	RecvMsg_CloseInfo,
 };
 
 enum SendMsgType
@@ -70,6 +78,9 @@ enum SendMsgType
 	SendType_Connect = 0,
 	SendType_GetHisData = 100,
 	SendType_GetHisPoint,
+	SendType_IndexMarket,
+	SendType_StockMarket,
+	SendType_HisPeriodKline,
 };
 
 
@@ -112,6 +123,7 @@ enum SListHead
 	SHead_ID,
 	SHead_Name,
 	SHead_LastPx,
+	SHead_ChangePct,
 	SHead_RPS520,
 	SHead_MACD520,
 	SHead_Point520,
@@ -147,6 +159,12 @@ enum DataProcType
 	UpdateSingleListData,
 	UpdateHisPoint,
 	UpdateLastDayEma,
+	UpdateIndexMarket,
+	UpdateStockMarket,
+	UpdateHisIndexMarket,
+	UpdateHisStockMarket,
+	UpdateHisKline,
+	UpdateCloseInfo,
 	Msg_Exit = 88888,
 };
 
@@ -178,4 +196,364 @@ enum RpsGroup
 	Group_SWL1 = 0,
 	Group_SWL2,
 	Group_Stock,
+	Group_Count,
 };
+
+
+//通用的行情数据结构
+typedef struct CommonStockMarket
+{
+	unsigned long long UpdateTime; // 行情时间 用作日线时只有日期没有时间
+	SecurityID SecurityID; //证券代码
+	int  State;//交易阶段代码
+	double 	PreCloPrice; //昨收盘价
+	long long	TradNum; //成交笔数
+	long long	Volume; //成交总量
+	double 	Turnover; //成交总金额
+	double	LastPrice; //最新价
+	double	OpenPrice; //今开盘价
+	double	HighPrice; //最高价
+	double	LowPrice; //最低价
+	long long TotalOfferQty; //委托卖出总量（有效竞价范围内）
+	double  WeightedAvgOfferPx; //加权平均卖出价格
+	long long  TotalBidQty; //委托买入总量
+	double  WeightedAvgBidPx; //加权平均买入价格
+	double	AskPrice[10]; //卖一价
+	long long	AskVolume[10]; //卖一量
+	double	BidPrice[10]; //买一价
+	long long	BidVolume[10]; //买一量
+	int	NumOrdersB[10]; //买一委托笔数
+	int	NumOrdersS[10]; //卖一委托笔数
+};
+
+typedef struct CommonStockTick
+{
+	SecurityID SecurityID;	//证券代码
+	unsigned long long TradTime;		//成交时间
+	double TradPrice;		//成交价格
+	long long TradVolume;	//成交数量
+	double TradeMoney;		//成交金额
+	long long TradeBuyNo;		//买方单号
+	long long TradeSellNo;	//卖方单号
+};
+
+typedef struct CommonStockOrder
+{
+	SecurityID SecurityID; //证券代码
+	long long OrderTime;	//委托时间
+	long long OrderNo;	//订单号
+	double OrderPrice;	//委托价格
+	long long OrderVolume;	//委托量
+	int Side;	//方向
+};
+
+typedef struct CommonIndexMarket
+{
+	int TradingDay;
+	int UpdateTime;
+	SecurityID SecurityID;
+	double	PreCloPrice;	//昨收盘价
+	double	LastPrice; //最新价
+	double	OpenPrice; //今开盘价
+	double	HighPrice; //最高价
+	double	LowPrice; //最低价
+	long long Volume;
+	double Turnover;
+	double Amplitude;	//振幅
+	double Change;
+	double ChangePct;
+	double VolumeRatio;	//量比
+};
+
+
+typedef struct KlineType
+{
+	double open;	//开
+	double high;	//高
+	double low;		//低
+	double close;	//收
+	double vol;		//量
+	int date;		//日期
+	int time;		//时间
+};
+
+typedef struct MACDType
+{
+	double dEMA12;
+	double dEMA26;
+	double dDIF;
+	double dDEA;
+	double dMACD;
+}MACD_t;
+
+
+typedef struct Band
+{
+	bool DataValid[MAX_BAR_COUNT];
+	int nLastHighPoint1[MAX_BAR_COUNT];
+	int nLastHighPoint2[MAX_BAR_COUNT];
+	int nLastLowPoint1[MAX_BAR_COUNT];
+	int nLastLowPoint2[MAX_BAR_COUNT];
+	int nLastCrossHigh[MAX_BAR_COUNT];
+	int nLastCrossLow[MAX_BAR_COUNT];
+	double UpperTrack1[MAX_BAR_COUNT];
+	double UpperTrack2[MAX_BAR_COUNT];
+	double LowerTrack1[MAX_BAR_COUNT];
+	double LowerTrack2[MAX_BAR_COUNT];
+	double SellLong[MAX_BAR_COUNT];
+	double BuyShort[MAX_BAR_COUNT];
+	int CrossPoint1[MAX_BAR_COUNT];
+	int CrossPoint2[MAX_BAR_COUNT];
+	int CrossPoint3[MAX_BAR_COUNT];
+	int CrossPoint4[MAX_BAR_COUNT];
+	int Status[MAX_BAR_COUNT];
+	double W2[MAX_BAR_COUNT];
+	int BB1[MAX_BAR_COUNT];
+	double dHigh1[MAX_BAR_COUNT];
+	double dHigh2[MAX_BAR_COUNT];
+	double dPreHigh1[MAX_BAR_COUNT];
+	double dPreHigh2[MAX_BAR_COUNT];
+	double dLow1[MAX_BAR_COUNT];
+	double dLow2[MAX_BAR_COUNT];
+	double dPreLow1[MAX_BAR_COUNT];
+	double dPreLow2[MAX_BAR_COUNT];
+	double Position[MAX_BAR_COUNT];
+}Band_t;
+
+typedef struct BandPara
+{
+	int N1;
+	int N2;
+	int K;
+	int M1;
+	int M2;
+	int P;
+	BandPara() :N1(8), N2(11), K(390), M1(8), M2(4), P(15)
+	{}
+}BandPara_t;
+
+typedef struct MACDDataType
+{
+	double EMA12[MAX_BAR_COUNT];
+	double EMA26[MAX_BAR_COUNT];
+	double DIF[MAX_BAR_COUNT];
+	double DEA[MAX_BAR_COUNT];
+	double MACD[MAX_BAR_COUNT];
+	double fMax;
+	double fMin;
+}MACDData_t;
+
+typedef struct InitPara
+{
+	bool bShowMA;
+	bool bShowHighLow;
+	bool bShowBandTarget;
+	bool bShowAverage;
+	bool bShowEMA;
+	bool bShowMACD;
+	bool bShowTSCVolume;
+	bool bShowKlineVolume;
+	bool bShowKlineMACD;
+	int  nPeriod;
+	int  nWidth;
+	bool bShowMarket;
+	bool bShowPrice;
+	int  nGroup;
+	int	 nPage;
+	bool bShowFutStock;
+	bool bShowBasis;
+	int  nEMAPara[2];
+	int  nMACDPara[3];
+	int	 nGroupDataType;
+	int	 nMarketPage;
+	int	 nMAPara[4];
+	bool bNoJiange;
+	int	 nCAType;
+	BandPara_t  BandPara;
+	InitPara() :bShowMA(true), bShowHighLow(true), bShowBandTarget(false), bShowAverage(true),
+		bShowEMA(true), bShowMACD(true), bShowTSCVolume(false), bShowKlineVolume(false), nPeriod(0),
+		nWidth(9), bShowKlineMACD(true), bShowMarket(false), bShowPrice(false), nGroup(0), nPage(0),
+		bShowFutStock(true), bShowBasis(true), nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 }, nGroupDataType(0),
+		nMarketPage(0), nMAPara{ 5,10,20,60 }, bNoJiange(false)
+	{}
+}InitPara_t;
+
+
+typedef struct _KLINE_INFO {
+	KlineType	pd[MAX_DATA_COUNT];	//data信息
+	double			fMa[MAX_MA_COUNT][MAX_DATA_COUNT];
+	bool			bShow;				//是否显示
+
+	double			fMax;
+	double			fMin;
+	int				nDivY;				//y轴显示系数1
+	int				nMulY;				//y轴显示系数2
+	int				nDecimal;			//小数位数
+	TCHAR			sDecimal[10];		//用来格式化
+	int				nDecimalXi;			//10的m_nDecimal次方
+	int				nLast1MinTime;		//最新更新所用的1MinK线的时间
+	int				nLastVolume;		//最后使用K线更新时累计的区间内成交量
+	int				nLastTradingDay;	//最后使用K线更新的交易日
+}KLINE_INFO;
+
+typedef struct _FUTU_INFO {
+	int			ftl[MAX_DATA_COUNT];	//副图线
+	COLORREF		clft;					//
+
+	double			fMax;
+	double			fMin;
+	int				nDivY;				//y轴显示系数1
+	int				nMulY;				//y轴显示系数2
+	int				nDecimal;			//小数位数
+	TCHAR			sDecimal[10];		//用来格式化
+	int				nDecimalXi;			//10的m_nDecimal次方
+}FUTU_INFO;
+
+
+typedef struct _FENSHI_GROUP {
+	double		close;
+	double		avg;
+	int			vol;
+	double		EMA1;
+	double		EMA2;
+	DWORD		time;
+	DWORD		date;
+	MACD_t      macd;
+}FENSHI_GROUP;
+
+typedef struct _FENSHI_ALLINFO
+{
+	std::vector<FENSHI_GROUP> d;	//收盘价格
+
+	double			fMax;
+	double			fMin;
+	//	int				nDivY;				//y轴显示系数1
+	//	int				nMulY;				//y轴显示系数2
+	//	int				nDecimal;			//小数位数
+	//TCHAR			sDecimal[10];		//用来格式化
+	//									//	int				nDecimalXi;			//10的m_nDecimal次方
+
+	double			fMaxf;
+	double			fMinf;
+	double			fMaxMACD;
+	double			fMinMACD;
+	double			dDelta;
+	//int				nDivYf;				//y轴显示系数1
+	//int				nMulYf;				//y轴显示系数2
+	//int				nRatio;				//价格系数
+	//int				nRatio2;			//合约2价格系数
+	double			fPreClose;			//前收
+
+	int				nLastVolume;		//上一个时段最后的数量
+	int				nCount;				//已经计算过tick的数量
+	int				nAllLineNum;		//分时图数据的数量
+
+	//int				nInsType;			//期货类型 0--商品无夜盘 1--商品有夜盘23:00 2--商品有夜盘1:00  3--商品有夜盘2:30  4--股指  5--国债
+
+	int				nMin;				//计算完的最后一个分钟
+	int				nTime;				//计算完的最后一个时间
+
+	//int				nGroupIns1Ratio;	//合约1系数
+	//int				nGroupIns2Ratio;	//合约2系数
+}FENSHI_INFO;
+
+typedef struct _AllKPIC_INFO {
+	KlineType		data[MAX_DATA_COUNT];	//data信息
+	double			fMa[MAX_MA_COUNT][MAX_DATA_COUNT];
+	double			fMax;
+	double			fMin;
+	double			fSubMax;
+	double			fSubMin;
+	int				nLast1MinTime;		//最新更新所用的1MinK线的时间
+	int				nLastVolume;		//最后使用K线更新时累计的区间内成交量
+	int				nLastTradingDay;	//最后使用K线更新的交易日
+	int				nTotal;
+	int		nKwidth;		//k线宽度
+	int		nMoveNow;		//校正后的move,防止move无限变大
+	_AllKPIC_INFO() {
+		clear();
+	}
+
+	void clear() {
+		ZeroMemory(&data, sizeof(data));
+		ZeroMemory(fMa, sizeof(fMa));
+		fMax = 0;
+		fMin = 0;
+		fSubMax = 0;
+		fSubMin = 0;
+		nTotal = 0;
+		nLast1MinTime = 0;
+		nLastVolume = 0;
+		nTotal = 0;
+		nLastTradingDay = 0;
+		nMoveNow = 0;
+	}
+
+}AllKPIC_INFO;
+
+typedef struct MAType
+{
+	double MA1;
+	double MA2;
+	double MA3;
+	double MA4;
+	int date;
+	int time;
+};
+
+typedef struct EMAType
+{
+	double EMA1;
+	double EMA2;
+};
+
+bool GetFileKlineData(SStringA InsID, vector<KlineType> &dataVec, bool bIsDay = false);
+
+typedef struct _PARAM_TICK_INFO {
+	int			id;				//证券内部编号
+	int			date;			//日期(20170101)
+	int			time;			//时间(93501500)		
+	double		newp;			//最新价
+	int			vol;			//最新量
+	int			totalvol;		//成交总数量
+	double		abp[10];		//卖5买5价
+
+	_PARAM_TICK_INFO() :id(0), date(0),
+		time(0), newp(0), vol(0), totalvol(0)
+	{
+		ZeroMemory(abp, sizeof(int) * 10);
+	}
+
+	int Compare(const _PARAM_TICK_INFO &x)	//1大于,0等于,-1小于
+	{
+		return this->Compare(x.date, x.time);
+	}
+
+	int Compare(int date, int time)	//1大于,0等于,-1小于
+	{
+		if (this->date > date)
+			return 1;
+		else if (this->date < date)
+			return -1;
+		else if (this->time > time)
+			return 1;
+		else if (this->time < time)
+			return -1;
+		else
+			return 0;
+	}
+}TICK_INFO, *LPTICK_INFO;
+
+
+enum TimePreiod
+{
+	Period_FenShi = 0,
+	Period_1Min = 1,
+	Period_5Min = 5,
+	Period_15Min = 15,
+	Period_30Min = 30,
+	Period_60Min = 60,
+	Period_1Day = 1440,
+	Period_NULL = 65535,
+};
+
