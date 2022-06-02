@@ -1,0 +1,19 @@
+﻿<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+  <item id="101">盘口信息</item>
+  <sep/>
+  <item id="102" check="0">成交量</item>
+  <sep/>
+  <item id="103" check="0">MACD</item>
+  <sep/>
+  <item id="104" >RPS</item>
+  <sep/>
+  <item id="105" >MACD参数</item>
+  <sep/>
+  <item id="106" check="0">均线</item>
+  <sep/>
+  <item id="107" check="0">EMA线</item>
+  <sep/>
+  <item id="108" >EMA参数</item>
+  <sep/>
+  <item id="100" >返回</item>
+</menu>

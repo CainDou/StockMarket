@@ -26,7 +26,7 @@ namespace SOUI
 		CRect		m_rect;
 		bool		m_bIsStockIndex;
 		void		Paint(IRenderTarget *pRT);
-
+		BOOL		m_bInited;
 		int			*m_pGroupDataType;
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
@@ -34,7 +34,7 @@ namespace SOUI
 	protected:
 		void		DrawStockOneCode(IRenderTarget * pRT);		//画单个合约
 		void		DrawIndexOneCode(IRenderTarget * pRT);
-
+		CAutoRefPtr<IFont> m_pFont15;
 		std::vector<TICK_INFO>	m_vTick;		//显示用的数据
 
 	};

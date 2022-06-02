@@ -9,7 +9,9 @@ CNetWorkClient::CNetWorkClient()
 	m_pFnHandle = NULL;
 	m_uThreadID = 0;
 	m_socket = INVALID_SOCKET;
+	m_ClientID = INVALID_SOCKET;
 	m_hFunc = INVALID_HANDLE_VALUE;
+	m_bExit = FALSE;
 }
 
 
@@ -67,6 +69,7 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 	}
 	else
 	{
+		::shutdown(m_socket, SD_BOTH);
 		::closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
@@ -93,6 +96,7 @@ HANDLE CNetWorkClient::Start(UINT & ThreadID, void *para)
 
 BOOL CNetWorkClient::Stop()
 {
+	m_bExit = TRUE;
 	if (m_bConnected)
 	{
 		OnConnect(NULL, NULL);

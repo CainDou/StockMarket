@@ -248,9 +248,19 @@ bool CDataProc::CalcHisRps(TimeLineArrMap& comData)
 bool CDataProc::SetPreEMAData(TimeLineArrMap & comData, TimeLineData& data)
 {
 	auto &dataVec = comData[data.securityID][data.dataName];
-	dataVec.reserve(2);
-	dataVec.emplace_back(data.data);
-	dataVec.emplace_back(data.data);
+
+	if (dataVec.empty())
+	{
+		dataVec.reserve(2);
+		dataVec.emplace_back(data.data);
+		dataVec.emplace_back(data.data);
+	}
+	else
+	{
+		dataVec.clear();
+		dataVec[0] = data.data;
+		dataVec[1] = data.data;
+	}
 	return true;
 }
 
@@ -318,37 +328,47 @@ void CDataProc::UpdateTmData(vector<CoreData>& comData, CoreData & data)
 
 }
 
-void CDataProc::UpdateClose(TimeLineArrMap& comData, TimeLineData & data, int nPeriod)
+void CDataProc::UpdateClose(TimeLineArrMap& comData, 
+	TimeLineData & data, 
+	int nPeriod)
 {
 	if (data.data.value == 0)
 		return;
+
+
 	auto & dataVec = comData[data.securityID][data.dataName];
+	int time = data.data.time;
 
-
-	if (nPeriod != 1)
+	if (nPeriod != Period_FenShi)
 	{
-		if (nPeriod / 1440 == 0)
+		if (time < 930)
+			return;
+
+		if (time != 1130 && time != 1500)
+			++time;
+
+		if (nPeriod / Period_1Day == 0)
 		{
-			if (nPeriod != 60)
+			if (nPeriod == Period_60Min)
 			{
-				int timeLeft = (data.data.time % 100) % nPeriod;
-				data.data.time -= timeLeft;
+				if (time > 930 && time <= 1030)
+					time = 1030;
+				else if (time > 1030 && time <= 1130)
+					time = 1130;
+				else if (time % 100 != 0)
+					time = (time / 100 + 1) * 100;
 			}
-			else
+			else if (nPeriod != Period_1Min)
 			{
-				if (data.data.time >= 930 && data.data.time < 1030)
-					data.data.time = 930;
-				else if (data.data.time >= 1030 && data.data.time < 1130)
-					data.data.time = 1030;
-				else
-				{
-					int timeLeft = (data.data.time % 100) % nPeriod;
-					data.data.time -= timeLeft;
-				}
+				int nLeft = time % 100 % nPeriod;
+				if (nLeft != 0)
+					time = time + nPeriod - nLeft;
 			}
+			if (time % 100 == 60)
+				time += 40;
 		}
 		else
-			data.data.time = 0;
+			time = 0;
 	}
 	if (dataVec.empty())
 		dataVec.emplace_back(data.data);
@@ -356,41 +376,51 @@ void CDataProc::UpdateClose(TimeLineArrMap& comData, TimeLineData & data, int nP
 		dataVec.emplace_back(data.data);
 	else if (dataVec.back().date == data.data.date)
 	{
-		if (dataVec.back().time < data.data.time)
+		if (dataVec.back().time < time)
 			dataVec.emplace_back(data.data);
-		else if (dataVec.back().time == data.data.time)
+		else if (dataVec.back().time == time)
 			dataVec.back() = data.data;
 	}
+	dataVec.back().time = time;
 }
 
 void CDataProc::UpdateClose(vector<CoreData>& comData, TimeLineData & data, int nPeriod)
 {
 	if (data.data.value == 0)
 		return;
-	if (nPeriod != 1)
+
+	int time = data.data.time;
+
+	if (nPeriod != Period_FenShi)
 	{
-		if (nPeriod / 1440 == 0)
+		if (time < 930)
+			return;
+
+		if (time != 1130 && time != 1500)
+			++time;
+
+		if (nPeriod / Period_1Day == 0)
 		{
-			if (nPeriod != 60)
+			if (nPeriod == Period_60Min)
 			{
-				int timeLeft = (data.data.time % 100) % nPeriod;
-				data.data.time -= timeLeft;
+				if (time > 930 && time <= 1030)
+					time = 1030;
+				else if (time > 1030 && time <= 1130)
+					time = 1130;
+				else if (time % 100 != 0)
+					time = (time / 100 + 1) * 100;
 			}
-			else
+			else if (nPeriod != Period_1Min)
 			{
-				if (data.data.time >= 930 && data.data.time < 1030)
-					data.data.time = 930;
-				else if (data.data.time >= 1030 && data.data.time < 1130)
-					data.data.time = 1030;
-				else
-				{
-					int timeLeft = (data.data.time % 100) % nPeriod;
-					data.data.time -= timeLeft;
-				}
+				int nLeft = time % 100 % nPeriod;
+				if (nLeft != 0)
+					time = time + nPeriod - nLeft;
 			}
+			if (time % 100 == 60)
+				time += 40;
 		}
 		else
-			data.data.time = 0;
+			time = 0;
 	}
 	if (comData.empty())
 		comData.emplace_back(data.data);
@@ -398,11 +428,12 @@ void CDataProc::UpdateClose(vector<CoreData>& comData, TimeLineData & data, int 
 		comData.emplace_back(data.data);
 	else if (comData.back().date == data.data.date)
 	{
-		if (comData.back().time < data.data.time)
+		if (comData.back().time < time)
 			comData.emplace_back(data.data);
-		else if (comData.back().time == data.data.time)
+		else if (comData.back().time == time)
 			comData.back() = data.data;
 	}
+	comData.back().time = time;
 
 }
 
@@ -437,18 +468,26 @@ bool CDataProc::RankPoint(TimeLineArrMap& comData, TimeLineArrMap& uniData, vect
 	vector<pair<SStringA, CoreData>> rpsData;
 	rpsData.reserve(StockIDVec.size());
 	for (auto &stockID : StockIDVec)
-		if (!comData[stockID]["RPS520"].empty())
-			rpsData.emplace_back(make_pair(stockID, comData[stockID]["RPS520"].back()));
+	{
+		auto &dataVec = comData[stockID]["RPS520"];
+		if (!dataVec.empty())
+			rpsData.emplace_back(make_pair(stockID, dataVec.back()));
+	}
 	RankPoint(rpsData, uniData, "RPS520", "Rank520", "Point520");
 	rpsData.clear();
 	for (auto &stockID : StockIDVec)
-		if (!comData[stockID]["RPS2060"].empty())
-			rpsData.emplace_back(make_pair(stockID, comData[stockID]["RPS2060"].back()));
+	{
+		auto &dataVec = comData[stockID]["RPS2060"];
+		if (!dataVec.empty())
+			rpsData.emplace_back(make_pair(stockID, dataVec.back()));
+	}
 	RankPoint(rpsData, uniData, "RPS2060", "Rank2060", "Point2060");
 	return true;
 }
 
-bool CDataProc::RankPointHisData(TimeLineArrMap& comData, TimeLineArrMap& uniData, vector<SStringA>& StockIDVec)
+bool CDataProc::RankPointHisData(TimeLineArrMap& comData, 
+	TimeLineArrMap& uniData,
+	vector<SStringA>& StockIDVec)
 {
 	map<int64_t, vector<pair<SStringA, CoreData>>> rpsData;
 	for (auto &it : StockIDVec)
@@ -499,6 +538,15 @@ bool CDataProc::UpdateShowData(TimeLineArrMap& comData, TimeLineArrMap& uniData,
 				ShowMap[dataName] = uniMap[dataName].back();
 		}
 	}
+	return true;
+}
+
+
+bool CDataProc::SetPeriodFenshiOpenEMAData(TimeLineArrMap & comData, TimeLineData & data)
+{
+	vector<TimeLineData> tmVec = CreatePreEMAFromOpenData(data);
+	for (int i = 0; i < tmVec.size(); ++i)
+		SetPreEMAData(comData, tmVec[i]);
 	return true;
 }
 
@@ -585,6 +633,26 @@ void CDataProc::UpdateOnceTmData(vector<CoreData>& comData, CoreData & data)
 		comData[0] = data;
 }
 
+vector<TimeLineData> CDataProc::CreatePreEMAFromOpenData(TimeLineData & data)
+{
+	vector<TimeLineData> tmVec;
+	tmVec.reserve(5);
+	int i = 0;
+	while (i < 5)
+	{
+		tmVec.emplace_back(data);
+		++i;
+	}
+	strcpy_s(tmVec[0].dataName, "EMA5");
+	strcpy_s(tmVec[1].dataName, "EMA20");
+	strcpy_s(tmVec[2].dataName, "EMA60");
+	strcpy_s(tmVec[3].dataName, "DEA520");
+	strcpy_s(tmVec[4].dataName, "DEA2060");
+	tmVec[3].data.value = 0;
+	tmVec[4].data.value = 0;
+	return tmVec;
+}
+
 void CDataProc::SetEMA(map<SStringA, vector<CoreData>>& dataMap, const CoreData& close, int nCount, SStringA dataName)
 {
 	auto & dataVec = dataMap[dataName];
@@ -598,7 +666,8 @@ void CDataProc::SetEMA(map<SStringA, vector<CoreData>>& dataMap, const CoreData&
 	}
 	else
 	{
-		if (dataVec[1].date != close.date || dataVec[1].time != close.time)
+		if (dataVec[1].date != close.date 
+			|| dataVec[1].time != close.time)
 		{
 			dataVec[0] = dataVec[1];
 			dataVec[1] = close;
@@ -606,7 +675,8 @@ void CDataProc::SetEMA(map<SStringA, vector<CoreData>>& dataMap, const CoreData&
 		}
 		else
 		{
-			if (dataVec[0].time == dataVec[1].time && dataVec[0].time != 0)
+			if (dataVec[0].time == dataVec[1].time 
+				&& dataVec[0].time != 0)
 				dataVec[1].value = close.value;
 			else
 				dataVec[1].value = EMA(nCount, dataVec[0].value, close.value);
@@ -654,7 +724,8 @@ void CDataProc::SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData 
 	}
 	else
 	{
-		if (dataVec[1].date != close.date || dataVec[1].time != close.time)
+		if (dataVec[1].date != close.date
+			|| dataVec[1].time != close.time)
 		{
 			dataVec[0] = dataVec[1];
 			dataVec[1] = close;

@@ -2,7 +2,7 @@
 
 //一些基本的界面框架信息
 
-#define RC_PRH			25
+#define RC_PRH			20
 #define MAX_LIST_NUM	300
 
 namespace SOUI
@@ -13,11 +13,12 @@ namespace SOUI
 	public:
 		CPriceList();
 //		void SetShowData(int nIndex, bool bGroup);
-		void		SetShowData(SStringA StockID, vector<CommonStockMarket>* pStkMarketVec);
-		void		SetShowData(SStringA StockID, vector<CommonIndexMarket>* pIdxMarketVec);
+		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
+		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
 		~CPriceList();
 
 		SStringA		m_strSubIns;
+		SStringA		m_strStockName;
 		int				m_nWorkMode;			//1:1档行情,2:5档行情
 		float			m_fPreSettle;
 		bool			m_bIsStockIndex;
@@ -26,8 +27,11 @@ namespace SOUI
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
 		double m_fMaxChgPct;
+		
 		//	double			m_fPreClose;			//前收
 		int				m_nListNum;				//数据数量
+
+		BOOL			m_bInsInited;
 
 		BOOL			m_bInit;
 

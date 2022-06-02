@@ -1,0 +1,17 @@
+﻿<SOUI name="dlg_login" title="登陆" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,5,5,5" wndType="normal" appWnd="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(220,220,210)" colorText="#000000ff">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<icon pos="10,8" src="ICON_LOGO:16" />
+				<text pos="29,9" name="txt_title">登陆</text>
+			</caption>
+			<edit name="login_ID" pos="148,56" size="144, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" maxBuf="16" />
+			<text pos="100,56" size="32, 24">账号</text>
+			<edit name="login_PassWord" pos="148,90" size="144, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" password="1" maxBuf="16" />
+			<text pos="100,90" size="32, 24">密码</text>
+			<imgbtn name="btn_login" pos="128,160" size="56, 24" tip="" animate="1">登陆</imgbtn>
+			<imgbtn name="btn_quit" pos="220,160" size="56, 24" tip="" animate="1">取消</imgbtn>
+			<text name="txt_login" pos="64,224" size="304, 64" multiLines="1" valign="top">欢迎使用</text>
+		</window>
+	</root>
+</SOUI>

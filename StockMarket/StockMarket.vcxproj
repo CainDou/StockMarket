@@ -168,7 +168,8 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -189,7 +190,12 @@
     <ClCompile Include="DataProc.cpp" />
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
+    <ClCompile Include="DlgBandPara.cpp" />
+    <ClCompile Include="DlgEmaPara.cpp" />
     <ClCompile Include="DlgKbElf.cpp" />
+    <ClCompile Include="DlgLogin.cpp" />
+    <ClCompile Include="DlgMacdPara.cpp" />
+    <ClCompile Include="DlgMaPara.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="NetWorkClient.cpp" />
@@ -200,6 +206,7 @@
     <ClCompile Include="SSubPic.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
     <ClCompile Include="SKlineTip.cpp" />
+    <ClCompile Include="SSubTargetPic.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -215,7 +222,12 @@
     <ClInclude Include="DataProc.h" />
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
+    <ClInclude Include="DlgBandPara.h" />
+    <ClInclude Include="DlgEmaPara.h" />
     <ClInclude Include="DlgKbElf.h" />
+    <ClInclude Include="DlgLogin.h" />
+    <ClInclude Include="DlgMacdPara.h" />
+    <ClInclude Include="DlgMaPara.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="NetWorkClient.h" />
@@ -227,6 +239,7 @@
     <ClInclude Include="SSubPic.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
     <ClInclude Include="SKlineTip.h" />
+    <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

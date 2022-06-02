@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<SOUI name="dlg_BandPara" title="波段优化参数" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="365" height="188" margin="1,5,5,5" wndType="normal" toolWindow="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">波段优化参数</text>
+				<imgbtn name="btn_BandClose" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<edit name="edit_BandParaN1" pos="52,50" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="32,50" size="20, 24">N1</text>
+			<edit name="edit_BandParaN2" pos="172,50" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="152,50" size="20, 24">N2</text>
+			<edit name="edit_BandParaK" pos="284,50" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="264,50" size="20, 24">K</text>
+			<edit name="edit_BandParaM1" pos="52,90" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="32,90" size="20, 24">M1</text>
+			<edit name="edit_BandParaM2" pos="172,90" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="152,90" size="20, 24">M2</text>
+			<edit name="edit_BandParaP" pos="284,90" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="264,90" size="20, 24">P</text>
+			<button name="btn_BandOK" pos="50,155" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">确定</button>
+			<button name="btn_BandCancel" pos="200,155" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">取消</button>
+			<button name="btn_BandDefault" pos="50,122" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">默认参数</button>
+			<button name="btn_BandSetDefault" pos="200,122" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">设置默认参数</button>
+		</window>
+	</root>
+</SOUI>

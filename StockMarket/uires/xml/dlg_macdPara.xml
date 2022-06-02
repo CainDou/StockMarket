@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<SOUI name="dlg_macdPara" title="MACD参数" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="365" height="180" margin="1,5,5,5" wndType="normal" toolWindow="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">MACD参数</text>
+				<imgbtn name="btn_MacdClose" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<edit name="edit_MacdPara1" pos="60,60" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="16,60" size="40, 24">参数1</text>
+			<edit name="edit_MacdPara2" pos="180,60" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="136,60" size="40, 24">参数2</text>
+			<edit name="edit_MacdPara3" pos="300,60" size="48, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="256,60" size="40, 24">参数3</text>
+			<button name="btn_MACDOK" pos="50,140" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">确定</button>
+			<button name="btn_MACDCancel" pos="230,140" size="100,24" colorText="#000000" skin="_skin.sys.btn.normal">取消</button>
+			<button name="btn_MACDDefault" pos="50,100" size="100,24" colorText="#000000" skin="_skin.sys.btn.normal">默认参数</button>
+			<button name="btn_MACDSetDefault" pos="230,100" size="100,24" colorText="#000000" skin="_skin.sys.btn.normal">设置默认参数</button>
+		</window>
+	</root>
+</SOUI>

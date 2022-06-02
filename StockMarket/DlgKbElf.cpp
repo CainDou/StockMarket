@@ -21,6 +21,7 @@ CDlgKbElf::~CDlgKbElf()
 void CDlgKbElf::OnClose()
 {
 	ShowWindow(SW_HIDE);
+
 }
 
 void CDlgKbElf::OnInit(EventArgs * e)
@@ -36,10 +37,10 @@ void CDlgKbElf::OnInit(EventArgs * e)
 	if (m_pList)
 	{
 		m_pList->GetEventSet()->subscribeEvent(EVT_LC_DBCLICK, Subscriber(&CDlgKbElf::OnDbClick, this));
-		//m_pList->GetEventSet()->subscribeEvent(EVT_KEYDOWN, Subscriber(&CDlgKbElf::OnKeyDown, this));
+		//m_pList->GetEventSet()->subscribeEvent(EVT_KEYDOWN, Subscriber(&CDlgKbElf::OnKeyUp, this));
 	}
 
-	m_pEdit->SetWindowTextW(strInput);
+	m_pEdit->SetWindowTextW(wstrInput);
 	SetTimer(2, 500);
 
 }
@@ -80,34 +81,82 @@ bool CDlgKbElf::OnEditChange(EventArgs * e)
 		return false;
 	if (!IsWindowVisible())
 		return false;
+	SStringW wstr = m_pEdit->GetWindowTextW();
+	if (wstrInput == wstr)
+		return false;
 	m_pList->DeleteAllItems();
-	strInput = m_pEdit->GetWindowTextW();
+	wstrInput = wstr;
 	int InsCount = -1;
 	m_Row2InsMap.clear();
-	if (strInput == L"")
+	if (wstrInput == L"")
+	{
 		ShowWindow(SW_HIDE);
+	}
 	else
 	{
-		SStringW StockIns;
-		SStringW StockClass;
+		SStringW wstr = InputToUpper(wstrInput);
+		int len = wstr.GetLength();
+		bool bID = true;
+		bool bName = true;
+		bool bSimpleName = true;
+		SStringA strInput = StrW2StrA(wstr);
+		for (int i = 0; i < len; ++i)
+		{
+			if (wstr[i] >= '0' && wstr[i] <= '9')
+				bName = false;
+			else if (wstr[i] >= 'A' && wstr[i] < 'Z')
+				bID = false;
+			else if (wstr[i] < 128)
+			{
+				bID = false;
+				if (i > 2)
+					bName = false;
+			}
+			else
+			{
+				bID = false;
+				bSimpleName = false;
+			}
+		}
+
+
 		for (auto &it : m_StockInfoMap)
 		{
-			StockIns = StrA2StrW(it.first);
-			if (StockIns.Find(strInput) != -1)
+			if (bID)
 			{
-				InsCount++;
-				if (StockIns.Find('I') != -1)
-					StockIns = StockIns.Left(6);
-				m_pList->InsertItem(InsCount, StockIns);
-				m_pList->SetSubItemText(InsCount, 1, StrA2StrW(it.second.SecurityName));
-				StockClass = L"A股";
-				if ((it.first[0] == '0'&&it.first.GetLength() == 7) || it.first[0] == '8')
-					StockClass = L"指数";
-				m_pList->SetSubItemText(InsCount, 2, StockClass);
-				m_Row2InsMap[InsCount] = it.first;
+				if (it.first.Find(strInput) != -1)
+				{
+					AddFindItem(InsCount, it);
+					continue;
+				}
+			}
+			if (bSimpleName)
+			{
+				SStringA strSimpleName = it.second.SimpleName;
+				if (strSimpleName.Find(strInput) != -1)
+				{
+					AddFindItem(InsCount, it);
+					continue;
+				}
+
+			}
+			if (bName)
+			{
+				SStringA strName = it.second.SecurityName;
+				SStringA strNameNoSpace = "";
+				if (strName.Find(' ') != -1)
+				{
+					SStringW wstrName = StrA2StrW(strName);
+					wstrName.Remove(' ');
+					strNameNoSpace = StrW2StrA(wstrName);
+				}
+				if (strName.Find(strInput) != -1
+					|| strNameNoSpace.Find(strInput) != -1)
+					AddFindItem(InsCount, it);
 
 			}
 		}
+
 
 		if (InsCount == -1)
 			m_pList->InsertItem(0, L"无匹配项");
@@ -151,7 +200,9 @@ void CDlgKbElf::OnTimer(char cTimerID)
 		if (IsWindowVisible())
 		{
 			if (!m_pList->IsFocused() && !m_pEdit->IsFocused())
+			{
 				ShowWindow(SW_HIDE);
+			}
 		}
 	}
 }
@@ -184,11 +235,29 @@ SStringW CDlgKbElf::InputToLower(SStringW inPut)
 	return Upperstr;
 }
 
+void CDlgKbElf::AddFindItem(int & InsCount,
+	std::pair<const SStringA, StockInfo>& it)
+{
+	InsCount++;
+	SStringW StockIns = StrA2StrW(it.first);
+	if (StockIns.Find('I') != -1)
+		StockIns = StockIns.Left(6);
+	m_pList->InsertItem(InsCount, StockIns);
+	m_pList->SetSubItemText(InsCount, 1,
+		StrA2StrW(it.second.SecurityName));
+	SStringW StockClass = L"A股";
+	if ((it.first[0] == '0'&&it.first.GetLength() == 7)
+		|| it.first[0] == '8')
+		StockClass = L"指数";
+	m_pList->SetSubItemText(InsCount, 2, StockClass);
+	m_Row2InsMap[InsCount] = it.first;
+
+}
+
 bool CDlgKbElf::OnKeyDown(EventArgs * e)
 {
+
 	EventKeyDown* pEvent = (EventKeyDown*)e;
-	//	if(m_pList->GetSelectedItem()<0)
-	//		m_pList->SetSelectedItem(0);
 
 	if (pEvent->nChar == VK_DOWN || pEvent->nChar == VK_UP)
 	{
@@ -202,7 +271,7 @@ bool CDlgKbElf::OnKeyDown(EventArgs * e)
 				if (m_pList->GetItemCount() < m_pList->GetCountPerPage(false))
 					nSelectedItem = m_pList->GetItemCount();
 				else
-					nSelectedItem= m_pList->GetTopIndex() + m_pList->GetCountPerPage(false);
+					nSelectedItem = m_pList->GetTopIndex() + m_pList->GetCountPerPage(false);
 
 			}
 
@@ -226,12 +295,15 @@ bool CDlgKbElf::OnKeyDown(EventArgs * e)
 		int nSel = m_pList->GetSelectedItem();
 		if (nSel >= 0 && !m_Row2InsMap.empty())
 			SubscribeIns(m_Row2InsMap[nSel]);
+		m_pEdit->SetWindowTextW(L"");
 		ShowWindow(SW_HIDE);
 	}
+	else if (pEvent->nChar == VK_BACK && m_pEdit->GetWindowText() == L"")
+		ShowWindow(SW_HIDE);
 	return false;
 }
 
 std::pair<SStringA, SColorListCtrlEx*> SOUI::CDlgKbElf::GetShowPicInfo()
 {
-	return std::make_pair(m_subIns,m_useList);
+	return std::make_pair(m_subIns, m_useList);
 }

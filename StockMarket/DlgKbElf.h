@@ -36,7 +36,7 @@ namespace SOUI
 		SStringW InputToUpper(SStringW inPut);
 		SStringW InputToLower(SStringW inPut);
 
-		SStringW strInput;
+		SStringW wstrInput;
 
 		SStringA m_subIns;
 
@@ -52,7 +52,7 @@ namespace SOUI
 		SColorListCtrlEx *m_pList;
 	protected:
 		//	virtual void OnFinalMessage(HWND hWnd);
-
+		void AddFindItem(int &InsCount, std::pair<const SStringA, StockInfo> &it);
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)

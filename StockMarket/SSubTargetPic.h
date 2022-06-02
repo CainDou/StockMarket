@@ -44,46 +44,55 @@ typedef struct InsStockAllData
 namespace SOUI
 {
 
-	class SSubPic : public SWindow
+	class SSubTargetPic
 	{
-		SOUI_CLASS_NAME(SSubPic, L"subPic")	//定义xml标签
 
 	public:
-		SSubPic();
-		~SSubPic();
+		SSubTargetPic();
+		~SSubTargetPic();
 
-		void		SetShowData(int nIndex,bool nGroup);
-		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec,vector<SStringA> dataNameVec,
-			SStringA StockID ,SStringA StockName);
-		void		OnDbClickedFenshi(UINT nFlags, CPoint point);
+		void		SetShowData(int nIndex, bool nGroup);
+		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec, vector<SStringA> dataNameVec,
+			SStringA StockID, SStringA StockName);
+		void		OnDbClicked(UINT nFlags, CPoint point);
 		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void		ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		SStringA	GetShowStock() const;
 		void		SetOffset2Zero();
-
-	protected:
-		void		InitColorAndPen(IRenderTarget *pRT);
+		CRect*		GetPicRect();
+		void		SetPicRect(CRect rc);
 		void		OnPaint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
+		void		InitColorAndPen(IRenderTarget *pRT);
+		void		DrawData(IRenderTarget * pRT);
+		void		SetMouseLineState(bool bShow);
+		void		SetMousePosDefault();
+		void		SetMouseMove();
+		void		SetNowKeyDownLinePos(int nPos);
+		void		SetShowWidth(int width, int nJiange);
+		void		SetOffset(int nOffset);
+		void		SetShowNum(int nNum);
+		void		DrawKeyDownMouseLine(IRenderTarget * pRT,BOOL bDoubleFlash = FALSE);
+
+	protected:
 		void		GetMaxDiff();		//判断坐标最大最小值和k线条数
 		BOOL		IsInRect(int x, int y, int nMode = 0);	//是否在坐标中,0为全部,1为上方,2为下方
 		SStringW	GetYPrice(int nY, BOOL bIsRight);
-		void		DrawData(IRenderTarget * pRT);
 		int			GetXPos(int n);		//获取id对应的x坐标
 		int			GetXData(int nx); 	//获取鼠标下的数据id
 		int			GetYPos(double fDiff, BOOL bIsRight);
-		void		OnMouseMove(UINT nFlags, CPoint point);
+		//void		OnMouseMove(UINT nFlags, CPoint point);
 		void		OnTimer(char cTimerID);
 		int			OnCreate(LPCREATESTRUCT lpCreateStruct);
-		void		OnMouseLeave();
-		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str,COLORREF color=RGBA(255,255,255,255),UINT uFormat=DT_SINGLELINE);
+		//void		OnMouseLeave();
+		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		HandleMissData(InStockData f1, int time);
 		void		DataInit();
-		void		DrawKeyDownMouseLine(IRenderTarget * pRT/*,UINT nChar*/);
-		void		DrawTime(IRenderTarget * pRT, CRect rc, int date ,int time);
+		//void		DrawTime(IRenderTarget * pRT, CRect rc, int date, int time);
 		void		DrawMouseData(IRenderTarget * pRT, int xPos);
+
 	protected:
 
 		int			m_nOffset;
@@ -117,33 +126,64 @@ namespace SOUI
 		int			m_nCount;
 		int			m_nMiddle;
 		int			m_nHeight;
+		int			m_nWidth;
+		int			m_nJiange;
 		int			m_nShowDataCount;
 		bool		m_bDataInited;
 		bool		m_bIsFirstKey;
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
-
-	public:
-		SOUI_MSG_MAP_BEGIN()
-			MSG_WM_PAINT_EX(OnPaint)
-			MSG_WM_MOUSEMOVE(OnMouseMove)
-			MSG_WM_MOUSELEAVE(OnMouseLeave)
-//			MSG_WM_TIMER_EX(OnTimer)
-			MSG_WM_KEYDOWN(OnKeyDown)
-			MSG_WM_CREATE(OnCreate)
-			MSG_WM_LBUTTONDBLCLK(OnDbClickedFenshi)
-			SOUI_MSG_MAP_END()
+		bool		m_bUseWidth;
 
 	};
 
-	inline SStringA SOUI::SSubPic::GetShowStock() const
+	inline SStringA SOUI::SSubTargetPic::GetShowStock() const
 	{
 		return m_StockID;
 	}
 
-	inline void SOUI::SSubPic::SetOffset2Zero()
+	inline void SOUI::SSubTargetPic::SetOffset2Zero()
 	{
 		m_nOffset = 0;
+	}
+	inline CRect * SSubTargetPic::GetPicRect()
+	{
+		return &m_rcImage;
+	}
+	inline void SSubTargetPic::SetPicRect(CRect rc)
+	{
+		m_rcImage = rc;
+	}
+	inline void SSubTargetPic::SetMouseLineState(bool bShow)
+	{
+		m_bShowMouseLine = bShow;
+	}
+	inline void SSubTargetPic::SetMousePosDefault()
+	{
+		m_nMouseX = m_nMouseY = -1;
+	}
+	inline void SSubTargetPic::SetMouseMove()
+	{
+		m_bIsFirstKey = true;
+		m_bKeyDown = false;
+	}
+	inline void SSubTargetPic::SetNowKeyDownLinePos(int nPos)
+	{
+		m_nNowPosition = nPos;
+	}
+	inline void SSubTargetPic::SetShowWidth(int nWidth, int nJiange)
+	{
+		 m_nWidth= nWidth;
+		 m_nJiange = nJiange;
+		 m_bUseWidth = true;
+	}
+	inline void SSubTargetPic::SetOffset(int nOffset)
+	{
+		m_nOffset = nOffset;
+	}
+	inline void SSubTargetPic::SetShowNum(int nNum)
+	{
+		m_nAllLineNum = nNum;
 	}
 }
 

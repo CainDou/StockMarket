@@ -17,8 +17,8 @@ using std::map;
 
 typedef char SecurityID[8];
 
-#define MAX_BAR_COUNT		10000
-#define MAX_DATA_COUNT		10000
+#define MAX_BAR_COUNT		10500
+#define MAX_DATA_COUNT		10500
 #define MAX_MA_COUNT		4
 struct hash_SStringA
 {
@@ -60,15 +60,15 @@ typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> 
 enum RecvMsgType
 {
 	RecvMsg_StockInfo = 182433,
-	RecvMsg_UpdateIndex,
+	RecvMsg_RTTimeLine,
 	RecvMsg_TodayData,
 	RecvMsg_HisData,
 	RecvMsg_HisPoint,
 	RecvMsg_LastDayEma,
 	RecvMsg_RTIndexMarket,
 	RecvMsg_RTStockMarket,
-	RecvMsg_IndexMarket,
-	RecvMsg_StockMarket,
+	RecvMsg_HisIndexMarket,
+	RecvMsg_HisStockMarket,
 	RecvMsg_HisKline,
 	RecvMsg_CloseInfo,
 };
@@ -76,11 +76,13 @@ enum RecvMsgType
 enum SendMsgType
 {
 	SendType_Connect = 0,
+	SendType_ReConnect,
 	SendType_GetHisData = 100,
 	SendType_GetHisPoint,
 	SendType_IndexMarket,
 	SendType_StockMarket,
 	SendType_HisPeriodKline,
+	SendType_SubIns,
 };
 
 
@@ -101,6 +103,10 @@ typedef struct _StockInfo
 	SecurityID SecurityID;
 	char SecurityName[16];
 	char ExchangeID[8];
+	char SimpleName[8];
+	char SWL1ID[8];
+	char SWL2ID[8];
+	char ScaleID[8];
 }StockInfo;
 
 typedef struct _ReceiveInfo
@@ -111,11 +117,31 @@ typedef struct _ReceiveInfo
 	}
 	int MsgType;
 	char InsID[10];
-	int StartDate;
-	int EndDate;
+	int Group;
+	int Period;
 	unsigned long nDataSize1;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
 	unsigned long nDataSize2;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceiveInfo;
+
+typedef struct _ReceiveIDInfo
+{
+	_ReceiveIDInfo() :MsgType(-1), NoUse3(-1)
+	{
+
+	}
+	_ReceiveIDInfo(ReceiveInfo& ri)
+	{
+		memcpy_s(this, sizeof(ReceiveIDInfo),
+			&ri, sizeof(ri));
+	}
+	int MsgType;
+	char NoUse1[10];
+	int ClientID;
+	int NoUse2;
+	unsigned long NoUse3;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long NoUse4;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+}ReceiveIDInfo;
+
 
 enum SListHead
 {
@@ -138,9 +164,18 @@ typedef struct SendInfo
 {
 	int MsgType;
 	char str[10];
-	int  StartDate;
-	int  EndDate;
+	int  Group;
+	int  Period;
 }SendInfo;
+
+typedef struct SendIDInfo
+{
+	int MsgType;
+	char NoUse1[10];
+	int  ClinetID;
+	int  NoUse2;
+}SendIDInfo_t;
+
 
 
 SStringW StrA2StrW(const SStringA &sstrSrcA);
@@ -181,15 +216,10 @@ enum MAINMSG
 	MAINMSG_UpdateList,
 	MAINMSG_ShowPic,
 	MAINMSG_UpdatePic,
+	MAINMSG_ProcFenShi,
+	MAINMSG_ProcKline,
 };
 
-typedef struct sendInfo
-{
-	int MsgType;
-	char InsID[10];
-	int  StartDate;
-	int  EndDate;
-}ReceiveInfo_t;
 
 enum RpsGroup
 {
@@ -346,35 +376,27 @@ typedef struct MACDDataType
 typedef struct InitPara
 {
 	bool bShowMA;
-	bool bShowHighLow;
 	bool bShowBandTarget;
 	bool bShowAverage;
 	bool bShowEMA;
-	bool bShowMACD;
+	bool bShowTSCMACD;
 	bool bShowTSCVolume;
 	bool bShowKlineVolume;
 	bool bShowKlineMACD;
-	int  nPeriod;
+	bool bShowTSCRPS;
+	bool bShowKlineRPS;
 	int  nWidth;
-	bool bShowMarket;
-	bool bShowPrice;
-	int  nGroup;
-	int	 nPage;
-	bool bShowFutStock;
-	bool bShowBasis;
+	bool bShowTSCDeal;
+	bool bShowKlineDeal;
 	int  nEMAPara[2];
 	int  nMACDPara[3];
-	int	 nGroupDataType;
-	int	 nMarketPage;
 	int	 nMAPara[4];
 	bool bNoJiange;
-	int	 nCAType;
 	BandPara_t  BandPara;
-	InitPara() :bShowMA(true), bShowHighLow(true), bShowBandTarget(false), bShowAverage(true),
-		bShowEMA(true), bShowMACD(true), bShowTSCVolume(false), bShowKlineVolume(false), nPeriod(0),
-		nWidth(9), bShowKlineMACD(true), bShowMarket(false), bShowPrice(false), nGroup(0), nPage(0),
-		bShowFutStock(true), bShowBasis(true), nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 }, nGroupDataType(0),
-		nMarketPage(0), nMAPara{ 5,10,20,60 }, bNoJiange(false)
+	InitPara() :bShowMA(true), bShowBandTarget(false), bShowAverage(true),bShowEMA(true), 
+		bShowTSCMACD(true), bShowTSCVolume(false), bShowKlineVolume(false),bShowTSCRPS(true),
+		bShowKlineRPS(true), nWidth(9), bShowKlineMACD(true) , bShowTSCDeal(true),bShowKlineDeal(false),
+		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },  nMAPara{ 5,10,20,60 }, bNoJiange(false)
 	{}
 }InitPara_t;
 
@@ -554,6 +576,75 @@ enum TimePreiod
 	Period_30Min = 30,
 	Period_60Min = 60,
 	Period_1Day = 1440,
-	Period_NULL = 65535,
+	//Period_NULL = 65535,
 };
 
+void InitLogFile();
+void TraceLog(char* log, ...);
+
+enum LoginMsg
+{
+	LoginMsg_UpdateText = 0,
+	LoginMsg_DestoryWnd,
+};
+
+typedef struct LoginInfo
+{
+	HWND loginwnd;
+	bool bLogin;
+	wchar_t ID[17];
+	wchar_t psd[17];
+}LoginInfo_t;
+
+enum FSMSG
+{
+	FSMSG_PROCDATA = 0,
+	FSMSG_UPDATE,
+	FSMSG_EMA,
+	FSMSG_MACD,
+	FSMSG_COUNT,
+};
+
+enum KLINEMSG
+{
+	KLINEMSG_PROCDATA = 0,
+	KLINEMSG_HISPOINT,
+	KLINEMSG_UPDATE,
+	KLINEMSG_MA,
+	KLINEMSG_MACD,
+	KLINEMSG_BAND,
+};
+
+enum FSMenu
+{
+	FM_Return = 100,
+	FM_Deal,
+	FM_Volume,
+	FM_MACD,
+	FM_RPS,
+	FM_MacdPara,
+	FM_Avg,
+	FM_EMA,
+	FM_EmaPara,
+	FM_End,
+};
+
+enum KlineMenu
+{
+	KM_Return = 200,
+	KM_Deal,
+	KM_MA,
+	KM_Band,
+	KM_Volume,
+	KM_MACD,
+	KM_RPS,
+	KM_MacdPara,
+	KM_BandPara,
+	KM_MaPara,
+	KM_End,
+};
+
+enum ReceiveCommonMsgType
+{
+	RecvMsg_ClientID = 170000,
+};

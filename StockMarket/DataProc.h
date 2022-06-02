@@ -40,6 +40,8 @@ public:
 	bool UpdateShowData(TimeLineArrMap& comData, TimeLineArrMap& uniData,TimeLineMap& ShowData,
 		vector<SStringA>& comDataNameVec , vector<SStringA>& uniDataNameVec, vector<SStringA>& StockIDVec);
 	double  EMA(int nCount, double preEMA, double data) const;
+
+	bool SetPeriodFenshiOpenEMAData(TimeLineArrMap & comData, TimeLineData& data);
 protected:
 	void SetEMA(map<SStringA, vector<CoreData>>& dataMap,const CoreData& close, int nCount, SStringA dataName);
 	void SetDEA(map<SStringA, vector<CoreData>>& dataMap, const CoreData& close, int nCount, SStringA dataName);
@@ -49,12 +51,14 @@ protected:
 	bool ClearRankPointData(map<SStringA, vector<CoreData>> &dataMap);
 	void UpdateOnceTmData(TimeLineArrMap& comData, CoreData& data, SStringA SecurityID, SStringA dataName);
 	void UpdateOnceTmData(vector<CoreData>& comData, CoreData& data);
+	vector<TimeLineData>  CreatePreEMAFromOpenData(TimeLineData& data);
 };
 
 inline double CDataProc::EMA(int nCount, double preEMA, double data) const
 {
 	return preEMA*(nCount - 1) / (nCount + 1) + data * 2 / (nCount + 1);
 }
+
 
 
 
