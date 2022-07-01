@@ -50,10 +50,43 @@
     <ClCompile Include="DataProc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgKbElf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DealList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PriceList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SKlineTip.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SSubPic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SFenShiPic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DlgKbElf.cpp">
+    <ClCompile Include="SKlinePic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SSubTargetPic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgBandPara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgEmaPara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgMacdPara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgMaPara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgLogin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -70,9 +103,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SFenShiPic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SHeaderCtrlEx.h">
@@ -94,6 +124,42 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgKbElf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DealList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PriceList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SKlineTip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SSubPic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SFenShiPic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SKlinePic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SSubTargetPic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgBandPara.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgEmaPara.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgMacdPara.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgMaPara.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgLogin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

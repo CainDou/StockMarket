@@ -2,7 +2,7 @@
 
 //一些基本的界面框架信息
 
-#define RC_PRH			25
+#define RC_PRH			20
 #define MAX_LIST_NUM	300
 
 namespace SOUI
@@ -13,42 +13,44 @@ namespace SOUI
 	public:
 		CPriceList();
 //		void SetShowData(int nIndex, bool bGroup);
-		void SetShowData(InsIDType strSubIns, bool bGroup);
+		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
+		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
+		void		SetIndyName(vector<SStringA>& nameVec);
 		~CPriceList();
 
-		InsIDType		m_strSubIns;
-		bool			m_bGroup;
+		SStringA		m_strSubIns;
+		SStringA		m_strStockName;
+		SStringA		m_strL1Indy;
+		SStringA		m_strL2Indy;
 		int				m_nWorkMode;			//1:1档行情,2:5档行情
 		float			m_fPreSettle;
 		bool			m_bIsStockIndex;
-		RestoreTickType	m_Tick;
-		StockIndex_t	m_IndexTick;
-		GroupDataType		m_Group;
+		CommonIndexMarket	m_IndexTick;
+		CommonStockMarket   m_StockTick;
+		CommonIndexMarket	m_preIndexTick;
+		CommonStockMarket   m_preStockTick;
 
-		double				m_groupSettle;
-		double				m_groupSettleRatio;
+		vector<CommonStockMarket> *m_pStkMarketVec;
+		vector<CommonIndexMarket> *m_pIdxMarketVec;
+		double m_fMaxChgPct;
+		
 		//	double			m_fPreClose;			//前收
 		int				m_nListNum;				//数据数量
-		int				m_nDecimal;				//小数位数
-		TCHAR			m_sDecimal[10];			//用来格式化
-		int				m_nDecimalXi;			//10的m_nDecimal次方
 
-		int				*m_pGroupDataType;
+		BOOL			m_bInsInited;
 
 		BOOL			m_bInit;
 
 		CRect			m_rect;
 
-		CAutoRefPtr<IFont> m_pFont15, m_pFont20;
+		CAutoRefPtr<IFont> m_pFont15, m_pFont20,m_pFont10;
 		CAutoRefPtr<IPen> m_penRed;
 		void		Paint(IRenderTarget *pRT);
 
 	protected:
-		void		DrawModeOne(IRenderTarget * pRT);
+		void		DrawStockModeOne(IRenderTarget * pRT);
 		void		DrawIndexModeOne(IRenderTarget * pRT);
-		void		DrawModeGroup(IRenderTarget * pRT);
 		COLORREF	GetTextColor(double price);
-		COLORREF    GetGroupColor(double price);
 	};
 }
 

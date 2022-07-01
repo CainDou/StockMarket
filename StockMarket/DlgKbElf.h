@@ -23,7 +23,8 @@ namespace SOUI
 		void OnClose();
 		void OnInit(EventArgs *e);
 		LRESULT OnActive(UINT wlParam, BOOL whParam, HWND lParam);
-		bool SetStockInfo(SColorListCtrlEx* pPic, vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec=nullptr);
+		bool SetStockInfo(SColorListCtrlEx* pPic, bool bFroceUpdate,
+			vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec=nullptr);
 		bool OnEditChange(EventArgs *e);
 		bool OnDbClick(EventArgs *e);
 		bool OnKeyDown(EventArgs *e);
@@ -36,7 +37,7 @@ namespace SOUI
 		SStringW InputToUpper(SStringW inPut);
 		SStringW InputToLower(SStringW inPut);
 
-		SStringW strInput;
+		SStringW wstrInput;
 
 		SStringA m_subIns;
 
@@ -52,7 +53,7 @@ namespace SOUI
 		SColorListCtrlEx *m_pList;
 	protected:
 		//	virtual void OnFinalMessage(HWND hWnd);
-
+		void AddFindItem(int &InsCount, std::pair<const SStringA, StockInfo> &it);
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)

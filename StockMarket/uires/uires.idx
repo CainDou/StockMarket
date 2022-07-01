@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -7,6 +7,11 @@
 		<file name="XML_MAINWND" path="xml\dlg_main.xml" />
 		<file name="page_list" path="xml\page_list.xml" />
 		<file name="dlg_keyboardElf" path="xml\dlg_keyboardElf.xml" />
+		<file name="dlg_maPara" path="xml\dlg_maPara.xml" />
+		<file name="dlg_login" path="xml\dlg_login.xml" />
+		<file name="dlg_macdPara" path="xml\dlg_macdPara.xml" />
+		<file name="dlg_BandPara" path="xml\dlg_BandPara.xml" />
+		<file name="dlg_emaPara" path="xml\dlg_emaPara.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -20,4 +25,9 @@
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />
 	</ICON>
+	<smenu>
+		<file name="menu_fenshi" path="smenu\menu_fenshi.xml" />
+		<file name="menu_kline" path="smenu\menu_kline.xml" />
+	</smenu>
+
 </resource>

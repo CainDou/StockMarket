@@ -164,17 +164,18 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;E:\Zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(SOUIPATH)\bin64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>utilities.lib;soui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlib.lib;utilities.lib;soui.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
     <ResourceCompile>
@@ -187,14 +188,25 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataProc.cpp" />
+    <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
+    <ClCompile Include="DlgBandPara.cpp" />
+    <ClCompile Include="DlgEmaPara.cpp" />
     <ClCompile Include="DlgKbElf.cpp" />
+    <ClCompile Include="DlgLogin.cpp" />
+    <ClCompile Include="DlgMacdPara.cpp" />
+    <ClCompile Include="DlgMaPara.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="NetWorkClient.cpp" />
+    <ClCompile Include="PriceList.cpp" />
     <ClCompile Include="SColorListCtrlEx.cpp" />
     <ClCompile Include="SFenShiPic.cpp" />
+    <ClCompile Include="SKlinePic.cpp" />
+    <ClCompile Include="SSubPic.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
+    <ClCompile Include="SKlineTip.cpp" />
+    <ClCompile Include="SSubTargetPic.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -208,15 +220,26 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataProc.h" />
+    <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
+    <ClInclude Include="DlgBandPara.h" />
+    <ClInclude Include="DlgEmaPara.h" />
     <ClInclude Include="DlgKbElf.h" />
+    <ClInclude Include="DlgLogin.h" />
+    <ClInclude Include="DlgMacdPara.h" />
+    <ClInclude Include="DlgMaPara.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="NetWorkClient.h" />
+    <ClInclude Include="PriceList.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SColorListCtrlEx.h" />
     <ClInclude Include="SFenShiPic.h" />
+    <ClInclude Include="SKlinePic.h" />
+    <ClInclude Include="SSubPic.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
+    <ClInclude Include="SKlineTip.h" />
+    <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

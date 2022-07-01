@@ -1,87 +1,117 @@
-﻿<include>
-	<window name="wnd_Ind1" pos ="5,5,%50,%40" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1"  font="face:微软雅黑">
-	  <text pos="5,5" colorText="#FF0000FF">申万1级行业</text>
-	  <imgbtn pos="[5,0" size="30,22" tip="1分钟图" animate="0" text="1M" name="btn_Ind1M1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="30,22" tip="5分钟图" animate="0" text="5M" name="btn_Ind1M5" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind1M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind1M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind1M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <imgbtn pos="[0,0" size="25,22" tip="日频图" animate="0" text="日" name="btn_Ind1Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom" />
-	  <color_listctrlex name="List_Ind1" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
-		 <items>
-			<item width="50">序号</item>
-			<item width="65">证券代码</item>
-			<item width="120">证券名称</item>
-			<item width="70">最新价</item>
-			<item width="70">rps520</item>
-			<item width="85">MACD520</item>
-			<item width="70">520分数</item>
-			<item width="70">520排名</item>
-			<item width="70">rps2060</item>
-			<item width="90">MACD2060</item>
-			<item width="70">2060分数</item>
-			<item width="70">2060排名</item>
-		  </items>
-		</headerex>
-	  </color_listctrlex>
-	<fenshiPic  name="FSPic_Ind1" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
+﻿<?xml version="1.0"?>
+<include>
+	<window name="wnd_Ind1" pos="5,5,%50,%40" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑">
+		<text pos="5,3" colorText="#FF0000FF">申万1级行业</text>
+		<imgbtn pos="[5,0" size="30,22" tip="市场行情" animate="0" text="行情" name="btn_Ind1Market" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="分时图" animate="0" text="分时" name="btn_Ind1FS" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="1分钟图" animate="0" text="1M" name="btn_Ind1M1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="5分钟图" animate="0" text="5M" name="btn_Ind1M5" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind1M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind1M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind1M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="25,22" tip="日频图" animate="0" text="日" name="btn_Ind1Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<color_listctrlex name="List_Ind1" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+			<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+				<items>
+					<item width="50">序号</item>
+					<item width="65">证券代码</item>
+					<item width="110">证券名称</item>
+					<item width="70">最新价</item>
+					<item width="60">涨幅%</item>
+					<item width="65">rps520</item>
+					<item width="80">MACD520</item>
+					<item width="65">520分数</item>
+					<item width="60">520排名</item>
+					<item width="70">rps2060</item>
+					<item width="90">MACD2060</item>
+					<item width="70">2060分数</item>
+					<item width="65">2060排名</item>
+				</items>
+			</headerex>
+		</color_listctrlex>
+		<fenshiPic name="fenshiPic_Ind1" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+		</fenshiPic>
+		<klinePic name="klinePic_Ind1" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+		</klinePic>
 	</window>
-	<window name="wnd_Ind2" pos ="5,%40,%50,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1"  font="face:微软雅黑" >
-	  <text pos="5,5" colorText="#FF0000FF">申万2级行业</text>
-	  <imgbtn pos="[5,0" size="30,22" tip="1分钟图" animate="0" text="1M" name="btn_Ind2M1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="30,22" tip="5分钟图" animate="0" text="5M" name="btn_Ind2M5" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind2M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind2M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind2M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="25,22" tip="日频图" animate="0" text="日" name="btn_Ind2Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <color_listctrlex name="List_Ind2" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
-		 <items>
-			<item width="50">序号</item>
-			<item width="65">证券代码</item>
-			<item width="120">证券名称</item>
-			<item width="70">最新价</item>
-			<item width="70">rps520</item>
-			<item width="85">MACD520</item>
-			<item width="70">520分数</item>
-			<item width="70">520排名</item>
-			<item width="70">rps2060</item>
-			<item width="90">MACD2060</item>
-			<item width="70">2060分数</item>
-			<item width="70">2060排名</item>
-		  </items>
-		</headerex>
-	  </color_listctrlex>
-	<fenshiPic  name="FSPic_Ind2" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
+	<window name="wnd_Ind2" pos="5,%40,%50,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑">
+		<text pos="5,3" colorText="#FF0000FF">申万2级行业</text>
+		<imgbtn pos="[5,0" size="30,22" tip="市场行情" animate="0" text="行情" name="btn_Ind2Market" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="分时图" animate="0" text="分时" name="btn_Ind2FS" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="1分钟图" animate="0" text="1M" name="btn_Ind2M1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="5分钟图" animate="0" text="5M" name="btn_Ind2M5" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind2M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind2M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind2M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="25,22" tip="日频图" animate="0" text="日" name="btn_Ind2Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="25,22" tip="行情列表联动" animate="0" text="联" name="btn_Ind2ListConnect" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<text pos="[5,3" colorText="#c0c0c0ff" name = "text_List2ShowIndy">当前分类:全市场</text>
+		<color_listctrlex name="List_Ind2" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+			<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+				<items>
+					<item width="50">序号</item>
+					<item width="65">证券代码</item>
+					<item width="110">证券名称</item>
+					<item width="70">最新价</item>
+					<item width="60">涨幅%</item>
+					<item width="65">rps520</item>
+					<item width="80">MACD520</item>
+					<item width="65">520分数</item>
+					<item width="60">520排名</item>
+					<item width="70">rps2060</item>
+					<item width="90">MACD2060</item>
+					<item width="70">2060分数</item>
+					<item width="65">2060排名</item>
+				</items>
+			</headerex>
+		</color_listctrlex>
+		<fenshiPic name="fenshiPic_Ind2" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+		</fenshiPic>
+		<klinePic name="klinePic_Ind2" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+		</klinePic>
 	</window>
-	<window name="wnd_Ind3" pos ="%50,5,-5,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑">
-	  <text pos="5,5" colorText="#FF0000FF">全市场</text>
-	  <imgbtn pos="[5,0" size="30,22" tip="1分钟图" animate="0" text="1M" name="btn_Ind3M1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="30,22" tip="5分钟图" animate="0" text="5M" name="btn_Ind3M5" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind3M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind3M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind3M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom"/>
-	  <imgbtn pos="[0,0" size="25,22" tip="日频图" animate="0" text="日" name="btn_Ind3Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13"  valign="bottom"/>
-	  <color_listctrlex name="List_Ind3" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-	    <headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
-		 <items>
-			<item width="50">序号</item>
-			<item width="65">证券代码</item>
-			<item width="120">证券名称</item>
-			<item width="70">最新价</item>
-			<item width="70">rps520</item>
-			<item width="85">MACD520</item>
-			<item width="70">520分数</item>
-			<item width="70">520排名</item>
-			<item width="70">rps2060</item>
-			<item width="90">MACD2060</item>
-			<item width="70">2060分数</item>
-			<item width="70">2060排名</item>
-		  </items>
-		</headerex>
-	  </color_listctrlex>
-	<fenshiPic  name="FSPic_Ind3" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12"/>
-	</window>
+	<window name="wnd_Ind3" pos="%50,5,-5,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑">
+		<text pos="5,3" colorText="#FF0000FF">全市场</text>
+		<imgbtn pos="[5,0" size="30,22" tip="市场行情" animate="0" text="行情" name="btn_Ind3Market" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="分时图" animate="0" text="分时" name="btn_Ind3FS" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="1分钟图" animate="0" text="1M" name="btn_Ind3M1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="5分钟图" animate="0" text="5M" name="btn_Ind3M5" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="30,22" tip="15分钟图" animate="0" text="15M" name="btn_Ind3M15" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="35,22" tip="30分钟图" animate="0" text="30M" name="btn_Ind3M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="35,22" tip="60分钟图" animate="0" text="60M" name="btn_Ind3M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="25,22" tip="日频图" animate="0" text="日" name="btn_Ind3Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="25,22" tip="申万1级行情列表联动" animate="0" text="联1" name="btn_Ind3ListConnect1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<imgbtn pos="[0,0" size="25,22" tip="申万2级行情列表联动" animate="0" text="联2" name="btn_Ind3ListConnect2" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+		<text pos="[5,3" colorText="#c0c0c0ff" name = "text_List3ShowIndy">当前分类:全市场</text>
 
+		<color_listctrlex name="List_Ind3" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+			<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+				<items>
+					<item width="50">序号</item>
+					<item width="65">证券代码</item>
+					<item width="110">证券名称</item>
+					<item width="70">最新价</item>
+					<item width="60">涨幅%</item>
+					<item width="65">rps520</item>
+					<item width="80">MACD520</item>
+					<item width="65">520分数</item>
+					<item width="60">520排名</item>
+					<item width="70">rps2060</item>
+					<item width="90">MACD2060</item>
+					<item width="70">2060分数</item>
+					<item width="65">2060排名</item>
+				</items>
+			</headerex>
+		</color_listctrlex>
+		<fenshiPic name="fenshiPic_Ind3" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+		</fenshiPic>
+		<klinePic name="klinePic_Ind3" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+		</klinePic>
+	</window>
 </include>

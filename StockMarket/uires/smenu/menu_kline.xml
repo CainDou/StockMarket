@@ -1,0 +1,24 @@
+﻿<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+  <item id="201">盘口信息</item>
+  <sep/>
+  <item id="202" check="0">MA</item>
+  <sep/>
+  <item id="203" check="0">波段优化</item>
+  <sep/>
+    <item id="204" check="0">成交量</item>
+  <sep/>
+  <item id="205" check="0">MACD</item>
+  <sep/>
+    <item id="206" check="0">RPS</item>
+  <sep/>
+  <item   text="修改参数"  contextHelpId="2">
+    <item id="207">MACD参数</item>
+    <item id="208">波段优化参数</item>
+    <item id="209">MA参数</item>
+  </item>
+  <item id="210" >申万1级RPS</item>
+  <sep/>
+  <item id="211" >申万2级RPS</item>
+  <sep/>
+  <item id="200" >返回</item>
+</menu>
