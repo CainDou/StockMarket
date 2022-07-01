@@ -23,7 +23,8 @@ namespace SOUI
 		void OnClose();
 		void OnInit(EventArgs *e);
 		LRESULT OnActive(UINT wlParam, BOOL whParam, HWND lParam);
-		bool SetStockInfo(SColorListCtrlEx* pPic, vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec=nullptr);
+		bool SetStockInfo(SColorListCtrlEx* pPic, bool bFroceUpdate,
+			vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec=nullptr);
 		bool OnEditChange(EventArgs *e);
 		bool OnDbClick(EventArgs *e);
 		bool OnKeyDown(EventArgs *e);

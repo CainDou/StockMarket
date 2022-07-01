@@ -34,12 +34,17 @@ namespace SOUI
 	public:
 		SFenShiPic();
 		~SFenShiPic();
-
-		void		SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
-		void		SetShowData(SStringA subIns, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
+		void		InitSubPic(int nNum,vector<SStringA> & picNameVec);
+		void		SetShowData(SStringA subIns, 
+					SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
+		void		SetShowData(SStringA subIns, 
+					SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
-		void		SetSubPicShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec,
-					vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName);
+		void		SetSubPicShowData(int nDataCount[],
+					vector<vector<vector<CoreData>*>>& data,
+					vector<vector<BOOL>> bRightVec,
+					vector<vector<SStringA>> , SStringA StockID, 
+					SStringA StockName);
 		void		SetRpsGroup(RpsGroup rg);
 		void		InitShowPara(InitPara_t para);
 		void		OutPutShowPara(InitPara_t &para);
@@ -50,19 +55,24 @@ namespace SOUI
 		bool		GetDealState() const;
 		bool		GetVolumeState() const;
 		bool		GetMacdState() const;
-		bool		GetRpsState() const;
+		bool		GetRpsState(int nWndNum) const;
 		bool		GetAvgState() const;
 		bool		GetEmaState() const;
 		void		SetDealState(bool bRevesered = true,bool bState = false);
 		void		SetVolumeState(bool bRevesered = true, bool bState = false);
 		void		SetMacdState(bool bRevesered = true, bool bState = false);
-		void		SetRpsState(bool bRevesered = true, bool bState = false);
+		void		SetRpsState(int nWndNum, bool bRevesered = true,
+					bool bState = false);
 		void		SetAvgState(bool bRevesered = true, bool bState = false);
 		void		SetEmaState(bool bRevesered = true, bool bState = false);
 		void		SetEmaPara(int EmaPara[]);
 		void		SetMacdPara(int MacdPara[]);
 		const int*	GetEmaPara();
 		const int*  GetMacdPara();
+		void		SetPicUnHandled();
+		int			GetShowSubPicNum() const;
+		void		SetBelongingIndy(vector<SStringA>& strNameVec);
+
 		//static RpsGroup GetClickGroup();
 		//图形处理
 	protected:
@@ -109,7 +119,6 @@ namespace SOUI
 		void		OnMouseLeave();
 		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void		OnDbClickedFenshi(UINT nFlags, CPoint point);
-		void		OnRButtonUp(UINT nFlags, CPoint point);
 		//数据处理
 	protected:
 
@@ -138,7 +147,7 @@ namespace SOUI
 		bool		m_bShowAvg;
 		bool		m_bShowEMA;
 		bool		m_bShowDeal;
-		bool		m_bShowSubPic;
+		BOOL*		m_pbShowSubPic;
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
 		bool		m_bIsStockIndex;
@@ -176,9 +185,9 @@ namespace SOUI
 	protected:
 		CPriceList* m_pPriceList;
 		CDealList*  m_pDealList;
-		SSubTargetPic*    m_pSubPic;	//rps图
+		SSubTargetPic**    m_ppSubPic;	//rps图
 		CDataProc   m_dataHandler;
-		
+		int			m_nSubPicNum;
 		//数据
 	protected:
 		vector<CommonStockMarket> *m_pStkMarketVec;
@@ -186,6 +195,8 @@ namespace SOUI
 		FENSHI_INFO *m_pData;
 		SStringA    m_strSubIns;
 		SStringA	m_strStockName;
+		SStringA	m_strL1Indy;
+		SStringA	m_strL2Indy;
 		int			m_nTradingDay;
 		int			m_nLastVolume;	//上一个时段结束的交易量
 		RpsGroup	m_rgGroup;
@@ -224,9 +235,9 @@ namespace SOUI
 	{
 		return m_bShowMacd;
 	}
-	inline bool SFenShiPic::GetRpsState() const
+	inline bool SFenShiPic::GetRpsState(int nWndNum) const
 	{
-		return m_bShowSubPic;
+		return m_pbShowSubPic[nWndNum];
 	}
 	inline bool SFenShiPic::GetAvgState() const
 	{
@@ -251,10 +262,10 @@ namespace SOUI
 		if (bRevesered) m_bShowMacd = !m_bShowMacd;
 		else m_bShowMacd = bState;
 	}
-	inline void SFenShiPic::SetRpsState(bool bRevesered, bool bState)
+	inline void SFenShiPic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
 	{
-		if (bRevesered) m_bShowSubPic = !m_bShowSubPic;
-		else m_bShowSubPic = bState;
+		if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
+		else m_pbShowSubPic[nWndNum] = bState;
 	}
 	inline void SFenShiPic::SetAvgState(bool bRevesered, bool bState)
 	{
@@ -282,6 +293,15 @@ namespace SOUI
 	{
 		return m_nMACDPara;
 	}
+	inline void SFenShiPic::SetPicUnHandled()
+	{
+		m_bDataInited = false;
+	}
+	inline int SFenShiPic::GetShowSubPicNum() const
+	{
+		return m_nSubPicNum;
+	}
+
 	//inline RpsGroup SFenShiPic::GetClickGroup()
 	//{
 	//	return m_rgClickGroup;

@@ -20,6 +20,7 @@ typedef char SecurityID[8];
 #define MAX_BAR_COUNT		10500
 #define MAX_DATA_COUNT		10500
 #define MAX_MA_COUNT		4
+
 struct hash_SStringA
 {
 	size_t operator()(const SStringA& str) const
@@ -27,6 +28,15 @@ struct hash_SStringA
 		return hash<string>()((string)str);
 	}
 };
+
+template<typename type>
+struct strHash
+{
+public:
+	unordered_map<SStringA, type, hash_SStringA> hash;
+};
+
+
 
 
 //typedef struct _TimeLineData
@@ -61,8 +71,8 @@ enum RecvMsgType
 {
 	RecvMsg_StockInfo = 182433,
 	RecvMsg_RTTimeLine,
-	RecvMsg_TodayData,
-	RecvMsg_HisData,
+	RecvMsg_TodayTimeLine,
+	RecvMsg_NoUse,
 	RecvMsg_HisPoint,
 	RecvMsg_LastDayEma,
 	RecvMsg_RTIndexMarket,
@@ -71,13 +81,15 @@ enum RecvMsgType
 	RecvMsg_HisStockMarket,
 	RecvMsg_HisKline,
 	RecvMsg_CloseInfo,
+	RecvMsg_Wait,
+	RecvMsg_Reinit,
 };
 
 enum SendMsgType
 {
 	SendType_Connect = 0,
 	SendType_ReConnect,
-	SendType_GetHisData = 100,
+	SendType_MsgNoUse = 100,
 	SendType_GetHisPoint,
 	SendType_IndexMarket,
 	SendType_StockMarket,
@@ -111,7 +123,7 @@ typedef struct _StockInfo
 
 typedef struct _ReceiveInfo
 {
-	_ReceiveInfo() :MsgType(-1), nDataSize1(-1)
+	_ReceiveInfo() :MsgType(-1), DataSize(-1)
 	{
 
 	}
@@ -119,8 +131,8 @@ typedef struct _ReceiveInfo
 	char InsID[10];
 	int Group;
 	int Period;
-	unsigned long nDataSize1;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
-	unsigned long nDataSize2;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+	unsigned long DataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long SrcDataSize;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceiveInfo;
 
 typedef struct _ReceiveIDInfo
@@ -142,6 +154,44 @@ typedef struct _ReceiveIDInfo
 	unsigned long NoUse4;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceiveIDInfo;
 
+typedef struct _ReceiveStockInfo
+{
+	_ReceiveStockInfo() :MsgType(-1), DataSize(-1)
+	{
+
+	}
+	_ReceiveStockInfo(ReceiveInfo& ri)
+	{
+		memcpy_s(this, sizeof(ReceiveStockInfo),
+			&ri, sizeof(ri));
+	}
+	int MsgType;
+	char NoUse1[10];
+	int ClientID;
+	int NoUse2;
+	unsigned long DataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long InfoType;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+}ReceiveStockInfo;
+
+typedef struct _ReceivePointInfo
+{
+	_ReceivePointInfo() :MsgType(-1), TotalDataSize(-1)
+	{
+
+	}
+	_ReceivePointInfo(ReceiveInfo& ri)
+	{
+		memcpy_s(this, sizeof(ReceivePointInfo),
+			&ri, sizeof(ri));
+	}
+	int MsgType;
+	char InsID[10];
+	int Group;
+	int Period;
+	unsigned long TotalDataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long FirstDataSize;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+}ReceivePointInfo;
+
 
 enum SListHead
 {
@@ -158,6 +208,7 @@ enum SListHead
 	SHead_MACD2060,
 	SHead_Point2060,
 	SHead_Rank2060,
+	SHead_ItmeCount,
 };
 
 typedef struct SendInfo
@@ -190,7 +241,7 @@ enum DataProcType
 	UpdateData=10000,
 	UpdateTodayData,
 	UpdateRPS,
-	UpdateHisData,
+	UpdateNoUse,
 	UpdateSingleListData,
 	UpdateHisPoint,
 	UpdateLastDayEma,
@@ -200,6 +251,7 @@ enum DataProcType
 	UpdateHisStockMarket,
 	UpdateHisKline,
 	UpdateCloseInfo,
+	Msg_ReInit=77777,
 	Msg_Exit = 88888,
 };
 
@@ -214,10 +266,12 @@ enum StockInfoType
 enum MAINMSG
 {
 	MAINMSG_UpdateList,
+	MAINMSG_UpdateListSingle,
 	MAINMSG_ShowPic,
 	MAINMSG_UpdatePic,
 	MAINMSG_ProcFenShi,
 	MAINMSG_ProcKline,
+	MAINMSG_ReInit,
 };
 
 
@@ -383,20 +437,24 @@ typedef struct InitPara
 	bool bShowTSCVolume;
 	bool bShowKlineVolume;
 	bool bShowKlineMACD;
-	bool bShowTSCRPS;
-	bool bShowKlineRPS;
+	bool bShowTSCRPS[3];
+	bool bShowKlineRPS[3];
 	int  nWidth;
 	bool bShowTSCDeal;
 	bool bShowKlineDeal;
 	int  nEMAPara[2];
 	int  nMACDPara[3];
 	int	 nMAPara[4];
-	bool bNoJiange;
+	int	 nJiange;
 	BandPara_t  BandPara;
-	InitPara() :bShowMA(true), bShowBandTarget(false), bShowAverage(true),bShowEMA(true), 
-		bShowTSCMACD(true), bShowTSCVolume(false), bShowKlineVolume(false),bShowTSCRPS(true),
-		bShowKlineRPS(true), nWidth(9), bShowKlineMACD(true) , bShowTSCDeal(true),bShowKlineDeal(false),
-		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },  nMAPara{ 5,10,20,60 }, bNoJiange(false)
+	InitPara() :bShowMA(true), bShowBandTarget(false),
+		bShowAverage(true),bShowEMA(true), 
+		bShowTSCMACD(true), bShowTSCVolume(false),
+		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
+		bShowKlineRPS{ false ,false,false }, nWidth(9),
+		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
+		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },  
+		nMAPara{ 5,10,20,60 }, nJiange(2)
 	{}
 }InitPara_t;
 
@@ -585,7 +643,10 @@ void TraceLog(char* log, ...);
 enum LoginMsg
 {
 	LoginMsg_UpdateText = 0,
-	LoginMsg_DestoryWnd,
+	LoginMsg_HideWnd,
+	LoginMsg_WaitAndTry,
+	LoginMsg_Exit,
+	LoginMsg_Reinit,
 };
 
 typedef struct LoginInfo
@@ -598,8 +659,7 @@ typedef struct LoginInfo
 
 enum FSMSG
 {
-	FSMSG_PROCDATA = 0,
-	FSMSG_UPDATE,
+	FSMSG_UPDATE=0,
 	FSMSG_EMA,
 	FSMSG_MACD,
 	FSMSG_COUNT,
@@ -607,12 +667,17 @@ enum FSMSG
 
 enum KLINEMSG
 {
-	KLINEMSG_PROCDATA = 0,
-	KLINEMSG_HISPOINT,
-	KLINEMSG_UPDATE,
+	KLINEMSG_UPDATE = 0,
 	KLINEMSG_MA,
 	KLINEMSG_MACD,
 	KLINEMSG_BAND,
+};
+
+enum DATAMSG
+{
+	DM_MARKET = 0,
+	DM_HISKLINE,
+	DM_HISPOINT,
 };
 
 enum FSMenu
@@ -626,6 +691,8 @@ enum FSMenu
 	FM_Avg,
 	FM_EMA,
 	FM_EmaPara,
+	FM_L1RPS,
+	FM_L2RPS,
 	FM_End,
 };
 
@@ -641,10 +708,20 @@ enum KlineMenu
 	KM_MacdPara,
 	KM_BandPara,
 	KM_MaPara,
+	KM_L1RPS,
+	KM_L2RPS,
 	KM_End,
 };
 
 enum ReceiveCommonMsgType
 {
 	RecvMsg_ClientID = 170000,
+};
+
+enum eSubPic
+{
+	SP_FULLMARKET = 0,
+	SP_SWINDYL1,
+	SP_SWINDYL2,
+	SP_COUNT,
 };

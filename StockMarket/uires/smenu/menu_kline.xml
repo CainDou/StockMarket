@@ -16,6 +16,9 @@
     <item id="208">波段优化参数</item>
     <item id="209">MA参数</item>
   </item>
+  <item id="210" >申万1级RPS</item>
+  <sep/>
+  <item id="211" >申万2级RPS</item>
   <sep/>
   <item id="200" >返回</item>
 </menu>

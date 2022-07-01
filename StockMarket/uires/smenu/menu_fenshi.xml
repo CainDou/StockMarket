@@ -15,5 +15,9 @@
   <sep/>
   <item id="108" >EMA参数</item>
   <sep/>
+  <item id="109" >申万1级RPS</item>
+  <sep/>
+  <item id="110" >申万2级RPS</item>
+  <sep/>
   <item id="100" >返回</item>
 </menu>

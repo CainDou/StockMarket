@@ -30,14 +30,19 @@ void CDlgKbElf::OnInit(EventArgs * e)
 	m_pEdit = FindChildByName2<SEdit>(L"edit_kbElf");
 	if (m_pEdit)
 	{
-		m_pEdit->GetEventSet()->subscribeEvent(EventRENotify::EventID, Subscriber(&CDlgKbElf::OnEditChange, this));
-		m_pEdit->GetEventSet()->subscribeEvent(EVT_KEYDOWN, Subscriber(&CDlgKbElf::OnKeyDown, this));
+		m_pEdit->GetEventSet()->subscribeEvent(
+			EventRENotify::EventID, 
+			Subscriber(&CDlgKbElf::OnEditChange, this));
+		m_pEdit->GetEventSet()->subscribeEvent(
+			EVT_KEYDOWN, 
+			Subscriber(&CDlgKbElf::OnKeyDown, this));
 
 	}
 	if (m_pList)
 	{
-		m_pList->GetEventSet()->subscribeEvent(EVT_LC_DBCLICK, Subscriber(&CDlgKbElf::OnDbClick, this));
-		//m_pList->GetEventSet()->subscribeEvent(EVT_KEYDOWN, Subscriber(&CDlgKbElf::OnKeyUp, this));
+		m_pList->GetEventSet()->subscribeEvent(
+			EVT_LC_DBCLICK, 
+			Subscriber(&CDlgKbElf::OnDbClick, this));
 	}
 
 	m_pEdit->SetWindowTextW(wstrInput);
@@ -55,10 +60,14 @@ LRESULT CDlgKbElf::OnActive(UINT wlParam, BOOL whParam, HWND lParam)
 	return 0;
 }
 
-bool CDlgKbElf::SetStockInfo(SColorListCtrlEx * pPic, vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec)
+bool CDlgKbElf::SetStockInfo(SColorListCtrlEx * pPic, bool bFroceUpdate,
+	vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec)
 {
-	if (pPic == m_useList)
-		return false;
+	if (!bFroceUpdate)
+	{
+		if (pPic == m_useList)
+			return false;
+	}
 	m_StockInfoMap.clear();
 	m_useList = pPic;
 	if (stock1Vec)

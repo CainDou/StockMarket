@@ -51,6 +51,7 @@ namespace SOUI
 		SSubTargetPic();
 		~SSubTargetPic();
 
+		void		SetSubPicName(SStringA strName);
 		void		SetShowData(int nIndex, bool nGroup);
 		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec, vector<SStringA> dataNameVec,
 			SStringA StockID, SStringA StockName);
@@ -70,34 +71,30 @@ namespace SOUI
 		void		SetMousePosDefault();
 		void		SetMouseMove();
 		void		SetNowKeyDownLinePos(int nPos);
-		void		SetShowWidth(int width, int nJiange);
+		void		SetShowWidth(int width, int nJiange,int nZoomRatio = 1);
 		void		SetOffset(int nOffset);
 		void		SetShowNum(int nNum);
 		void		DrawKeyDownMouseLine(IRenderTarget * pRT,BOOL bDoubleFlash = FALSE);
 
 	protected:
 		void		GetMaxDiff();		//判断坐标最大最小值和k线条数
-		BOOL		IsInRect(int x, int y, int nMode = 0);	//是否在坐标中,0为全部,1为上方,2为下方
+		BOOL		IsInRect(int x, int y);	
 		SStringW	GetYPrice(int nY, BOOL bIsRight);
 		int			GetXPos(int n);		//获取id对应的x坐标
 		int			GetXData(int nx); 	//获取鼠标下的数据id
 		int			GetYPos(double fDiff, BOOL bIsRight);
-		//void		OnMouseMove(UINT nFlags, CPoint point);
 		void		OnTimer(char cTimerID);
 		int			OnCreate(LPCREATESTRUCT lpCreateStruct);
-		//void		OnMouseLeave();
 		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		HandleMissData(InStockData f1, int time);
-		void		DataInit();
-		//void		DrawTime(IRenderTarget * pRT, CRect rc, int date, int time);
 		void		DrawMouseData(IRenderTarget * pRT, int xPos);
 
 	protected:
-
 		int			m_nOffset;
 		int			m_nFirst;
 		int			m_nEnd;
+		int			m_nZoomRatio;
 		CRect		m_rcImage;
 		double		m_fMaxL;
 		double		m_fMinL;
@@ -105,6 +102,7 @@ namespace SOUI
 		double		m_fMinR;
 		double		m_fDeltaL;
 		double		m_fDeltaR;
+		SStringW	m_strPicName;
 		vector<CoreData> **m_pData;
 		vector<SStringA> m_dataNameVec;
 		vector<BOOL> m_bRightArr;
@@ -137,12 +135,17 @@ namespace SOUI
 
 	};
 
-	inline SStringA SOUI::SSubTargetPic::GetShowStock() const
+	inline void SSubTargetPic::SetSubPicName(SStringA strName)
+	{
+		m_strPicName = StrA2StrW(strName);
+	}
+
+	inline SStringA SSubTargetPic::GetShowStock() const
 	{
 		return m_StockID;
 	}
 
-	inline void SOUI::SSubTargetPic::SetOffset2Zero()
+	inline void SSubTargetPic::SetOffset2Zero()
 	{
 		m_nOffset = 0;
 	}
@@ -171,10 +174,11 @@ namespace SOUI
 	{
 		m_nNowPosition = nPos;
 	}
-	inline void SSubTargetPic::SetShowWidth(int nWidth, int nJiange)
+	inline void SSubTargetPic::SetShowWidth(int nWidth, int nJiange,int nZoomRatio)
 	{
 		 m_nWidth= nWidth;
 		 m_nJiange = nJiange;
+		 m_nZoomRatio = nZoomRatio;
 		 m_bUseWidth = true;
 	}
 	inline void SSubTargetPic::SetOffset(int nOffset)

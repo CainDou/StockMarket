@@ -31,22 +31,30 @@ void SOUI::CDlgLogin::OnClickButtonOk()
 	SEdit *pEditPsd = FindChildByName2<SEdit>(L"login_PassWord");
 	if (pEditPsd)
 		strPsd = pEditPsd->GetWindowText();
-	m_pLoginTxt->SetWindowTextW(L"正在连接服务器");
-	m_pLoginTxt->Invalidate();
-	TraceLog("开始连接服务器");
-	m_pNetClient->SetWndHandle(m_hParWnd);
-	//m_pNetClient->m_socket = INVALID_SOCKET;
-	if (m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
+	if (m_pNetClient->GetState())
 	{
 		m_bLogin = true;
 		SetEvent(g_hLoginEvent);
 	}
 	else
 	{
-		m_bLogin = false;
-		m_pLoginTxt->SetWindowTextW(L"服务器连接失败，请重试");
-		pButton->EnableWindow(TRUE);
-		pButton->Invalidate();
+		m_pLoginTxt->SetWindowTextW(L"正在连接服务器");
+		m_pLoginTxt->Invalidate();
+		TraceLog("开始连接服务器");
+		m_pNetClient->SetWndHandle(m_hParWnd);
+		//m_pNetClient->m_socket = INVALID_SOCKET;
+		if (m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
+		{
+			m_bLogin = true;
+			SetEvent(g_hLoginEvent);
+		}
+		else
+		{
+			m_bLogin = false;
+			m_pLoginTxt->SetWindowTextW(L"服务器连接失败，请重试");
+			pButton->EnableWindow(TRUE);
+			pButton->Invalidate();
+		}
 	}
 
 }
@@ -85,8 +93,23 @@ LRESULT SOUI::CDlgLogin::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		if (m_pLoginTxt)
 			m_pLoginTxt->SetWindowTextW(pMsg);
 	}
-	else if (nlp == LoginMsg_DestoryWnd)
+	else if (nlp == LoginMsg_HideWnd)
+		ShowWindow(SW_HIDE);
+	else if (nlp == LoginMsg_WaitAndTry)
+	{
+		SButton * pButton = FindChildByName2<SButton>(L"btn_login");
+		m_bLogin = false;
+		m_pLoginTxt->SetWindowTextW(L"服务器正在初始化，请稍后重试...");
+		pButton->EnableWindow(TRUE);
+		pButton->Invalidate();
+	}
+	else if (nlp == LoginMsg_Exit)
 		EndDialog(0);
+	else if (nlp == LoginMsg_Reinit)
+	{
+		ShowWindow(SW_SHOW);
+		OnClickButtonOk();
+	}
 	return 0;
 }
 

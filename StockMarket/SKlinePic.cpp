@@ -24,6 +24,11 @@ using std::vector;
 #define DATA_ERROR			-1234567
 #define SDECIMAL			L"%.02f"
 
+#define	ZOOMWIDTH (m_nKWidth * 1.0 / m_nZoomRatio)
+#define TOTALZOOMWIDTH ((m_nKWidth + m_nJiange) * 1.0 / m_nZoomRatio)
+
+#define MAX_SUBWINDOW 5
+
 SKlinePic::SKlinePic()
 {
 
@@ -47,7 +52,7 @@ SKlinePic::SKlinePic()
 	m_nPeriod = 1;
 	m_pDealList = new CDealList;
 	m_pPriceList = new CPriceList;
-	m_pSubPic = new SSubTargetPic();
+	m_ppSubPic = nullptr;
 	m_strSubIns = "";
 	m_bReSetFirstLine = false;
 	m_nFirst = 0;
@@ -57,12 +62,16 @@ SKlinePic::SKlinePic()
 	m_bClearTip = false;
 	m_nPreX = -1;
 	m_nPreY = -1;
-	m_bShowSubPic = true;
+	m_pbShowSubPic = nullptr;
+	m_bTodayMarketReady = false;
+	m_bHisKlineReady = false;
+	m_bHisPointReady = false;
 	m_nMAPara[0] = 5;
 	m_nMAPara[1] = 10;
 	m_nMAPara[2] = 20;
 	m_nMAPara[3] = 60;
 	m_pTip = nullptr;
+	m_nZoomRatio = 1;
 	//m_pTip = new SKlineTip(m_hParWnd);
 
 }
@@ -77,7 +86,37 @@ SKlinePic::~SKlinePic()
 		delete m_pDealList;
 	if (m_pTip)
 		delete m_pTip;
+	if (m_ppSubPic)
+	{
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			delete m_ppSubPic[i];
+		delete[]m_ppSubPic;
+	}
+	if (m_pbShowSubPic)
+		delete[]m_pbShowSubPic;
 }
+
+void SKlinePic::InitSubPic(int nNum, vector<SStringA> & picNameVec)
+{
+	if (m_ppSubPic)
+	{
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			delete m_ppSubPic[i];
+		delete[]m_ppSubPic;
+	}
+
+	if (m_pbShowSubPic)
+		delete[]m_pbShowSubPic;
+	m_nSubPicNum = nNum;
+	m_ppSubPic = new SSubTargetPic*[nNum];
+	for (int i = 0; i < nNum; ++i)
+	{
+		m_ppSubPic[i] = new SSubTargetPic;
+		m_ppSubPic[i]->SetSubPicName(picNameVec[i]);
+	}
+	m_pbShowSubPic = new BOOL[nNum];
+}
+
 
 void SKlinePic::InitShowPara(InitPara_t para)
 {
@@ -90,6 +129,8 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_nKWidth = para.nWidth;
 	m_bShowDeal = para.bShowKlineDeal;
 	m_bShowMacd = para.bShowKlineMACD;
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_pbShowSubPic[i] = para.bShowKlineRPS[i];
 	m_nMACDPara[0] = para.nMACDPara[0];
 	m_nMACDPara[1] = para.nMACDPara[1];
 	m_nMACDPara[2] = para.nMACDPara[2];
@@ -99,10 +140,10 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_nMAPara[2] = para.nMAPara[2];
 	m_nMAPara[3] = para.nMAPara[3];
 
-	m_bNoJiange = para.bNoJiange;
+	m_nJiange = para.nJiange;
 }
 
-void SOUI::SKlinePic::OutPutShowPara(InitPara_t & para)
+void SKlinePic::OutPutShowPara(InitPara_t & para)
 {
 	para.bShowBandTarget = m_bShowBandTarget;
 	para.bShowKlineVolume = m_bShowVolume;
@@ -110,6 +151,8 @@ void SOUI::SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.nWidth = m_nKWidth;
 	para.bShowKlineDeal = m_bShowDeal;
 	para.bShowKlineMACD = m_bShowMacd;
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		para.bShowKlineRPS[i] = m_pbShowSubPic[i];
 	para.nMACDPara[0] = m_nMACDPara[0];
 	para.nMACDPara[1] = m_nMACDPara[1];
 	para.nMACDPara[2] = m_nMACDPara[2];
@@ -118,13 +161,14 @@ void SOUI::SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.nMAPara[1] = m_nMAPara[1];
 	para.nMAPara[2] = m_nMAPara[2];
 	para.nMAPara[3] = m_nMAPara[3];
-	para.bNoJiange = m_bNoJiange;
+	para.nJiange = m_nJiange;
 }
 
 void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec,
 	map<int, vector<KlineType>>*pHisKlineMap)
 {
 	KillTimer(1);
+	//OutputDebugStringA("¹Ø±Õ¶¨Ê±Æ÷\n");
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_pIdxMarketVec = pIdxMarketVec;
@@ -132,8 +176,11 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonIn
 	m_pStkMarketVec = nullptr;
 	m_bIsStockIndex = true;
 	m_strStockName = StockName;
-	m_pSubPic->SetShowWidth(m_nKWidth, m_bNoJiange ? 0 : 2);
-	m_pSubPic->SetOffset2Zero();
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+		m_ppSubPic[i]->SetOffset2Zero();
+	}
 
 	m_pPriceList->SetShowData(subIns, m_strStockName, pIdxMarketVec);
 	m_pDealList->SetShowData(subIns, pIdxMarketVec);
@@ -143,6 +190,7 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonSt
 	map<int, vector<KlineType>>*pHisKlineMap)
 {
 	KillTimer(1);
+	//OutputDebugStringA("¹Ø±Õ¶¨Ê±Æ÷\n");
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_pStkMarketVec = pStkMarketVec;
@@ -150,27 +198,40 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonSt
 	m_pIdxMarketVec = nullptr;
 	m_bIsStockIndex = false;
 	m_strStockName = StockName;
-	m_pSubPic->SetShowWidth(m_nKWidth, m_bNoJiange ? 0 : 2);
-	m_pSubPic->SetOffset2Zero();
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+		m_ppSubPic[i]->SetOffset2Zero();
+	}
 	m_pPriceList->SetShowData(subIns, m_strStockName, pStkMarketVec);
 	m_pDealList->SetShowData(subIns, pStkMarketVec);
 }
 
 void SKlinePic::SetSubPicShowData(int nIndex, bool nGroup)
 {
-	m_pSubPic->SetShowData(nIndex, nGroup);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_ppSubPic[i]->SetShowData(nIndex, nGroup);
 }
 
-void SKlinePic::SetSubPicShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec,
-	vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName)
+void SKlinePic::SetSubPicShowData(int nDataCount[],
+	vector<vector<vector<CoreData>*>>& data, vector<vector<BOOL>> bRightVec,
+	vector<vector<SStringA>> dataNameVec, SStringA StockID, SStringA StockName)
 {
-	m_pSubPic->SetShowData(nDataCount, data, bRightVec, dataNameVec, StockID, StockName);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_ppSubPic[i]->SetShowData(
+			nDataCount[i], &data[i][0], bRightVec[i], dataNameVec[i],
+			StockID, StockName);
 }
 
-void SKlinePic::ReSetSubPicData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec)
+void SKlinePic::ReSetSubPicData(int nDataCount,
+	vector<CoreData>* data[],
+	vector<BOOL>& bRightVec)
 {
-	m_pSubPic->SetOffset2Zero();
-	m_pSubPic->ReSetShowData(nDataCount, data, bRightVec);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		m_ppSubPic[i]->SetOffset2Zero();
+		m_ppSubPic[i]->ReSetShowData(nDataCount, data, bRightVec);
+	}
 }
 
 void SKlinePic::SetParentHwnd(HWND hParWnd)
@@ -180,6 +241,18 @@ void SKlinePic::SetParentHwnd(HWND hParWnd)
 	m_pTip->Create();
 }
 
+void SKlinePic::SetTodayMarketState(bool bReady)
+{
+	m_bTodayMarketReady = bReady;
+	if (!m_bTodayMarketReady)
+	{
+		KillTimer(1);
+		//OutputDebugStringA("¹Ø±Õ¶¨Ê±Æ÷\n");
+		m_bDataInited = false;
+	}
+
+}
+
 
 void SKlinePic::SetHisKlineState(bool bReady)
 {
@@ -187,6 +260,7 @@ void SKlinePic::SetHisKlineState(bool bReady)
 	if (!m_bHisKlineReady)
 	{
 		KillTimer(1);
+		//OutputDebugStringA("¹Ø±Õ¶¨Ê±Æ÷\n");
 		m_bDataInited = false;
 	}
 }
@@ -197,13 +271,14 @@ void SKlinePic::SetHisPointState(bool bReady)
 	if (!m_bHisPointReady)
 	{
 		KillTimer(1);
+		//OutputDebugStringA("¹Ø±Õ¶¨Ê±Æ÷\n");
 		m_bDataInited = false;
 	}
 }
 
 bool SOUI::SKlinePic::GetDataReadyState()
 {
-	return m_bHisKlineReady & m_bHisPointReady;
+	return m_bTodayMarketReady&m_bHisKlineReady & m_bHisPointReady;
 }
 
 void SKlinePic::ClearTip()
@@ -289,7 +364,7 @@ void SKlinePic::DrawMainUpperMarket(IRenderTarget * pRT, KlineType & data)
 	SStringW strMarket;
 
 	strMarket.Format(L"%s ÈÕÆÚ:%04d-%02d-%02d Ê±¼ä:%02d:%02d ¿ª:%.02f ¸ß:%.02f µÍ:%.02f ÊÕ:%.02f Á¿:%.0f",
-		StrA2StrW(m_strSubIns), data.date / 10000, data.date % 10000 / 100, data.date % 100,
+		StrA2StrW(m_strStockName), data.date / 10000, data.date % 10000 / 100, data.date % 100,
 		data.time / 100, data.time % 100,
 		data.open, data.high, data.low, data.close, ceil(data.vol));
 
@@ -371,7 +446,7 @@ void SKlinePic::DrawMainUpperBand(IRenderTarget * pRT, int nPos)
 		nLeft += size.cx;
 
 		strMarket.Format(L"¿ÕÆ½Î»ÖÃ:%.02f", m_pBandData->BuyShort[nPos]);
-		DrawTextonPic(pRT, CRect(m_rcImage.left + nLeft , m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket);
+		DrawTextonPic(pRT, CRect(m_rcImage.left + nLeft, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket);
 		GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
 		nLeft += size.cx;
 
@@ -463,18 +538,23 @@ void SKlinePic::SetWindowRect()
 	{
 		if (m_bIsStockIndex)
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 180);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top + 185, m_rcAll.right + 30, m_rcAll.bottom + 30);
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, 
+				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 160);
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, 
+				m_rcAll.top + 165,m_rcAll.right + 30, m_rcAll.bottom + 30);
 		}
 		else
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 560);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top + 565, m_rcAll.right + 30, m_rcAll.bottom + 30);
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, 
+				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 580);
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, 
+				m_rcAll.top + 585, m_rcAll.right + 30, m_rcAll.bottom + 30);
 		}
-		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top, m_rcAll.right - 240, m_rcAll.bottom);
+		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top, 
+			m_rcAll.right - 240, m_rcAll.bottom);
 	}
 
-	CRect *pSubRect[3];
+	CRect *pSubRect[MAX_SUBWINDOW];
 	int nShowCount = 0;
 	if (m_bShowVolume)
 	{
@@ -490,16 +570,20 @@ void SKlinePic::SetWindowRect()
 	}
 	else m_rcMACD.SetRectEmpty();
 
-	if (m_bShowSubPic)
+	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
-		pSubRect[nShowCount] = m_pSubPic->GetPicRect();
-		nShowCount++;
+		if (m_pbShowSubPic[i])
+		{
+			pSubRect[nShowCount] = m_ppSubPic[i]->GetPicRect();
+			nShowCount++;
+		}
+		else
+			m_ppSubPic[i]->SetPicRect(CRect(0, 0, 0, 0));
 	}
-	else
-		m_pSubPic->SetPicRect(CRect(0, 0, 0, 0));
 	int preBottom = m_rcImage.top;
 	int nowBottom = m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2;
-	m_rcMain.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2);
+	m_rcMain.SetRect(m_rcImage.left, m_rcImage.top, 
+		m_rcImage.right, m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2);
 	preBottom = nowBottom;
 	for (int i = 0; i < nShowCount; ++i)
 	{
@@ -743,14 +827,14 @@ int SKlinePic::ProcMACDData(int nPos, MACDData_t * pMacdData)
 //{
 //	if (!__super::CreateChildren(xmlNode))
 //		return FALSE;
-//	m_pSubPic = nullptr;
+//	m_ppSubPic = nullptr;
 //
 //	SWindow *pChild = GetWindow(GSW_FIRSTCHILD);
 //	while (pChild)
 //	{
 //		if (pChild->IsClass(SSubPic::GetClassName()))
 //		{
-//			m_pSubPic = (SSubPic*)pChild;
+//			m_ppSubPic = (SSubPic*)pChild;
 //			break;
 //		}
 //		pChild = pChild->GetWindow(GSW_NEXTSIBLING);
@@ -795,7 +879,8 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 		pRT->CreatePen(PS_SOLID, RGBA(100, 100, 100, 255), 1, &m_penGray);
 
 		m_bPaintInit = true;
-		m_pSubPic->InitColorAndPen(pRT);
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			m_ppSubPic[i]->InitColorAndPen(pRT);
 
 	}
 
@@ -859,7 +944,8 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 
 		CPoint po(m_nMouseX, m_nMouseY);
 		m_nMouseX = m_nMouseY = -1;
-		m_pSubPic->SetMousePosDefault();
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			m_ppSubPic[i]->SetMousePosDefault();
 		LONGLONG llTmp3 = GetTickCount64();
 		if (m_bKeyDown)
 			DrawKeyDownLine(pRT, m_bClearTip);
@@ -1039,9 +1125,11 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 
 	}
 
-	if (m_bShowSubPic)
-		m_pSubPic->DrawArrow(pRT);
-
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_pbShowSubPic[i])
+			m_ppSubPic[i]->DrawArrow(pRT);
+	}
 }
 
 
@@ -1049,10 +1137,10 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 void SKlinePic::GetMaxDiff()		//ÅÐ¶Ï×ø±ê×î´ó×îÐ¡ÖµºÍkÏßÌõÊý
 {
 	int nLen = m_rcMain.right - m_rcMain.left - RC_RIGHT_BACK;	//ÅÐ¶ÏÊÇ·ñ³¬³ö·¶Î§
-	int  nJiange = 2;
-	if (m_bNoJiange)
-		nJiange = 0;
-	m_nMaxKNum = nLen / (m_nKWidth + nJiange);
+	//int  nJiange = 2;
+	//if (m_nJiange)
+	//	nJiange = 0;
+	m_nMaxKNum = nLen / TOTALZOOMWIDTH;
 	m_nFirst = 0;
 	m_nEnd = m_pAll->nTotal;
 	int nTotal = m_pAll->nTotal;
@@ -1090,10 +1178,12 @@ void SKlinePic::GetMaxDiff()		//ÅÐ¶Ï×ø±ê×î´ó×îÐ¡ÖµºÍkÏßÌõÊý
 			m_nMove = nTotal - m_nEnd;
 		}
 
-		m_pSubPic->SetOffset(m_nMove);
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			m_ppSubPic[i]->SetOffset(m_nMove);
 		m_bReSetFirstLine = false;
 	}
-	m_pSubPic->SetShowNum(m_nEnd - m_nFirst);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_ppSubPic[i]->SetShowNum(m_nEnd - m_nFirst);
 	//	}
 	//ÅÐ¶Ï×î´ó×îÐ¡Öµ
 	//	OutputDebugString("ÅÐ¶Ï×î´óÖµ\n");
@@ -1279,7 +1369,7 @@ void SKlinePic::GetMACDMaxDiff()		//ÅÐ¶Ï¸±Í¼×ø±ê×î´ó×îÐ¡ÖµºÍkÏßÌõÊý
 
 int SKlinePic::GetMACDYPos(double fDiff)
 {
-	double fPos = m_rcMACD.top + (1 - (fDiff / m_pMacdData->fMax)) 
+	double fPos = m_rcMACD.top + (1 - (fDiff / m_pMacdData->fMax))
 		/ 2 * (m_rcMACD.Height() - 30) + 25;
 	int nPos = (int)fPos;
 	return nPos;
@@ -1315,7 +1405,7 @@ SStringW SKlinePic::GetYPrice(int nY)
 	SStringW strRet; strRet.Empty();
 	int nHeight = m_rcMain.bottom - RC_MIN - m_rcMain.top - RC_MAX - 20;
 	double fPriceDiff = m_pAll->fMax - m_pAll->fMin;
-	double fDiff = m_pAll->fMin + (double)(m_rcMain.bottom - nY - RC_MIN) 
+	double fDiff = m_pAll->fMin + (double)(m_rcMain.bottom - nY - RC_MIN)
 		/ nHeight*fPriceDiff;
 	strRet.Format(SDECIMAL, fDiff);
 	return strRet;
@@ -1349,7 +1439,8 @@ void SKlinePic::OnMouseMove(UINT nFlags, CPoint point)
 	if (m_bKeyDown)
 	{
 		m_bKeyDown = false;
-		m_pSubPic->SetMouseMove();
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			m_ppSubPic[i]->SetMouseMove();
 		Invalidate();
 		return;
 	}
@@ -1403,10 +1494,11 @@ void SKlinePic::OnMouseLeave()
 
 int SKlinePic::GetXData(int nx) {	//»ñÈ¡Êó±êÏÂµÄÊý¾Ýid
 
-	int nJiange = 2;
-	if (m_bNoJiange)
-		nJiange = 0;
-	float fn = (float)(nx - m_rcMain.left) / (float)(m_nKWidth + nJiange);
+	//int nJiange = 2;
+	//if (m_nJiange)
+	//	nJiange = 0;
+	float fn = (float)(nx - m_rcMain.left) /
+		(float)TOTALZOOMWIDTH;
 	int n = (int)fn;
 	if (n < 0)
 		n = 0;
@@ -1417,12 +1509,13 @@ int SKlinePic::GetXData(int nx) {	//»ñÈ¡Êó±êÏÂµÄÊý¾Ýid
 
 int SKlinePic::GetXPos(int nx)
 {
-	int nJiange = 2;
-	if (m_bNoJiange)
-		nJiange = 0;
+	//int nJiange = 2;
+	//if (m_nJiange)
+	//	nJiange = 0;
 
-	int nPos = nx * (m_nKWidth + nJiange) + 1 + m_rcMain.left;
-	nPos = nPos + m_nKWidth / 2;
+	int nPos = nx * TOTALZOOMWIDTH
+		+ 1 + m_rcMain.left;
+	nPos = nPos + ZOOMWIDTH / 2;
 	return nPos;
 }
 
@@ -1448,14 +1541,15 @@ void SKlinePic::DrawKeyDownLine(IRenderTarget * pRT, bool bClearTip)
 	//»­Êó±êÏß
 	if (m_pAll->nTotal <= 0)
 		return;
-	int  nJianGe = 2;
-	if (m_bNoJiange)
-		nJianGe = 0;
+	//int  nJianGe = 2;
+	//if (m_nJiange)
+	//	nJianGe = 0;
 
 	int nx = m_nMouseLinePos - m_nFirst;
-	int x = nx * (m_nKWidth + nJianGe) + 1 + m_rcMain.left;
+	int x = nx * TOTALZOOMWIDTH
+		+ 1 + m_rcMain.left;
 	CPoint po;
-	po.x = x + m_nKWidth / 2;
+	po.x = x + ZOOMWIDTH / 2;
 	po.y = GetYPos(m_pAll->data[m_nMouseLinePos].close);
 
 	DrawMouseLine(pRT, po);
@@ -1463,10 +1557,11 @@ void SKlinePic::DrawKeyDownLine(IRenderTarget * pRT, bool bClearTip)
 	auto &data = m_pAll->data[m_nMouseLinePos];
 	DrawBarInfo(pRT, m_nMouseLinePos);
 
-
-	m_pSubPic->SetNowKeyDownLinePos(nx);
-	m_pSubPic->DrawKeyDownMouseLine(pRT, TRUE);
-
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		m_ppSubPic[i]->SetNowKeyDownLinePos(nx);
+		m_ppSubPic[i]->DrawKeyDownMouseLine(pRT, TRUE);
+	}
 	if (bClearTip)
 	{
 		m_pTip->ClearTip();
@@ -1561,21 +1656,24 @@ void SKlinePic::DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint)
 		if (nx >= 0 && nx < m_pAll->nTotal && data.date>0)
 			DrawMoveTime(pRT, p.x, data.date, data.time, true);
 	}
-	if (m_bShowSubPic)
-		m_pSubPic->DrawMouse(pRT, p, bFromOnPaint);;
-
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_pbShowSubPic[i])
+			m_ppSubPic[i]->DrawMouse(pRT, p, bFromOnPaint);;
+	}
 	m_nMouseX = p.x;
 	m_nMouseY = p.y;
 }
 
 void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ±¼äºÍ±êÊ¾Êý×Ö
 {
-	int nJiange = 2;
-	if (m_bNoJiange)
-		nJiange = 0;
+	//int nJiange = 2;
+	//if (m_nJiange)
+	//	nJiange = 0;
 
 	int nXpre = 0;  //µÚÒ»¸ùÊúÏßµÄxÖáÎ»ÖÃ
-	int nMaX = (m_nEnd - m_nFirst - 1)*(m_nKWidth + nJiange) + RC_LEFT + 1 + (m_nKWidth / 2);	//×îºóÒ»¸öÊý¾ÝµÄÎ»ÖÃ
+	int nMaX = (m_nEnd - m_nFirst - 1)*TOTALZOOMWIDTH
+		+ RC_LEFT + 1 + ZOOMWIDTH / 2;	//×îºóÒ»¸öÊý¾ÝµÄÎ»ÖÃ
 	KlineType *p = m_pAll->data + m_nFirst;
 
 	CAutoRefPtr<IPen> oldPen;
@@ -1594,8 +1692,10 @@ void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ
 
 	for (int i = 0; i < m_nEnd - m_nFirst; i++)
 	{
-		int x = i * (m_nKWidth + nJiange) + 1 + m_rcMain.left + (m_nKWidth / 2);
-		int preX = (nPosMx[nPosCount - 1]) * (m_nKWidth + nJiange) + 1 + m_rcMain.left + (m_nKWidth / 2);
+		int x = i * TOTALZOOMWIDTH
+			+ 1 + m_rcMain.left + (ZOOMWIDTH / 2);
+		int preX = (nPosMx[nPosCount - 1]) * TOTALZOOMWIDTH +
+			1 + m_rcMain.left + (ZOOMWIDTH / 2);
 		//¼ÓÊ±¼ä
 		if ((x - nXpre - RC_LEFT >= 10 && x < nMaX - 200) || (i == 0 && m_nEnd - m_nFirst > 9) || i == m_nEnd - m_nFirst - 1)
 		{
@@ -1639,9 +1739,9 @@ void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ
 
 void SKlinePic::DrawData(IRenderTarget * pRT)
 {
-	int  nJianGe = 2;
-	if (m_bNoJiange)
-		nJianGe = 0;
+	//int  nJianGe = 2;
+	//if (m_nJiange)
+	//	nJianGe = 0;
 	if (m_pAll->nTotal <= 0)
 		return;
 
@@ -1690,7 +1790,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	for (int i = 0; i < m_nEnd - m_nFirst; i++)
 	{
 		int nOffset = i + m_nFirst;
-		x = i * (m_nKWidth + nJianGe) + 1 + m_rcMain.left;
+		x = i * TOTALZOOMWIDTH + 1 + m_rcMain.left;
 		auto data = m_pAll->data[nOffset];
 		int nVolume = m_pAll->data[nOffset].vol;
 		//if (!(m_rgGroup != Group_Stock && m_strSubIns[0] == '0'))
@@ -1717,7 +1817,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 				{
 					SStringW strTemp;
 					strTemp.Format(SDECIMAL, data.close);
-					pRT->TextOut(x + m_nKWidth + 2, yclose - 5, strTemp, -1);
+					pRT->TextOut(x + ZOOMWIDTH + 2, yclose - 5, strTemp, -1);
 
 					CPoint pt;
 					GetCursorPos(&pt);
@@ -1736,10 +1836,10 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			if (data.close > data.open)			//¸ßµÍÏß
 			{
 				pRT->SelectObject(m_penRed);
-				pts[0].SetPoint(x + m_nKWidth / 2, yclose);
-				pts[1].SetPoint(x + m_nKWidth / 2, yhigh);
-				pts[2].SetPoint(x + m_nKWidth / 2, yopen);
-				pts[3].SetPoint(x + m_nKWidth / 2, ylow);
+				pts[0].SetPoint(x + ZOOMWIDTH / 2, yclose);
+				pts[1].SetPoint(x + ZOOMWIDTH / 2, yhigh);
+				pts[2].SetPoint(x + ZOOMWIDTH / 2, yopen);
+				pts[3].SetPoint(x + ZOOMWIDTH / 2, ylow);
 			}
 			else if (data.close <= data.open)
 			{
@@ -1747,25 +1847,31 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 					pRT->SelectObject(m_penWhite);
 				else
 					pRT->SelectObject(m_penGreen);
-				pts[0].SetPoint(x + m_nKWidth / 2, yopen);
-				pts[1].SetPoint(x + m_nKWidth / 2, yhigh);
-				pts[2].SetPoint(x + m_nKWidth / 2, yclose);
-				pts[3].SetPoint(x + m_nKWidth / 2, ylow);
+				pts[0].SetPoint(x + ZOOMWIDTH / 2, yopen);
+				pts[1].SetPoint(x + ZOOMWIDTH / 2, yhigh);
+				pts[2].SetPoint(x + ZOOMWIDTH / 2, yclose);
+				pts[3].SetPoint(x + ZOOMWIDTH / 2, ylow);
 			}
 			pRT->DrawLines(pts, 2);
 			pRT->DrawLines(pts + 2, 2);
 			if (data.close == data.open)
 			{
-				pts[0].SetPoint(x + 2, yopen);
-				pts[1].SetPoint(x + m_nKWidth - 1, yopen);
+				pts[0].SetPoint(x, yopen);
+				pts[1].SetPoint(x + ZOOMWIDTH, yopen);
 				pRT->DrawLines(pts, 2);
 			}
 			else
 			{
 				if (data.close >= data.open)
-					pRT->DrawRectangle(CRect(x, yopen, x + m_nKWidth, yclose));
+					pRT->DrawRectangle(CRect(x, yclose, x + ZOOMWIDTH,
+						yopen == yclose ? yopen + 1 : yopen));
 				else
-					pRT->FillSolidRect(CRect(x, yclose, x + m_nKWidth, yopen == yclose ? (yopen - 1) : yopen), RGBA(0, 255, 255, 255));
+					//pRT->FillSolidRect(CRect(x, yclose, x + m_nKWidth, 
+					//	yopen == yclose ? (yopen - 1) : yopen), RGBA(0, 255, 255, 255));
+					pRT->FillSolidRect(CRect(x, yopen == yclose ? yopen - 1 : yopen
+						, x + ZOOMWIDTH, yclose)
+						, RGBA(0, 255, 255, 255));
+
 			}
 
 			if (m_bShowMA)
@@ -1773,7 +1879,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 				auto & arrMA = m_pAll->fMa;
 				for (int j = 0; j < 4; ++j)
 					if (i + m_nFirst >= m_nMAPara[j] - 1)
-						MaLine[j][i].SetPoint(x + m_nKWidth / 2, GetYPos(arrMA[j][nOffset]));
+						MaLine[j][i].SetPoint(x + ZOOMWIDTH / 2, GetYPos(arrMA[j][nOffset]));
 			}
 
 		}
@@ -1792,17 +1898,17 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 				if (nValidNum == -1 && m_pBandData->DataValid[nOffset])
 					nValidNum = i;
 
-				SellLongLine[i].SetPoint(x + m_nKWidth / 2, ySellLong);
+				SellLongLine[i].SetPoint(x + ZOOMWIDTH / 2, ySellLong);
 
-				BuyShortLine[i].SetPoint(x + m_nKWidth / 2, yBuyShort);
+				BuyShortLine[i].SetPoint(x + ZOOMWIDTH / 2, yBuyShort);
 
-				UpperLine1[i].SetPoint(x + m_nKWidth / 2, yUpperTrack1);
+				UpperLine1[i].SetPoint(x + ZOOMWIDTH / 2, yUpperTrack1);
 
-				LowerLine1[i].SetPoint(x + m_nKWidth / 2, yLowerTrack1);
+				LowerLine1[i].SetPoint(x + ZOOMWIDTH / 2, yLowerTrack1);
 
-				UpperLine2[i].SetPoint(x + m_nKWidth / 2, yUpperTrack2);
+				UpperLine2[i].SetPoint(x + ZOOMWIDTH / 2, yUpperTrack2);
 
-				LowerLine2[i].SetPoint(x + m_nKWidth / 2, yLowerTrack2);
+				LowerLine2[i].SetPoint(x + ZOOMWIDTH / 2, yLowerTrack2);
 			}
 		}
 
@@ -1817,16 +1923,20 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 				pRT->SelectObject(m_penRed);
 
 				if (data.close > data.open)
-					pRT->DrawRectangle(CRect(x, GetFuTuYPos(nVolume), x + m_nKWidth, m_rcVolume.bottom));
+					pRT->DrawRectangle(CRect(x, GetFuTuYPos(nVolume),
+						x + ZOOMWIDTH, m_rcVolume.bottom));
 				else if (data.close == data.open&&m_nFirst + i > 0)
 				{
 					if (data.close >= p[i - 1].close)
-						pRT->DrawRectangle(CRect(x, GetFuTuYPos(nVolume), x + m_nKWidth, m_rcVolume.bottom));
+						pRT->DrawRectangle(CRect(x, GetFuTuYPos(nVolume),
+							x + ZOOMWIDTH, m_rcVolume.bottom));
 					else
-						pRT->FillSolidRect(CRect(x, GetFuTuYPos(nVolume), x + m_nKWidth, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
+						pRT->FillSolidRect(CRect(x, GetFuTuYPos(nVolume),
+							x + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
 				}
 				else
-					pRT->FillSolidRect(CRect(x, GetFuTuYPos(nVolume), x + m_nKWidth, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
+					pRT->FillSolidRect(CRect(x, GetFuTuYPos(nVolume),
+						x + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
 			}
 		}
 
@@ -1836,17 +1946,17 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			double yDEA = GetMACDYPos(m_pMacdData->DEA[nOffset]);
 
 
-			DIFLine[i].SetPoint(x + m_nKWidth / 2, yDIF);
+			DIFLine[i].SetPoint(x + ZOOMWIDTH / 2, yDIF);
 
-			DEALine[i].SetPoint(x + m_nKWidth / 2, yDEA);
+			DEALine[i].SetPoint(x + ZOOMWIDTH / 2, yDEA);
 
 
 			int nWidthMacd = (m_rcMACD.Height() - 20) / 4;
 			//MACDÖù×´Í¼
 			if (m_pMacdData->MACD[nOffset] != 0)
 			{
-				pts[0].SetPoint(x + m_nKWidth / 2, m_rcMACD.top + 20 + 2 * nWidthMacd);
-				pts[1].SetPoint(x + m_nKWidth / 2, GetMACDYPos(m_pMacdData->MACD[i + m_nFirst]));
+				pts[0].SetPoint(x + ZOOMWIDTH / 2, m_rcMACD.top + 20 + 2 * nWidthMacd);
+				pts[1].SetPoint(x + ZOOMWIDTH / 2, GetMACDYPos(m_pMacdData->MACD[i + m_nFirst]));
 
 				if (m_pMacdData->MACD[nOffset] > 0)
 					pRT->SelectObject(m_penRed);
@@ -1913,10 +2023,10 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 		for (int i = 0; i < m_nEnd - m_nFirst; i++)
 		{
 			int nOffset = i + m_nFirst;
-			x = i * (m_nKWidth + nJianGe) + 1 + m_rcMain.left;
+			x = i * TOTALZOOMWIDTH + 1 + m_rcMain.left;
 			auto data = m_pAll->data[nOffset];
 			int nVolume = m_pAll->data[nOffset].vol;
-			DrawBandData(pRT, nOffset, data, x, nJianGe);
+			DrawBandData(pRT, nOffset, data, x, m_nJiange);
 			if (i == m_nEnd - m_nFirst - 1)
 			{
 				int nVolume = m_pAll->data[nOffset].vol;
@@ -1970,13 +2080,16 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	DEALine = nullptr;
 	MaLine = nullptr;
 
-	if (m_bShowSubPic)
-		m_pSubPic->DrawData(pRT);
-
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_pbShowSubPic[i])
+			m_ppSubPic[i]->DrawData(pRT);
+	}
 }
 
 
-void SKlinePic::DrawBandData(IRenderTarget * pRT, int nDataPos, KlineType &data, int x, int nJiange)
+void SKlinePic::DrawBandData(IRenderTarget * pRT, int nDataPos,
+	KlineType &data, int x, int nJiange)
 {
 	CAutoRefPtr<IPen> oldPen;
 	CAutoRefPtr<IBrush> bOldBrush;
@@ -2002,44 +2115,52 @@ void SKlinePic::DrawBandData(IRenderTarget * pRT, int nDataPos, KlineType &data,
 
 	if (m_pBandData->W2[nDataPos] >= 0)
 	{
+		if (yOpen == yClose)
+			yOpen = yOpen + 1;
 		if (m_pBandData->BB1[nDataPos] == 2)
-			pRT->FillSolidRect(CRect(x, yOpen, x + m_nKWidth, yClose), RGBA(0, 255, 255, 255));
+			pRT->FillSolidRect(CRect(x, yOpen, x + ZOOMWIDTH, yClose),
+				RGBA(0, 255, 255, 255));
 		else if (m_pBandData->BB1[nDataPos] == 1)
-			pRT->FillSolidRect(CRect(x, yOpen, x + m_nKWidth, yClose), RGBA(255, 0, 0, 255));
+			pRT->FillSolidRect(CRect(x, yOpen, x + ZOOMWIDTH, yClose),
+				RGBA(255, 0, 0, 255));
 		else if (m_pBandData->BB1[nDataPos] == 3)
-			pRT->FillSolidRect(CRect(x, yOpen, x + m_nKWidth, yClose), RGBA(255, 255, 0, 255));
+			pRT->FillSolidRect(CRect(x, yOpen, x + ZOOMWIDTH, yClose),
+				RGBA(255, 255, 0, 255));
 		else if (m_pBandData->BB1[nDataPos] == 4)
-			pRT->FillSolidRect(CRect(x, yOpen, x + m_nKWidth, yClose), RGBA(100, 100, 100, 255));
+			pRT->FillSolidRect(CRect(x, yOpen, x + ZOOMWIDTH, yClose),
+				RGBA(100, 100, 100, 255));
 
 		CPoint pts[2];
 
 		if (m_pBandData->W2[nDataPos] == 0)
 		{
 			pts[0].SetPoint(x, yOpen);
-			pts[1].SetPoint(x + m_nKWidth, yOpen);
+			pts[1].SetPoint(x + ZOOMWIDTH, yOpen);
 			pRT->DrawLines(pts, 2);
 		}
 
-		pts[0].SetPoint(x + m_nKWidth / 2, yOpen);
-		pts[1].SetPoint(x + m_nKWidth / 2, yHigh);
+		pts[0].SetPoint(x + ZOOMWIDTH / 2, yOpen);
+		pts[1].SetPoint(x + ZOOMWIDTH / 2, yHigh);
 		pRT->DrawLines(pts, 2);
 
-		pts[0].SetPoint(x + m_nKWidth / 2, yClose);
-		pts[1].SetPoint(x + m_nKWidth / 2, yLow);
+		pts[0].SetPoint(x + ZOOMWIDTH / 2, yClose);
+		pts[1].SetPoint(x + ZOOMWIDTH / 2, yLow);
 		pRT->DrawLines(pts, 2);
 
 	}
 	else if (m_pBandData->W2[nDataPos] < 0)
 	{
-		pRT->DrawRectangle(CRect(x, yClose, x + m_nKWidth, yOpen));
+		if (yOpen == yClose)
+			yOpen = yOpen - 1;
+		pRT->DrawRectangle(CRect(x, yClose, x + ZOOMWIDTH, yOpen));
 
 		CPoint pts[2];
-		pts[0].SetPoint(x + m_nKWidth / 2, yClose + 1);
-		pts[1].SetPoint(x + m_nKWidth / 2, yHigh);
+		pts[0].SetPoint(x + ZOOMWIDTH / 2, yClose + 1);
+		pts[1].SetPoint(x + ZOOMWIDTH / 2, yHigh);
 		pRT->DrawLines(pts, 2);
 
-		pts[0].SetPoint(x + m_nKWidth / 2, yOpen - 1);
-		pts[1].SetPoint(x + m_nKWidth / 2, yLow);
+		pts[0].SetPoint(x + ZOOMWIDTH / 2, yOpen - 1);
+		pts[1].SetPoint(x + ZOOMWIDTH / 2, yLow);
 		pRT->DrawLines(pts, 2);
 
 	}
@@ -2087,15 +2208,11 @@ void SKlinePic::DataProc()
 	m_nMacdCount = 0;
 	m_bDataInited = true;
 	UpdateData();
+	Invalidate();
+	//OutputDebugStringA("Ë¢ÐÂÍ¼ÐÎ\n");
 	SetTimer(1, 1000);
 }
 
-void SKlinePic::ChangePeriod(int nPeriod, BOOL bNeedReCalc)
-{
-	m_nPeriod = nPeriod;
-	if(bNeedReCalc && GetDataReadyState())
-		DataProc();
-}
 
 void SKlinePic::ReProcMAData()
 {
@@ -2119,14 +2236,35 @@ void SKlinePic::ReProcBandData()
 	BandDataUpdate();
 }
 
+void SKlinePic::ChangePeriod(int nPeriod, BOOL bNeedReCalc)
+{
+	m_nPeriod = nPeriod;
+	if (bNeedReCalc && GetDataReadyState())
+		DataProc();
+}
+
+void SKlinePic::SetBelongingIndy(vector<SStringA>& strNameVec)
+{
+	for (int i = SP_SWINDYL1; i < m_nSubPicNum; ++i)
+	{
+		SStringA str;
+		m_ppSubPic[i]->SetSubPicName(str.Format("%d¼¶ÐÐÒµ:%s",
+			i, strNameVec[i - 1]));
+	}
+	m_strL1Indy = strNameVec[0];
+	m_strL2Indy = strNameVec[1];
+	m_pPriceList->SetIndyName(strNameVec);
+
+}
+
 void SKlinePic::DrawTickMainData(IRenderTarget * pRT)	//»­Ö÷Í¼tick
 {
 	LONGLONG llTmp1 = GetTickCount64();
 	if (m_pAll == nullptr || m_pAll->nTotal <= 0)
 		return;
-	int  nJianGe = 1;
-	if (m_nKWidth > 4)
-		nJianGe = 2;
+	//int  nJianGe = 1;
+	//if (m_nKWidth > 4)
+	//	nJianGe = 2;
 
 	CPoint pts[10000];
 	int nPNum = 0;
@@ -2140,7 +2278,7 @@ void SKlinePic::DrawTickMainData(IRenderTarget * pRT)	//»­Ö÷Í¼tick
 	auto *p = m_pAll->data + m_nFirst;
 	for (int i = 0; i < m_nEnd - m_nFirst; i++)
 	{
-		x = i * m_nKWidth + 1 + m_rcMain.left;
+		x = i * ZOOMWIDTH + 1 + m_rcMain.left;
 		yopen = GetYPos(p[i].open);
 		yhigh = GetYPos(p[i].high);
 		ylow = GetYPos(p[i].low);
@@ -2150,13 +2288,13 @@ void SKlinePic::DrawTickMainData(IRenderTarget * pRT)	//»­Ö÷Í¼tick
 		//Á¬½ÓÇ°ºÍÏÖ¿ª
 		pts[nPNum++].SetPoint(x, yopen);
 		//»­¿ª
-		pts[nPNum++].SetPoint(x + m_nKWidth / 2, yopen);
+		pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, yopen);
 		//ÊúÏß
-		pts[nPNum++].SetPoint(x + m_nKWidth / 2, yhigh);
-		pts[nPNum++].SetPoint(x + m_nKWidth / 2, ylow);
+		pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, yhigh);
+		pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, ylow);
 		//»­ÊÕ
-		pts[nPNum++].SetPoint(x + m_nKWidth / 2, yclose);
-		pts[nPNum++].SetPoint(x + m_nKWidth, yclose);
+		pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, yclose);
+		pts[nPNum++].SetPoint(x + ZOOMWIDTH, yclose);
 		ypre = yclose;
 
 		//¼Ó×îºóµÄÊýÖµ
@@ -2164,7 +2302,7 @@ void SKlinePic::DrawTickMainData(IRenderTarget * pRT)	//»­Ö÷Í¼tick
 		{
 			SStringW strTemp;
 			strTemp.Format(SDECIMAL, p[i].close);
-			pRT->TextOut(x + m_nKWidth + 2, yclose - 5, strTemp, -1);
+			pRT->TextOut(x + ZOOMWIDTH + 2, yclose - 5, strTemp, -1);
 		}
 	}
 	pRT->DrawLines(pts, nPNum);
@@ -2180,9 +2318,9 @@ void SKlinePic::DrawVolData(IRenderTarget * pRT)
 	//	LONGLONG llTmp1 = GetTickCount64();
 	if (m_pAll == nullptr || m_pAll->nTotal <= 0)
 		return;
-	int  nJianGe = 1;
-	if (m_nKWidth > 4)
-		nJianGe = 2;
+	//int  nJianGe = 1;
+	//if (m_nKWidth > 4)
+	//	nJianGe = 2;
 
 	CPoint pts[10000];
 	int nPNum = 0, x = 0;
@@ -2196,20 +2334,20 @@ void SKlinePic::DrawVolData(IRenderTarget * pRT)
 
 	for (int i = 0; i < m_nEnd - m_nFirst; i++)
 	{
-		x = i * m_nKWidth + 1 + m_rcMain.left;
+		x = i * ZOOMWIDTH + 1 + m_rcMain.left;
 		int volPos = GetFuTuYPos(m_pAll->data[m_nFirst + i - 1].vol);
-		if (m_nKWidth > 2)
+		if (ZOOMWIDTH > 2)
 		{
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2 - 1, m_rcVolume.bottom);
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2 - 1, volPos);
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2, volPos);
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2, m_rcVolume.bottom);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2 - 1, m_rcVolume.bottom);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2 - 1, volPos);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, volPos);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, m_rcVolume.bottom);
 		}
 		else
 		{
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2, m_rcVolume.bottom);
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2, volPos);
-			pts[nPNum++].SetPoint(x + m_nKWidth / 2, m_rcVolume.bottom);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, m_rcVolume.bottom);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, volPos);
+			pts[nPNum++].SetPoint(x + ZOOMWIDTH / 2, m_rcVolume.bottom);
 		}
 
 	}
@@ -2235,7 +2373,8 @@ void SKlinePic::OnDbClickedKline(UINT nFlags, CPoint point)
 		m_nMouseX = m_nPreX;
 		m_nMouseY = m_nPreY;
 	}
-	m_pSubPic->SetMouseLineState(m_bShowMouseLine);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_ppSubPic[i]->SetMouseLineState(m_bShowMouseLine);
 
 	Invalidate();
 }
@@ -2252,10 +2391,16 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			m_pTip->ClearTip();
 			m_bReSetFirstLine = true;
 		}
-		if (m_nKWidth == 1 && m_bNoJiange)
+		if (m_nKWidth == 1 && m_nJiange < 2)
 		{
-			m_bNoJiange = false;
-			m_pSubPic->SetShowWidth(m_nKWidth, 2);
+			if (m_nZoomRatio > 1)
+				--m_nZoomRatio;
+			else
+				++m_nJiange;
+
+			//m_nJiange = false;
+			for (int i = 0; i < m_nSubPicNum; ++i)
+				m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
 			Invalidate();
 			break;
 		}
@@ -2264,7 +2409,8 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		m_nKWidth += 2;
 		if (m_nKWidth > 64)
 			m_nKWidth = 65;
-		m_pSubPic->SetShowWidth(m_nKWidth, 2);
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			m_ppSubPic[i]->SetShowWidth(m_nKWidth, 2);
 
 		Invalidate();
 
@@ -2277,21 +2423,29 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			m_pTip->ClearTip();
 			m_bReSetFirstLine = true;
 		}
+		if (m_nFirst == 0)
+			break;
 
 		if (m_nKWidth == 1)
 		{
-			if (!m_bNoJiange)
-			{
-				m_bNoJiange = true;
-				m_pSubPic->SetShowWidth(m_nKWidth, 0);
-				Invalidate();
-			}
+			//if (m_nJiange )
+			//{
+				//m_nJiange = true;
+			if (m_nJiange > 0)
+				--m_nJiange;
+			else
+				++m_nZoomRatio;
+			for (int i = 0; i < m_nSubPicNum; ++i)
+				m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+			Invalidate();
+			//}
 			break;
 		}
 		m_nKWidth -= 2;
 		if (m_nKWidth < 1)
 			m_nKWidth = 1;
-		m_pSubPic->SetShowWidth(m_nKWidth, 2);
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			m_ppSubPic[i]->SetShowWidth(m_nKWidth, 2);
 
 		Invalidate();
 
@@ -2338,7 +2492,8 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			if (m_nMouseLinePos < m_nFirst)
 			{
 				m_nMove++;
-				m_pSubPic->SetOffset(m_nMove);
+				for (int i = 0; i < m_nSubPicNum; ++i)
+					m_ppSubPic[i]->SetOffset(m_nMove);
 				m_bClearTip = true;
 				Invalidate();
 				break;
@@ -2346,7 +2501,8 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			if (m_nMouseLinePos >= m_nFirst + m_nMaxKNum)
 			{
 				m_nMove--;
-				m_pSubPic->SetOffset(m_nMove);
+				for (int i = 0; i < m_nSubPicNum; ++i)
+					m_ppSubPic[i]->SetOffset(m_nMove);
 				m_bClearTip = true;
 
 				Invalidate();
@@ -2765,9 +2921,10 @@ void SKlinePic::StockMarketMultMinUpdate(int nPeriod)
 
 void SKlinePic::StockMarketDayUpdate()
 {
-
+	//OutputDebugStringA("´¦ÀíÈÕÏß\n");
 	if (m_pStkMarketVec->empty())
 		return;
+	//OutputDebugStringA("Êý¾Ý·Ç¿Õ\n");
 	auto tick = m_pStkMarketVec->back();
 	int nDataCount = m_pAll->nTotal;
 	if (tick.OpenPrice > 10000000 || tick.OpenPrice == 0)
@@ -2777,6 +2934,7 @@ void SKlinePic::StockMarketDayUpdate()
 		StockTickToDayKline(nDataCount, tick);
 		m_pAll->nTotal++;
 		m_bAddDay = true;
+		//OutputDebugStringA("Ìí¼ÓÁËÒ»ÌõÐÂµÄÈÕÏß\n");
 	}
 	else
 		StockTickToDayKline(nDataCount - 1, tick);
@@ -3053,14 +3211,15 @@ void SKlinePic::OnSize(UINT nType, CSize size)
 
 BOOL SKlinePic::ptIsInKlineRect(CPoint pt, int nDataCount, KlineType &data)
 {
-	int	nJianGe = 2;
-	if (m_bNoJiange)
-		nJianGe = 0;
+	//int	nJianGe = 2;
+	//if (m_nJiange)
+	//	nJianGe = 0;
 
 	int nTop = GetYPos(data.high);
 	int nBottom = GetYPos(data.low);
-	int nLeft = nDataCount * (m_nKWidth + nJianGe) + 1 + m_rcMain.left;
-	int nRight = nLeft + m_nKWidth;
+	int nLeft = nDataCount * TOTALZOOMWIDTH
+		+ 1 + m_rcMain.left;
+	int nRight = nLeft + ZOOMWIDTH;
 
 	if (pt.x >= nLeft&&pt.x <= nRight&&pt.y >= nTop&&pt.y <= nBottom)
 		return TRUE;

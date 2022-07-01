@@ -1,8 +1,10 @@
-#include "stdafx.h"
+Ôªø#include "stdafx.h"
 #include"PriceList.h"
 #include <unordered_map>
 #include<map>
-extern CRITICAL_SECTION g_csGroupTick;
+
+#define VPOS(x) (m_rect.top + RC_PRH * x)
+#define SPACE 5
 
 CPriceList::CPriceList()
 {
@@ -11,10 +13,11 @@ CPriceList::CPriceList()
 	m_bInit = FALSE;
 	m_bIsStockIndex = false;
 	m_bInsInited = FALSE;
-	//OutputDebugString(L"∏≥÷µ≤ª «stockIndex\n");
+	//OutputDebugString(L"ËµãÂÄº‰∏çÊòØstockIndex\n");
 }
 
-void CPriceList::SetShowData(SStringA StockID, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec)
+void CPriceList::SetShowData(SStringA StockID, SStringA StockName,
+	vector<CommonStockMarket>* pStkMarketVec)
 {
 	m_bInsInited = FALSE;
 	m_strSubIns = StockID;
@@ -22,14 +25,17 @@ void CPriceList::SetShowData(SStringA StockID, SStringA StockName, vector<Common
 	m_pIdxMarketVec = nullptr;
 	m_bIsStockIndex = false;
 	m_strStockName = StockName;
-	if (m_strSubIns[0] == '3' || m_strSubIns.Find("688") != -1)
+	if (m_strStockName.Find("ST") != -1)
+		m_fMaxChgPct = 0.05;
+	else if (m_strSubIns[0] == '3' || m_strSubIns.Find("688") != -1)
 		m_fMaxChgPct = 0.2;
 	else
 		m_fMaxChgPct = 0.1;
 	m_bInsInited = TRUE;
 }
 
-void CPriceList::SetShowData(SStringA StockID, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec)
+void CPriceList::SetShowData(SStringA StockID, SStringA StockName,
+	vector<CommonIndexMarket>* pIdxMarketVec)
 {
 	m_bInsInited = FALSE;
 	m_strSubIns = StockID;
@@ -38,6 +44,12 @@ void CPriceList::SetShowData(SStringA StockID, SStringA StockName, vector<Common
 	m_bIsStockIndex = true;
 	m_strStockName = StockName;
 	m_bInsInited = TRUE;
+}
+
+void CPriceList::SetIndyName(vector<SStringA>& nameVec)
+{
+	m_strL1Indy = nameVec[0];
+	m_strL2Indy = nameVec[1];
 }
 
 
@@ -50,15 +62,17 @@ void SOUI::CPriceList::Paint(IRenderTarget * pRT)
 	if (!m_bInit)
 	{
 		m_bInit = TRUE;
-		pRT->CreatePen(PS_SOLID, RGBA(255, 0, 0, 255), 2, &m_penRed);
+		pRT->CreatePen(PS_SOLID, RGBA(255, 31, 31, 255), 2, &m_penRed);
 
 		LOGFONT lf;
 		ZeroMemory(&lf, sizeof(LOGFONT));
-		lf.lfHeight = 15;// ◊÷ÃÂ¥Û–°
-		_stprintf(lf.lfFaceName, L"%s", L"Œ¢»Ì—≈∫⁄"); // ◊÷ÃÂ√˚≥∆
+		lf.lfHeight = 15;// Â≠ó‰ΩìÂ§ßÂ∞è
+		_stprintf(lf.lfFaceName, L"%s", L"ÂæÆËΩØÈõÖÈªë"); // Â≠ó‰ΩìÂêçÁß∞
 		GETRENDERFACTORY->CreateFont(&m_pFont15, lf);
-		lf.lfHeight = 20;// ◊÷ÃÂ¥Û–°
+		lf.lfHeight = 20;// Â≠ó‰ΩìÂ§ßÂ∞è
 		GETRENDERFACTORY->CreateFont(&m_pFont20, lf);
+		lf.lfHeight = 12;// Â≠ó‰ΩìÂ§ßÂ∞è
+		GETRENDERFACTORY->CreateFont(&m_pFont10, lf);
 
 	}
 
@@ -68,6 +82,11 @@ void SOUI::CPriceList::Paint(IRenderTarget * pRT)
 		{
 			if (!m_pStkMarketVec->empty())
 				m_StockTick = m_pStkMarketVec->back();
+			if (m_pStkMarketVec->size() > 1)
+				m_preStockTick =
+				m_pStkMarketVec->at(m_pStkMarketVec->size() - 2);
+			else
+				m_preStockTick = CommonStockMarket{ 0 };
 			DrawStockModeOne(pRT);
 		}
 		else
@@ -96,387 +115,478 @@ void CPriceList::DrawStockModeOne(IRenderTarget * pRT)
 
 	pRT->SetTextColor(RGBA(255, 255, 0, 255));
 	SStringW strTmp = StrA2StrW(m_strStockName);
-	pRT->DrawTextW(strTmp, strTmp.GetLength(), CRect(m_rect.left + 40, m_rect.top, m_rect.left + nWidth * 2 + 80, m_rect.top + RC_PRH), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-	strTmp = L"";
-	//	pRT->DrawTextW(strTmp, strTmp.GetLength(), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top, m_rect.right, m_rect.top + RC_PRH + 5), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-	pRT->SelectObject(OldFont);
+	pRT->DrawTextW(strTmp, strTmp.GetLength(),
+		CRect(m_rect.left + 20, VPOS(-1),
+			m_rect.left + nWidth * 2 + 80, VPOS(1) - SPACE),
+		DT_CENTER | DT_TOP | DT_SINGLELINE);
 	pRT->SelectObject(m_pFont15, (IRenderObj**)&OldFont);
+	strTmp = StrA2StrW(m_strSubIns);
+	pRT->DrawTextW(strTmp, strTmp.GetLength(),
+		CRect(m_rect.left + 20, m_rect.top,
+			m_rect.left + nWidth * 2 + 80, VPOS(1)),
+		DT_CENTER | DT_BOTTOM | DT_SINGLELINE);
 
-	//∫·œﬂ
-	point[0].SetPoint(m_rect.left, m_rect.top + RC_PRH + 4);
-	point[1].SetPoint(m_rect.right + 5, m_rect.top + RC_PRH + 4);
-	pRT->DrawLines(point, 2);
+
+	strTmp = L"";
+	//Ê®™Á∫ø
+	pRT->DrawRectangle(CRect(m_rect.left - 6, VPOS(1),
+		m_rect.right+6, VPOS(2)));
+	//point[0].SetPoint(m_rect.left, VPOS(1) );
+	//point[1].SetPoint(m_rect.right + SPACE, VPOS(1));
+	//pRT->DrawLines(point, 2);
+
+	int left = m_rect.left - 5;
+	int right = m_rect.left + 30;
+	pRT->SetTextColor(RGBA(255, 255, 255, 255));
+	pRT->DrawTextW(L"ÂßîÊØî", wcslen(L"ÂßîÊØî"),
+		CRect(left, VPOS(1), right, VPOS(2)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	left = m_rect.left + nWidth * 2 + 10;
+	right = m_rect.left + nWidth * 2 + 40;
+	pRT->DrawTextW(L"ÂßîÂ∑Æ", wcslen(L"ÂßîÂ∑Æ"),
+		CRect(left, VPOS(1), right, VPOS(2)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+	left = m_rect.left - 5;
+	right = m_rect.left + 40;
 
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	pRT->DrawTextW(L"¬Ù Æ", wcslen(L"¬Ù Æ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH, m_rect.left + 40, m_rect.top + RC_PRH * 2), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ùæ≈", wcslen(L"¬Ùæ≈"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 2, m_rect.left + 40, m_rect.top + RC_PRH * 3), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ù∞À", wcslen(L"¬Ù∞À"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 3, m_rect.left + 40, m_rect.top + RC_PRH * 4), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ù∆ﬂ", wcslen(L"¬Ù∆ﬂ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 4, m_rect.left + 40, m_rect.top + RC_PRH * 5), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ù¡˘", wcslen(L"¬Ù¡˘"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 5, m_rect.left + 40, m_rect.top + RC_PRH * 6), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬ÙŒÂ", wcslen(L"¬ÙŒÂ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 6, m_rect.left + 40, m_rect.top + RC_PRH * 7), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬ÙÀƒ", wcslen(L"¬ÙÀƒ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 7, m_rect.left + 40, m_rect.top + RC_PRH * 8), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ù»˝", wcslen(L"¬Ù»˝"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 8, m_rect.left + 40, m_rect.top + RC_PRH * 9), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ù∂˛", wcslen(L"¬Ù∂˛"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 9, m_rect.left + 40, m_rect.top + RC_PRH * 10), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ù“ª", wcslen(L"¬Ù“ª"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 10, m_rect.left + 40, m_rect.top + RC_PRH * 11), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"ÂçñÂçÅ", wcslen(L"ÂçñÂçÅ"),
+		CRect(left, VPOS(2), right, VPOS(3)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"Âçñ‰πù", wcslen(L"Âçñ‰πù"),
+		CRect(left, VPOS(3), right, VPOS(4)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"ÂçñÂÖ´", wcslen(L"ÂçñÂÖ´"),
+		CRect(left, VPOS(4), right, VPOS(5)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"Âçñ‰∏É", wcslen(L"Âçñ‰∏É"),
+		CRect(left, VPOS(5), right, VPOS(6)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"ÂçñÂÖ≠", wcslen(L"ÂçñÂÖ≠"),
+		CRect(left, VPOS(6), right, VPOS(7)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"Âçñ‰∫î", wcslen(L"Âçñ‰∫î"),
+		CRect(left, VPOS(7), right, VPOS(8)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"ÂçñÂõõ", wcslen(L"ÂçñÂõõ"),
+		CRect(left, VPOS(8), right, VPOS(9)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"Âçñ‰∏â", wcslen(L"Âçñ‰∏â"),
+		CRect(left, VPOS(9), right, VPOS(10)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"Âçñ‰∫å", wcslen(L"Âçñ‰∫å"),
+		CRect(left, VPOS(10), right, VPOS(11)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"Âçñ‰∏Ä", wcslen(L"Âçñ‰∏Ä"),
+		CRect(left, VPOS(11), right, VPOS(12)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
-	pRT->DrawTextW(L"¬Ú“ª", wcslen(L"¬Ú“ª"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 11, m_rect.left + 40, m_rect.top + RC_PRH * 12), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ú∂˛", wcslen(L"¬Ú∂˛"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 12, m_rect.left + 40, m_rect.top + RC_PRH * 13), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ú»˝", wcslen(L"¬Ú»˝"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 13, m_rect.left + 40, m_rect.top + RC_PRH * 14), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬ÚÀƒ", wcslen(L"¬ÚÀƒ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 14, m_rect.left + 40, m_rect.top + RC_PRH * 15), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬ÚŒÂ", wcslen(L"¬ÚŒÂ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 15, m_rect.left + 40, m_rect.top + RC_PRH * 16), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ú¡˘", wcslen(L"¬Ú¡˘"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 16, m_rect.left + 40, m_rect.top + RC_PRH * 17), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ú∆ﬂ", wcslen(L"¬Ú∆ﬂ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 17, m_rect.left + 40, m_rect.top + RC_PRH * 18), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ú∞À", wcslen(L"¬Ú∞À"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 18, m_rect.left + 40, m_rect.top + RC_PRH * 19), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Úæ≈", wcslen(L"¬Úæ≈"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 19, m_rect.left + 40, m_rect.top + RC_PRH * 20), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	pRT->DrawTextW(L"¬Ú Æ", wcslen(L"¬Ú Æ"), CRect(m_rect.left + 10, m_rect.top + RC_PRH * 20, m_rect.left + 40, m_rect.top + RC_PRH * 21), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞‰∏Ä", wcslen(L"‰π∞‰∏Ä"),
+		CRect(left, VPOS(12), right, VPOS(13)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞‰∫å", wcslen(L"‰π∞‰∫å"),
+		CRect(left, VPOS(13), right, VPOS(14)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞‰∏â", wcslen(L"‰π∞‰∏â"),
+		CRect(left, VPOS(14), right, VPOS(15)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞Âõõ", wcslen(L"‰π∞Âõõ"),
+		CRect(left, VPOS(15), right, VPOS(16)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞‰∫î", wcslen(L"‰π∞‰∫î"),
+		CRect(left, VPOS(16), right, VPOS(17)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞ÂÖ≠", wcslen(L"‰π∞ÂÖ≠"),
+		CRect(left, VPOS(17), right, VPOS(18)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞‰∏É", wcslen(L"‰π∞‰∏É"),
+		CRect(left, VPOS(18), right, VPOS(19)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞ÂÖ´", wcslen(L"‰π∞ÂÖ´"),
+		CRect(left, VPOS(19),
+			right, VPOS(20)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞‰πù", wcslen(L"‰π∞‰πù"),
+		CRect(left, VPOS(20), right, VPOS(21)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(L"‰π∞ÂçÅ", wcslen(L"‰π∞ÂçÅ"),
+		CRect(left, VPOS(21), right, VPOS(22)),
+		DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
-	//∫·œﬂ
-	point[0].SetPoint(m_rect.left, m_rect.top + RC_PRH * 11);
-	point[1].SetPoint(m_rect.right + 5, m_rect.top + RC_PRH * 11);
+	//Ê®™Á∫ø
+	point[0].SetPoint(m_rect.left - 5, VPOS(12));
+	point[1].SetPoint(m_rect.right + 5, VPOS(12));
 	pRT->DrawLines(point, 2);
 
-	//¡ø
-	if (m_StockTick.AskVolume[9] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[9] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH + 5,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[9]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[9]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH + 5,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+	int pxLeft = m_rect.left + 30;
+	int pxRight = m_rect.left + nWidth * 2 - 5;
+	int volLeft = m_rect.left + nWidth * 2;
+	int volRight = m_rect.left + nWidth * 4 - 30;
+	int chgLeft = m_rect.left + nWidth * 4 - 30;
+	int chgRight = m_rect.right+5;
 
-	}
-	if (m_StockTick.AskVolume[8] > 0)
+	//Èáè
+	int BidVol = 0;
+	int AskVol = 0;
+	std::map<double, int> preAskMap;
+	std::map<double, int> preBidMap;
+	if (m_preStockTick.UpdateTime != 0)
 	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[8] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 2,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 3), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[8]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[8]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 2,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 3), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[7] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[7] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 3,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 4), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[7]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[7]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 3,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 4), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[6] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[6] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 4,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 5), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[6]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[6]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 4,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 5), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[5] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[5] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 5,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 6), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[5]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[5]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 5,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 6), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[4] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[4] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 6,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 7), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[4]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[4]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 6,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 7), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.AskVolume[3] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[3] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 7,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 8), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[3]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[3]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 7,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 8), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[2] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[2] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 8,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 9), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[2]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[2]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 8,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 9), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[1] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[1] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 9,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 10), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[1]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[1]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 9,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 10), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-
-	}
-	if (m_StockTick.AskVolume[0] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.AskVolume[0] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 10,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 11), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[0]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[0]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 10,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 11), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+		for (int i = 0; i < 10; ++i)
+		{
+			if (m_preStockTick.AskPrice[i] > 0 &&
+				m_preStockTick.AskVolume[i] > 0)
+				preAskMap[m_preStockTick.AskPrice[i]]
+				= m_preStockTick.AskVolume[i] / 100;
+			if (m_preStockTick.BidPrice[i] > 0 &&
+				m_preStockTick.BidVolume[i] > 0)
+				preBidMap[m_preStockTick.BidPrice[i]]
+				= m_preStockTick.BidVolume[i] / 100;
+		}
 	}
 
+	for (int i = 0; i < 10; ++i)
+	{
+		int nVol = m_StockTick.AskVolume[9 - i] / 100;
+		double fPrice = m_StockTick.AskPrice[9 - i];
+		if (nVol > 0)
+		{
+			pRT->SetTextColor(RGBA(255, 255, 255, 255));
+			_swprintf(szTmp, L"%d", nVol);
+			pRT->DrawTextW(szTmp, wcslen(szTmp),
+				CRect(volLeft, VPOS((2 + i)), volRight, VPOS((3 + i))),
+				DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+			AskVol += nVol;
+			if (fPrice > 0)
+			{
+				pRT->SetTextColor(GetTextColor(fPrice));
+				_swprintf(szTmp, L"%.02f", fPrice);
+				pRT->DrawTextW(szTmp, wcslen(szTmp),
+					CRect(pxLeft, VPOS((2 + i)), pxRight, VPOS((3 + i))),
+					DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+				int preVol = 0;
+				if (preAskMap.count(fPrice))
+					preVol = preAskMap[fPrice];
+				if (nVol != preVol)
+				{
+					int diff = nVol - preVol;
+					if (diff > 0)
+						pRT->SetTextColor(RGBA(255, 31, 31, 255));
+					else
+						pRT->SetTextColor(RGBA(0, 255, 0, 255));
+					_swprintf(szTmp, L"%+d", diff);
+					pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
+					pRT->DrawTextW(szTmp, wcslen(szTmp),
+						CRect(chgLeft, VPOS((2 + i)), chgRight, VPOS((3 + i))),
+						DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+					pRT->SelectObject(OldFont);
+				}
+			}
 
+		}
+	}
 
-	if (m_StockTick.BidVolume[0] > 0)
+	double preAsk1 = m_preStockTick.AskPrice[0];
+	if (preAsk1 > 0 && m_StockTick.AskPrice[0] > 0)
 	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[0] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 11,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 12), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[0]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[0]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 11,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 12), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[1] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[1] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 12,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 13), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[1]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[1]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 12,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 13), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[2] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[2] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 13,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 14), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[2]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[2]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 13,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 14), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[3] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[3] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 14,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 15), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[3]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[3]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 14,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 15), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[4] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[4] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 15,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 16), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[4]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[4]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 15,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 16), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[5] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[5] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 16,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 17), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[5]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[5]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 16,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 17), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[6] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[6] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 17,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 18), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[6]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[6]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 17,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 18), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[7] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[7] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 18,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 19), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[7]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[7]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 18,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 19), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[8] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[8] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 19,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 20), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[8]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[8]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 19,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 20), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	}
-	if (m_StockTick.BidVolume[9] > 0)
-	{
-		pRT->SetTextColor(RGBA(255, 255, 255, 255));
-		_swprintf(szTmp, L"%d", m_StockTick.BidVolume[9] / 100);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 20,
-			m_rect.left + nWidth * 4 - 10, m_rect.top + RC_PRH * 21), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-		pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[9]));
-		_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[9]);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 20,
-			m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 21), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+		pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
+		if (m_StockTick.AskPrice[0] < preAsk1)
+		{
+			pRT->SetTextColor(RGBA(0, 255, 0, 255));
+			_swprintf(szTmp, L"‚ñº");
+			pRT->DrawTextW(szTmp, wcslen(szTmp),
+				CRect(pxRight, VPOS(11), volLeft + 8, VPOS(12)),
+				DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		}
+		else if (m_StockTick.AskPrice[0] > preAsk1)
+		{
+			pRT->SetTextColor(RGBA(255, 31, 31, 255));
+			_swprintf(szTmp, L"‚ñ≤");
+			pRT->DrawTextW(szTmp, wcslen(szTmp),
+				CRect(pxRight, VPOS(11), volLeft + 8, VPOS(12)),
+				DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		}
+		pRT->SelectObject(OldFont);
 
 	}
 
-	//¬Ú“ª¬Ù“ªº€
-	//pRT->SetTextColor(GetTextColor(m_StockTick.AskPrice[0]));
-	//_swprintf(szTmp, L"%.02f", m_StockTick.AskPrice[0]);
-	//pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH + 5,
-	//	m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	//pRT->SetTextColor(GetTextColor(m_StockTick.BidPrice[0]));
-	//_swprintf(szTmp, L"%.02f", m_StockTick.BidPrice[0]);
-	//pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH * 2,
-	//	m_rect.left + nWidth * 2, m_rect.top + RC_PRH * 3), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	//∫·œﬂ
-	point[0].SetPoint(m_rect.left, m_rect.top + RC_PRH * 21);
-	point[1].SetPoint(m_rect.right, m_rect.top + RC_PRH * 21);
-	pRT->DrawLines(point, 2);
 
-	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	pRT->DrawTextW(L"◊Ó–¬", 2, CRect(m_rect.left, m_rect.top + (RC_PRH) * 21 , m_rect.left + 30, m_rect.top + (RC_PRH) * 22), DT_LEFT);
-	pRT->DrawTextW(L"’«µ¯", 2, CRect(m_rect.left, m_rect.top + (RC_PRH) * 22, m_rect.left + 30, m_rect.top + (RC_PRH) * 23), DT_LEFT);
-	pRT->DrawTextW(L"’«∑˘", 2, CRect(m_rect.left, m_rect.top + (RC_PRH) * 23, m_rect.left + 30, m_rect.top + (RC_PRH) * 24), DT_LEFT);
-	pRT->DrawTextW(L"’«Õ£", 2, CRect(m_rect.left, m_rect.top + (RC_PRH) * 24, m_rect.left + 30, m_rect.top + (RC_PRH) * 25), DT_LEFT);
-	pRT->DrawTextW(L"◊‹ ÷", 2, CRect(m_rect.left, m_rect.top + (RC_PRH) * 25, m_rect.left + 30, m_rect.top + (RC_PRH) * 26), DT_LEFT);
-	pRT->DrawTextW(L"◊Ú ’", 2, CRect(m_rect.left, m_rect.top + (RC_PRH) * 26, m_rect.left + 30, m_rect.top + (RC_PRH) * 27), DT_LEFT);
-
-	pRT->DrawTextW(L"ø™≈Ã", 2, CRect(m_rect.left + nWidth * 2 + 10, m_rect.top + (RC_PRH) * 21, m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 22), DT_LEFT);
-	pRT->DrawTextW(L"◊Ó∏ﬂ", 2, CRect(m_rect.left + nWidth * 2 + 10, m_rect.top + (RC_PRH) * 22, m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 23), DT_LEFT);
-	pRT->DrawTextW(L"◊ÓµÕ", 2, CRect(m_rect.left + nWidth * 2 + 10, m_rect.top + (RC_PRH) * 23, m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 24), DT_LEFT);
-	pRT->DrawTextW(L"µ¯Õ£", 2, CRect(m_rect.left + nWidth * 2 + 10, m_rect.top + (RC_PRH) * 24, m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 25), DT_LEFT);
-	pRT->DrawTextW(L"Ω∂Ó", 2, CRect(m_rect.left + nWidth * 2 + 10, m_rect.top + (RC_PRH) * 25, m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 26), DT_LEFT);
-
-	pRT->SetTextColor(GetTextColor(m_StockTick.LastPrice));
-	if (m_StockTick.LastPrice > 10000000 || m_StockTick.LastPrice < 0)
+	for (int i = 0; i < 10; ++i)
 	{
-		_swprintf(szTmp, L"°™");	//◊Ó–¬
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 21, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 22), DT_RIGHT);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 22, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 23), DT_RIGHT);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 23, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 24), DT_RIGHT);
+		int nVol = m_StockTick.BidVolume[i] / 100;
+		double fPrice = m_StockTick.BidPrice[i];
+		if (nVol > 0)
+		{
+			pRT->SetTextColor(RGBA(255, 255, 255, 255));
+			_swprintf(szTmp, L"%d", nVol);
+			pRT->DrawTextW(szTmp, wcslen(szTmp),
+				CRect(volLeft, VPOS((12 + i)), volRight, VPOS((13 + i))),
+				DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+			BidVol += nVol;
+			if (fPrice > 0)
+			{
+				pRT->SetTextColor(GetTextColor(fPrice));
+				_swprintf(szTmp, L"%.02f", fPrice);
+				pRT->DrawTextW(szTmp, wcslen(szTmp),
+					CRect(pxLeft, VPOS((12 + i)), pxRight, VPOS((13 + i))),
+					DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+				int preVol = 0;
+				if (preBidMap.count(fPrice))
+					preVol = preBidMap[fPrice];
+				if (nVol != preVol)
+				{
+					int diff = nVol - preVol;
+					if (diff > 0)
+						pRT->SetTextColor(RGBA(255, 31, 31, 255));
+					else
+						pRT->SetTextColor(RGBA(0, 255, 0, 255));
+					_swprintf(szTmp, L"%+d", diff);
+					pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
+					pRT->DrawTextW(szTmp, wcslen(szTmp),
+						CRect(chgLeft, VPOS((12 + i)), chgRight, VPOS((13 + i))),
+						DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+					pRT->SelectObject(OldFont);
+				}
+
+			}
+
+		}
+	}
+
+	double preBid1 = m_preStockTick.BidPrice[0];
+	if (preBid1 > 0 && m_StockTick.BidPrice[0] > 0)
+	{
+		pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
+		if (m_StockTick.BidPrice[0] < preBid1)
+		{
+			pRT->SetTextColor(RGBA(0, 255, 0, 255));
+			_swprintf(szTmp, L"‚ñº");
+			pRT->DrawTextW(szTmp, wcslen(szTmp),
+				CRect(pxRight, VPOS(12), volLeft + 8, VPOS(13)),
+				DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		}
+		else if (m_StockTick.BidPrice[0] > preBid1)
+		{
+			pRT->SetTextColor(RGBA(255, 31, 31, 255));
+			_swprintf(szTmp, L"‚ñ≤");
+			pRT->DrawTextW(szTmp, wcslen(szTmp),
+				CRect(pxRight, VPOS(12), volLeft + 8, VPOS(13)),
+				DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		}
+		pRT->SelectObject(OldFont);
+
+	}
+
+
+
+	//ÂßîÊØîÂßîÂ∑Æ
+	if (BidVol + AskVol > 0)
+	{
+		int diff = BidVol - AskVol;
+		double diffRatio = diff*100.0 / (BidVol + AskVol);
+
+		if (diff > 0)
+			pRT->SetTextColor(RGBA(255, 31, 31, 255));
+		else if (diff < 0)
+			pRT->SetTextColor(RGBA(0, 255, 0, 255));
+		else
+			pRT->SetTextColor(RGBA(255, 255, 255, 255));
+		left = m_rect.left + 30;
+		right = m_rect.left + nWidth * 2;
+		_swprintf(szTmp, L"%.02f%%", diffRatio);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(1), right, VPOS(2)),
+			DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+		left = m_rect.left + nWidth * 2 + 40;
+		right = m_rect.left + nWidth * 4;
+		_swprintf(szTmp, L"%d", diff);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(1), right, VPOS(2)),
+			DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	}
 	else
 	{
-		_swprintf(szTmp, L"%.02f", m_StockTick.LastPrice);	//◊Ó–¬
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 21, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 22), DT_RIGHT);
-		_swprintf(szTmp, L"%.02f", m_StockTick.LastPrice - m_StockTick.PreCloPrice);	//’«µ¯
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 22, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 23), DT_RIGHT);
-		_swprintf(szTmp, L"%.2f%%", (m_StockTick.LastPrice - m_StockTick.PreCloPrice) / (m_StockTick.PreCloPrice) * 100);	//’«∑˘
-		pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 23, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 24), DT_RIGHT);
+		pRT->SetTextColor(RGBA(255, 255, 255, 255));
+		_swprintf(szTmp, L"-");
+		left = m_rect.left + 30;
+		right = m_rect.left + nWidth * 2;
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(1), right, VPOS(2)),
+			DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+		left = m_rect.left + nWidth * 2 + 40;
+		right = m_rect.left + nWidth * 4;
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(1), right, VPOS(2)),
+			DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+
 	}
-	pRT->SetTextColor(RGBA(255, 0, 0, 255));
-	_swprintf(szTmp, L"%.02f", m_StockTick.PreCloPrice * (1 + m_fMaxChgPct));	//’«Õ£r
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 24, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 25), DT_RIGHT);
+
+
+	//Ê®™Á∫ø
+	point[0].SetPoint(m_rect.left - 5, VPOS(22));
+	point[1].SetPoint(m_rect.right, VPOS(22));
+	pRT->DrawLines(point, 2);
+
+	//Á¨¨‰∏ÄÂàó
+	left = m_rect.left - 5;
+	right = m_rect.left + 30;
+
+	pRT->SetTextColor(RGBA(255, 255, 255, 255));
+	pRT->DrawTextW(L"ÊúÄÊñ∞", 2,
+		CRect(left, VPOS(22), right, VPOS(23)),
+		DT_LEFT);
+	pRT->DrawTextW(L"Ê∂®Ë∑å", 2,
+		CRect(left, VPOS(23), right, VPOS(24)),
+		DT_LEFT);
+	pRT->DrawTextW(L"Ê∂®ÂπÖ", 2,
+		CRect(left, VPOS(24), right, VPOS(25)),
+		DT_LEFT);
+	pRT->DrawTextW(L"Ê∂®ÂÅú", 2,
+		CRect(left, VPOS(25), right, VPOS(26)),
+		DT_LEFT);
+	pRT->DrawTextW(L"ÊÄªÊâã", 2,
+		CRect(left, VPOS(26), right, VPOS(27)),
+		DT_LEFT);
+	pRT->DrawTextW(L"Êò®Êî∂", 2,
+		CRect(left, VPOS(27), right, VPOS(28)),
+		DT_LEFT);
+
+	left = m_rect.left + nWidth * 2 + 10;
+	right = m_rect.left + nWidth * 2 + 40;
+	pRT->DrawTextW(L"ÂºÄÁõò", 2,
+		CRect(left, VPOS(22), right, VPOS(23)),
+		DT_LEFT);
+	pRT->DrawTextW(L"ÊúÄÈ´ò", 2,
+		CRect(left, VPOS(23), right, VPOS(24)),
+		DT_LEFT);
+	pRT->DrawTextW(L"ÊúÄ‰Ωé", 2,
+		CRect(left, VPOS(24), right, VPOS(25)),
+		DT_LEFT);
+	pRT->DrawTextW(L"Ë∑åÂÅú", 2,
+		CRect(left, VPOS(25), right, VPOS(26)),
+		DT_LEFT);
+	pRT->DrawTextW(L"ÈáëÈ¢ù", 2,
+		CRect(left, VPOS(26), right, VPOS(27)),
+		DT_LEFT);
+
+	//Êï∞ÊçÆ
+	left = m_rect.left + 30;
+	right = m_rect.left + nWidth * 2;
+	pRT->SetTextColor(GetTextColor(m_StockTick.LastPrice));
+	if (m_StockTick.LastPrice > 10000000
+		|| m_StockTick.LastPrice < 0)
+	{
+		_swprintf(szTmp, L"‚Äî");	//ÊúÄÊñ∞
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(22), right, VPOS(23)),
+			DT_RIGHT);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(23), right, VPOS(24)),
+			DT_RIGHT);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(24), right, VPOS(25)),
+			DT_RIGHT);
+	}
+	else
+	{
+		_swprintf(szTmp, L"%.02f", m_StockTick.LastPrice);	//ÊúÄÊñ∞
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(22), right, VPOS(23)),
+			DT_RIGHT);
+		_swprintf(szTmp, L"%.02f",
+			m_StockTick.LastPrice - m_StockTick.PreCloPrice);	//Ê∂®Ë∑å
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(23), right, VPOS(24)),
+			DT_RIGHT);
+		_swprintf(szTmp, L"%.2f%%",
+			(m_StockTick.LastPrice - m_StockTick.PreCloPrice)
+			/ (m_StockTick.PreCloPrice) * 100);	//Ê∂®ÂπÖ
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(24), right, VPOS(25)),
+			DT_RIGHT);
+	}
+	pRT->SetTextColor(RGBA(255, 31, 31, 255));
+	_swprintf(szTmp, L"%.02f",
+		m_StockTick.PreCloPrice * (1 + m_fMaxChgPct));	//Ê∂®ÂÅúr
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(25), right, VPOS(26)),
+		DT_RIGHT);
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
 
 	m_StockTick.Volume /= 100;
 	if (m_StockTick.Volume > 1'000'000)
-		_swprintf(szTmp, L"%.2fÕÚ", m_StockTick.Volume / 10'000.0);	//◊Ú ’
+		_swprintf(szTmp, L"%.2f‰∏á", m_StockTick.Volume / 10'000.0);	//Êò®Êî∂
 	else
-		_swprintf(szTmp, L"%lld", m_StockTick.Volume);	//◊Ú ’
+		_swprintf(szTmp, L"%lld", m_StockTick.Volume);	
 
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 25, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 26), DT_RIGHT);
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(26), right, VPOS(27)),
+		DT_RIGHT);
 
-	_swprintf(szTmp, L"%.02f", m_StockTick.PreCloPrice);	//◊Ú ’
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH) * 26, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH) * 27), DT_RIGHT);
+	_swprintf(szTmp, L"%.02f", m_StockTick.PreCloPrice);	//Êò®Êî∂
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(27), right, VPOS(28)),
+		DT_RIGHT);
 
-	//ø™≈Ã
+	left = m_rect.left + nWidth * 2 + 40;
+	right = m_rect.left + nWidth * 4;
+	//ÂºÄÁõò
 	pRT->SetTextColor(GetTextColor(m_StockTick.OpenPrice));
 	if (m_StockTick.OpenPrice > 10000000 || m_StockTick.OpenPrice < 0)
-		_swprintf(szTmp, L"°™");
+		_swprintf(szTmp, L"‚Äî");
 	else
-		_swprintf(szTmp, L"%.02f", m_StockTick.OpenPrice);	//ø™≈Ã
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 21, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH) * 22), DT_RIGHT);
+		_swprintf(szTmp, L"%.02f", m_StockTick.OpenPrice);	//ÂºÄÁõò
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(22), right, VPOS(23)),
+		DT_RIGHT);
 
-	//◊Ó∏ﬂ
+	//ÊúÄÈ´ò
 	pRT->SetTextColor(GetTextColor(m_StockTick.HighPrice));
 	if (m_StockTick.HighPrice > 10000000 || m_StockTick.HighPrice < 0)
-		_swprintf(szTmp, L"°™");
+		_swprintf(szTmp, L"‚Äî");
 	else
 		_swprintf(szTmp, L"%.02f", m_StockTick.HighPrice);
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 22, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH) * 23), DT_RIGHT);
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(23), right, VPOS(24)),
+		DT_RIGHT);
 
-	//◊ÓµÕ
+	//ÊúÄ‰Ωé
 	pRT->SetTextColor(GetTextColor(m_StockTick.LowPrice));
 	if (m_StockTick.LowPrice > 10000000 || m_StockTick.LowPrice < 0)
-		_swprintf(szTmp, L"°™");
+		_swprintf(szTmp, L"‚Äî");
 	else
 		_swprintf(szTmp, L"%.02f", m_StockTick.LowPrice);
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 23, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH) * 24), DT_RIGHT);
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(24), right, VPOS(25)),
+		DT_RIGHT);
 	pRT->SetTextColor(RGBA(0, 255, 0, 255));
-	_swprintf(szTmp, L"%.02f", m_StockTick.PreCloPrice * (1 - m_fMaxChgPct));	//µ¯Õ£
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 24, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH) * 25), DT_RIGHT);
+	_swprintf(szTmp, L"%.02f",
+		m_StockTick.PreCloPrice * (1 - m_fMaxChgPct));	//Ë∑åÂÅú
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(25), right, VPOS(26)),
+		DT_RIGHT);
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	//	pRT->SetTextColor(RGBA(255, 255, 0, 255));
-	//	pRT->DrawTextW(L"--", 2, CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH)* 25, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH)* 26), DT_RIGHT);
 	if (m_StockTick.Turnover > 100'000'000'000)
-		_swprintf(szTmp, L"%.0f“⁄", m_StockTick.Turnover / 100'000'000);	//µ¯Õ£
+		_swprintf(szTmp, L"%.0f‰∫ø", m_StockTick.Turnover / 100'000'000);
 	else if (m_StockTick.Turnover > 100'000'000)
-		_swprintf(szTmp, L"%.02f“⁄", m_StockTick.Turnover / 100'000'000);	//µ¯Õ£
+		_swprintf(szTmp, L"%.02f‰∫ø", m_StockTick.Turnover / 100'000'000);
 	else if (m_StockTick.Turnover > 1'000'000)
-		_swprintf(szTmp, L"%.02fÕÚ", m_StockTick.Turnover / 10'000);	//µ¯Õ£
+		_swprintf(szTmp, L"%.0f‰∏á", m_StockTick.Turnover / 10'000);
 	else
-		_swprintf(szTmp, L"%.0f", m_StockTick.Turnover);	//µ¯Õ£
-	pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH) * 25, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH) * 26), DT_RIGHT);
+		_swprintf(szTmp, L"%.0f", m_StockTick.Turnover);	//Ë∑åÂÅú
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(26), right, VPOS(27)),
+		DT_RIGHT);
 
 
-	//∫·œﬂ
-	point[0].SetPoint(m_rect.left, m_rect.top + (RC_PRH) * 26 + 22);
-	point[1].SetPoint(m_rect.right, m_rect.top + (RC_PRH) * 26 + 22);
+	//Ê®™Á∫ø
+	point[0].SetPoint(m_rect.left - 5, VPOS(27) + 22);
+	point[1].SetPoint(m_rect.right, VPOS(27) + 22);
 	pRT->DrawLines(point, 2);
 
-	// ˙œﬂ
-	for (int i = m_rect.top + RC_PRH * 21; i < m_rect.top + (RC_PRH) * 26; i += 3)
+	//Á´ñÁ∫ø
+	for (int i = VPOS(22); i < VPOS(28); i += 3)
 		pRT->SetPixel(m_rect.left + nWidth * 2 + 5, i, RGB(0, 0, 255));
 	pRT->SelectObject(OldFont);
 
@@ -497,244 +607,182 @@ void SOUI::CPriceList::DrawIndexModeOne(IRenderTarget * pRT)
 
 	pRT->SetTextColor(RGBA(255, 255, 0, 255));
 	SStringW strTmp = StrA2StrW(m_strStockName);
-	pRT->DrawTextW(strTmp, strTmp.GetLength(), 
-		CRect(m_rect.left + 40, 
-			m_rect.top-5, 
-			m_rect.left + nWidth * 2 + 80, 
-			m_rect.top + RC_PRH), 
-		DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-	strTmp = L"";
-	//	pRT->DrawTextW(strTmp, strTmp.GetLength(), CRect(m_rect.left + nWidth * 2 + 40, m_rect.top, m_rect.right, m_rect.top + RC_PRH + 5), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	pRT->DrawTextW(strTmp, strTmp.GetLength(),
+		CRect(m_rect.left + 20,
+			m_rect.top - 5,
+			m_rect.left + nWidth * 2 + 80,
+			m_rect.top + RC_PRH),
+		DT_CENTER | DT_TOP | DT_SINGLELINE);
 	pRT->SelectObject(OldFont);
 	pRT->SelectObject(m_pFont15, (IRenderObj**)&OldFont);
+	strTmp = StrA2StrW(m_strSubIns);
+	if (strTmp.GetLength() == 7)
+		strTmp = strTmp.Left(6);
+	pRT->DrawTextW(strTmp, strTmp.GetLength(),
+		CRect(m_rect.left + 20, m_rect.top,
+			m_rect.left + nWidth * 2 + 80, VPOS(2) - SPACE),
+		DT_CENTER | DT_BOTTOM | DT_SINGLELINE);
 
-	//∫·œﬂ
-	point[0].SetPoint(m_rect.left, m_rect.top + (RC_PRH + 5) + 4);
-	point[1].SetPoint(m_rect.right + 5, m_rect.top + (RC_PRH + 5) + 4);
+	strTmp = L"";
+	//Ê®™Á∫ø
+	point[0].SetPoint(m_rect.left, VPOS(2) - SPACE);
+	point[1].SetPoint(m_rect.right + 5, VPOS(2) - SPACE);
 	pRT->DrawLines(point, 2);
 
-	//pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	//pRT->DrawTextW(L"¬Ù", wcslen(L"¬Ù"), CRect(m_rect.left + 10, m_rect.top + RC_PRH + 5, m_rect.left + 30, m_rect.top + (RC_PRH + 5) * 2), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	//pRT->DrawTextW(L"¬Ú", wcslen(L"¬Ú"), CRect(m_rect.left + 10, m_rect.top + (RC_PRH + 5) * 2, m_rect.left + 30, m_rect.top + (RC_PRH + 5) * 3), DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	////∫·œﬂ
-	//point[0].SetPoint(m_rect.left, m_rect.top + (RC_PRH + 5) * 2);
-	//point[1].SetPoint(m_rect.right + 5, m_rect.top + (RC_PRH + 5) * 2);
-	//pRT->DrawLines(point, 2);
-
-	////¡ø
-	//_swprintf(szTmp, L"-");
-	//pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_PRH + 5, m_rect.left + nWidth * 4 - 10, m_rect.top + (RC_PRH + 5) * 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	//_swprintf(szTmp, L"-");
-	//pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + (RC_PRH + 5) * 2, m_rect.left + nWidth * 4 - 10, m_rect.top + (RC_PRH + 5) * 3), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	////¬Ú“ª¬Ù“ªº€
-	//pRT->SetTextColor(RGBA(255, 255, 0, 0));
-	//_swprintf(szTmp, L"-");
-	//pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + RC_PRH + 5, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH + 5) * 2), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	//_swprintf(szTmp, L"-");
-	//pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + 30, m_rect.top + (RC_PRH + 5) * 2, m_rect.left + nWidth * 2, m_rect.top + (RC_PRH + 5) * 3), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-	////∫·œﬂ
-	//point[0].SetPoint(m_rect.left, m_rect.top + (RC_PRH + 5) * 3);
-	//point[1].SetPoint(m_rect.right, m_rect.top + (RC_PRH + 5) * 3);
-	//pRT->DrawLines(point, 2);
-
+	//Á¨¨‰∏ÄÂàóÊï∞ÊçÆ
+	int left = m_rect.left;
+	int right = m_rect.left + 30;
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	pRT->DrawTextW(L"◊Ó–¬", 2, 
-		CRect(m_rect.left, 
-			m_rect.top + (RC_PRH + 5) * 1 + 20, 
-			m_rect.left + 30, 
-			m_rect.top + (RC_PRH + 5) * 2 + 20), 
+	pRT->DrawTextW(L"ÊúÄÊñ∞", 2,
+		CRect(left, VPOS(2), right, VPOS(3)),
 		DT_LEFT);
-	pRT->DrawTextW(L"’«µ¯", 2, 
-		CRect(m_rect.left, 
-			m_rect.top + (RC_PRH + 5) * 2 + 20, 
-			m_rect.left + 30, 
-			m_rect.top + (RC_PRH + 5) * 3 + 20),
+	pRT->DrawTextW(L"Ê∂®Ë∑å", 2,
+		CRect(left, VPOS(3), right, VPOS(4)),
 		DT_LEFT);
-	pRT->DrawTextW(L"’«∑˘", 2, 
-		CRect(m_rect.left, 
-			m_rect.top + (RC_PRH + 5) * 3 + 20, 
-			m_rect.left + 30,
-			m_rect.top + (RC_PRH + 5) * 4 + 20), 
+	pRT->DrawTextW(L"Ê∂®ÂπÖ", 2,
+		CRect(left, VPOS(4), right, VPOS(5)),
 		DT_LEFT);
-	pRT->DrawTextW(L"◊‹ ÷", 2,
-		CRect(m_rect.left, 
-			m_rect.top + (RC_PRH + 5) * 4 + 20, 
-			m_rect.left + 30,
-			m_rect.top + (RC_PRH + 5) * 5 + 20),
+	pRT->DrawTextW(L"ÊÄªÊâã", 2,
+		CRect(left, VPOS(5), right, VPOS(6)),
 		DT_LEFT);
-	pRT->DrawTextW(L"◊Ú ’", 2,
-		CRect(m_rect.left, 
-			m_rect.top + (RC_PRH + 5) * 5 + 20,
-			m_rect.left + 30, 
-			m_rect.top + (RC_PRH + 5) * 6 + 20),
+	pRT->DrawTextW(L"Êò®Êî∂", 2,
+		CRect(left, VPOS(6), right, VPOS(7)),
 		DT_LEFT);
 
-	pRT->DrawTextW(L"ø™≈Ã", 2, 
-		CRect(m_rect.left + nWidth * 2 + 10,
-			m_rect.top + (RC_PRH + 5) * 1 + 20,
-			m_rect.left + nWidth * 2 + 40, 
-			m_rect.top + (RC_PRH + 5) * 2 + 20), 
+	//Á¨¨‰∫åÂàó
+	left = m_rect.left + nWidth * 2 + 10;
+	right = m_rect.left + nWidth * 2 + 40;
+	pRT->DrawTextW(L"ÂºÄÁõò", 2,
+		CRect(left, VPOS(2), right, VPOS(3)),
 		DT_LEFT);
-	pRT->DrawTextW(L"◊Ó∏ﬂ", 2, 
-		CRect(m_rect.left + nWidth * 2 + 10,
-			m_rect.top + (RC_PRH + 5) * 2 + 20, 
-			m_rect.left + nWidth * 2 + 40,
-			m_rect.top + (RC_PRH + 5) * 3 + 20),
+	pRT->DrawTextW(L"ÊúÄÈ´ò", 2,
+		CRect(left, VPOS(3), right, VPOS(4)),
 		DT_LEFT);
-	pRT->DrawTextW(L"◊ÓµÕ", 2,
-		CRect(m_rect.left + nWidth * 2 + 10,
-			m_rect.top + (RC_PRH + 5) * 3 + 20,
-			m_rect.left + nWidth * 2 + 40, 
-			m_rect.top + (RC_PRH + 5) * 4 + 20), 
+	pRT->DrawTextW(L"ÊúÄ‰Ωé", 2,
+		CRect(left, VPOS(4), right, VPOS(5)),
 		DT_LEFT);
-	pRT->DrawTextW(L"Ω∂Ó", 2, 
-		CRect(m_rect.left + nWidth * 2 + 10,
-			m_rect.top + (RC_PRH + 5) * 4 + 20,
-			m_rect.left + nWidth * 2 + 40,
-			m_rect.top + (RC_PRH + 5) * 5 + 20),
+	pRT->DrawTextW(L"ÈáëÈ¢ù", 2,
+		CRect(left, VPOS(5), right, VPOS(6)),
 		DT_LEFT);
 
 	pRT->SetTextColor(GetTextColor(m_IndexTick.LastPrice));
-	if (m_IndexTick.LastPrice > 10000000 || m_IndexTick.LastPrice < 0)
+	left = m_rect.left + 30;
+	right = m_rect.left + nWidth * 2;
+	if (m_IndexTick.LastPrice > 10000000
+		|| m_IndexTick.LastPrice < 0)
 	{
-		_swprintf(szTmp, L"°™");	//◊Ó–¬
+		_swprintf(szTmp, L"‚Äî");
 		pRT->DrawTextW(szTmp, wcslen(szTmp),
-			CRect(m_rect.left + 30,
-				m_rect.top + (RC_PRH + 5) * 1 + 20, 
-				m_rect.left + nWidth * 2,
-				m_rect.top + (RC_PRH + 5) * 2 + 20), 
+			CRect(left, VPOS(2), right, VPOS(3)),
 			DT_RIGHT);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), 
-			CRect(m_rect.left + 30,
-				m_rect.top + (RC_PRH + 5) * 2 + 20, 
-				m_rect.left + nWidth * 2, 
-				m_rect.top + (RC_PRH + 5) * 3 + 20), 
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(3), right, VPOS(4)),
 			DT_RIGHT);
-		pRT->DrawTextW(szTmp, wcslen(szTmp), 
-			CRect(m_rect.left + 30, 
-				m_rect.top + (RC_PRH + 5) * 3 + 20, 
-				m_rect.left + nWidth * 2, 
-				m_rect.top + (RC_PRH + 5) * 4 + 20), 
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(4), right, VPOS(5)),
 			DT_RIGHT);
 	}
 	else
 	{
-		_swprintf(szTmp, L"%.02f", m_IndexTick.LastPrice);	//◊Ó–¬
-		pRT->DrawTextW(szTmp, wcslen(szTmp), 
-			CRect(m_rect.left + 30, 
-				m_rect.top + (RC_PRH + 5) * 1 + 20, 
-				m_rect.left + nWidth * 2, 
-				m_rect.top + (RC_PRH + 5) * 2 + 20),
+		//ÊúÄÊñ∞‰ª∑
+		_swprintf(szTmp, L"%.02f", m_IndexTick.LastPrice);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(2), right, VPOS(3)),
 			DT_RIGHT);
-		double change = m_IndexTick.LastPrice - m_IndexTick.PreCloPrice;
-		_swprintf(szTmp, L"%.2f", change);	//’«µ¯
-		pRT->DrawTextW(szTmp, wcslen(szTmp), 
-			CRect(m_rect.left + 30,
-				m_rect.top + (RC_PRH + 5) * 2 + 20, 
-				m_rect.left + nWidth * 2,
-				m_rect.top + (RC_PRH + 5) * 3 + 20),
+		//Ê∂®Ë∑å
+		double change = m_IndexTick.LastPrice
+			- m_IndexTick.PreCloPrice;
+		_swprintf(szTmp, L"%.2f", change);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(3), right, VPOS(4)),
 			DT_RIGHT);
-		_swprintf(szTmp, L"%.2f%%", change / m_IndexTick.PreCloPrice * 100);//’«∑˘
-		pRT->DrawTextW(szTmp, wcslen(szTmp), 
-			CRect(m_rect.left + 30, 
-				m_rect.top + (RC_PRH + 5) * 3 + 20,
-				m_rect.left + nWidth * 2, 
-				m_rect.top + (RC_PRH + 5) * 4 + 20),
+		//Ê∂®ÂπÖ
+		_swprintf(szTmp, L"%.2f%%",
+			change / m_IndexTick.PreCloPrice * 100);
+		pRT->DrawTextW(szTmp, wcslen(szTmp),
+			CRect(left, VPOS(4), right, VPOS(5)),
 			DT_RIGHT);
 	}
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
 	if (m_IndexTick.SecurityID[0] == '8')
 		m_IndexTick.Volume /= 100;
 	if (m_IndexTick.Volume > 1'000'000)
-		_swprintf(szTmp, L"%dÕÚ", m_IndexTick.Volume / 10'000);	//’«Õ£r
+		_swprintf(szTmp, L"%d‰∏á", m_IndexTick.Volume / 10'000);
 	else
-		_swprintf(szTmp, L"%d", m_IndexTick.Volume);	//’«Õ£r
+		_swprintf(szTmp, L"%d", m_IndexTick.Volume);
 
-	pRT->DrawTextW(szTmp, wcslen(szTmp), 
-		CRect(m_rect.left + 30,
-			m_rect.top + (RC_PRH + 5) * 4 + 20, 
-			m_rect.left + nWidth * 2, 
-			m_rect.top + (RC_PRH + 5) * 5 + 20), 
-		DT_RIGHT);
-	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	_swprintf(szTmp, L"%.02f", m_IndexTick.PreCloPrice);	//◊Ú ’
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
-		CRect(m_rect.left + 30, 
-			m_rect.top + (RC_PRH + 5) * 5 + 20, 
-			m_rect.left + nWidth * 2, 
-			m_rect.top + (RC_PRH + 5) * 6 + 20),
+		CRect(left, VPOS(5), right, VPOS(6)),
 		DT_RIGHT);
 
-	//ø™≈Ã
+	//Êò®Êî∂
+	pRT->SetTextColor(RGBA(255, 255, 255, 255));
+	_swprintf(szTmp, L"%.02f", m_IndexTick.PreCloPrice);
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(6), right, VPOS(7)),
+		DT_RIGHT);
+
+	left = m_rect.left + nWidth * 2 + 40;
+	right = m_rect.left + nWidth * 4;
+	//ÂºÄÁõò
 	pRT->SetTextColor(GetTextColor(m_IndexTick.OpenPrice));
 	if (m_IndexTick.OpenPrice > 10000000 || m_IndexTick.OpenPrice < 0)
-		_swprintf(szTmp, L"°™");
+		_swprintf(szTmp, L"‚Äî");
 	else
-		_swprintf(szTmp, L"%.02f", m_IndexTick.OpenPrice);	//ø™≈Ã
-	pRT->DrawTextW(szTmp, wcslen(szTmp), 
-		CRect(m_rect.left + nWidth * 2 + 40, 
-			m_rect.top + (RC_PRH + 5) * 1 + 20, 
-			m_rect.left + nWidth * 4, 
-			m_rect.top + (RC_PRH + 5) * 2 + 20),
+		_swprintf(szTmp, L"%.02f", m_IndexTick.OpenPrice);	//ÂºÄÁõò
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(2), right, VPOS(3)),
 		DT_RIGHT);
 
-	//◊Ó∏ﬂ
+	//ÊúÄÈ´ò
 	pRT->SetTextColor(GetTextColor(m_IndexTick.HighPrice));
 	if (m_IndexTick.HighPrice > 10000000 || m_IndexTick.HighPrice < 0)
-		_swprintf(szTmp, L"°™");
+		_swprintf(szTmp, L"‚Äî");
 	else
 		_swprintf(szTmp, L"%.02f", m_IndexTick.HighPrice);
-	pRT->DrawTextW(szTmp, wcslen(szTmp), 
-		CRect(m_rect.left + nWidth * 2 + 40, 
-			m_rect.top + (RC_PRH + 5) * 2 + 20,
-			m_rect.left + nWidth * 4, 
-			m_rect.top + (RC_PRH + 5) * 3 + 20),
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(3), right, VPOS(4)),
 		DT_RIGHT);
 
-	//◊ÓµÕ
+	//ÊúÄ‰Ωé
 	pRT->SetTextColor(GetTextColor(m_IndexTick.LowPrice));
 	if (m_IndexTick.LowPrice > 10000000 || m_IndexTick.LowPrice < 0)
-		_swprintf(szTmp, L"°™");
+		_swprintf(szTmp, L"‚Äî");
 	else
 		_swprintf(szTmp, L"%.02f", m_IndexTick.LowPrice);
-	pRT->DrawTextW(szTmp, wcslen(szTmp), 
-		CRect(m_rect.left + nWidth * 2 + 40,
-			m_rect.top + (RC_PRH + 5) * 3 + 20, 
-			m_rect.left + nWidth * 4, 
-			m_rect.top + (RC_PRH + 5) * 4 + 20), 
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(4), right, VPOS(5)),
 		DT_RIGHT);
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
 
-	//Ω∂Ó
+	//ÈáëÈ¢ù
 	if (m_IndexTick.Turnover > 10'000'000'000)
-		_swprintf(szTmp, L"%.0f“⁄", m_IndexTick.Turnover / 100'000'000);	
+		_swprintf(szTmp, L"%.0f‰∫ø",
+			m_IndexTick.Turnover / 100'000'000);
 	else if (m_IndexTick.Turnover > 100'000'000)
-		_swprintf(szTmp, L"%.02f“⁄", m_IndexTick.Turnover / 100'000'000);	//µ¯Õ£
+		_swprintf(szTmp, L"%.02f‰∫ø",
+			m_IndexTick.Turnover / 100'000'000);
 	else if (m_IndexTick.Turnover > 1'000'000)
-		_swprintf(szTmp, L"%.02fÕÚ", m_IndexTick.Turnover / 10'000);	//µ¯Õ£
+		_swprintf(szTmp, L"%.02f‰∏á",
+			m_IndexTick.Turnover / 10'000);
 	else
-		_swprintf(szTmp, L"%.0f", m_IndexTick.Turnover);	//µ¯Õ£
+		_swprintf(szTmp, L"%.0f", m_IndexTick.Turnover);	//Ë∑åÂÅú
 
-	//_swprintf(szTmp, L"-");	//µ¯Õ£
-	pRT->DrawTextW(szTmp, wcslen(szTmp), 
-		CRect(m_rect.left + nWidth * 2 + 40, 
-			m_rect.top + (RC_PRH + 5) * 4 + 20,
-			m_rect.left + nWidth * 4, 
-			m_rect.top + (RC_PRH + 5) * 5 + 20), 
+	//_swprintf(szTmp, L"-");	//Ë∑åÂÅú
+	pRT->DrawTextW(szTmp, wcslen(szTmp),
+		CRect(left, VPOS(5), right, VPOS(6)),
 		DT_RIGHT);
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	//	pRT->SetTextColor(RGBA(255, 255, 0, 255));
-	//	pRT->DrawTextW(L"--", 2, CRect(m_rect.left + nWidth * 2 + 40, m_rect.top + (RC_PRH + 5)* 7 + 20, m_rect.left + nWidth * 4, m_rect.top + (RC_PRH + 5)* 8 + 20), DT_RIGHT);
 
-
-	//∫·œﬂ
-	point[0].SetPoint(m_rect.left, m_rect.top + (RC_PRH + 5) * 6 + 17);
-	point[1].SetPoint(m_rect.right, m_rect.top + (RC_PRH + 5) * 6 + 17);
+	//Ê®™Á∫ø
+	point[0].SetPoint(m_rect.left, VPOS(7));
+	point[1].SetPoint(m_rect.right, VPOS(7));
 	pRT->DrawLines(point, 2);
 
-	// ˙œﬂ
-	for (int i = m_rect.top + (RC_PRH + 5) * 1; i < m_rect.top + (RC_PRH + 5) * 6 + 17; i += 3)
-		pRT->SetPixel(m_rect.left + nWidth * 2 + 5, i, RGB(0, 0, 255));
+	//Á´ñÁ∫ø
+	for (int i = VPOS(2); i < VPOS(7); i += 3)
+		pRT->SetPixel(m_rect.left + nWidth * 2 + 5,
+			i, RGB(0, 0, 255));
 	pRT->SelectObject(OldFont);
 
 }
@@ -748,7 +796,7 @@ COLORREF CPriceList::GetTextColor(double price)
 		if (price > 10000000 || price < 0)
 			return RGBA(255, 255, 255, 255);
 		if (price > m_StockTick.PreCloPrice)
-			return RGBA(255, 0, 0, 255);
+			return RGBA(255, 31, 31, 255);
 		else if (price < m_StockTick.PreCloPrice)
 			return RGBA(0, 255, 0, 255);
 		return RGBA(255, 255, 255, 255);
@@ -759,7 +807,7 @@ COLORREF CPriceList::GetTextColor(double price)
 		if (price > 10000000 || price < 0)
 			return RGBA(255, 255, 255, 255);
 		if (price > m_IndexTick.PreCloPrice)
-			return RGBA(255, 0, 0, 255);
+			return RGBA(255, 31, 31, 255);
 		else if (price < m_IndexTick.PreCloPrice)
 			return RGBA(0, 255, 0, 255);
 		return RGBA(255, 255, 255, 255);

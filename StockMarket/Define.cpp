@@ -32,7 +32,6 @@ SStringA StrW2StrA(const SStringW &cstrSrcW)
 
 int SendMsg(unsigned uThreadId, unsigned MsgType, char *SendBuf, unsigned BufLen)
 {
-	int tick = GetTickCount();
 	if (uThreadId <= 0)
 		return InvalidThreadId;
 	char *buf;
@@ -48,13 +47,6 @@ int SendMsg(unsigned uThreadId, unsigned MsgType, char *SendBuf, unsigned BufLen
 		memcpy(buf, SendBuf, BufLen);
 	}
 	int ret = PostThreadMessage(uThreadId, MsgType, (WPARAM)buf, (LPARAM)BufLen);
-	tick = GetTickCount() - tick;
-	if (MsgType == UpdateHisStockMarket)
-	{
-		SStringA str;
-		str.Format("传输花费时间为%llds\n", tick / 1000);
-		OutputDebugStringA(str);
-	}
 	return ret;
 }
 
@@ -78,7 +70,7 @@ void InitLogFile()
 {
 	::InitializeCriticalSection(&g_csLogFile);
 	SStringA strPath = ".//trace";
-	if(_access(strPath,0)==-1)
+	if (_access(strPath, 0) == -1)
 		CreateDirectoryA(strPath, NULL);
 
 	SYSTEMTIME st;
@@ -123,7 +115,7 @@ void InitLogFile()
 			DeleteFileA(strPath + fileName);
 	}
 
-	sprintf_s(g_strLogFile, "%strace_%04d%02d%02d.log", strPath,st.wYear, st.wMonth, st.wDay);
+	sprintf_s(g_strLogFile, "%strace_%04d%02d%02d.log", strPath, st.wYear, st.wMonth, st.wDay);
 }
 
 void TraceLog(char * log, ...)

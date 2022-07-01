@@ -16,6 +16,7 @@ extern HWND g_MainWnd;
 
 #define sDimical L"%.02f"
 //RpsGroup SFenShiPic::m_rgClickGroup = Group_Count;
+#define MAX_SUBWINDOW 5
 
 SFenShiPic::SFenShiPic()
 {
@@ -31,20 +32,20 @@ SFenShiPic::SFenShiPic()
 	m_nPaintTick = GetTickCount();
 	m_bDataInited = false;
 
-
+	m_nSubPicNum = 0;
 	m_nNowPosition = 0;
 	m_bShowMouseLine = false;
 	m_bKeyDown = false;
 	m_bIsFirstKey = true;
 	m_bShowDeal = true;
-	m_bShowSubPic = true;
+	m_pbShowSubPic = nullptr;
 	m_bShowAvg = true;
 	m_bPaintInit = FALSE;
 
 
 	m_pDealList = new CDealList;
 	m_pPriceList = new CPriceList;
-	m_pSubPic = new SSubTargetPic();
+	m_ppSubPic = nullptr;
 	m_bIsStockIndex = false;
 	m_preMovePt.SetPoint(-1, -1);
 
@@ -61,12 +62,47 @@ SFenShiPic::SFenShiPic()
 
 SFenShiPic::~SFenShiPic()
 {
-	delete m_pData;
-	delete m_pDealList;
-	delete m_pPriceList;
+	if (m_pData)
+		delete m_pData;
+	if (m_pPriceList)
+		delete m_pPriceList;
+	if (m_pDealList)
+		delete m_pDealList;
+	if (m_ppSubPic)
+	{
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			delete m_ppSubPic[i];
+		delete[]m_ppSubPic;
+	}
+	if (m_pbShowSubPic)
+		delete[]m_pbShowSubPic;
+
 }
 
-void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec)
+void SFenShiPic::InitSubPic(int nNum, vector<SStringA> & picNameVec)
+{
+	if (m_ppSubPic)
+	{
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			delete m_ppSubPic[i];
+		delete[]m_ppSubPic;
+	}
+
+	if (m_pbShowSubPic)
+		delete[]m_pbShowSubPic;
+	m_nSubPicNum = nNum;
+	m_ppSubPic = new SSubTargetPic*[nNum];
+	for (int i = 0; i < nNum; ++i)
+	{
+		m_ppSubPic[i] = new SSubTargetPic;
+		m_ppSubPic[i]->SetSubPicName(picNameVec[i]);
+	}
+	m_pbShowSubPic = new BOOL[nNum];
+
+}
+
+void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, 
+	vector<CommonIndexMarket>* pIdxMarketVec)
 {
 	KillTimer(1);
 	m_bDataInited = false;
@@ -82,7 +118,8 @@ void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonI
 	//	m_pData->fPreClose = fPreClose;
 }
 
-void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec)
+void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, 
+	vector<CommonStockMarket>* pStkMarketVec)
 {
 	KillTimer(1);
 	m_bDataInited = false;
@@ -101,13 +138,18 @@ void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonS
 
 void SFenShiPic::SetSubPicShowData(int nIndex, bool nGroup)
 {
-	m_pSubPic->SetShowData(nIndex, nGroup);
+	for(int i=0;i<m_nSubPicNum;++i)
+		m_ppSubPic[i]->SetShowData(nIndex, nGroup);
 }
 
-void SFenShiPic::SetSubPicShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec,
-	vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName)
+void SFenShiPic::SetSubPicShowData(int nDataCount[], 
+	vector<vector<vector<CoreData>*>>& data, vector<vector<BOOL>> bRightVec,
+	vector<vector<SStringA>> dataNameVec, SStringA StockID, SStringA StockName)
 {
-	m_pSubPic->SetShowData(nDataCount, data, bRightVec, dataNameVec, StockID, StockName);
+	for(int i=0;i<m_nSubPicNum;++i)
+		m_ppSubPic[i]->SetShowData(
+		nDataCount[i], &data[i][0], bRightVec[i], dataNameVec[i],
+			StockID, StockName);
 }
 
 
@@ -120,6 +162,8 @@ void SFenShiPic::InitShowPara(InitPara_t para)
 	m_bShowVolume = para.bShowTSCVolume;
 	m_bShowAvg = para.bShowAverage;
 	m_bShowEMA = para.bShowEMA;
+	for (int i = 0; i < m_nSubPicNum;++i)
+		m_pbShowSubPic[i] = para.bShowTSCRPS[i];
 	m_nEMAPara[0] = para.nEMAPara[0];
 	m_nEMAPara[1] = para.nEMAPara[1];
 	m_nMACDPara[0] = para.nMACDPara[0];
@@ -135,6 +179,8 @@ void SOUI::SFenShiPic::OutPutShowPara(InitPara_t & para)
 	para.bShowTSCVolume = m_bShowVolume;
 	para.bShowAverage = m_bShowAvg;
 	para.bShowEMA = m_bShowEMA;
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		para.bShowTSCRPS[i] = m_pbShowSubPic[i];
 	para.nEMAPara[0] = m_nEMAPara[0];
 	para.nEMAPara[1] = m_nEMAPara[1];
 	para.nMACDPara[0] = m_nMACDPara[0];
@@ -157,7 +203,8 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 	if (!m_bPaintInit)
 	{
 		m_bPaintInit = true;
-		m_pSubPic->InitColorAndPen(pRT);
+		for(int i=0;i<m_nSubPicNum;++i)
+			m_ppSubPic[i]->InitColorAndPen(pRT);
 	}
 
 	pRT->SetAttribute(L"antiAlias", L"0", FALSE);
@@ -202,8 +249,8 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 		DrawData(pRT);
 	}
 
-	//if (m_bShowSubPic)
-	//	m_pSubPic->OnPaint(pRT);
+	//if (m_pbShowSubPic)
+	//	m_ppSubPic->OnPaint(pRT);
 
 	if (m_bShowDeal)
 	{
@@ -214,7 +261,8 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 
 	CPoint po(m_nMouseX, m_nMouseY);
 	m_nMouseX = m_nMouseY = -1;
-	m_pSubPic->SetMousePosDefault();
+	for(int i=0;i<m_nSubPicNum;++i)
+		m_ppSubPic[i]->SetMousePosDefault();
 	LONGLONG llTmp3 = GetTickCount64();
 	if (m_bKeyDown)
 		DrawKeyDownMouseLine(pRT, 0);
@@ -370,8 +418,11 @@ void SFenShiPic::DrawArrow(IRenderTarget * pRT)
 		}
 	}
 
-	if (m_bShowSubPic)
-		m_pSubPic->DrawArrow(pRT);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_pbShowSubPic[i])
+			m_ppSubPic[i]->DrawArrow(pRT);
+	}
 }
 
 void SFenShiPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
@@ -575,7 +626,8 @@ void SFenShiPic::OnMouseMove(UINT nFlags, CPoint point)
 	{
 		//DrawKeyDownMouseLine(pRT, 0);
 		m_bKeyDown = false;
-		m_pSubPic->SetMouseMove();
+		for(int i=0;i<m_nSubPicNum;++i)
+			m_ppSubPic[i]->SetMouseMove();
 		Invalidate();
 		return;
 	}
@@ -628,11 +680,6 @@ void SFenShiPic::OnMouseMove(UINT nFlags, CPoint point)
 
 void SFenShiPic::OnMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 {
-	static int times = 0;
-	++times;
-	SStringA str;
-	str.Format("触发了%d\n", times);
-	OutputDebugStringA(str);
 	//SetMsgHandled(FALSE);
 	SSendMessage(WM_COMMAND, MAKEWORD(nID, uNotifyCode), (LPARAM)wndCtl);
 }
@@ -907,6 +954,11 @@ void SFenShiPic::DataProc()
 		m_bDataInited = true;
 		StockDataUpdate();
 	}
+	GetMaxDiff();
+	GetFuTuMaxDiff();
+	GetMACDMaxDiff();
+	Invalidate();
+	SetTimer(1, 1000);
 }
 
 
@@ -1017,7 +1069,7 @@ void SFenShiPic::StockDataUpdate()
 
 	for (size_t i = m_pData->nCount; i < TickSize; ++i)
 	{
-		auto &tick = m_pStkMarketVec->at(i);
+		auto& tick = m_pStkMarketVec->at(i);
 		int time = tick.UpdateTime / 100;
 		++m_pData->nCount;
 		if (m_pData->nCount >= TickSize)
@@ -1102,7 +1154,7 @@ void SFenShiPic::SetFSData(FENSHI_GROUP & f, CommonIndexMarket & market)
 
 void SFenShiPic::SetFSData(FENSHI_GROUP & f, CommonStockMarket & market)
 {
-	f.close = market.LastPrice;
+	f.close = market.LastPrice == 0?market.PreCloPrice:market.LastPrice;
 	f.avg = market.Volume == 0 ? market.LastPrice : market.Turnover / market.Volume;
 	f.vol = market.Volume - m_pData->nLastVolume;
 
@@ -1147,6 +1199,19 @@ void SFenShiPic::ReProcEMA()
 		}
 	}
 	//	Invalidate();
+}
+
+void SFenShiPic::SetBelongingIndy(vector<SStringA>& strNameVec)
+{
+	for (int i = SP_SWINDYL1; i < m_nSubPicNum; ++i)
+	{
+		SStringA str;
+		m_ppSubPic[i]->SetSubPicName(str.Format("%d级行业:%s",
+			i, strNameVec[i-1]));
+	}
+	m_strL1Indy = strNameVec[0];
+	m_strL2Indy = strNameVec[1];
+	m_pPriceList->SetIndyName(strNameVec);
 }
 
 bool SFenShiPic::TimeInGap(int time)
@@ -1233,23 +1298,29 @@ void SFenShiPic::UpdateData()
 void SFenShiPic::SetWindowRect()
 {
 	if (!m_bShowDeal)
-		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top, m_rcAll.right, m_rcAll.bottom);
+		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top,
+			m_rcAll.right, m_rcAll.bottom);
 	else
 	{
 		if (m_bIsStockIndex)
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 180);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top + 185, m_rcAll.right + 30, m_rcAll.bottom + 30);
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
+				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 160);
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 180,
+				m_rcAll.top + 165, m_rcAll.right + 30, m_rcAll.bottom + 30);
 		}
 		else
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 560);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, m_rcAll.top + 565, m_rcAll.right + 30, m_rcAll.bottom + 30);
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
+				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 580);
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, 
+				m_rcAll.top + 585, m_rcAll.right + 30, m_rcAll.bottom + 30);
 		}
-		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top, m_rcAll.right - 240, m_rcAll.bottom);
+		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top,
+			m_rcAll.right - 240, m_rcAll.bottom);
 	}
 
-	CRect *pSubRect[3];
+	CRect *pSubRect[MAX_SUBWINDOW];
 	int nShowCount = 0;
 	if (m_bShowVolume)
 	{
@@ -1265,48 +1336,33 @@ void SFenShiPic::SetWindowRect()
 	}
 	else m_rcMACD.SetRectEmpty();
 
-	if (m_bShowSubPic)
+	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
-		pSubRect[nShowCount] = m_pSubPic->GetPicRect();
-		nShowCount++;
+		if (m_pbShowSubPic[i])
+		{
+			pSubRect[nShowCount] = m_ppSubPic[i]->GetPicRect();
+			nShowCount++;
+		}
+		else
+			m_ppSubPic[i]->SetPicRect(CRect(0, 0, 0, 0));
 	}
-	else
-		m_pSubPic->SetPicRect(CRect(0, 0, 0, 0));
 	int preBottom = m_rcImage.top;
-	int nowBottom = m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2;
-	m_rcMain.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2);
+	int nowBottom = m_rcImage.top + 
+		m_rcImage.Height() / (nShowCount + 2) * 2;
+	m_rcMain.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, 
+		m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2);
 	preBottom = nowBottom;
+	SStringA str;
 	for (int i = 0; i < nShowCount; ++i)
 	{
-		nowBottom = m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * (3 + i);
-		pSubRect[i]->SetRect(m_rcImage.left, preBottom, m_rcImage.right, nowBottom);
+		nowBottom = m_rcImage.top + m_rcImage.Height() 
+			/ (nShowCount + 2) * (3 + i);
+		pSubRect[i]->SetRect(m_rcImage.left, preBottom, 
+			m_rcImage.right, nowBottom);
 		preBottom = nowBottom;
+
 	}
 
-	//if (m_bShowMacd&&m_bShowVolume)
-	//{
-	//	m_rcUpper.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, m_rcImage.bottom - (m_rcImage.bottom - m_rcImage.top) / 5 * 2);
-	//	m_rcLower.SetRect(m_rcImage.left, m_rcImage.top + (m_rcImage.bottom - m_rcImage.top) * 3 / 5, m_rcImage.right, m_rcImage.bottom - (m_rcImage.bottom - m_rcImage.top) / 5);
-	//	m_rcMACD.SetRect(m_rcImage.left, m_rcImage.top + (m_rcImage.bottom - m_rcImage.top) * 4 / 5, m_rcImage.right, m_rcImage.bottom);
-	//}
-	//else if (m_bShowVolume)
-	//{
-	//	m_rcUpper.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, m_rcImage.bottom - (m_rcImage.bottom - m_rcImage.top) / 4);
-	//	m_rcLower.SetRect(m_rcImage.left, m_rcImage.top + (m_rcImage.bottom - m_rcImage.top) * 3 / 4, m_rcImage.right, m_rcImage.bottom);
-	//	m_rcMACD.SetRect(0, 0, 0, 0);
-	//}
-	//else if (m_bShowMacd)
-	//{
-	//	m_rcUpper.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, m_rcImage.bottom - (m_rcImage.bottom - m_rcImage.top) / 4);
-	//	m_rcLower.SetRect(0, 0, 0, 0);
-	//	m_rcMACD.SetRect(m_rcImage.left, m_rcImage.top + (m_rcImage.bottom - m_rcImage.top) * 3 / 4, m_rcImage.right, m_rcImage.bottom);
-	//}
-	//else
-	//{
-	//	m_rcUpper.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right, m_rcImage.bottom);
-	//	m_rcLower.SetRect(0, 0, 0, 0);
-	//	m_rcMACD.SetRect(0, 0, 0, 0);
-	//}
 }
 
 int SFenShiPic::SetFenshiMin(int nTime, bool bSetData)
@@ -1483,14 +1539,14 @@ COLORREF SFenShiPic::GetColor(double dPrice)
 //{
 //	if (!__super::CreateChildren(xmlNode))
 //		return FALSE;
-//	m_pSubPic = nullptr;
+//	m_ppSubPic = nullptr;
 //
 //	SWindow *pChild = GetWindow(GSW_FIRSTCHILD);
 //	while (pChild)
 //	{
 //		if (pChild->IsClass(SSubPic::GetClassName()))
 //		{
-//			m_pSubPic = (SSubPic*)pChild;
+//			m_ppSubPic = (SSubPic*)pChild;
 //			break;
 //		}
 //		pChild = pChild->GetWindow(GSW_NEXTSIBLING);
@@ -1650,8 +1706,11 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 		}
 
 	}
-	if (m_bShowSubPic)
-		m_pSubPic->DrawMouse(pRT, po, bFromOnPaint);;
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_pbShowSubPic[i])
+			m_ppSubPic[i]->DrawMouse(pRT, po, bFromOnPaint);
+	}
 	m_nMouseX = po.x;
 	m_nMouseY = po.y;
 
@@ -1898,9 +1957,11 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 	pRT->SelectObject(oldPen);
 	pRT->SelectObject(bOldBrush);
 
-	if (m_bShowSubPic)
-		m_pSubPic->DrawData(pRT);
-
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_pbShowSubPic[i])
+			m_ppSubPic[i]->DrawData(pRT);
+	}
 }
 
 void SFenShiPic::OnDbClickedFenshi(UINT nFlags, CPoint point)
@@ -1908,31 +1969,12 @@ void SFenShiPic::OnDbClickedFenshi(UINT nFlags, CPoint point)
 	SetMsgHandled(FALSE);
 	m_bShowMouseLine = !m_bShowMouseLine;
 	m_bKeyDown = FALSE;
-	m_pSubPic->SetMouseLineState(m_bShowMouseLine);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_ppSubPic[i]->SetMouseLineState(m_bShowMouseLine);
 	Invalidate();
 }
 
-void SFenShiPic::OnRButtonUp(UINT nFlags, CPoint point)
-{
-	//LPARAM lp = MAKEWORD(Group_SWL1)
-	//m_rgClickGroup = m_rgGroup;
-	SMenu menu;
-	menu.LoadMenuW(L"smenu:menu_fenshi");
-	if (m_bShowDeal)
-		menu.CheckMenuItem(FM_Deal, MF_CHECKED);
-	if (m_bShowVolume)
-		menu.CheckMenuItem(FM_Volume, MF_CHECKED);
-	if (m_bShowMacd)
-		menu.CheckMenuItem(FM_MACD, MF_CHECKED);
-	if (m_bShowSubPic)
-		menu.CheckMenuItem(FM_RPS, MF_CHECKED);
-	if (m_bShowAvg)
-		menu.CheckMenuItem(FM_Avg, MF_CHECKED);
-	if (m_bShowEMA)
-		menu.CheckMenuItem(FM_EMA, MF_CHECKED);
-	ClientToScreen(g_MainWnd, &point);
-	menu.TrackPopupMenu(0, point.x, point.y, g_MainWnd);
-}
+
 
 void SFenShiPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
@@ -1973,7 +2015,7 @@ void SFenShiPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	default:
 		break;
 	}
-	//m_pSubPic->OnKeyUp(nChar, nRepCnt, nFlags);
+	//m_ppSubPic->OnKeyUp(nChar, nRepCnt, nFlags);
 	//Invalidate();
 }
 
@@ -2021,7 +2063,6 @@ void SFenShiPic::SingleInit()
 
 	m_bDataInited = true;
 
-	SetTimer(1, 1000);
 	if (m_bIsStockIndex)
 	{
 		if (m_pIdxMarketVec->empty())
@@ -2149,8 +2190,11 @@ void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT, UINT nChar)
 
 	//左上角显示行情
 	DrawUpperMarket(pRT, p);
-	m_pSubPic->SetNowKeyDownLinePos(m_nNowPosition);
-	m_pSubPic->DrawKeyDownMouseLine(pRT);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		m_ppSubPic[i]->SetNowKeyDownLinePos(m_nNowPosition);
+		m_ppSubPic[i]->DrawKeyDownMouseLine(pRT);
+	}
 
 	if (nChar == VK_LEFT)
 	{
@@ -2161,8 +2205,8 @@ void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT, UINT nChar)
 		else
 			m_nNowPosition--;
 		DrawKeyDownMouseLine(pRT, 0);
-		//m_pSubPic->SetNowKeyDownLinePos(m_nNowPosition);
-		//m_pSubPic->DrawKeyDownMouseLine(pRT);
+		//m_ppSubPic->SetNowKeyDownLinePos(m_nNowPosition);
+		//m_ppSubPic->DrawKeyDownMouseLine(pRT);
 
 	}
 	else if (nChar == VK_RIGHT)
@@ -2174,8 +2218,8 @@ void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT, UINT nChar)
 		else
 			m_nNowPosition++;
 		DrawKeyDownMouseLine(pRT, 0);
-		//m_pSubPic->SetNowKeyDownLinePos(m_nNowPosition);
-		//m_pSubPic->DrawKeyDownMouseLine(pRT);
+		//m_ppSubPic->SetNowKeyDownLinePos(m_nNowPosition);
+		//m_ppSubPic->DrawKeyDownMouseLine(pRT);
 
 	}
 

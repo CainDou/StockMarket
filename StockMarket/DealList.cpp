@@ -87,19 +87,19 @@ void CDealList::DrawStockOneCode(IRenderTarget * pRT)		//画单个合约
 		vector<CommonStockMarket> MarketVec;
 		for (int i = m_pStkMarketVec->size() - 1; i >= 0; --i)
 		{
+			auto &tick = m_pStkMarketVec->at(i);
 			if (i != 0)
 			{
-				if (m_pStkMarketVec->at(i).Volume == 
-					m_pStkMarketVec->at(i - 1).Volume 
-					|| m_pStkMarketVec->at(i).Volume <
-					m_pStkMarketVec->at(i - 1).Volume)
+				auto &preTick = m_pStkMarketVec->at(i - 1);
+				if (tick.Volume == preTick.Volume
+					|| tick.Volume < preTick.Volume)
 					continue;
-				MarketVec.emplace_back(m_pStkMarketVec->at(i));
+				MarketVec.emplace_back(tick);
 				if (MarketVec.size() >= nLineCount + 1)
 					break;
 			}
-			else if(m_pStkMarketVec->at(i).Volume !=0)
-				MarketVec.emplace_back(m_pStkMarketVec->at(i));
+			else if(tick.Volume !=0)
+				MarketVec.emplace_back(tick);
 		}
 		int i = 0;
 		int j = MarketVec.size() > nLineCount ? 
@@ -134,7 +134,7 @@ void CDealList::DrawStockOneCode(IRenderTarget * pRT)		//画单个合约
 					ceil((MarketVec[j].Volume -
 						MarketVec[j+1].Volume) *1.0 / 100));
 			else
-				_swprintf(szTmp, L"%d", MarketVec[j].Volume);
+				_swprintf(szTmp, L"%d", MarketVec[j].Volume / 100);
 			pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rect.left + nWidth * 2, m_rect.top + RC_HEIGHT * (i + 1), m_rect.left + nWidth * 3, m_rect.top + RC_HEIGHT * (i + 2)), DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 		}
 
@@ -191,19 +191,19 @@ void CDealList::DrawIndexOneCode(IRenderTarget * pRT)		//画单个合约
 		vector<CommonIndexMarket> MarketVec;
 		for (int i = m_pIdxMarketVec->size() - 1; i >= 0; --i)
 		{
+			auto &tick = m_pIdxMarketVec->at(i);
 			if (i != 0)
 			{
-				if (m_pIdxMarketVec->at(i).Turnover ==
-					m_pIdxMarketVec->at(i - 1).Turnover 
-					|| m_pIdxMarketVec->at(i).Turnover <
-					m_pIdxMarketVec->at(i - 1).Turnover)
+				auto &preTick = m_pIdxMarketVec->at(i - 1);
+				if (tick.Turnover == preTick.Turnover
+					|| tick.Turnover < preTick.Turnover)
 					continue;
-				MarketVec.emplace_back(m_pIdxMarketVec->at(i));
+				MarketVec.emplace_back(tick);
 				if (MarketVec.size() >= nLineCount + 1)
 					break;
 			}
-			else if(m_pIdxMarketVec->at(i).Turnover != 0)
-				MarketVec.emplace_back(m_pIdxMarketVec->at(i));
+			else if(tick.Turnover != 0)
+				MarketVec.emplace_back(tick);
 		}
 		int i = 0;
 		int j = MarketVec.size() > nLineCount ?

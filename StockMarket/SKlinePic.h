@@ -22,6 +22,7 @@ namespace SOUI
 
 
 		//数据接口
+		void		InitSubPic(int nNum, vector<SStringA> & picNameVec);
 		void		InitShowPara(InitPara_t para);
 		void		OutPutShowPara(InitPara_t& para);
 		void		SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec,
@@ -29,10 +30,14 @@ namespace SOUI
 		void		SetShowData(SStringA subIns, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec,
 					map<int, vector<KlineType>>*pHisKlineMap);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
-		void		SetSubPicShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec,
-					vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName);
+		void		SetSubPicShowData(int nDataCount[],
+			vector<vector<vector<CoreData>*>>& data,
+			vector<vector<BOOL>> bRightVec,
+			vector<vector<SStringA>>, SStringA StockID,
+			SStringA StockName);
 		void		ReSetSubPicData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		void		SetParentHwnd(HWND hParWnd);
+		void		SetTodayMarketState(bool bReady);
 		void		SetHisKlineState(bool bReady);
 		void		SetHisPointState(bool bReady);
 		bool		GetDataReadyState();
@@ -47,13 +52,14 @@ namespace SOUI
 		bool		GetDealState() const;
 		bool		GetVolumeState() const;
 		bool		GetMacdState() const;
-		bool		GetRpsState() const;
+		bool		GetRpsState(int nWndNum) const;
 		bool		GetMaState() const;
 		bool		GetBandState() const;
 		void		SetDealState(bool bRevesered = true, bool bState = false);
 		void		SetVolumeState(bool bRevesered = true, bool bState = false);
 		void		SetMacdState(bool bRevesered = true, bool bState = false);
-		void		SetRpsState(bool bRevesered = true, bool bState = false);
+		void		SetRpsState(int nWndNum,
+					bool bRevesered = true, bool bState = false);
 		void		SetMaState(bool bRevesered = true, bool bState = false);
 		void		SetBandState(bool bRevesered = true, bool bState = false);
 		void		SetBandPara(BandPara_t& bandPara);
@@ -62,6 +68,9 @@ namespace SOUI
 		const int*  GetMaPara();
 		const int*  GetMacdPara();
 		BandPara_t	GetBandPara();
+		void		SetPicUnHandled();
+		int			GetShowSubPicNum() const;
+		void		SetBelongingIndy(vector<SStringA>& strNameVec);
 
 		// 图形处理绘制
 	protected:
@@ -173,7 +182,9 @@ namespace SOUI
 		map<int, vector<KlineType>> *m_pHisKlineMap;
 		SStringA	m_strSubIns;
 		SStringA	m_strStockName;
-		bool			m_bAddDay;	//添加日线
+		SStringA	m_strL1Indy;
+		SStringA	m_strL2Indy;
+		bool		m_bAddDay;	//添加日线
 
 		//调用类
 	protected:
@@ -181,11 +192,13 @@ namespace SOUI
 		CDealList*  m_pDealList;
 		CDataProc	m_dataHandler;
 		SKlineTip*  m_pTip;
-		SSubTargetPic*	m_pSubPic;
+		SSubTargetPic**	m_ppSubPic;
+		int m_nSubPicNum;
 
 		//显示和计算参数
 	protected:
 		BandPara_t  m_BandPara;
+		int 		m_nZoomRatio;
 		int			m_nMAPara[4];
 		int			m_nMACDPara[3];
 		bool		m_bDataInited;
@@ -204,8 +217,7 @@ namespace SOUI
 		int			m_nMacdCount;
 		int			m_nTradingDay;
 		int			m_nMouseLinePos;
-
-		bool		m_bNoJiange;
+		int			m_nJiange;
 		bool		m_bReSetFirstLine;
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
@@ -216,7 +228,8 @@ namespace SOUI
 		bool        m_bShowBandTarget;	//显示波段优化交易指标
 		bool		m_bShowDeal;
 		bool		m_bIsStockIndex;
-		bool		m_bShowSubPic;
+		BOOL		*m_pbShowSubPic;
+		bool		m_bTodayMarketReady;
 		bool		m_bHisKlineReady;
 		bool		m_bHisPointReady;
 		//绘图参数
@@ -267,9 +280,9 @@ namespace SOUI
 	{
 		return m_bShowMacd;
 	}
-	inline bool SKlinePic::GetRpsState() const
+	inline bool SKlinePic::GetRpsState(int nWndNum) const
 	{
-		return m_bShowSubPic;
+		return m_pbShowSubPic[nWndNum];
 	}
 	inline bool SKlinePic::GetMaState() const
 	{
@@ -294,10 +307,10 @@ namespace SOUI
 		if (bRevesered) m_bShowMacd = !m_bShowMacd;
 		else m_bShowMacd = bState;
 	}
-	inline void SKlinePic::SetRpsState(bool bRevesered, bool bState)
+	inline void SKlinePic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
 	{
-		if (bRevesered) m_bShowSubPic = !m_bShowSubPic;
-		else m_bShowSubPic = bState;
+		if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
+		else m_pbShowSubPic[nWndNum] = bState;
 	}
 	inline void SKlinePic::SetMaState(bool bRevesered, bool bState)
 	{
@@ -334,6 +347,16 @@ namespace SOUI
 	inline BandPara_t SKlinePic::GetBandPara()
 	{
 		return m_BandPara;
+	}
+
+	inline void SKlinePic::SetPicUnHandled()
+	{
+		m_bDataInited = false;
+	}
+
+	inline int SKlinePic::GetShowSubPicNum() const
+	{
+		return m_nSubPicNum;
 	}
 
 }
