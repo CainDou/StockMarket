@@ -896,23 +896,23 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 		CAutoRefPtr<IPen> pen, oldPen;
 		pRT->CreatePen(PS_SOLID, RGBA(192, 192, 192, 255), 2, &pen);
 		pRT->SelectObject(pen, (IRenderObj**)&oldPen);
-		pts[0].SetPoint(m_rcAll.left - 49, m_rcAll.top - 25);
-		pts[1].SetPoint(m_rcAll.left - 49, m_rcAll.bottom + 35);
-		pts[2].SetPoint(m_rcAll.right + 41, m_rcAll.bottom + 35);
-		pts[3].SetPoint(m_rcAll.right + 41, m_rcAll.top - 25);
+		pts[0].SetPoint(m_rcAll.left - RC_FSLEFT + 1, m_rcAll.top - 25);
+		pts[1].SetPoint(m_rcAll.left - RC_FSLEFT + 1, m_rcAll.bottom + 35);
+		pts[2].SetPoint(m_rcAll.right + RC_FSLEFT + 1, m_rcAll.bottom + 35);
+		pts[3].SetPoint(m_rcAll.right + RC_FSLEFT + 1, m_rcAll.top - 25);
 		pts[4] = pts[0];
 		pRT->DrawLines(pts, 5);
 		if (m_bShowDeal)
 		{
-			pts[0].SetPoint(m_rcImage.right + 41, m_rcAll.top - 25);
-			pts[1].SetPoint(m_rcImage.right + 41, m_rcAll.bottom + 35);
+			pts[0].SetPoint(m_rcImage.right + RC_FSLEFT + 1, m_rcAll.top - 25);
+			pts[1].SetPoint(m_rcImage.right + RC_FSLEFT + 1, m_rcAll.bottom + 35);
 			pRT->DrawLines(pts, 2);
-			pts[0].SetPoint(m_rcImage.right + 41, m_pPriceList->m_rect.bottom - 5);
-			pts[1].SetPoint(m_rcAll.right + 41, m_pPriceList->m_rect.bottom - 5);
+			pts[0].SetPoint(m_rcImage.right + RC_FSLEFT + 1, 
+				m_pPriceList->m_rect.bottom - 5);
+			pts[1].SetPoint(m_rcAll.right + RC_FSLEFT + 1,
+				m_pPriceList->m_rect.bottom - 5);
 			pRT->DrawLines(pts, 2);
-
 		}
-
 		pRT->SelectObject(oldPen);
 	}
 
