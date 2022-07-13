@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -12,6 +12,8 @@
 		<file name="dlg_macdPara" path="xml\dlg_macdPara.xml" />
 		<file name="dlg_BandPara" path="xml\dlg_BandPara.xml" />
 		<file name="dlg_emaPara" path="xml\dlg_emaPara.xml" />
+		<file name="wnd_cell" path="xml\wnd_work.xml" />
+		<file name="page_workwnd" path="xml\page_workwnd.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -29,5 +31,4 @@
 		<file name="menu_fenshi" path="smenu\menu_fenshi.xml" />
 		<file name="menu_kline" path="smenu\menu_kline.xml" />
 	</smenu>
-
 </resource>

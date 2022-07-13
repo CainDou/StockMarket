@@ -27,7 +27,7 @@ public:
 	void UpdateTmData(TimeLineArrMap& comData, const TimeLineData& data);
 	void UpdateTmData(TimeLineArrMap& comData, CoreData& data, SStringA SecurityID, SStringA dataName);
 	void UpdateTmData(vector<CoreData>& comData, const TimeLineData& data);
-	void UpdateTmData(vector<CoreData>& comData, CoreData& data);
+	static void UpdateTmData(vector<CoreData>& comData, CoreData& data);
 
 	void UpdateClose(TimeLineArrMap& comData, const TimeLineData& data, int nPeriod);
 	void UpdateClose(vector<CoreData>& comData, const TimeLineData& data, int nPeriod);

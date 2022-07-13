@@ -30,7 +30,8 @@ SStringA StrW2StrA(const SStringW &cstrSrcW)
 	return cstrDestA;
 }
 
-int SendMsg(unsigned uThreadId, unsigned MsgType, char *SendBuf, unsigned BufLen)
+int SendMsg(unsigned uThreadId, unsigned MsgType,
+	const char *SendBuf, unsigned BufLen)
 {
 	if (uThreadId <= 0)
 		return InvalidThreadId;

@@ -233,27 +233,59 @@ SStringW StrA2StrW(const SStringA &sstrSrcA);
 
 SStringA StrW2StrA(const SStringW &cstrSrcW);
 
-int SendMsg(unsigned uThreadId, unsigned MsgType, char *SendBuf, unsigned BufLen);
+int SendMsg(unsigned uThreadId, unsigned MsgType,const char *SendBuf, unsigned BufLen);
 int	RecvMsg(int  msgQId, char** buf, int& length, int timeout);
 
 enum DataProcType
 {
 	UpdateData=10000,
 	UpdateTodayData,
-	UpdateRPS,
-	UpdateNoUse,
-	UpdateSingleListData,
-	UpdateHisPoint,
 	UpdateLastDayEma,
-	UpdateIndexMarket,
-	UpdateStockMarket,
-	UpdateHisIndexMarket,
-	UpdateHisStockMarket,
-	UpdateHisKline,
-	UpdateCloseInfo,
 	Msg_ReInit=77777,
 	Msg_Exit = 88888,
 };
+
+enum SynMsg
+{
+	Syn_AddWnd=20000,
+	Syn_RemoveWnd,
+	Syn_ListData,
+	Syn_GetMarket,
+	Syn_GetKline,
+	Syn_GetPoint,
+	Syn_Point,
+	Syn_TodayPoint,
+	Syn_HisPoint,
+	Syn_RTIndexMarket,
+	Syn_RTStockMarket,
+	Syn_HisIndexMarket,
+	Syn_HisStockMarket,
+	Syn_HisKline,
+	Syn_CloseInfo,
+	Syn_Reinit,
+
+};
+
+enum WorkWndMsg
+{
+	WW_ListData = Syn_ListData,
+	WW_GetMarket,
+	WW_GetKline,
+	WW_GetPoint,
+	WW_Point,
+	WW_TodayPoint,
+	WW_HisPoint,
+	WW_RTIndexMarket,
+	WW_RTStockMarket,
+	WW_HisIndexMarket,
+	WW_HisStockMarket,
+	WW_HisKline,
+	WW_CloseInfo,
+	WW_Reinit,
+
+};
+
+
 
 enum StockInfoType
 {
@@ -266,12 +298,20 @@ enum StockInfoType
 enum MAINMSG
 {
 	MAINMSG_UpdateList,
-	MAINMSG_UpdateListSingle,
-	MAINMSG_ShowPic,
-	MAINMSG_UpdatePic,
-	MAINMSG_ProcFenShi,
-	MAINMSG_ProcKline,
+	MAINMSG_UpdatePoint,
+	MAINMSG_TodayPoint,
+	MAINMSG_HisPoint,
+	MAINMSG_RTIndex,
+	MAINMSG_RTStock,
+	MAINMSG_HisIndex,
+	MAINMSG_HisStock,
+	MAINMSG_HisKline,
+	MAINMSG_DownloadPoint,
+	MAINMSG_DownloadMarket,
+	MAINMSG_DownloadKline,
+	MAINMSG_ChangeIndy,
 	MAINMSG_ReInit,
+
 };
 
 
@@ -427,36 +467,6 @@ typedef struct MACDDataType
 	double fMin;
 }MACDData_t;
 
-typedef struct InitPara
-{
-	bool bShowMA;
-	bool bShowBandTarget;
-	bool bShowAverage;
-	bool bShowEMA;
-	bool bShowTSCMACD;
-	bool bShowTSCVolume;
-	bool bShowKlineVolume;
-	bool bShowKlineMACD;
-	bool bShowTSCRPS[3];
-	bool bShowKlineRPS[3];
-	int  nWidth;
-	bool bShowTSCDeal;
-	bool bShowKlineDeal;
-	int  nEMAPara[2];
-	int  nMACDPara[3];
-	int	 nMAPara[4];
-	int	 nJiange;
-	BandPara_t  BandPara;
-	InitPara() :bShowMA(true), bShowBandTarget(false),
-		bShowAverage(true),bShowEMA(true), 
-		bShowTSCMACD(true), bShowTSCVolume(false),
-		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
-		bShowKlineRPS{ false ,false,false }, nWidth(9),
-		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
-		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },  
-		nMAPara{ 5,10,20,60 }, nJiange(2)
-	{}
-}InitPara_t;
 
 
 typedef struct _KLINE_INFO {
@@ -725,3 +735,56 @@ enum eSubPic
 	SP_SWINDYL2,
 	SP_COUNT,
 };
+
+typedef struct _DataGetInfo
+{
+	HWND hWnd;
+	char StockID[8];
+	int	 Group;
+	int Period;
+}DataGetInfo;
+
+enum 
+{
+	DT_ListData=0,
+	DT_IndexMarket,
+	DT_StockMarket,
+	DT_Kline,
+	DT_Point,
+};
+
+typedef struct InitPara
+{
+	bool bShowMA;
+	bool bShowBandTarget;
+	bool bShowAverage;
+	bool bShowEMA;
+	bool bShowTSCMACD;
+	bool bShowTSCVolume;
+	bool bShowKlineVolume;
+	bool bShowKlineMACD;
+	bool bShowTSCRPS[3];
+	bool bShowKlineRPS[3];
+	int  nWidth;
+	bool bShowTSCDeal;
+	bool bShowKlineDeal;
+	int  nEMAPara[2];
+	int  nMACDPara[3];
+	int	 nMAPara[4];
+	int	 nJiange;
+	BandPara_t  BandPara;
+	int Period;
+	bool Connect1;
+	bool Connect2;
+	char ShowIndy[8];
+	InitPara() :bShowMA(true), bShowBandTarget(false),
+		bShowAverage(true), bShowEMA(true),
+		bShowTSCMACD(true), bShowTSCVolume(false),
+		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
+		bShowKlineRPS{ false ,false,false }, nWidth(9),
+		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
+		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
+		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
+		Connect1(false), Connect2(false), ShowIndy("")
+	{}
+}InitPara_t;

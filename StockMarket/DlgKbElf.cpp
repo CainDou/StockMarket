@@ -60,16 +60,10 @@ LRESULT CDlgKbElf::OnActive(UINT wlParam, BOOL whParam, HWND lParam)
 	return 0;
 }
 
-bool CDlgKbElf::SetStockInfo(SColorListCtrlEx * pPic, bool bFroceUpdate,
+bool CDlgKbElf::SetStockInfo( bool bFroceUpdate,
 	vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec)
 {
-	if (!bFroceUpdate)
-	{
-		if (pPic == m_useList)
-			return false;
-	}
 	m_StockInfoMap.clear();
-	m_useList = pPic;
 	if (stock1Vec)
 	{
 		for (auto &it : *stock1Vec)
@@ -192,7 +186,7 @@ void CDlgKbElf::SubscribeIns(SStringA SubIns)
 {
 
 	m_subIns = SubIns;
-	::PostMessageW(m_hParWnd, WM_MAIN_MSG, MAINMSG_ShowPic, NULL);
+	::PostMessageW(m_hParWnd, WM_MAIN_MSG, MAINMSG_TodayPoint, NULL);
 }
 
 void CDlgKbElf::OnTimer(char cTimerID)

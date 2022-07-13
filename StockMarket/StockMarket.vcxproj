@@ -214,6 +214,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StockMarket.cpp" />
+    <ClCompile Include="WndSynHandler.cpp" />
+    <ClCompile Include="WorkWnd.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc" />
@@ -241,6 +243,8 @@
     <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="WndSynHandler.h" />
+    <ClInclude Include="WorkWnd.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\soui_res.rc2" />
