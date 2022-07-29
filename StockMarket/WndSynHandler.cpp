@@ -41,7 +41,7 @@ void CWndSynHandler::Run()
 	InitializeCriticalSection(&m_cs);
 	InitLogFile();
 	InitCommonSetting();
-	InitConfig();
+	InitNetConfig();
 	SetVectorSize();
 	InitDataHandleMap();
 	InitNetHandleMap();
@@ -125,9 +125,9 @@ void CWndSynHandler::InitCommonSetting()
 
 }
 
-void CWndSynHandler::InitConfig()
+void CWndSynHandler::InitNetConfig()
 {
-	CIniFile ini(".//config//config.ini");
+	CIniFile ini(".//config//NetConfig.ini");
 	m_strIPAddr = ini.GetStringA("IP", "Addr", "");
 	m_nIPPort = ini.GetIntA("IP", "Port", 0);
 

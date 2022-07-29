@@ -38,7 +38,7 @@ public:
 	//初始化函数
 protected:
 	void InitCommonSetting();
-	void InitConfig();
+	void InitNetConfig();
 
 	//辅助函数
 protected:
