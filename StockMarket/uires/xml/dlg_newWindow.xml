@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<SOUI name="dlg_new" title="新窗口" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="360" height="130" margin="1,5,5,5" wndType="normal" appWnd="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(50,50,50)">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<icon pos="10,8" src="ICON_LOGO:16" />
+				<text pos="29,9" name="txt_title" colorText="#00ffffff">新建窗口</text>
+			</caption>
+			<edit name="edit_name" pos="80,40" size="260, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" maxBuf="16" />
+			<text pos="10,40" size="64, 24" colorText="#00ffffff">窗口标题</text>
+			<imgbtn name="btn_OK" pos="70,85" size="80, 24" tip="" animate="1" colorText="#000000ff">确定</imgbtn>
+			<imgbtn name="btn_cancel" pos="210,85" size="80, 24" tip="" animate="1" colorText="#000000ff">取消</imgbtn>
+		</window>
+	</root>
+</SOUI>

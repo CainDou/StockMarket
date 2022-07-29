@@ -1,8 +1,6 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <include>
-	<realwnd name="wnd_SWL1" pos="5,5,%50,%40" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
-	
-	<realwnd name="wnd_SWL2" pos="5,%40,%50,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑"/>
-	
-	<realwnd name="wnd_Stock" pos="%50,5,-5,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑"/>
+	<realwnd name="wnd_SWL1" pos="5,5,%50,%40" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
+	<realwnd name="wnd_SWL2" pos="5,%40,%50,-5" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
+	<realwnd name="wnd_Stock" pos="%50,5,-5,-5" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
 </include>

@@ -244,7 +244,6 @@ void SSubPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 
 	int nLen = m_rcImage.right - m_rcImage.left;	//判断是否超出范围
 	//判断最大最小值
-	//	OutputDebugString("判断最大值\0");
 	m_nFirst = 0;
 	m_nEnd = m_pData[0]->size();
 	if (m_nEnd > m_nAllLineNum)

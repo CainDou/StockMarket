@@ -56,6 +56,7 @@ SKlinePic::SKlinePic()
 	m_strSubIns = "";
 	m_bReSetFirstLine = false;
 	m_nFirst = 0;
+	m_nEnd = 0;
 	m_bKeyDown = false;
 	m_preMovePoint.SetPoint(-1, -1);
 	m_bShowMA = true;
@@ -167,8 +168,6 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec,
 	map<int, vector<KlineType>>*pHisKlineMap)
 {
-	KillTimer(1);
-	//OutputDebugStringA("关闭定时器\n");
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_pIdxMarketVec = pIdxMarketVec;
@@ -190,7 +189,6 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonSt
 	map<int, vector<KlineType>>*pHisKlineMap)
 {
 	KillTimer(1);
-	//OutputDebugStringA("关闭定时器\n");
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_pStkMarketVec = pStkMarketVec;
@@ -246,8 +244,6 @@ void SKlinePic::SetTodayMarketState(bool bReady)
 	m_bTodayMarketReady = bReady;
 	if (!m_bTodayMarketReady)
 	{
-		KillTimer(1);
-		//OutputDebugStringA("关闭定时器\n");
 		m_bDataInited = false;
 	}
 
@@ -259,8 +255,6 @@ void SKlinePic::SetHisKlineState(bool bReady)
 	m_bHisKlineReady = bReady;
 	if (!m_bHisKlineReady)
 	{
-		KillTimer(1);
-		//OutputDebugStringA("关闭定时器\n");
 		m_bDataInited = false;
 	}
 }
@@ -270,8 +264,6 @@ void SKlinePic::SetHisPointState(bool bReady)
 	m_bHisPointReady = bReady;
 	if (!m_bHisPointReady)
 	{
-		KillTimer(1);
-		//OutputDebugStringA("关闭定时器\n");
 		m_bDataInited = false;
 	}
 }
@@ -1186,7 +1178,6 @@ void SKlinePic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 		m_ppSubPic[i]->SetShowNum(m_nEnd - m_nFirst);
 	//	}
 	//判断最大最小值
-	//	OutputDebugString("判断最大值\n");
 	double fMax = -100000000000000;
 	double fMin = 100000000000000;
 	auto& data = m_pAll->data;
@@ -1256,7 +1247,6 @@ void SKlinePic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 void SKlinePic::GetFuTuMaxDiff()		//判断副图坐标最大最小值和k线条数
 {
 	//判断最大最小值
-	//	OutputDebugString("判断最大值\n");
 	double fMax = -100000000000000;
 	double fMin = 0;
 
@@ -1320,7 +1310,6 @@ SStringW SKlinePic::GetFuTuYPrice(int nY)
 void SKlinePic::GetMACDMaxDiff()		//判断副图坐标最大最小值和k线条数
 {
 	//判断最大最小值
-	//	OutputDebugString("判断最大值\n");
 	double fMax = -100000000000000;
 	double fMin = 100000000000000;
 
@@ -1460,8 +1449,6 @@ void SKlinePic::OnMouseMove(UINT nFlags, CPoint point)
 
 void SKlinePic::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	//	OutputDebugString(L"1");
-	//	SWindow::SetTimer(1, 16);
 }
 
 void SKlinePic::OnTimer(char cTimerID)
@@ -2208,9 +2195,8 @@ void SKlinePic::DataProc()
 	m_nMacdCount = 0;
 	m_bDataInited = true;
 	UpdateData();
-	Invalidate();
-	//OutputDebugStringA("刷新图形\n");
-	SetTimer(1, 1000);
+	//Invalidate();
+	//SetTimer(1, 1000);
 }
 
 
@@ -2529,7 +2515,6 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 void SKlinePic::DrawMouseLine(IRenderTarget * pRT, CPoint p)
 {
 	//画鼠标线
-	//OutPutDebugStringFormat("前点 %d,%d 后点%d,%d\n", m_nMouseX, m_nMouseY, p.x, p.y);
 
 	HDC hdc = pRT->GetDC();
 	int  nMode = SetROP2(hdc, R2_NOTXORPEN);
@@ -2875,7 +2860,9 @@ void SKlinePic::StockMarket1MinUpdate()
 	for (size_t i = 0; i < TickVec.size(); ++i)
 	{
 		++m_nUsedTickCount;
-		int ntime = TickVec[i].UpdateTime/* / 100*/;
+		if (TickVec[i].LastPrice == 0)
+			continue;
+		int ntime = TickVec[i].UpdateTime;
 		if (!ProcKlineTime(ntime) || TickVec[i].LastPrice == 0)
 			continue;
 		if (ntime == 1500 && i + m_nUsedTickCount == 1)
@@ -2888,6 +2875,11 @@ void SKlinePic::StockMarket1MinUpdate()
 		}
 		else if (ntime == m_pAll->data[m_pAll->nTotal - 1].time && m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date)
 			StockTickToKline(m_pAll->nTotal - 1, TickVec[i]);
+		if (ntime == 1500)
+		{
+			auto &kline = m_pAll->data[m_pAll->nTotal - 1];
+			kline.open = kline.high = kline.low = kline.close;
+		}
 		KlineMAProc(m_pAll->nTotal);
 	}
 }
@@ -2898,16 +2890,14 @@ void SKlinePic::StockMarketMultMinUpdate(int nPeriod)
 	for (size_t i = 0; i < TickVec.size(); ++i)
 	{
 		++m_nUsedTickCount;
-		int ntime = TickVec[i].UpdateTime /*/ 100*/;
+		if (TickVec[i].LastPrice == 0)
+			continue;
+		int ntime = TickVec[i].UpdateTime;
 		if (!ProcKlineTime(ntime) || TickVec[i].LastPrice == 0)
 			continue;
-		//if (m_pAll->nTotal == 0 || ntime > m_pAll->data[m_pAll->nTotal - 1].time + (nPeriod - 1) ||
-		//	m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		if (m_pAll->nTotal == 0 || ntime > m_pAll->data[m_pAll->nTotal - 1].time ||
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
-			//int nLeft = ntime % 100 % nPeriod;
-			//ntime -= nLeft;
 			StockTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
 			m_pAll->nTotal++;
 		}
@@ -2921,10 +2911,8 @@ void SKlinePic::StockMarketMultMinUpdate(int nPeriod)
 
 void SKlinePic::StockMarketDayUpdate()
 {
-	//OutputDebugStringA("处理日线\n");
 	if (m_pStkMarketVec->empty())
 		return;
-	//OutputDebugStringA("数据非空\n");
 	auto tick = m_pStkMarketVec->back();
 	int nDataCount = m_pAll->nTotal;
 	if (tick.OpenPrice > 10000000 || tick.OpenPrice == 0)
@@ -2934,7 +2922,6 @@ void SKlinePic::StockMarketDayUpdate()
 		StockTickToDayKline(nDataCount, tick);
 		m_pAll->nTotal++;
 		m_bAddDay = true;
-		//OutputDebugStringA("添加了一条新的日线\n");
 	}
 	else
 		StockTickToDayKline(nDataCount - 1, tick);
@@ -2985,6 +2972,8 @@ void SKlinePic::IndexMarket1MinUpdate()
 	for (size_t i = 0; i < TickVec.size(); ++i)
 	{
 		++m_nUsedTickCount;
+		if (TickVec[i].LastPrice == 0)
+			continue;
 		if (TickVec[i].TradingDay < m_nTradingDay)
 			continue;
 		int ntime = TickVec[i].UpdateTime/* / 100*/;
@@ -3008,13 +2997,13 @@ void SKlinePic::IndexMarketMultMinUpdate(int nPeriod)
 	for (size_t i = 0; i < TickVec.size(); ++i)
 	{
 		++m_nUsedTickCount;
+		if (TickVec[i].LastPrice == 0)
+			continue;
 		if (TickVec[i].TradingDay < m_nTradingDay)
 			continue;
 		int ntime = TickVec[i].UpdateTime /*/ 100*/;
 		if (!ProcKlineTime(ntime))
 			continue;
-		//if (m_pAll->nTotal == 0 || ntime > m_pAll->data[m_pAll->nTotal - 1].time + (nPeriod - 1)||
-		//	m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		if (m_pAll->nTotal == 0 || ntime > m_pAll->data[m_pAll->nTotal - 1].time ||
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
@@ -3195,6 +3184,8 @@ void SKlinePic::ReProcKlineData(bool bSingleNeedProc)
 void SKlinePic::UpdateData()
 {
 	if (m_pAll == nullptr)
+		return;
+	if (!m_bDataInited)
 		return;
 	SingleDataUpdate();
 }

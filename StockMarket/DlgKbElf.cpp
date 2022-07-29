@@ -5,13 +5,12 @@
 
 CDlgKbElf::CDlgKbElf()
 {
-	m_useList = nullptr;
 }
 
 CDlgKbElf::CDlgKbElf(HWND hParWnd) : SHostWnd(_T("LAYOUT:dlg_keyboardElf"))
 {
-	m_useList = nullptr;
 	m_hParWnd = hParWnd;
+	m_bFromSet = false;
 }
 
 CDlgKbElf::~CDlgKbElf()
@@ -31,51 +30,45 @@ void CDlgKbElf::OnInit(EventArgs * e)
 	if (m_pEdit)
 	{
 		m_pEdit->GetEventSet()->subscribeEvent(
-			EventRENotify::EventID, 
+			EventRENotify::EventID,
 			Subscriber(&CDlgKbElf::OnEditChange, this));
-		m_pEdit->GetEventSet()->subscribeEvent(
-			EVT_KEYDOWN, 
-			Subscriber(&CDlgKbElf::OnKeyDown, this));
-
 	}
 	if (m_pList)
 	{
 		m_pList->GetEventSet()->subscribeEvent(
-			EVT_LC_DBCLICK, 
+			EVT_LC_DBCLICK,
 			Subscriber(&CDlgKbElf::OnDbClick, this));
 	}
 
-	m_pEdit->SetWindowTextW(wstrInput);
+	m_pEdit->SetWindowTextW(L"");
 	SetTimer(2, 500);
 
 }
 
-LRESULT CDlgKbElf::OnActive(UINT wlParam, BOOL whParam, HWND lParam)
-{
-	SetMsgHandled(FALSE);
-	if (!whParam)
-		ShowWindow(SW_SHOW);
-	else
-		ShowWindow(SW_HIDE);
-	return 0;
-}
 
-bool CDlgKbElf::SetStockInfo( bool bFroceUpdate,
-	vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec)
+bool CDlgKbElf::SetStockInfo(vector<StockInfo>& stockVec)
 {
 	m_StockInfoMap.clear();
-	if (stock1Vec)
-	{
-		for (auto &it : *stock1Vec)
-			m_StockInfoMap[it.SecurityID] = it;
-	}
-
-	if (stock2Vec)
-	{
-		for (auto &it : *stock2Vec)
-			m_StockInfoMap[it.SecurityID] = it;
-	}
+	for (auto &it : stockVec)
+		m_StockInfoMap[it.SecurityID] = it;
 	return true;
+}
+
+void CDlgKbElf::ClearInput()
+{
+	m_wstrInput = L"";
+}
+
+void CDlgKbElf::SetEditInput(SStringW wstrInput)
+{
+	m_pEdit->SetWindowTextW(wstrInput);
+	m_pEdit->SetFocus();
+	m_pEdit->SetSel(-1);
+	if (wstrInput != L"")
+	{
+		m_bFromSet = true;
+		m_wstrInput = wstrInput;
+	}
 }
 
 bool CDlgKbElf::OnEditChange(EventArgs * e)
@@ -85,19 +78,28 @@ bool CDlgKbElf::OnEditChange(EventArgs * e)
 	if (!IsWindowVisible())
 		return false;
 	SStringW wstr = m_pEdit->GetWindowTextW();
-	if (wstrInput == wstr)
+
+	if (m_bFromSet)
+	{
+		wstr = m_wstrInput;
+		m_pEdit->SetWindowTextW(m_wstrInput);
+		m_pEdit->SetSel(-1);
+		m_bFromSet = false;
+	}
+	else if (m_wstrInput == wstr)
 		return false;
 	m_pList->DeleteAllItems();
-	wstrInput = wstr;
+	m_wstrInput = wstr;
 	int InsCount = -1;
 	m_Row2InsMap.clear();
-	if (wstrInput == L"")
+	if (m_wstrInput == L"")
 	{
 		ShowWindow(SW_HIDE);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SetFocus, NULL);
 	}
 	else
 	{
-		SStringW wstr = InputToUpper(wstrInput);
+		SStringW wstr = InputToUpper(m_wstrInput);
 		int len = wstr.GetLength();
 		bool bID = true;
 		bool bName = true;
@@ -186,10 +188,10 @@ void CDlgKbElf::SubscribeIns(SStringA SubIns)
 {
 
 	m_subIns = SubIns;
-	::PostMessageW(m_hParWnd, WM_MAIN_MSG, MAINMSG_TodayPoint, NULL);
+	::PostMessageW(m_hParWnd, WM_WINDOW_MSG, WDMsg_SubIns, NULL);
 }
 
-void CDlgKbElf::OnTimer(char cTimerID)
+void CDlgKbElf::OnTimer(UINT_PTR cTimerID)
 {
 	if (cTimerID == 1)
 	{
@@ -204,7 +206,9 @@ void CDlgKbElf::OnTimer(char cTimerID)
 		{
 			if (!m_pList->IsFocused() && !m_pEdit->IsFocused())
 			{
+
 				ShowWindow(SW_HIDE);
+				//::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SetFocus, NULL);
 			}
 		}
 	}
@@ -257,19 +261,24 @@ void CDlgKbElf::AddFindItem(int & InsCount,
 
 }
 
-bool CDlgKbElf::OnKeyDown(EventArgs * e)
+void SOUI::CDlgKbElf::OnFinalMessage(HWND hWnd)
 {
+	__super::OnFinalMessage(hWnd);
+	delete this;
+}
 
-	EventKeyDown* pEvent = (EventKeyDown*)e;
 
-	if (pEvent->nChar == VK_DOWN || pEvent->nChar == VK_UP)
+void CDlgKbElf::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	SetMsgHandled(FALSE);
+	if (nChar == VK_DOWN || nChar == VK_UP)
 	{
 		int nSelectedItem = m_pList->GetSelectedItem();
 		if (nSelectedItem < 0)
 		{
-			if (pEvent->nChar == VK_DOWN)
+			if (nChar == VK_DOWN)
 				nSelectedItem = m_pList->GetTopIndex();
-			if (pEvent->nChar == VK_UP)
+			if (nChar == VK_UP)
 			{
 				if (m_pList->GetItemCount() < m_pList->GetCountPerPage(false))
 					nSelectedItem = m_pList->GetItemCount();
@@ -280,9 +289,9 @@ bool CDlgKbElf::OnKeyDown(EventArgs * e)
 
 		}
 		int  nNewSelItem = -1;
-		if (pEvent->nChar == VK_DOWN && nSelectedItem < m_pList->GetItemCount() - 1)
+		if (nChar == VK_DOWN && nSelectedItem < m_pList->GetItemCount() - 1)
 			nNewSelItem = nSelectedItem + 1;
-		else if (pEvent->nChar == VK_UP &&  m_pList->GetSelectedItem() > 0)
+		else if (nChar == VK_UP &&  m_pList->GetSelectedItem() > 0)
 			nNewSelItem = nSelectedItem - 1;
 
 
@@ -293,7 +302,13 @@ bool CDlgKbElf::OnKeyDown(EventArgs * e)
 		}
 
 	}
-	else if (pEvent->nChar == VK_RETURN)
+
+}
+
+void CDlgKbElf::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	SetMsgHandled(FALSE);
+	if (nChar == VK_RETURN)
 	{
 		int nSel = m_pList->GetSelectedItem();
 		if (nSel >= 0 && !m_Row2InsMap.empty())
@@ -301,12 +316,10 @@ bool CDlgKbElf::OnKeyDown(EventArgs * e)
 		m_pEdit->SetWindowTextW(L"");
 		ShowWindow(SW_HIDE);
 	}
-	else if (pEvent->nChar == VK_BACK && m_pEdit->GetWindowText() == L"")
+	else if (nChar == VK_BACK && m_pEdit->GetWindowText() == L""
+		|| nChar == VK_ESCAPE)
+	{
 		ShowWindow(SW_HIDE);
-	return false;
-}
-
-std::pair<SStringA, SColorListCtrlEx*> SOUI::CDlgKbElf::GetShowPicInfo()
-{
-	return std::make_pair(m_subIns, m_useList);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SetFocus, NULL);
+	}
 }

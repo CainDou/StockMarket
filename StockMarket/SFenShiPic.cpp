@@ -46,7 +46,7 @@ SFenShiPic::SFenShiPic()
 	m_pDealList = new CDealList;
 	m_pPriceList = new CPriceList;
 	m_ppSubPic = nullptr;
-	m_bIsStockIndex = false;
+	m_bIsIndex = false;
 	m_preMovePt.SetPoint(-1, -1);
 
 	m_nMACDPara[0] = 12;
@@ -104,12 +104,11 @@ void SFenShiPic::InitSubPic(int nNum, vector<SStringA> & picNameVec)
 void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, 
 	vector<CommonIndexMarket>* pIdxMarketVec)
 {
-	KillTimer(1);
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_pIdxMarketVec = pIdxMarketVec;
 	m_pStkMarketVec = nullptr;
-	m_bIsStockIndex = true;
+	m_bIsIndex = true;
 	m_strStockName = StockName;
 	m_pPriceList->SetShowData(subIns, m_strStockName, pIdxMarketVec);
 	m_pDealList->SetShowData(subIns, pIdxMarketVec);
@@ -121,12 +120,11 @@ void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName,
 void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName, 
 	vector<CommonStockMarket>* pStkMarketVec)
 {
-	KillTimer(1);
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_pStkMarketVec = pStkMarketVec;
 	m_pIdxMarketVec = nullptr;
-	m_bIsStockIndex = false;
+	m_bIsIndex = false;
 	m_strStockName = StockName;
 	m_pPriceList->SetShowData(subIns, m_strStockName, pStkMarketVec);
 	m_pDealList->SetShowData(subIns, pStkMarketVec);
@@ -430,7 +428,6 @@ void SFenShiPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 
 	int nLen = m_rcMain.right - m_rcMain.left;	//判断是否超出范围
 													//判断最大最小值
-													//	OutputDebugString("判断最大值\0");
 
 	double fMax = -1000000000;
 	double fMin = 1000000000;
@@ -510,7 +507,7 @@ void SFenShiPic::GetFuTuMaxDiff()		//判断副图坐标最大最小值和k线条数
 	if (m_pData->d.empty())
 		m_pData->fMaxf = 1;
 
-	if (!m_bIsStockIndex)
+	if (!m_bIsIndex)
 		m_pData->fMaxf /= 100;
 
 
@@ -642,41 +639,6 @@ void SFenShiPic::OnMouseMove(UINT nFlags, CPoint point)
 	ReleaseRenderTarget(pRT);
 }
 
-//LRESULT SFenShiPic::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp)
-//{
-//	static int times = 0;
-//	++times;
-//	SStringA str;
-//	str.Format("group%d OnMsg触发了%d\n",m_rgGroup, times);
-//	OutputDebugStringA(str);
-//
-//	USHORT nGroup = LOWORD(lp);
-//	if ((RpsGroup)nGroup != m_rgGroup)
-//	{
-//		SetMsgHandled(FALSE);
-//		return -1;
-//	}
-//	FSMSG msg = (FSMSG)HIWORD(lp);
-//	switch (msg)
-//	{
-//	case FSMSG_PROCDATA:
-//		DataProc();
-//		break;
-//	case FSMSG_UPDATE:
-//		break;
-//	case FSMSG_EMA:
-//		ReProcEMA();
-//		Invalidate();
-//		break;
-//	case FSMSG_MACD:
-//		ReProcMacd();
-//		Invalidate();
-//		break;
-//	default:
-//		break;
-//	}
-//	return 0;
-//}
 
 void SFenShiPic::OnMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 {
@@ -791,7 +753,7 @@ void SFenShiPic::DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP & data)
 
 	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
 	left += size.cx;
-	strMarket.Format(L"%d",m_bIsStockIndex?data.vol: data.vol / 100);
+	strMarket.Format(L"%d",m_bIsIndex?data.vol: data.vol / 100);
 	DrawTextonPic(pRT, CRect(m_rcMain.left + left, m_rcMain.top + 5, m_rcMain.right, m_rcImage.top + 20), strMarket, RGBA(255, 255, 0, 255));
 
 	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
@@ -858,7 +820,9 @@ void SFenShiPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLO
 	pMemRT->SelectObject(pFont);
 
 	pMemRT->SetTextColor(color);				//字为白色
-	pMemRT->DrawTextW(str, wcslen(str), CRect(0, 0, rc.right - rc.left, rc.bottom - rc.top), uFormat);
+	pMemRT->DrawTextW(str, wcslen(str), 
+		CRect(0, 0, rc.right - rc.left, rc.bottom - rc.top), 
+		uFormat);
 	pRT->BitBlt(rc, pMemRT, 0, 0, SRCINVERT);
 
 }
@@ -944,29 +908,22 @@ void SFenShiPic::InitVirTimeLineMap()
 void SFenShiPic::DataProc()
 {
 	DataInit();
-	if (m_bIsStockIndex)
-	{
-		m_bDataInited = true;
+	m_bDataInited = true;
+	if (m_bIsIndex)
 		IndexDataUpdate();
-	}
 	else
-	{
-		m_bDataInited = true;
 		StockDataUpdate();
-	}
 	GetMaxDiff();
 	GetFuTuMaxDiff();
 	GetMACDMaxDiff();
-	Invalidate();
-	SetTimer(1, 1000);
+	//Invalidate();
+	//SetTimer(1, 1000);
 }
 
 
 void SFenShiPic::IndexDataUpdate()
 {
 
-	if (!m_bDataInited)
-		return;
 	if (m_pIdxMarketVec->empty())
 		return;
 
@@ -1054,8 +1011,6 @@ void SFenShiPic::IndexDataUpdate()
 void SFenShiPic::StockDataUpdate()
 {
 
-	if (!m_bDataInited)
-		return;
 	if (m_pStkMarketVec->empty())
 		return;
 
@@ -1284,7 +1239,9 @@ void SFenShiPic::UpdateData()
 {
 	if (m_pData == nullptr)
 		return;
-	if (m_bIsStockIndex)
+	if (!m_bDataInited)
+		return;
+	if (m_bIsIndex)
 		IndexDataUpdate();
 	else
 		StockDataUpdate();
@@ -1302,7 +1259,7 @@ void SFenShiPic::SetWindowRect()
 			m_rcAll.right, m_rcAll.bottom);
 	else
 	{
-		if (m_bIsStockIndex)
+		if (m_bIsIndex)
 		{
 			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
 				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 160);
@@ -1853,7 +1810,7 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 			pRT->SelectObject(penYellow);
 			//		pRT->DrawRectangle(CRect(x + width, GetFuTuYPos(m_pData->d[i].vol), x + width, m_rcLower.bottom - 1));
 
-			int vol = m_bIsStockIndex ? 
+			int vol = m_bIsIndex ? 
 				m_pData->d[i].vol : m_pData->d[i].vol / 100;
 			if (m_pData->d[i].vol != 0)
 			{
@@ -2024,19 +1981,18 @@ void SFenShiPic::DataInit()
 	if (m_pData == nullptr)
 	{
 		m_pData = new FENSHI_INFO;
-		ZeroMemory(m_pData, sizeof(m_pData));
+		ZeroMemory(m_pData, sizeof(FENSHI_INFO));
 	}
 	else
 	{
 		delete m_pData;
 		m_pData = new FENSHI_INFO;
-		ZeroMemory(m_pData, sizeof(m_pData));
+		ZeroMemory(m_pData, sizeof(FENSHI_INFO));
 	}
 
 	SYSTEMTIME st;
 	::GetLocalTime(&st);
 	m_nTradingDay = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
-
 	SingleInit();
 
 }
@@ -2049,7 +2005,7 @@ void SFenShiPic::SingleInit()
 	m_pData->nMin = 30;
 	int nDigit = 0;
 
-	if (m_bIsStockIndex)
+	if (m_bIsIndex)
 		m_bShowAvg = false;
 
 	InitVirTimeLineMap();
@@ -2063,7 +2019,7 @@ void SFenShiPic::SingleInit()
 
 	m_bDataInited = true;
 
-	if (m_bIsStockIndex)
+	if (m_bIsIndex)
 	{
 		if (m_pIdxMarketVec->empty())
 			return;

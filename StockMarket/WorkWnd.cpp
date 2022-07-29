@@ -19,75 +19,86 @@
 
 CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 {
+	m_pDlgKbElf = nullptr;
+	m_uThreadID = INVALID_THREADID;
 }
 
 
 CWorkWnd::~CWorkWnd()
 {
-	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
-	if(m_workThread.joinable())
+	if(INVALID_THREADID != m_uThreadID)
+		SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
+	if (m_workThread.joinable())
 		m_workThread.join();
+	m_pPreSelBtn = nullptr;
 }
 
-void CWorkWnd::SetGroup(RpsGroup Group, bool bMain, HWND hParWnd)
+void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 {
 	m_Group = Group;
-	m_bInMain = bMain;
 	m_hParWnd = hParWnd;
+	if (Group_SWL1 == m_Group)
+	{
+		m_pTextIndy->SetVisible(FALSE);
+		m_pBtnConn1->SetVisible(FALSE);
+		m_pBtnConn2->SetVisible(FALSE);
+		m_pTextTitle->SetWindowTextW(L"申万一级行业");
+	}
+	else if (Group_SWL2 == m_Group)
+	{
+		m_pBtnConn1->SetWindowTextW(L"联");
+		m_pBtnConn2->SetVisible(FALSE);
+		m_pBtnConn2->SetAttribute(L"size", L"0,22");
+		m_pTextTitle->SetWindowTextW(L"申万二级行业");
+	}
+	else if (Group_Stock == m_Group)
+		m_pTextTitle->SetWindowTextW(L"股票");
 }
 
 void CWorkWnd::InitShowConfig(InitPara initPara)
 {
+	vector<SStringA> SubPicWndNameVec;
+	SubPicWndNameVec.reserve(MAX_SUBPIC);
+	SubPicWndNameVec.emplace_back("全市场RPS");
+	SubPicWndNameVec.emplace_back("1级行业RPS");
+	SubPicWndNameVec.emplace_back("2级行业RPS");
+
 	m_InitPara = initPara;
 	if (Group_Stock == m_Group)
-		m_pFenShiPic->InitSubPic(MAX_SUBPIC, m_SubPicWndNameVec);
+	{
+		m_pFenShiPic->InitSubPic(MAX_SUBPIC, SubPicWndNameVec);
+		m_pKlinePic->InitSubPic(MAX_SUBPIC, SubPicWndNameVec);
+	}
 	else
-		m_pFenShiPic->InitSubPic(1, m_SubPicWndNameVec);
+	{
+		m_pFenShiPic->InitSubPic(1, SubPicWndNameVec);
+		m_pKlinePic->InitSubPic(1, SubPicWndNameVec);
+	}
 	m_pFenShiPic->SetRpsGroup(m_Group);
 	m_pFenShiPic->InitShowPara(m_InitPara);
-	if (Group_Stock == m_Group)
-		m_pKlinePic->InitSubPic(MAX_SUBPIC, m_SubPicWndNameVec);
-	else
-		m_pKlinePic->InitSubPic(1, m_SubPicWndNameVec);
 	m_pKlinePic->SetRpsGroup(m_Group);
 	m_pKlinePic->SetParentHwnd(m_hWnd);
 	m_pKlinePic->InitShowPara(m_InitPara);
 	m_PicPeriod = m_ListPeriod = m_InitPara.Period;
 
-	SStringW btnName;
-	if (Period_FenShi == m_ListPeriod)
-		btnName.Format(L"btn_FS");
-	else if (Period_1Day == m_ListPeriod)
-		btnName.Format(L"btn_Day");
-	else
-		btnName.Format(L"btn_M%d", m_ListPeriod);
-	m_pPreSelBtn = FindChildByName2<SImageButton>(btnName);
+	m_pPreSelBtn = m_pPeriodBtnMap[m_ListPeriod];
 	m_pPreSelBtn->SetAttribute(L"colorText", L"#00ffffff");
-	m_pTxtIndy = FindChildByName2<SStatic>(L"text_ShowIndy");
 	m_bListConn1 = initPara.Connect1;
 	m_bListConn2 = initPara.Connect2;
 	if (m_bListConn1)
-	{
-		SImageButton * pBtn =
-			FindChildByName2<SImageButton>(L"btn_ListConnect1");
-		SetBtnState(pBtn, true);
-	}
+		SetBtnState(m_pBtnConn1, true);
 	if (m_bListConn2)
-	{
-		SImageButton * pBtn =
-			FindChildByName2<SImageButton>(L"btn_ListConnect2");
-		SetBtnState(pBtn, true);
-	}
+		SetBtnState(m_pBtnConn2, true);
 
 	if (m_bListConn1 || m_bListConn2)
 	{
 		m_ListShowInd = m_InitPara.ShowIndy;
-		SetListShowIndyStr(m_pTxtIndy);
+		SetListShowIndyStr(m_pTextIndy);
 	}
 
 }
 
-InitPara SOUI::CWorkWnd::OutPutInitPara()
+InitPara CWorkWnd::OutPutInitPara()
 {
 	m_pFenShiPic->OutPutShowPara(m_InitPara);
 	m_pKlinePic->OutPutShowPara(m_InitPara);
@@ -98,15 +109,14 @@ InitPara SOUI::CWorkWnd::OutPutInitPara()
 	return m_InitPara;
 }
 
-void SOUI::CWorkWnd::ClearData()
+void CWorkWnd::ClearData()
 {
-	m_ListInsVec.clear();
-	m_StockVec.clear();
+	m_InfoVec.clear();
 }
 
-void SOUI::CWorkWnd::InitList()
+void CWorkWnd::InitList()
 {
-	m_pList = FindChildByName2<SColorListCtrlEx>(L"ls_rps");
+	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.ls_rps);
 	m_pList->GetEventSet()->subscribeEvent(EVT_LC_DBCLICK,
 		Subscriber(&CWorkWnd::OnListDbClick, this));
 	m_pList->GetEventSet()->subscribeEvent(EVT_LC_SELCHANGED,
@@ -119,11 +129,12 @@ void SOUI::CWorkWnd::InitList()
 		Subscriber(&CWorkWnd::OnListHeaderClick, this));
 	pHeader->GetEventSet()->subscribeEvent(EVT_HEADER_ITEMSWAP,
 		Subscriber(&CWorkWnd::OnListHeaderSwap, this));
+	m_bListInited = true;
 	UpdateList();
 
 }
 
-void SOUI::CWorkWnd::ReInitList()
+void CWorkWnd::ReInitList()
 {
 	m_bListInited = false;
 	UpdateListShowStock();
@@ -132,35 +143,37 @@ void SOUI::CWorkWnd::ReInitList()
 
 }
 
-void SOUI::CWorkWnd::SetDataPoint(void * pData, int DataType)
+void CWorkWnd::SetDataPoint(void * pData, int DataType)
 {
 	switch (DataType)
 	{
 	case DT_ListData:
-		m_pListDataMap = (map<int,TimeLineMap>*)pData;
+		m_pListDataMap = (map<int, TimeLineMap>*)pData;
 		break;
 	}
 }
 
-void SOUI::CWorkWnd::SetKbElfInfo(bool bFroceUpdate,
-	vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec)
-{
-	m_pDlgKbElf->SetStockInfo(bFroceUpdate, stock1Vec, stock2Vec);
-}
-
-void SOUI::CWorkWnd::SetPicUnHandled()
+void CWorkWnd::SetPicUnHandled()
 {
 	m_pFenShiPic->SetPicUnHandled();
 	m_pKlinePic->SetPicUnHandled();
 }
 
-void SOUI::CWorkWnd::ReSetPic()
+void CWorkWnd::ReSetPic()
 {
 	if (m_strSubStock != "")
-		ShowSubStockPic(m_strSubStock);
+		ShowPicWithNewID(m_strSubStock,true);
 }
 
-void SOUI::CWorkWnd::UpdateTodayPointData(SStringA pointName,
+void CWorkWnd::SetListInfo(vector<StockInfo>& infoVec,
+	strHash<SStringA>& StockNameMap)
+{
+	m_InfoVec = infoVec;
+	m_StockName = StockNameMap;
+	m_pDlgKbElf->SetStockInfo(m_InfoVec);
+}
+
+void CWorkWnd::UpdateTodayPointData(SStringA pointName,
 	vector<CoreData>& dataVec, bool bLast)
 {
 	m_PointData[m_PicPeriod][pointName] = dataVec;
@@ -168,149 +181,149 @@ void SOUI::CWorkWnd::UpdateTodayPointData(SStringA pointName,
 		m_PointReadyMap[m_PicPeriod] = true;
 }
 
-void SOUI::CWorkWnd::OnInit(EventArgs * e)
+void CWorkWnd::CloseWnd()
 {
-	m_pFenShiPic = FindChildByName2<SFenShiPic>(L"fenshiPic");
-	m_pKlinePic = FindChildByName2<SKlinePic>(L"klinePic");
+	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
+	if (m_workThread.joinable())
+		m_workThread.join();
+	m_uThreadID = INVALID_THREADID;
+	m_pPreSelBtn = nullptr;
+	m_pListDataMap = nullptr;
+	m_pList->DeleteAllItems();
+	m_PointData.clear();
+	m_IndexMarketVec.clear();
+	m_IndexMarketVec.shrink_to_fit();
+	m_StockMarketVec.clear();
+	m_StockMarketVec.shrink_to_fit();
+	m_KlineMap.clear();
+	m_preCloseMap.hash.clear();
+	m_StockName.hash.clear();
+	m_dataNameVec.clear();
+	m_dataNameVec.shrink_to_fit();
+	m_PointReadyMap.clear();
+	m_KlineGetMap.clear();
+	m_PointGetMap.clear();
+	m_SubPicShowNameVec.clear();
+	m_SubPicShowNameVec.shrink_to_fit();
+	m_ListPosMap.hash.clear();
+}
+
+void CWorkWnd::OnInit(EventArgs * e)
+{
+	::InitializeCriticalSection(&m_csClose);
+	m_pFenShiPic = FindChildByID2<SFenShiPic>(R.id.fenshiPic);
+	m_pKlinePic = FindChildByID2<SKlinePic>(R.id.klinePic);
+	m_pTextTitle = FindChildByID2<SStatic>(R.id.text_Group);
+	m_pTextIndy = FindChildByID2<SStatic>(R.id.text_ShowIndy);
+	m_pBtnMarket = FindChildByID2<SImageButton>(R.id.btn_Market);
+	m_pPeriodBtnMap[Period_FenShi] = 
+		FindChildByID2<SImageButton>(R.id.btn_FS);
+	m_pPeriodBtnMap[Period_1Min] =
+		FindChildByID2<SImageButton>(R.id.btn_M1);
+	m_pPeriodBtnMap[Period_5Min] =
+		FindChildByID2<SImageButton>(R.id.btn_M5);
+	m_pPeriodBtnMap[Period_15Min] =
+		FindChildByID2<SImageButton>(R.id.btn_M15);
+	m_pPeriodBtnMap[Period_30Min] =
+		FindChildByID2<SImageButton>(R.id.btn_M30);
+	m_pPeriodBtnMap[Period_60Min] =
+		FindChildByID2<SImageButton>(R.id.btn_M60);
+	m_pPeriodBtnMap[Period_1Day] =
+		FindChildByID2<SImageButton>(R.id.btn_Day);
+	m_pBtnConn1 = FindChildByID2<SImageButton>(R.id.btn_ListConnect1);
+	m_pBtnConn2 = FindChildByID2<SImageButton>(R.id.btn_ListConnect2);
+
 	InitProcFucMap();
-	m_workThread = thread(&CWorkWnd::DataProc,this);
+	InitNameVec();
+	m_workThread = thread(&CWorkWnd::DataProc, this);
 	m_uThreadID = *(unsigned*)&m_workThread.get_id();
 	m_pDlgKbElf = new CDlgKbElf(m_hWnd);
 	m_pDlgKbElf->Create(NULL);
 
 }
 
-LRESULT SOUI::CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
+LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 {
 	int Msg = (int)wp;
 	switch (wp)
 	{
-	case MAINMSG_UpdateList:
-	{
+	case WDMsg_UpdateList:
 		UpdateList();
 		if (m_pList->IsVisible())
 			m_pList->Invalidate();
-	}
-	break;
-	case MAINMSG_UpdatePoint:
-	{
-		UpdateList();
-		m_pList->Invalidate();
-	}
-	break;
-	case MAINMSG_TodayPoint:
-	{
-		auto info = m_pDlgKbElf->GetShowPicInfo();
-		ShowSubStockPic(info.first);
-	}
-	break;
-	case MAINMSG_HisPoint:
-	{
-		int nGroup = (int)lp;
-		m_pFenShiPic->Invalidate();
-		m_pKlinePic->Invalidate();
-	}
-	break;
+		break;
+	case WDMsg_UpdatePic:
+		if (m_pFenShiPic->IsVisible())
+			m_pFenShiPic->Invalidate();
+		if (m_pKlinePic->IsVisible())
+			m_pKlinePic->Invalidate();
+		break;
+	case WDMsg_SubIns:
+		ShowPicWithNewID(m_pDlgKbElf->GetShowPicInfo());
+		break;
+	case WDMsg_ChangeIndy:
+		UpdateListShowStock();
+		break;
+	case WDMsg_SetFocus:
+		CSimpleWnd::SetFocus();
+		break;
 	default:
 		break;
 	}
 	return 0;
 }
 
-LRESULT SOUI::CWorkWnd::OnDataMsg(UINT uMsg, WPARAM wp,
+LRESULT CWorkWnd::OnFSMsg(UINT uMsg, WPARAM wp,
 	LPARAM lp, BOOL & bHandled)
 {
-	USHORT nGroup = LOWORD(lp);
-	FSMSG msg = (FSMSG)HIWORD(lp);
-	char *StockID = (char*)wp;
-	if (m_strSubStock == StockID)
-	{
-		switch (msg)
-		{
-		case DM_MARKET:
-		{
-			m_pFenShiPic->DataProc();
-			m_pKlinePic->SetTodayMarketState(true);
-		}
-		break;
-		case DM_HISKLINE:
-			m_pKlinePic->SetHisKlineState(true);
-			break;
-		case DM_HISPOINT:
-			m_pKlinePic->SetHisPointState(true);
-			break;
-		default:
-			break;
-		}
-		if (m_pKlinePic->IsVisible()
-			&& m_pKlinePic->GetDataReadyState())
-			m_pKlinePic->DataProc();
-	}
-	delete[]StockID;
-	return 0;
-}
-
-LRESULT SOUI::CWorkWnd::OnFSMsg(UINT uMsg, WPARAM wp,
-	LPARAM lp, BOOL & bHandled)
-{
-	USHORT nGroup = LOWORD(lp);
-	FSMSG msg = (FSMSG)HIWORD(lp);
-	switch (msg)
+	switch (lp)
 	{
 	case FSMSG_UPDATE:
 		break;
 	case FSMSG_EMA:
 		m_pFenShiPic->SetEmaPara((int*)wp);
-		m_pFenShiPic->ReProcEMA();
-		m_pFenShiPic->Invalidate();
-		ChangeWindowSetting("EMA", (void*)wp, true);
+		::SendMsg(m_uThreadID, WW_FSEma, NULL, 0);
 		break;
 	case FSMSG_MACD:
 		m_pFenShiPic->SetMacdPara((int*)wp);
-		m_pFenShiPic->ReProcMacd();
-		m_pFenShiPic->Invalidate();
-		ChangeWindowSetting("MACD", (void*)wp, true);
+		::SendMsg(m_uThreadID, WW_FSMacd, NULL, 0);
 		break;
 	default:
 		break;
 	}
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		WDMsg_SaveConfig, NULL);
 	return 0;
 }
 
-LRESULT SOUI::CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
+LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 	LPARAM lp, BOOL & bHandled)
 {
-	USHORT nGroup = LOWORD(lp);
-	KLINEMSG msg = (KLINEMSG)HIWORD(lp);
-	switch (msg)
+	switch (lp)
 	{
 	case KLINEMSG_UPDATE:
 		break;
 	case KLINEMSG_MA:
 		m_pKlinePic->SetMaPara((int*)wp);
-		m_pKlinePic->ReProcMAData();
-		m_pKlinePic->Invalidate();
-		ChangeWindowSetting("MA", (void*)wp, true);
+		::SendMsg(m_uThreadID, WW_KlineMa, NULL, 0);
 		break;
 	case KLINEMSG_MACD:
 		m_pKlinePic->SetMacdPara((int*)wp);
-		m_pKlinePic->ReProcMacdData();
-		m_pKlinePic->Invalidate();
-		ChangeWindowSetting("MACD", (void*)wp, true);
+		::SendMsg(m_uThreadID, WW_KlineMacd, NULL, 0);
 		break;
 	case KLINEMSG_BAND:
 		m_pKlinePic->SetBandPara(*(BandPara_t*)wp);
-		m_pKlinePic->ReProcBandData();
-		m_pKlinePic->Invalidate();
-		ChangeWindowSetting("Band", (void*)wp, true);
+		::SendMsg(m_uThreadID, WW_KlineBand, NULL, 0);
 		break;
 	default:
 		break;
 	}
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		WDMsg_SaveConfig, NULL);
 	return 0;
 }
 
-void SOUI::CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
+void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 
 {
 	bool bState = false;
@@ -320,25 +333,29 @@ void SOUI::CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetDealState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetDealState();
-		ChangeWindowSetting(m_Group, "ShowTSCDeal", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_Volume:
 		m_pFenShiPic->SetVolumeState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetVolumeState();
-		ChangeWindowSetting(m_Group, "ShowTSCVolume", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_MACD:
 		m_pFenShiPic->SetMacdState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetMacdState();
-		ChangeWindowSetting(m_Group, "ShowTSCMACD", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_RPS:
 		m_pFenShiPic->SetRpsState(SP_FULLMARKET);
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetRpsState(SP_FULLMARKET);
-		ChangeWindowSetting(m_Group, "ShowTSCRPS", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_MacdPara:
 	{
@@ -354,13 +371,15 @@ void SOUI::CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetAvgState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetAvgState();
-		ChangeWindowSetting(m_Group, "ShowAvg", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_EMA:
 		m_pFenShiPic->SetEmaState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetEmaState();
-		ChangeWindowSetting(m_Group, "ShowEMA", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_EmaPara:
 	{
@@ -376,19 +395,21 @@ void SOUI::CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetRpsState(SP_SWINDYL1);
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetRpsState(SP_SWINDYL1);
-		ChangeWindowSetting(m_Group, "ShowTSCL1RPS", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case FM_L2RPS:
 		m_pFenShiPic->SetRpsState(SP_SWINDYL2);
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetRpsState(SP_SWINDYL2);
-		ChangeWindowSetting(m_Group, "ShowTSCL2RPS", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	default:
 		break;
 	}
 }
-void SOUI::CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
+void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 
 {
 	bool bState = false;
@@ -398,39 +419,45 @@ void SOUI::CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetDealState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetDealState();
-		ChangeWindowSetting(m_Group, "ShowKlineDeal", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_MA:
 		m_pKlinePic->SetBandState(false, false);
 		m_pKlinePic->SetMaState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetMaState();
-		ChangeWindowSetting(m_Group, "ShowMA", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_Band:
 		m_pKlinePic->SetMaState(false, false);
 		m_pKlinePic->SetBandState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetBandState();
-		ChangeWindowSetting(m_Group, "ShowBand", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_Volume:
 		m_pKlinePic->SetVolumeState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetVolumeState();
-		ChangeWindowSetting(m_Group, "ShowKlineVolume", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_MACD:
 		m_pKlinePic->SetMacdState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetMacdState();
-		ChangeWindowSetting(m_Group, "ShowKlineMACD", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_RPS:
 		m_pKlinePic->SetRpsState(SP_FULLMARKET);
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetRpsState(SP_FULLMARKET);
-		ChangeWindowSetting(m_Group, "ShowKlineRPS", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_MacdPara:
 	{
@@ -466,20 +493,22 @@ void SOUI::CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetRpsState(SP_SWINDYL1);
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetRpsState(SP_SWINDYL1);
-		ChangeWindowSetting(m_Group, "ShowKlineL1RPS", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_L2RPS:
 		m_pKlinePic->SetRpsState(SP_SWINDYL2);
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetRpsState(SP_SWINDYL2);
-		ChangeWindowSetting(m_Group, "ShowKlineL2RPS", &bState);
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 		break;
 
 	default:
 		break;
 	}
 }
-void SOUI::CWorkWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CWorkWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	SetMsgHandled(FALSE);
 	if (nChar == 229)
@@ -507,7 +536,7 @@ void SOUI::CWorkWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 	}
 }
-void SOUI::CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	SetMsgHandled(FALSE);
 	if (nChar == VK_ESCAPE)
@@ -520,17 +549,15 @@ void SOUI::CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 		{
 			CRect rc;
 			::GetWindowRect(m_hParWnd, &rc);
-			m_pDlgKbElf->SetWindowPos(NULL, rc.right - 320,
+			m_pDlgKbElf->SetWindowPos(HWND_TOPMOST, rc.right - 320,
 				rc.bottom - 370, 0, 0, SWP_NOSIZE);
-			m_pDlgKbElf->wstrInput = L"";
+			m_pDlgKbElf->ClearInput();
 			SStringW input = L"";
 			if (m_nLastChar >= '0' && m_nLastChar <= '9')
 				input = (char)m_nLastChar;
-			m_pDlgKbElf->m_pEdit->SetWindowTextW(input);
-
-			m_pDlgKbElf->m_pEdit->SetFocus();
-			m_pDlgKbElf->m_pEdit->SetSel(-1);
 			m_pDlgKbElf->ShowWindow(SW_SHOWDEFAULT);
+			m_pDlgKbElf->SetEditInput(input);
+			//SetMsgHandled(TRUE);
 		}
 	}
 	else if ((nChar >= 0x30 && nChar <= 0x39) ||
@@ -544,7 +571,7 @@ void SOUI::CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 			m_pDlgKbElf->SetWindowPos(NULL,
 				rc.right - 320, rc.bottom - 370, 0, 0,
 				SWP_NOSIZE);
-			m_pDlgKbElf->wstrInput = L"";
+			m_pDlgKbElf->ClearInput();
 			SStringW input;
 			if (nChar >= VK_NUMPAD0&&nChar <= VK_NUMPAD9)
 				input = (char)(nChar - 0x30);
@@ -572,19 +599,13 @@ void SOUI::CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 				input = bCaps ^ bShift ?
 					(char)nChar : (char)(nChar + 32);
 			}
-			m_pDlgKbElf->m_pEdit->SetWindowTextW(input);
-			m_pDlgKbElf->m_pEdit->SetFocus();
-			m_pDlgKbElf->m_pEdit->SetSel(-1);
 			m_pDlgKbElf->ShowWindow(SW_SHOWDEFAULT);
+			m_pDlgKbElf->SetEditInput(input);
 		}
 
 	}
 }
-void SOUI::CWorkWnd::OnLButtonDown(UINT nFlags, CPoint point)
-{
-
-}
-void SOUI::CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
+void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	SetMsgHandled(FALSE);
 	if (m_pList->IsVisible())
@@ -645,10 +666,9 @@ void SOUI::CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 
 	}
 }
-BOOL SOUI::CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+BOOL CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	SetMsgHandled(FALSE);
-	int nWnd = 0;
 	ScreenToClient(&pt);
 	static uint64_t tick = 0;
 	uint64_t nowTick = GetTickCount64();
@@ -659,16 +679,15 @@ BOOL SOUI::CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 		m_pList->SetFocus();
 	else
 	{
-		SStringA strSubIns = m_strSubStock[nWnd];
 		std::vector < pair<SStringA, int>>ListPosVec(
-			m_ListPosMap.begin(), m_ListPosMap.end());
+			m_ListPosMap.hash.begin(), m_ListPosMap.hash.end());
 		std::sort(ListPosVec.begin(), ListPosVec.end(),
 			[](const pair<SStringA, int> &a, const pair<SStringA, int> b)
 		{return a.second < b.second; });
 		int i = 0;
 		for (i; i < ListPosVec.size(); ++i)
 		{
-			if (strSubIns == ListPosVec[i].first)
+			if (m_strSubStock == ListPosVec[i].first)
 				break;
 		}
 		if (zDelta < 0)
@@ -679,11 +698,11 @@ BOOL SOUI::CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 			i = ListPosVec.size() - 1;
 		if (i >= ListPosVec.size())
 			i = 0;
-		ShowSubStockPic(ListPosVec[i].first);
+		ShowPicWithNewID(ListPosVec[i].first);
 	}
 	return 0;
 }
-void SOUI::CWorkWnd::SwitchPic2List()
+void CWorkWnd::SwitchPic2List()
 {
 	m_pFenShiPic->SetVisible(FALSE, TRUE);
 	m_pKlinePic->SetVisible(FALSE, TRUE);
@@ -694,7 +713,7 @@ void SOUI::CWorkWnd::SwitchPic2List()
 	m_pList->RequestRelayout();
 
 }
-void SOUI::CWorkWnd::SwitchList2Pic(int nPeriod)
+void CWorkWnd::SwitchList2Pic(int nPeriod)
 {
 	m_pList->SetVisible(FALSE, TRUE);
 	m_pFenShiPic->SetVisible(FALSE, FALSE);
@@ -713,52 +732,8 @@ void SOUI::CWorkWnd::SwitchList2Pic(int nPeriod)
 		m_pKlinePic->RequestRelayout();
 	}
 }
-void SOUI::CWorkWnd::ChangeWindowSetting(SStringA strKey, void * pValue, bool bComplex)
-{
-	SStringA strSection;
-	strSection.Format("Group%d", m_Group);
-	CIniFile ini(".//config//WindowConfig.ini");
-	if (!bComplex)
-		ini.WriteIntA(strSection, strKey, (int)pValue);
-	else
-	{
-		if (strKey.Find("MACD") != -1)
-		{
-			int * pMacd = (int *)pValue;
-			for (int i = 0; i < 3; ++i)
-				ini.WriteIntA(strSection,
-					strKey.Format("MACDPara%d", i + 1), pMacd[i]);
-		}
-		else if (strKey.Find("EMA") != -1)
-		{
-			int * pEma = (int *)pValue;
-			for (int i = 0; i < 2; ++i)
-				ini.WriteIntA(strSection,
-					strKey.Format("EMAPara%d", i + 1), pEma[i]);
-		}
-		else if (strKey.Find("MA") != -1)
-		{
-			int * pMa = (int *)pValue;
-			for (int i = 0; i < 4; ++i)
-				ini.WriteIntA(strSection,
-					strKey.Format("MAPara%d", i + 1), pMa[i]);
-		}
-		else if (strKey.Find("Band") != -1)
-		{
-			BandPara_t * pBand = (BandPara_t *)pValue;
-			ini.WriteIntA(strSection, "BandN1", pBand->N1);
-			ini.WriteIntA(strSection, "BandN2", pBand->N2);
-			ini.WriteIntA(strSection, "BandK", pBand->K);
-			ini.WriteIntA(strSection, "BandM1", pBand->M1);
-			ini.WriteIntA(strSection, "BandM2", pBand->M2);
-			ini.WriteIntA(strSection, "BandP", pBand->P);
-		}
-	}
-}
-void SOUI::CWorkWnd::OnTimer(UINT_PTR nIDEvent)
-{
-}
-void SOUI::CWorkWnd::DataProc()
+
+void CWorkWnd::DataProc()
 {
 	int MsgId;
 	char *info;
@@ -774,14 +749,16 @@ void SOUI::CWorkWnd::DataProc()
 		}
 		auto pFuc = m_dataHandleMap[MsgId];
 		if (pFuc)
-			(this->*pFuc)(msgLength, info);;
+			(this->*pFuc)(msgLength, info);
 		delete[]info;
 		info = nullptr;
 	}
 
 }
-void SOUI::CWorkWnd::InitProcFucMap()
+void CWorkWnd::InitProcFucMap()
 {
+	m_dataHandleMap[WW_ListData] =
+		&CWorkWnd::OnUpdateListData;
 	m_dataHandleMap[WW_Point] =
 		&CWorkWnd::OnUpdatePoint;
 	m_dataHandleMap[WW_TodayPoint] =
@@ -800,9 +777,45 @@ void SOUI::CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnUpdateHisKline;
 	m_dataHandleMap[WW_CloseInfo] =
 		&CWorkWnd::OnUpdateCloseInfo;
+	m_dataHandleMap[WW_ChangeIndy] =
+		&CWorkWnd::OnChangeShowIndy;
+	m_dataHandleMap[WW_FSEma] =
+		&CWorkWnd::OnFenShiEma;
+	m_dataHandleMap[WW_FSMacd] =
+		&CWorkWnd::OnFenShiMacd;
+	m_dataHandleMap[WW_KlineMa] =
+		&CWorkWnd::OnKlineMa;
+	m_dataHandleMap[WW_KlineMacd] =
+		&CWorkWnd::OnKlineMacd;
+	m_dataHandleMap[WW_KlineBand] =
+		&CWorkWnd::OnKlineBand;
 
 }
-bool SOUI::CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
+void CWorkWnd::InitNameVec()
+{
+	m_dataNameVec.emplace_back("close");
+	m_dataNameVec.emplace_back("RPS520");
+	m_dataNameVec.emplace_back("MACD520");
+	m_dataNameVec.emplace_back("Point520");
+	m_dataNameVec.emplace_back("Rank520");
+	m_dataNameVec.emplace_back("RPS2060");
+	m_dataNameVec.emplace_back("MACD2060");
+	m_dataNameVec.emplace_back("Point2060");
+	m_dataNameVec.emplace_back("Rank2060");
+
+	m_SubPicShowNameVec.resize(MAX_SUBPIC);
+	for (int i = 0; i < MAX_SUBPIC; ++i)
+		m_SubPicShowNameVec[i].reserve(SHOWDATACOUNT);
+	m_SubPicShowNameVec[0].emplace_back("Point520");
+	m_SubPicShowNameVec[0].emplace_back("Point2060");
+	m_SubPicShowNameVec[1].emplace_back("L1Point520");
+	m_SubPicShowNameVec[1].emplace_back("L1Point2060");
+	m_SubPicShowNameVec[2].emplace_back("L2Point520");
+	m_SubPicShowNameVec[2].emplace_back("L2Point2060");
+
+
+}
+bool CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
 {
 
 	EventHeaderClick *pEvt = (EventHeaderClick*)pEvtBase;
@@ -847,7 +860,7 @@ bool SOUI::CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
 
 	return true;
 }
-bool SOUI::CWorkWnd::OnListHeaderSwap(EventArgs * pEvtBase)
+bool CWorkWnd::OnListHeaderSwap(EventArgs * pEvtBase)
 {
 	EventHeaderItemSwap *pEvt = (EventHeaderItemSwap*)pEvtBase;
 	SHeaderCtrlEx* pHead = (SHeaderCtrlEx*)pEvt->sender;
@@ -863,7 +876,7 @@ bool SOUI::CWorkWnd::OnListHeaderSwap(EventArgs * pEvtBase)
 	}
 	return true;
 }
-bool SOUI::CWorkWnd::OnListDbClick(EventArgs * pEvtBase)
+bool CWorkWnd::OnListDbClick(EventArgs * pEvtBase)
 {
 	EventHeaderClick *pEvt = (EventHeaderClick*)pEvtBase;
 	SColorListCtrlEx *pList = (SColorListCtrlEx*)pEvt->sender;
@@ -871,16 +884,16 @@ bool SOUI::CWorkWnd::OnListDbClick(EventArgs * pEvtBase)
 	if (nSel < 0)
 		return false;
 	SStringA StockID = StrW2StrA(pList->GetSubItemText(nSel, SHead_ID));
-	if (m_ListPosMap.count(StockID) == 0)
+	if (m_ListPosMap.hash.count(StockID) == 0)
 		StockID += "I";
-	m_strSubStock = StockID;
+	//m_strSubStock = StockID;
 
 	m_PicPeriod = m_ListPeriod;
-	ShowSubStockPic(StockID);
+	ShowPicWithNewID(StockID);
 	m_bShowList = false;
 	return true;
 }
-bool SOUI::CWorkWnd::OnListLClick(EventArgs * pEvtBase)
+bool CWorkWnd::OnListLClick(EventArgs * pEvtBase)
 {
 	EventHeaderClick *pEvt = (EventHeaderClick*)pEvtBase;
 	SColorListCtrlEx *pList = (SColorListCtrlEx*)pEvt->sender;
@@ -889,13 +902,49 @@ bool SOUI::CWorkWnd::OnListLClick(EventArgs * pEvtBase)
 	int nSel = pList->GetSelectedItem();
 	if (nSel < 0)
 		return false;
-	SStringA StockID = StrW2StrA(pList->GetSubItemText(nSel, SHead_ID));
-	if (StockID[0] == '0')
-		StockID += "I";
-	::PostMessage(m_hParWnd, WM_MAIN_MSG, MAINMSG_UpdateList, 0);
+	SStringA strID = StrW2StrA(pList->GetSubItemText(nSel, SHead_ID));
+	if (strID[0] == '0')
+		strID += "I";
+	int nGroup = m_Group;
+	char msg[12] = "";
+	memcpy_s(msg, 12, &nGroup, 4);
+	memcpy_s(msg + 4, 12, strID, strID.GetLength() + 1);
+	SendMsg(m_uParWndThreadID, WW_ChangeIndy, msg, 12);
 	return true;
 }
-void SOUI::CWorkWnd::UpdateListShowStock()
+void CWorkWnd::UpdateListShowStock()
+{
+	SStringA strInd = m_ListShowInd;
+	m_ListPosMap.hash.clear();
+	m_pList->DeleteAllItems();
+	int nCount = 0;
+	SStringW tmp;
+	for (auto &it : m_InfoVec)
+	{
+		if (strInd == "" || strInd == it.ScaleID ||
+			strInd == it.SWL1ID || strInd == it.SWL2ID)
+		{
+			tmp.Format(L"%d", nCount + 1);
+			m_pList->InsertItem(nCount, tmp);
+			SStringW strID = StrA2StrW(it.SecurityID);
+			if (strID.GetLength() > 6)
+				strID = strID.Left(6);
+			m_pList->SetSubItemText(nCount, SHead_ID,
+				strID);
+			m_pList->SetSubItemText(nCount, SHead_Name,
+				StrA2StrW(it.SecurityName));
+			m_ListPosMap.hash[it.SecurityID] = nCount;
+			nCount++;
+		}
+	}
+	SetListShowIndyStr(m_pTextIndy);
+
+	UpdateList();
+	//m_pList->UpdateLayout();
+	m_pList->RequestRelayout();
+}
+
+void CWorkWnd::UpdateList()
 {
 	if (!m_bListInited)
 		return;
@@ -903,7 +952,7 @@ void SOUI::CWorkWnd::UpdateListShowStock()
 		return;
 	SStringW tmp;
 	auto ListData = m_pListDataMap->at(m_ListPeriod);
-	for (auto &it : m_ListPosMap)
+	for (auto &it : m_ListPosMap.hash)
 	{
 		SStringA StockID = it.first;
 		if (ListData.count(StockID))
@@ -912,7 +961,7 @@ void SOUI::CWorkWnd::UpdateListShowStock()
 			if (!isnan(dataVec["close"].value) && dataVec["close"].value != 0)
 			{
 				double fClose = dataVec["close"].value;
-				double fPreClose = m_preCloseMap[StockID];
+				double fPreClose = m_preCloseMap.hash[StockID];
 				COLORREF cl = RGBA(255, 255, 255, 255);
 				if (fClose > fPreClose)
 					cl = RGBA(255, 0, 0, 255);
@@ -985,97 +1034,7 @@ void SOUI::CWorkWnd::UpdateListShowStock()
 
 }
 
-void SOUI::CWorkWnd::UpdateList()
-{
-	if (!m_bListInited)
-		return;
-	if (!m_pList->IsVisible())
-		return;
-	SStringW tmp;
-	auto ListData = m_pListDataMap->at(m_ListPeriod);
-	for (auto &it : m_ListPosMap)
-	{
-		SStringA StockID = it.first;
-		if (ListData.count(StockID))
-		{
-			auto & dataVec = ListData[StockID];
-			if (!isnan(dataVec["close"].value) && dataVec["close"].value != 0)
-			{
-				double fClose = dataVec["close"].value;
-				double fPreClose = m_preCloseMap[StockID];
-				COLORREF cl = RGBA(255, 255, 255, 255);
-				if (fClose > fPreClose)
-					cl = RGBA(255, 0, 0, 255);
-				else if (fClose < fPreClose && fClose != 0)
-					cl = RGBA(0, 255, 0, 255);
-				tmp.Format(L"%.2f", fClose);
-				m_pList->SetSubItemText(it.second, SHead_LastPx, tmp, cl);
-				double chgPct = (fClose - fPreClose) / fPreClose * 100;
-				if (!isnan(chgPct) && !isinf(chgPct) && fClose != 0)
-					tmp.Format(L"%.2f", (fClose - fPreClose) / fPreClose * 100);
-				else
-					tmp = L"-";
-				m_pList->SetSubItemText(it.second, SHead_ChangePct, tmp, cl);
-			}
-			else
-			{
-				if (dataVec["close"].value == 0)
-					m_pList->SetSubItemText(it.second, SHead_LastPx, L"0.00");
-				else
-					m_pList->SetSubItemText(it.second, SHead_LastPx, L"-");
-				for (int i = SHead_ChangePct; i < SHead_ItmeCount; ++i)
-					m_pList->SetSubItemText(it.second, i, L"-");
-				continue;
-			}
-			for (int i = 1; i < m_dataNameVec.size(); ++i)
-			{
-				if (dataVec.count(m_dataNameVec[i])
-					&& !isnan(dataVec[m_dataNameVec[i]].value))
-				{
-					COLORREF cl = RGBA(255, 255, 0, 255);
-					if (i + SHead_ChangePct == SHead_Point520
-						|| i + SHead_ChangePct == SHead_Point2060)
-					{
-						if (dataVec[m_dataNameVec[i]].value >= 80)
-							cl = RGBA(255, 0, 0, 255);
-						else if (dataVec[m_dataNameVec[i]].value < 60)
-							cl = RGBA(0, 255, 0, 255);
-						else
-							cl = RGBA(255, 255, 255, 255);
-					}
-					else if (i + SHead_ChangePct == SHead_RPS520
-						|| i + SHead_ChangePct == SHead_RPS2060
-						|| i + SHead_ChangePct == SHead_MACD520
-						|| i + SHead_ChangePct == SHead_MACD2060)
-					{
-						if (dataVec[m_dataNameVec[i]].value > 0)
-							cl = RGBA(255, 0, 0, 255);
-						else if (dataVec[m_dataNameVec[i]].value < 0)
-							cl = RGBA(0, 255, 0, 255);
-						else
-							cl = RGBA(255, 255, 255, 255);
-					}
-
-					if (i + SHead_ChangePct == SHead_Rank520 ||
-						i + SHead_ChangePct == SHead_Rank2060)
-						tmp.Format(L"%.0f", dataVec[m_dataNameVec[i]].value);
-					else
-						tmp.Format(L"%.03f", dataVec[m_dataNameVec[i]].value);
-					m_pList->SetSubItemText(it.second,
-						i + SHead_ChangePct, tmp, cl);
-				}
-				else
-					m_pList->SetSubItemText(it.second,
-						i + SHead_ChangePct, L"-");
-			}
-
-		}
-	}
-	SortList(m_pList);
-
-}
-
-void SOUI::CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
+void CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
 {
 
 	if (!bSortCode)
@@ -1115,14 +1074,14 @@ void SOUI::CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
 		tmp.Format(L"%d", i + 1);
 		pList->SetSubItemText(i, 0, tmp);
 		SStringA stockID = StrW2StrA(pList->GetSubItemText(i, 1));
-		if (m_ListPosMap.count(stockID) == 0)
+		if (m_ListPosMap.hash.count(stockID) == 0)
 			stockID += "I";
-		m_ListPosMap[stockID] = i;
+		m_ListPosMap.hash[stockID] = i;
 	}
 	m_bListInited = true;
 }
 
-int SOUI::CWorkWnd::SortDouble(void * para1, const void * para2,
+int CWorkWnd::SortDouble(void * para1, const void * para2,
 	const void * para3)
 {
 	SortPara *pData = (SortPara*)para1;
@@ -1285,7 +1244,7 @@ int SOUI::CWorkWnd::SortDouble(void * para1, const void * para2,
 	}
 }
 
-int SOUI::CWorkWnd::SortInt(void * para1, const void * para2,
+int CWorkWnd::SortInt(void * para1, const void * para2,
 	const void * para3)
 {
 
@@ -1372,7 +1331,7 @@ int SOUI::CWorkWnd::SortInt(void * para1, const void * para2,
 	}
 }
 
-int SOUI::CWorkWnd::SortStr(void * para1, const void * para2,
+int CWorkWnd::SortStr(void * para1, const void * para2,
 	const void * para3)
 {
 	SortPara *pData = (SortPara*)para1;
@@ -1400,81 +1359,72 @@ int SOUI::CWorkWnd::SortStr(void * para1, const void * para2,
 		return str2.Compare(str1);
 }
 
-void SOUI::CWorkWnd::SaveListConfig()
-{
-}
 
-void SOUI::CWorkWnd::OnBtnMarketClicked()
+void CWorkWnd::OnBtnMarketClicked()
 {
 	OnBtnShowTypeChange();
 }
 
-void SOUI::CWorkWnd::OnBtnFenShiClicked()
+void CWorkWnd::OnBtnFenShiClicked()
 {
 	OnBtnPeriedChange(Period_FenShi);
 }
 
-void SOUI::CWorkWnd::OnBtnM1Clicked()
+void CWorkWnd::OnBtnM1Clicked()
 {
 	OnBtnPeriedChange(Period_1Min);
 }
 
-void SOUI::CWorkWnd::OnBtnM5Clicked()
+void CWorkWnd::OnBtnM5Clicked()
 {
 	OnBtnPeriedChange(Period_5Min);
 
 }
 
-void SOUI::CWorkWnd::OnBtnM15Clicked()
+void CWorkWnd::OnBtnM15Clicked()
 {
 	OnBtnPeriedChange(Period_15Min);
 
 }
 
-void SOUI::CWorkWnd::OnBtnM30Clicked()
+void CWorkWnd::OnBtnM30Clicked()
 {
 	OnBtnPeriedChange(Period_30Min);
 
 }
 
-void SOUI::CWorkWnd::OnBtnM60Clicked()
+void CWorkWnd::OnBtnM60Clicked()
 {
 	OnBtnPeriedChange(Period_60Min);
-
 }
 
-void SOUI::CWorkWnd::OnBtnDayClicked()
+void CWorkWnd::OnBtnDayClicked()
 {
 	OnBtnPeriedChange(Period_1Day);
 
 }
 
-void SOUI::CWorkWnd::OnBtnListConnect1Clicked()
+void CWorkWnd::OnBtnListConnect1Clicked()
 {
 	m_bListConn1 = !m_bListConn1;
 	if (!m_bListConn1)
 		m_ListShowInd = "";
-	SImageButton * pBtn =
-		FindChildByName2<SImageButton>(L"btn_ListConnect1");
-	SetBtnState(pBtn, m_bListConn1);
-	::PostMessage(m_hWnd, WM_MAIN_MSG,
-		MAINMSG_UpdatePoint, Group_Stock);
-	SaveListConfig();
+	SetBtnState(m_pBtnConn1, m_bListConn1);
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		WDMsg_SaveConfig, NULL);
 }
 
-void SOUI::CWorkWnd::OnBtnListConnect2Clicked()
+void CWorkWnd::OnBtnListConnect2Clicked()
 {
 	m_bListConn2 = !m_bListConn2;
 	if (!m_bListConn2)
 		m_ListShowInd = "";
-	SImageButton * pBtn =
-		FindChildByName2<SImageButton>(L"btn_ListConnect2");
-	SetBtnState(pBtn, m_bListConn2);
-	::PostMessage(m_hWnd, WM_MAIN_MSG,
-		MAINMSG_UpdatePoint, Group_Stock);
+	SetBtnState(m_pBtnConn2, m_bListConn2);
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		WDMsg_SaveConfig, NULL);
 }
 
-void SOUI::CWorkWnd::SetBtnState(SImageButton * nowBtn, SImageButton ** preBtn)
+void CWorkWnd::SetBtnState(SImageButton * nowBtn, SImageButton ** preBtn)
 {
 	if (*preBtn)
 		(*preBtn)->SetAttribute(L"colorText", L"#c0c0c0ff");
@@ -1482,7 +1432,7 @@ void SOUI::CWorkWnd::SetBtnState(SImageButton * nowBtn, SImageButton ** preBtn)
 	*preBtn = nowBtn;
 }
 
-void SOUI::CWorkWnd::SetBtnState(SImageButton * nowBtn, bool bSelected)
+void CWorkWnd::SetBtnState(SImageButton * nowBtn, bool bSelected)
 {
 	if (bSelected)
 		nowBtn->SetAttribute(L"colorText", L"#00ffffff");
@@ -1490,16 +1440,9 @@ void SOUI::CWorkWnd::SetBtnState(SImageButton * nowBtn, bool bSelected)
 		nowBtn->SetAttribute(L"colorText", L"#c0c0c0ff");
 }
 
-void SOUI::CWorkWnd::SetBtnState(int nPeriod, bool bSelected)
+void CWorkWnd::SetBtnState(int nPeriod, bool bSelected)
 {
-	SStringW strBtn;
-	if (nPeriod == Period_FenShi)
-		strBtn.Format(L"btnFS");
-	else if (nPeriod == Period_1Day)
-		strBtn.Format(L"btn_Day");
-	else
-		strBtn.Format(L"btn_M%d", nPeriod);
-	SImageButton * pBtn = FindChildByName2<SImageButton>(strBtn);
+	SImageButton * pBtn = m_pPeriodBtnMap[nPeriod];
 	if (bSelected)
 	{
 		pBtn->SetAttribute(L"colorText", L"#00ffffff");
@@ -1509,7 +1452,7 @@ void SOUI::CWorkWnd::SetBtnState(int nPeriod, bool bSelected)
 		pBtn->SetAttribute(L"colorText", L"#c0c0c0ff");
 }
 
-void SOUI::CWorkWnd::OnBtnShowTypeChange(bool bFroceList)
+void CWorkWnd::OnBtnShowTypeChange(bool bFroceList)
 {
 	if (bFroceList)
 	{
@@ -1520,71 +1463,59 @@ void SOUI::CWorkWnd::OnBtnShowTypeChange(bool bFroceList)
 			{
 				m_ListShowInd = "";
 				UpdateListShowStock();
-				SaveListConfig();
+				::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+					WDMsg_SaveConfig, NULL);
 			}
 			return;
 		}
 	}
-	SStringW strBtn = L"btn_Market";
-	SImageButton * pBtn = FindChildByName2<SImageButton>(strBtn);
-	//if (pBtn == m_pPreSelBtn[Group_SWL1])
-	//	return;
 	if (m_bShowList)
 	{
-		pBtn->SetWindowTextW(L"个股");
+		m_pBtnMarket->SetWindowTextW(L"个股");
 		SetBtnState(m_ListPeriod, false);
 		SetBtnState(m_PicPeriod, true);
 		SetSelectedPeriod(m_ListPeriod);
 	}
 	else
 	{
-		pBtn->SetWindowTextW(L"行情");
+		m_pBtnMarket->SetWindowTextW(L"行情");
 		SetBtnState(m_PicPeriod, false);
 		SetBtnState(m_ListPeriod, true);
 		SwitchPic2List();
 	}
 	m_bShowList = !m_bShowList;
-	SaveListConfig();
 }
 
-void SOUI::CWorkWnd::OnBtnPeriedChange(int nPeriod)
+void CWorkWnd::OnBtnPeriedChange(int nPeriod)
 {
-	SStringW strBtn;
-	if (nPeriod == Period_FenShi)
-		strBtn.Format(L"btn_FS");
-	else if (nPeriod == Period_1Day)
-		strBtn.Format(L"btn_Day");
-	else
-		strBtn.Format(L"btn_M%d", nPeriod);
-	SImageButton * pBtn = FindChildByName2<SImageButton>(strBtn);
+	SImageButton * pBtn = m_pPeriodBtnMap[nPeriod];
 	if (pBtn == m_pPreSelBtn)
 		return;
 	SetBtnState(pBtn, &m_pPreSelBtn);
-	//SetSelectedPeriod(nGroup, nGroup);
 	if (m_bShowList)
 	{
 		m_ListPeriod = nPeriod;
-		//SendMsg(m_RpsProcThreadID, UpdateSingleListData,
-		//	(char*)&m_pList, sizeof(m_pList));
+		UpdateList();
 	}
 	else
 		SetSelectedPeriod(nPeriod);
-	SaveListConfig();
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		WDMsg_SaveConfig, NULL);
 }
 
-void SOUI::CWorkWnd::SetListShowIndyStr(SStatic * pText)
+void CWorkWnd::SetListShowIndyStr(SStatic * pText)
 {
 	if (m_ListShowInd == "")
 		pText->SetWindowTextW(L"当前分类:全市场");
 	else
 	{
-		SStringW strIndy = StrA2StrW(m_StockNameMap[m_ListShowInd]);
+		SStringW strIndy = StrA2StrW(m_StockName.hash[m_ListShowInd]);
 		SStringW strText;
 		pText->SetWindowTextW(strText.Format(L"当前分类:%s", strIndy));
 	}
 }
 
-void SOUI::CWorkWnd::SetFenShiShowData()
+void CWorkWnd::SetFenShiShowData()
 {
 	SStringA stockID = m_strSubStock;
 	int nShowNum = m_pFenShiPic->GetShowSubPicNum();
@@ -1616,14 +1547,14 @@ void SOUI::CWorkWnd::SetFenShiShowData()
 
 	m_pFenShiPic->SetSubPicShowData(dataCount,
 		tmpDataArr, rightVec, m_SubPicShowNameVec,
-		stockID, m_StockNameMap[stockID]);
+		stockID, m_StockName.hash[stockID]);
 
 	delete[]dataCount;
 	dataCount = nullptr;
 
 }
 
-void SOUI::CWorkWnd::SetKlineShowData(int nPeriod, BOOL bNeedReCalc)
+void CWorkWnd::SetKlineShowData(int nPeriod, BOOL bNeedReCalc)
 {
 	SStringA stockID = m_strSubStock;
 	int nShowNum = m_pKlinePic->GetShowSubPicNum();
@@ -1645,7 +1576,7 @@ void SOUI::CWorkWnd::SetKlineShowData(int nPeriod, BOOL bNeedReCalc)
 		{
 			//tmpDataArr[i][j] = &m_dataVec[nPeriod]\
 			//	[stockID][m_SubPicShowNameVec[i][j]];
-			tmpDataArr[i][j] = &m_PointData[Period_FenShi]
+			tmpDataArr[i][j] = &m_PointData[nPeriod]
 				[m_SubPicShowNameVec[i][j]];
 
 			rightVec[i][j] = TRUE;
@@ -1655,7 +1586,7 @@ void SOUI::CWorkWnd::SetKlineShowData(int nPeriod, BOOL bNeedReCalc)
 
 	m_pKlinePic->SetSubPicShowData(dataCount,
 		tmpDataArr, rightVec, m_SubPicShowNameVec,
-		stockID, m_StockNameMap[stockID]);
+		stockID, m_StockName.hash[stockID]);
 
 	delete[]dataCount;
 	dataCount = nullptr;
@@ -1664,18 +1595,25 @@ void SOUI::CWorkWnd::SetKlineShowData(int nPeriod, BOOL bNeedReCalc)
 
 }
 
-void SOUI::CWorkWnd::GetBelongingIndyName(vector<SStringA>& nameVec)
+void CWorkWnd::GetBelongingIndyName(vector<SStringA>& nameVec)
 {
 	nameVec.resize(2);
 	SStringA stockID = m_strSubStock;
-	auto &info = m_ListStockInfoMap[stockID];
-	nameVec[0] = m_StockNameMap[info.SWL1ID];
-	nameVec[1] = m_StockNameMap[info.SWL2ID];
+	//stockID = stockID.Left(6);
+	for (auto &it : m_InfoVec)
+	{
+		if (stockID == it.SecurityID)
+		{
+			nameVec[0] = m_StockName.hash[it.SWL1ID];
+			nameVec[1] = m_StockName.hash[it.SWL2ID];
+			break;
+		}
+	}
 }
 
-void SOUI::CWorkWnd::SetSelectedPeriod(int nPeriod)
+void CWorkWnd::SetSelectedPeriod(int nPeriod)
 {
-	if (m_ListPeriod == nPeriod
+	if (m_PicPeriod == nPeriod
 		&&m_strSubStock != "")
 	{
 		SwitchList2Pic(nPeriod);
@@ -1685,33 +1623,16 @@ void SOUI::CWorkWnd::SetSelectedPeriod(int nPeriod)
 	SStringA& StockID = m_strSubStock;
 	if (StockID == "")
 	{
-		for (auto &it : m_ListPosMap)
+		for (auto &it : m_ListPosMap.hash)
 		{
 			if (it.second == 0)
 			{
 				StockID = it.first;
-				ShowSubStockPic(StockID);
-				break;
+				ShowPicWithNewID(StockID);
+				return;
 			}
 		}
 	}
-
-	BOOL bWaitData = FALSE;
-	if (!m_bMarketGet)
-	{
-		m_pKlinePic->SetHisKlineState(false);
-		DataGetInfo* pGetInfo = new DataGetInfo;
-		pGetInfo->hWnd = m_hParWnd;
-		strcpy_s(pGetInfo->StockID, StockID);
-		pGetInfo->Group = m_Group;
-		pGetInfo->Period = nPeriod;
-		::PostMessage(m_hWnd, WM_MAIN_MSG, MAINMSG_DownloadMarket,
-			(LPARAM)pGetInfo);
-		bWaitData = TRUE;
-	}
-	else
-		m_pKlinePic->SetHisKlineState(true);
-
 
 	if (Period_FenShi != nPeriod)
 	{
@@ -1719,13 +1640,13 @@ void SOUI::CWorkWnd::SetSelectedPeriod(int nPeriod)
 		if (m_KlineGetMap.count(nPeriod) == 0)
 		{
 			m_pKlinePic->SetHisKlineState(false);
-			DataGetInfo* pGetInfo = new DataGetInfo;
-			pGetInfo->hWnd = m_hParWnd;
-			strcpy_s(pGetInfo->StockID, StockID);
-			pGetInfo->Group = m_Group;
-			pGetInfo->Period = nPeriod;
-			::PostMessage(m_hWnd, WM_MAIN_MSG, MAINMSG_DownloadKline,
-				(LPARAM)pGetInfo);
+			DataGetInfo GetInfo;
+			GetInfo.hWnd = m_hParWnd;
+			strcpy_s(GetInfo.StockID, StockID);
+			GetInfo.Group = m_Group;
+			GetInfo.Period = nPeriod;
+			SendMsg(m_uParWndThreadID, WW_GetKline,
+				(char*)&GetInfo, sizeof(GetInfo));
 		}
 		else
 			m_pKlinePic->SetHisKlineState(true);
@@ -1733,13 +1654,13 @@ void SOUI::CWorkWnd::SetSelectedPeriod(int nPeriod)
 		if (m_PointGetMap.count(nPeriod) == 0)
 		{
 			m_pKlinePic->SetHisPointState(false);
-			DataGetInfo* pGetInfo = new DataGetInfo;
-			pGetInfo->hWnd = m_hParWnd;
-			strcpy_s(pGetInfo->StockID, StockID);
-			pGetInfo->Group = m_Group;
-			pGetInfo->Period = nPeriod;
-			::PostMessage(m_hWnd, WM_MAIN_MSG, MAINMSG_DownloadPoint,
-				(LPARAM)pGetInfo);
+			DataGetInfo GetInfo;
+			GetInfo.hWnd = m_hParWnd;
+			strcpy_s(GetInfo.StockID, StockID);
+			GetInfo.Group = m_Group;
+			GetInfo.Period = nPeriod;
+			SendMsg(m_uParWndThreadID, WW_GetPoint,
+				(char*)&GetInfo, sizeof(GetInfo));
 		}
 		else
 			m_pKlinePic->SetHisPointState(true);
@@ -1750,130 +1671,106 @@ void SOUI::CWorkWnd::SetSelectedPeriod(int nPeriod)
 
 }
 
-void SOUI::CWorkWnd::ShowSubStockPic(SStringA StockID)
+void CWorkWnd::ShowPicWithNewID(SStringA StockID,bool bForce)
 {
-	BOOL bNeedMarket = TRUE;
-	int nPeriod = m_bShowList ?
+	if (!bForce && m_strSubStock == StockID)
+		return;
+	SetDataFlagFalse();
+	m_PicPeriod = m_bShowList ?
 		m_ListPeriod : m_PicPeriod;
 	m_strSubStock = StockID;
-	if (!m_bMarketGet)
+
+	SStringA StockName = m_StockName.hash[StockID];
+	if(m_Group!=Group_Stock)
 	{
-		m_pKlinePic->SetTodayMarketState(false);
-		m_pKlinePic->SetHisKlineState(false);
-		DataGetInfo* pGetInfo = new DataGetInfo;
-		pGetInfo->hWnd = m_hParWnd;
-		strcpy_s(pGetInfo->StockID, StockID);
-		pGetInfo->Group = m_Group;
-		pGetInfo->Period = nPeriod;
-		::PostMessage(m_hWnd, WM_MAIN_MSG, MAINMSG_DownloadMarket,
-			(LPARAM)pGetInfo);
-	}
-	else
-	{
-		m_pKlinePic->SetTodayMarketState(true);
-		bNeedMarket = FALSE;
-	}
-
-
-	SStringA StockName = m_StockNameMap[StockID];
-
-
-
-	SFenShiPic *pFenShiPic = m_pFenShiPic;
-	SKlinePic *pKlinePic = m_pKlinePic;
-
-
-	if (StockID[0] == '8' || StockID.GetLength() == 7)
-	{
-		pFenShiPic->SetShowData(StockID, StockName, &m_IndexMarketVec);
-		pKlinePic->SetShowData(StockID, StockName,
+		m_pFenShiPic->SetShowData(StockID, StockName, &m_IndexMarketVec);
+		m_pKlinePic->SetShowData(StockID, StockName,
 			&m_IndexMarketVec, &m_KlineMap);
 	}
 	else
 	{
-		pFenShiPic->SetShowData(StockID, StockName, &m_StockMarketVec);
-		pKlinePic->SetShowData(StockID, StockName,
+		m_pFenShiPic->SetShowData(StockID, StockName, &m_StockMarketVec);
+		m_pKlinePic->SetShowData(StockID, StockName,
 			&m_StockMarketVec, &m_KlineMap);
 	}
-
-
-	if (Period_FenShi != nPeriod)
-	{
-		if (m_KlineGetMap.count(nPeriod) == 0)
-		{
-			m_pKlinePic->SetHisKlineState(false);
-			DataGetInfo* pGetInfo = new DataGetInfo;
-			pGetInfo->hWnd = m_hParWnd;
-			strcpy_s(pGetInfo->StockID, StockID);
-			pGetInfo->Group = m_Group;
-			pGetInfo->Period = nPeriod;
-			::PostMessage(m_hWnd, WM_MAIN_MSG, MAINMSG_DownloadKline,
-				(LPARAM)pGetInfo);
-		}
-		else
-			m_pKlinePic->SetHisKlineState(true);
-
-		if (m_PointGetMap.count(nPeriod) == 0)
-		{
-			m_pKlinePic->SetHisPointState(false);
-			DataGetInfo* pGetInfo = new DataGetInfo;
-			pGetInfo->hWnd = m_hParWnd;
-			strcpy_s(pGetInfo->StockID, StockID);
-			pGetInfo->Group = m_Group;
-			pGetInfo->Period = nPeriod;
-			::PostMessage(m_hWnd, WM_MAIN_MSG, MAINMSG_DownloadPoint,
-				(LPARAM)pGetInfo);
-		}
-		else
-			m_pKlinePic->SetHisPointState(true);
-		SetKlineShowData(nPeriod, FALSE);
-	}
-
-
+	//获取分时数据
+	DataGetInfo GetInfo;
+	GetInfo.hWnd = m_hParWnd;
+	strcpy_s(GetInfo.StockID, StockID);
+	GetInfo.Group = m_Group;
+	GetInfo.Period = Period_FenShi;
+	SendMsg(m_uParWndThreadID, WW_GetMarket,
+		(char*)&GetInfo, sizeof(GetInfo));
+	SendMsg(m_uParWndThreadID, WW_GetPoint,
+		(char*)&GetInfo, sizeof(GetInfo));
 	SetFenShiShowData();
 
-	if (!bNeedMarket)
+	//获取当前订阅数据
+	if (Period_FenShi != m_PicPeriod)
 	{
-		pFenShiPic->DataProc();
-		if (Period_FenShi != nPeriod
-			&&pKlinePic->GetDataReadyState())
-			pKlinePic->DataProc();
-
+		GetInfo.Period = m_PicPeriod;
+		SendMsg(m_uParWndThreadID, WW_GetKline,
+			(char*)&GetInfo, sizeof(GetInfo));
+		SendMsg(m_uParWndThreadID, WW_GetPoint,
+			(char*)&GetInfo, sizeof(GetInfo));
+		SetKlineShowData(m_PicPeriod, FALSE);
 	}
-	SwitchList2Pic(nPeriod);
+	SwitchList2Pic(m_PicPeriod);
 	m_bShowList = false;
-	//SWindow::InvalidateRect(rc);
 }
 
-void SOUI::CWorkWnd::OnUpdateListData(int nMsgLength, const char * info)
+void CWorkWnd::SetDataFlagFalse()
 {
-
+	m_bMarketGet = false;
+	m_PointReadyMap.clear();
+	m_PointGetMap.clear();
+	m_KlineGetMap.clear();
+	m_pKlinePic->SetTodayMarketState(false);
+	m_pKlinePic->SetHisKlineState(false);
+	m_pKlinePic->SetHisPointState(false);
 }
 
-void SOUI::CWorkWnd::OnUpdatePoint(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateListData(int nMsgLength, const char * info)
 {
-	int nDataCount = nMsgLength / + sizeof(pair<int,pair<char[16], CoreData>>);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdateList, NULL);
+}
+
+void CWorkWnd::OnUpdatePoint(int nMsgLength, const char * info)
+{
+	int nDataCount = nMsgLength / sizeof(pair<int, pair<char[16], CoreData>>);
 	pair<int, pair<char[16], CoreData>> *dataArr =
 		(pair<int, pair<char[16], CoreData>> *)info;
 	for (int i = 0; i < nDataCount; ++i)
 	{
-		if(m_PointReadyMap[dataArr[i].first])
+		if (m_PointReadyMap[dataArr[i].first])
 			CDataProc::UpdateTmData(m_PointData[dataArr[i].first]\
 				[dataArr[i].second.first],
 				dataArr[i].second.second);
 	}
-
+	m_pFenShiPic->UpdateData();
+	m_pKlinePic->UpdateData();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void SOUI::CWorkWnd::OnUpdateTodayPoint(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateTodayPoint(int nMsgLength, const char * info)
 {
+	int nPeriod = *(int*)info;
+	map<SStringA, vector<CoreData>> *pDataMap =
+		*(map<SStringA, vector<CoreData>>**)(info + 4);
+	auto & pointMap = m_PointData[nPeriod];
+	for (auto &it : *pDataMap)
+	{
+		if (it.first.Find("Point") != -1)
+			pointMap[it.first] = it.second;
+	}
+	delete pDataMap;
+	pDataMap = nullptr;
+	m_PointReadyMap[nPeriod] = true;
 }
 
-void SOUI::CWorkWnd::OnUpdateHisKline(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateHisKline(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	char *StockID = new char[8];
-	strcpy_s(StockID, 8, pRecvInfo->InsID);
 	int nOffset = sizeof(*pRecvInfo);
 	int nSize = pRecvInfo->DataSize / sizeof(KlineType);
 	int nGroup = pRecvInfo->Group;
@@ -1883,13 +1780,13 @@ void SOUI::CWorkWnd::OnUpdateHisKline(int nMsgLength, const char * info)
 	KlineVec.resize(nSize);
 	memcpy_s(&KlineVec[0], pRecvInfo->DataSize,
 		info + nOffset, pRecvInfo->DataSize);
-	//char *InsID = new char[8];
-	LPARAM lp = MAKELPARAM(nGroup, DM_HISKLINE);
-	::PostMessage(m_hWnd, WM_DATA_MSG,
-		(WPARAM)StockID, lp);
+	m_pKlinePic->SetHisKlineState(true);
+	if (m_pKlinePic->GetDataReadyState())
+		m_pKlinePic->DataProc();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void SOUI::CWorkWnd::OnUpdateHisPoint(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateHisPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	if (pRecvInfo->Group != Group_Stock)
@@ -1916,85 +1813,124 @@ void SOUI::CWorkWnd::OnUpdateHisPoint(int nMsgLength, const char * info)
 		ProcHisPointFromMsg(pRecvInfo3, info + nOffset,
 			"L2Point520", "L2Point2060");
 	}
+	m_pKlinePic->SetHisPointState(true);
+	if (m_pKlinePic->GetDataReadyState())
+		m_pKlinePic->DataProc();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 
-	char *StockID = new char[8];
-	strcpy_s(StockID, 8, pRecvInfo->InsID);
-	int nGroup = pRecvInfo->Group;
-	int nPeriod = pRecvInfo->Period;
-	LPARAM lp = MAKELPARAM(nGroup, DM_HISPOINT);
-	::PostMessage(m_hWnd, WM_DATA_MSG,
-		(WPARAM)StockID, lp);
 }
 
 
-void SOUI::CWorkWnd::OnUpdateIndexMarket(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateIndexMarket(int nMsgLength, const char * info)
 {
 	CommonIndexMarket* pIndexData = (CommonIndexMarket*)info;
 	SStringA SecurityID = pIndexData->SecurityID;
 	m_IndexMarketVec.emplace_back(*pIndexData);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void SOUI::CWorkWnd::OnUpdateStockMarket(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateStockMarket(int nMsgLength, const char * info)
 {
 	CommonStockMarket* pStockData = (CommonStockMarket*)info;
 	SStringA SecurityID = pStockData->SecurityID;
 	m_StockMarketVec.emplace_back(*pStockData);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void SOUI::CWorkWnd::OnUpdateHisIndexMarket(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateHisIndexMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	char *StockID = new char[8];
-	strcpy_s(StockID, 8, pRecvInfo->InsID);
 	int nOffset = sizeof(*pRecvInfo);
 	int dataCount = pRecvInfo->DataSize / sizeof(CommonIndexMarket);
 	CommonIndexMarket * dataArr = (CommonIndexMarket *)(info + nOffset);
 	m_IndexMarketVec.reserve(MAX_TICK);
 	m_IndexMarketVec.resize(dataCount);
-	SStringA str;
 	memcpy_s(&m_IndexMarketVec[0], pRecvInfo->DataSize,
 		dataArr, pRecvInfo->DataSize);
 	m_bMarketGet = TRUE;
-	int nGroup = pRecvInfo->Group;
-	LPARAM lp = MAKELPARAM(nGroup, DM_MARKET);
-	::PostMessage(m_hWnd, WM_DATA_MSG,
-		(WPARAM)StockID, lp);
+	m_pFenShiPic->DataProc();
+	m_pKlinePic->SetTodayMarketState(true);
+	if (m_pKlinePic->GetDataReadyState())
+		m_pKlinePic->DataProc();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void SOUI::CWorkWnd::OnUpdateHisStockMarket(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateHisStockMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	char *StockID = new char[8];
-	strcpy_s(StockID, 8, pRecvInfo->InsID);
 	int nOffset = sizeof(*pRecvInfo);
 	int dataCount = pRecvInfo->DataSize / sizeof(CommonStockMarket);
 	CommonStockMarket * dataArr = (CommonStockMarket *)(info + nOffset);
 	m_StockMarketVec.reserve(MAX_TICK);
 	m_StockMarketVec.resize(dataCount);
-	SStringA str;
 	memcpy_s(&m_StockMarketVec[0], pRecvInfo->DataSize,
 		dataArr, pRecvInfo->DataSize);
 	m_bMarketGet = TRUE;
-	int nGroup = pRecvInfo->Group;
-	LPARAM lp = MAKELPARAM(nGroup, DM_MARKET);
-	::PostMessage(m_hWnd, WM_DATA_MSG,
-		(WPARAM)StockID, lp);
+	m_pFenShiPic->DataProc();
+	m_pKlinePic->SetTodayMarketState(true);
+	if (m_pKlinePic->GetDataReadyState())
+		m_pKlinePic->DataProc();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void SOUI::CWorkWnd::OnUpdateCloseInfo(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateCloseInfo(int nMsgLength, const char * info)
 {
 	pair<char[8], double>preCloseData;
 	int dataCount = nMsgLength / sizeof(preCloseData);
 	pair<char[8], double> * dataArr = (pair<char[8], double> *)info;
 	auto &closeMap = m_preCloseMap;
-	//::EnterCriticalSection(&m_csClose);
-	closeMap.clear();
+	::EnterCriticalSection(&m_csClose);
+	closeMap.hash.clear();
 	for (int i = 0; i < dataCount; ++i)
-		closeMap[dataArr[i].first] = dataArr[i].second;
-	//::LeaveCriticalSection(&m_csClose);
+		closeMap.hash[dataArr[i].first] = dataArr[i].second;
+	::LeaveCriticalSection(&m_csClose);
 }
 
-void SOUI::CWorkWnd::ProcHisPointFromMsg(ReceivePointInfo * pRecvInfo,
+void CWorkWnd::OnChangeShowIndy(int nMsgLength, const char * info)
+{
+	int nGroup = *(int*)info;
+	SStringA IndexID = info + 4;
+	if (Group_SWL1 == nGroup
+		&& m_bListConn1)
+		m_ListShowInd = IndexID;
+	if(Group_SWL2 == nGroup
+		&& m_bListConn2)
+		m_ListShowInd = IndexID;
+	::PostMessage(m_hWnd, WM_WINDOW_MSG,
+		WDMsg_ChangeIndy, NULL);
+}
+
+void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)
+{
+	m_pFenShiPic->ReProcEMA();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::OnFenShiMacd(int nMsgLength, const char * info)
+{
+	m_pFenShiPic->ReProcMacd();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::OnKlineMa(int nMsgLength, const char * info)
+{
+	m_pKlinePic->ReProcMAData();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::OnKlineMacd(int nMsgLength, const char * info)
+{
+	m_pKlinePic->ReProcMacdData();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::OnKlineBand(int nMsgLength, const char * info)
+{
+	m_pKlinePic->ReProcBandData();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::ProcHisPointFromMsg(ReceivePointInfo * pRecvInfo,
 	const char * info, SStringA dataName1, SStringA dataName2)
 {
 	int nOffset = 0;

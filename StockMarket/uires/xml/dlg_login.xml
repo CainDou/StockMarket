@@ -1,4 +1,5 @@
-﻿<SOUI name="dlg_login" title="登陆" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,5,5,5" wndType="normal" appWnd="0">
+<?xml version="1.0"?>
+<SOUI name="dlg_login" title="登陆" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,5,5,5" wndType="normal" appWnd="0">
 	<root cache="1">
 		<window pos="0,0,-0,-0" colorBkgnd="rgb(220,220,210)" colorText="#000000ff">
 			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">

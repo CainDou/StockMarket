@@ -25,19 +25,23 @@ public:
 	~CWndSynHandler();
 	void Run();
 	void Close();
-	void SetMianWnd(HWND hWnd);
+	void SetMainWnd(HWND hWnd);
 	void AddWnd(HWND hWnd,UINT threadID);
 	void RemoveWnd(HWND hWnd);
-	void GetListInsVec(vector<vector<SStringA>> &ListInsVec,
-		unordered_map<SStringA, StockInfo, hash_SStringA>& ListInfoMap);
+	void GetListInsVec(vector<vector<StockInfo>> &ListInsVec,
+		 strHash<SStringA>& StockNameVec);
+	vector<map<int, TimeLineMap>>* GetListData();
+	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
+	UINT GetThreadID() const;
+	strHash<double> GetCloseMap() const;
 
 	//初始化函数
-public:
+protected:
 	void InitCommonSetting();
 	void InitConfig();
 
 	//辅助函数
-public:
+protected:
 	bool GetHisPoint(SStringA stockID, int nPeriod, int nGroup);
 	bool GetMarket(SStringA stockID, int nGroup);
 	bool GetHisKline(SStringA stockID, int nPeriod, int nGroup);
@@ -47,7 +51,7 @@ public:
 	bool CheckInfoRecv();
 	void SetPointDataCapacity();
 
-public:
+protected:
 	bool ReceiveData(SOCKET socket, int size, char end,
 		char *buffer, int offset = 0);
 	static unsigned __stdcall NetHandle(void* para);
@@ -83,15 +87,16 @@ protected:
 	void OnTimeLineUpdate(int nMsgLength, const char* info);
 	void OnTodayTimeLineProc(int nMsgLength, const char* info);
 	void OnUpdateLastDayEma(int nMsgLength, const char* info);
-
+	void OnClearData(int nMsgLength, const char* info);
 	//同步窗口数据处理
 protected:
 	void OnAddWnd(int nMsgLength, const char* info);
 	void OnRemoveWnd(int nMsgLength, const char* info);
-	void OnUpdatePoint(int nMsgLength, const char* info);
 	void OnGetMarket(int nMsgLength, const char* info);
 	void OnGetKline(int nMsgLength, const char* info);
 	void OnGetPoint(int nMsgLength, const char* info);
+	void OnUpdateList(int nMsgLength, const char* info);
+	void OnUpdatePoint(int nMsgLength, const char* info);
 	void OnHisPoint(int nMsgLength, const char* info);
 	void OnRTIndexMarket(int nMsgLength, const char* info);
 	void OnRTStockMarket(int nMsgLength, const char* info);
@@ -100,14 +105,14 @@ protected:
 	void OnHisKline(int nMsgLength, const char* info);
 	void OnCloseInfo(int nMsgLength, const char* info);
 	void OnReinit(int nMsgLength, const char* info);
+
 public:
 	vector<SStringA> m_dataNameVec;
 	vector<SStringA> m_comDataNameVec;
 	vector<SStringA> m_uniDataNameVec;
 	vector<vector<SStringA>> m_SubPicShowNameVec;
-	vector<SStringA> m_SubPicWndNameVec;
-	unordered_map<SStringA, SStringA, hash_SStringA> m_StockNameMap;
-	map<int, unordered_map<SStringA, StockInfo, hash_SStringA>> m_ListStockInfoMap;
+	map<int, strHash<StockInfo>> m_ListStockInfoMap;
+	strHash<SStringA> m_StockName;
 	vector<int> m_PeriodVec;
 
 protected:
@@ -118,12 +123,10 @@ protected:
 
 protected:
 	thread tLogin;
-	thread tDataProc;
 	thread tRpsCalc;
 	thread tMsgSyn;
 	UINT m_uNetThreadID;
 	UINT m_RpsProcThreadID;
-	UINT m_DataThreadID;
 	UINT m_uMsgThreadID;
 	//处理函数哈希表
 protected:
@@ -132,8 +135,9 @@ protected:
 	unordered_map<int, PDATAHANDLEFUNC>m_synHandleMap;
 
 public:
-	unordered_map<SStringA, double, hash_SStringA> m_preCloseMap;
+	strHash<double>m_preCloseMap;
 	vector<vector<SStringA>> m_ListInsVec;
+	vector<vector<StockInfo>> m_ListInfoVec;
 	vector<map<int, TimeLineMap>>m_listDataMap;
 	vector<map<int, TimeLineArrMap> >m_dataVec;
 	map<int, TimeLineArrMap> m_commonDataMap;	// 用来保存通用的需要使用所有数据数据
@@ -151,11 +155,12 @@ protected:
 	SStringA m_strIPAddr;
 	int		m_nIPPort;
 	bool m_bServerReady;
+	bool bExit;
 	CRITICAL_SECTION m_cs;
 
 };
 
-inline void CWndSynHandler::SetMianWnd(HWND hWnd)
+inline void CWndSynHandler::SetMainWnd(HWND hWnd)
 {
 	m_hMain = hWnd;
 }
@@ -171,8 +176,31 @@ inline void CWndSynHandler::RemoveWnd(HWND hWnd)
 	m_WndSubMap.erase(hWnd);
 }
 
-inline void CWndSynHandler::GetListInsVec(vector<vector<SStringA>>& ListInsVec,
-	unordered_map<SStringA, StockInfo, hash_SStringA>& ListInfoMap)
+inline void CWndSynHandler::GetListInsVec(
+	vector<vector<StockInfo>>& ListInsVec, 
+	strHash<SStringA>&StockName)
 {
-	ListInsVec = m_ListInsVec;
+	ListInsVec = m_ListInfoVec;
+	StockName = m_StockName;
+}
+
+inline vector<map<int, TimeLineMap>>* CWndSynHandler::GetListData()
+{
+	return &m_listDataMap;
+}
+
+inline void CWndSynHandler::GetSubPicShowNameVec(
+	vector<vector<SStringA>>& SubPicShowNameVec)
+{
+	SubPicShowNameVec = m_SubPicShowNameVec;
+}
+
+inline UINT CWndSynHandler::GetThreadID() const
+{
+	return m_uMsgThreadID;
+}
+
+inline strHash<double> CWndSynHandler::GetCloseMap() const
+{
+	return m_preCloseMap;
 }

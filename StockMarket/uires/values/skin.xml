@@ -1,7 +1,6 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-
+<?xml version="1.0" encoding="utf-8"?>
 <skin>
-  	<imglist name="skin_traymenu_icons" src="img:traymenu_icons" states="9" />
+	<imglist name="skin_traymenu_icons" src="img:traymenu_icons" states="9" />
 	<ColorRect name="skin_Black" src="" normal="#000000ff" hover="#000000ff" pushdown="#000000ff" disable="#000000ff" />
 	<Button name="skin_ButtonBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpHover="#505050ff" colorDownHover="#505050ff" colorUpPush="#000000ff" colorDownPush="#000000ff" colorUpDisable="#000000ff" colorDownDisable="#000000ff" />
 	<scrollbar name="skin_bb_scrollbar" src="img:default.scrollbar" margin="2" />
@@ -10,4 +9,4 @@
 	<Button name="skin_ButtonPureBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpHover="#000000ff" colorDownHover="#000000ff" colorUpPush="#000000ff" colorDownPush="#000000ff" colorUpDisable="#000000ff" colorDownDisable="#000000ff" colorBorder="#ff0000ff" />
 	<Button name="skin_ButtonGrayBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpDisable="#000000ff" colorDownDisable="#000000ff" colorUpHover="#505050ff" colorDownHover="#505050ff" colorUpPush="#505050ff" colorDownPush="#505050ff" />
 	<imgframe name="skin_lcex_header_arrow" src="img:skin_lcex_header_arrow" states="2" />
-	</skin>
+</skin>

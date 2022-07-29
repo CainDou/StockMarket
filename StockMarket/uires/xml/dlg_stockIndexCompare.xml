@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<SOUI name="ArbitrageWindow" title="股指套利" bigIcon="ICON_LOGO:48" smallIcon="ICON_LOGO:32" width="1400" height="890" margin="5,5,5,5" resizable="1" wndType="normal" translucent="1">
+	<root cache="1">
+		<window pos="1,[1,-1,-1" colorBkgnd="#000000ff" colorBorder="#FF0000" margin="1,1,1,1">
+			<caption pos="0,0,-0,30" show="1" font="adding:0" colorBkgnd="#000000ff" colorText="#ffffffff" colorBorder="#FF0000" margin="0,0,0,1">
+				<text pos="10,10" name="txt_title">股指套利</text>
+				<imgbtn name="stkIdxArbt_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="0" />
+				<imgbtn name="stkIdxArbt_maximize" skin="_skin.sys.btn.maximize" pos="-83,0" animate="0" />
+				<imgbtn name="stkIdxArbt_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="0" />
+				<imgbtn name="stkIdxArbt_minimize" skin="_skin.sys.btn.minimize" pos="-121,0" animate="0" />
+			</caption>
+			<window pos="5,%5,%50,%25">
+				<color_listctrlex name="List_ArbitrageIH" bkgndBlend="0" pos="5,5,@420,@220" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">上证50</item>
+							<item width="70">上证50</item>
+							<item width="70">IH当月</item>
+							<item width="70">IH次月</item>
+							<item width="70">IH当季</item>
+							<item width="70">IH下季</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIH" pos="[5,5,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="%50,%5,-5,%31" colorText="#00ffffff" font="underline:0,face:微软雅黑">
+				<combobox name="cbx_IB0" class="cls_edit" pos="5,5,90,25" dropDown="1" dropHeight="100" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0">
+					<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
+					<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
+				</combobox>
+				<color_listctrlex name="List_ArbitrageIB0" bkgndBlend="0" pos="5,[5,@420,@220" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">50/300</item>
+							<item width="70">50/300</item>
+							<item width="70">当月比</item>
+							<item width="70">次月比</item>
+							<item width="70">当季比</item>
+							<item width="70">下季比</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIB0" pos="[5,{0,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="5,%25,%50,%45">
+				<color_listctrlex name="List_ArbitrageIF" bkgndBlend="0" pos="5,5,@420,@220" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">沪深300</item>
+							<item width="70">沪深300</item>
+							<item width="70">IF当月</item>
+							<item width="70">IF次月</item>
+							<item width="70">IF当季</item>
+							<item width="70">IF下季</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIF" pos="[5,5,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="%50,%34,-5,%57" colorText="#00ffffff" font="underline:0,face:微软雅黑">
+				<combobox name="cbx_IB1" class="cls_edit" pos="5,5,90,25" dropDown="1" dropHeight="100" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0">
+					<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
+					<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
+				</combobox>
+				<color_listctrlex name="List_ArbitrageIB1" bkgndBlend="0" pos="5,[5,@420,@220" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">50/500</item>
+							<item width="70">50/500</item>
+							<item width="70">当月比</item>
+							<item width="70">次月比</item>
+							<item width="70">当季比</item>
+							<item width="70">下季比</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIB1" pos="[5,{0,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="5,%45,%50,%65">
+				<color_listctrlex name="List_ArbitrageIC" bkgndBlend="0" pos="5,5,@420,@220" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">中证500</item>
+							<item width="70">中证500</item>
+							<item width="70">IC当月</item>
+							<item width="70">IC次月</item>
+							<item width="70">IC当季</item>
+							<item width="70">IC下季</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIC" pos="[5,5,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="%50,%61,-5,%83" colorText="#00ffffff" font="underline:0,face:微软雅黑">
+				<combobox name="cbx_IB2" class="cls_edit" pos="5,5,90,25" dropDown="1" dropHeight="100" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0">
+					<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
+					<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
+				</combobox>
+				<color_listctrlex name="List_ArbitrageIB2" bkgndBlend="0" pos="5,[5,@420,@220" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">300/500</item>
+							<item width="70">300/500</item>
+							<item width="70">当月比</item>
+							<item width="70">次月比</item>
+							<item width="70">当季比</item>
+							<item width="70">下季比</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIB2" pos="[5,{0,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="5,%65,%50,%85">
+				<color_listctrlex name="List_ArbitrageIM" bkgndBlend="0" pos="5,5,@420,@190" hotTrack="0" itemHeight="32" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">中证1000</item>
+							<item width="70">中证500</item>
+							<item width="70">IM当月</item>
+							<item width="70">IM次月</item>
+							<item width="70">IM当季</item>
+							<item width="70">IM下季</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<CmpChart name="pic_cmpChartIM" pos="[5,5,-5,@220" colorBKgnd="#000000ff" font="face:微软雅黑,size:14" bkgndBlend="1" cache="1" />
+			</window>
+			<window pos="5,%85,-5,-5">
+				<color_listctrlex name="List_IHIF" bkgndBlend="0" pos="75,5,@280,@60" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">配比值</item>
+							<item width="70">IH</item>
+							<item width="70">IF</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<color_listctrlex name="List_IHIC" bkgndBlend="0" pos="%30,5,@280,@60" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">配比值</item>
+							<item width="70">IH</item>
+							<item width="70">IC</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<text pos="%49,5,%50,5" />
+				<color_listctrlex name="List_IFIC" bkgndBlend="0" pos="[75,5,@280,@60" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">配比值</item>
+							<item width="70">IF</item>
+							<item width="70">IC</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<color_listctrlex name="List_IHIM" bkgndBlend="0" pos="75,%50,@280,@60" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">配比值</item>
+							<item width="70">IH</item>
+							<item width="70">IM</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<color_listctrlex name="List_IFIM" bkgndBlend="0" pos="%30,%50,@280,@60" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">配比值</item>
+							<item width="70">IF</item>
+							<item width="70">IM</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<text pos="%49,%50,%50,%50" />
+				<color_listctrlex name="List_ICIM" bkgndBlend="0" pos="[75,%50,@280,@60" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">配比值</item>
+							<item width="70">IC</item>
+							<item width="70">IM</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<color_listctrlex name="List_AllRatio" bkgndBlend="0" pos="%78,5,@350,@90" hotTrack="0" itemHeight="30" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" cache="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#000000ff" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack">
+						<items>
+							<item width="70">合约配比</item>
+							<item width="70">IH50</item>
+							<item width="70">IF300</item>
+							<item width="70">IC500</item>
+							<item width="70">IM1000</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+			</window>
+		</window>
+	</root>
+</SOUI>

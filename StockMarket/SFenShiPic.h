@@ -150,7 +150,7 @@ namespace SOUI
 		BOOL*		m_pbShowSubPic;
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
-		bool		m_bIsStockIndex;
+		bool		m_bIsIndex;
 		bool		m_bIsFirstKey;
 
 		//具体显示参数
@@ -210,7 +210,7 @@ namespace SOUI
 			MSG_WM_PAINT_EX(OnPaint)
 			MSG_WM_MOUSEMOVE(OnMouseMove)
 			MSG_WM_MOUSELEAVE(OnMouseLeave)
-			MSG_WM_TIMER_EX(OnTimer)
+			//MSG_WM_TIMER_EX(OnTimer)
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_CREATE(OnCreate)
 			MSG_WM_LBUTTONDBLCLK(OnDbClickedFenshi)

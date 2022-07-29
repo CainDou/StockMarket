@@ -34,7 +34,7 @@ int SendMsg(unsigned uThreadId, unsigned MsgType,
 	const char *SendBuf, unsigned BufLen)
 {
 	if (uThreadId <= 0)
-		return InvalidThreadId;
+		return INVALID_THREADID;
 	char *buf;
 	if (SendBuf == NULL
 		|| BufLen <= 0)

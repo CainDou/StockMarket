@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<include width="500" height="500" colorBkgnd="#101010ff" alpha="255">
+	<tabctrl name="tab_kline" pos="0,0,-1,-1" tabAlign="top" tabSkin="" tabInterSize="2" tabWidth="70" tabHeight="0" colorText="#c0c0c0ff" colorBkgnd="#000000ff" focusable="0" show="1" curSel="0">
+		<page title="单周期">
+			<realwnd pos="5,[0,-0,-1" name="kuang_tab_kline" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<!--		<window pos="-1,0,@250,-1" offset="-1,0" name="kuang_tab_kline" font="adding:0" colorBKgnd="#000000ff" colortext="#ffffff" /> -->
+		</page>
+		<page title="双周期">
+			<realwnd pos="5,[0,%50-125,-1" name="kuang_tab_kline21" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,-0,-1" name="kuang_tab_kline22" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+		</page>
+		<page title="四周期">
+			<realwnd pos="5,[0,%50-125,%50" name="kuang_tab_kline41" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,-0,%50" name="kuang_tab_kline42" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="5,[0,%50-125,-1" name="kuang_tab_kline43" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,-0,-1" name="kuang_tab_kline44" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+		</page>
+		<page title="六周期">
+			<realwnd pos="5,[0,%33-83,%50" name="kuang_tab_kline61" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,%67-167,%50" name="kuang_tab_kline62" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,-0,%50" name="kuang_tab_kline63" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="5,[0,%33-83,-1" name="kuang_tab_kline64" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,%67-167,-1" name="kuang_tab_kline65" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+			<realwnd pos="[0,{0,-0,-1" name="kuang_tab_kline66" wndclass="win_kline" font="face:微软雅黑,adding:0" colorBkgnd="#101010ff" />
+		</page>
+	</tabctrl>
+</include>

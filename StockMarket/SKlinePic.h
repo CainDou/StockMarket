@@ -45,6 +45,7 @@ namespace SOUI
 		//LRESULT		OnMsg(UINT uMsg, WPARAM wp, LPARAM lp);
 		void		SetRpsGroup(RpsGroup rg);
 		void		DataProc();
+		void		UpdateData();
 		void		ReProcMAData();
 		void		ReProcMacdData();
 		void		ReProcBandData();
@@ -133,7 +134,6 @@ namespace SOUI
 		// 数据处理
 	protected:
 		void DataInit();
-		void UpdateData();
 
 		bool GenerateMultiMinFromOne(int nCount, KlineType & data, int nPeriod);
 
@@ -259,7 +259,7 @@ namespace SOUI
 			MSG_WM_LBUTTONDBLCLK(OnDbClickedKline)
 			MSG_WM_MOUSEMOVE(OnMouseMove)
 			MSG_WM_MOUSELEAVE(OnMouseLeave)
-			MSG_WM_TIMER_EX(OnTimer)
+			//MSG_WM_TIMER_EX(OnTimer)
 			MSG_WM_CREATE(OnCreate)
 			SOUI_MSG_MAP_END()
 	};

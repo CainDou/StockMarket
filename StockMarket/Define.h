@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define InvalidThreadId       0
+#define INVALID_THREADID 0
 
 #include<unordered_map>
 #include<string>
@@ -25,7 +25,7 @@ struct hash_SStringA
 {
 	size_t operator()(const SStringA& str) const
 	{
-		return hash<string>()((string)str);
+		return hash<string>()((string)(const char*)str);
 	}
 };
 
@@ -241,6 +241,7 @@ enum DataProcType
 	UpdateData=10000,
 	UpdateTodayData,
 	UpdateLastDayEma,
+	ClearOldData,
 	Msg_ReInit=77777,
 	Msg_Exit = 88888,
 };
@@ -282,6 +283,14 @@ enum WorkWndMsg
 	WW_HisKline,
 	WW_CloseInfo,
 	WW_Reinit,
+	WW_ChangeIndy,
+	WW_OuterMsgEnd,
+	WW_FSEma,
+	WW_FSMacd,
+	WW_KlineMa,
+	WW_KlineMacd,
+	WW_KlineBand,
+	WW_InnerMsgEnd,
 
 };
 
@@ -295,22 +304,19 @@ enum StockInfoType
 	StockInfo_Index,
 };
 
-enum MAINMSG
+enum WDMSG
 {
-	MAINMSG_UpdateList,
-	MAINMSG_UpdatePoint,
-	MAINMSG_TodayPoint,
-	MAINMSG_HisPoint,
-	MAINMSG_RTIndex,
-	MAINMSG_RTStock,
-	MAINMSG_HisIndex,
-	MAINMSG_HisStock,
-	MAINMSG_HisKline,
-	MAINMSG_DownloadPoint,
-	MAINMSG_DownloadMarket,
-	MAINMSG_DownloadKline,
-	MAINMSG_ChangeIndy,
-	MAINMSG_ReInit,
+	WDMsg_UpdateList,
+	WDMsg_UpdatePic,
+	WDMsg_SubIns,
+	WDMsg_HideWindow,
+	WDMsg_ReInit,
+	WDMsg_ChangeIndy,
+	WDMsg_SetFocus,
+	WDMsg_SaveConfig,
+	WDMsg_NewWindow,
+	WDMsg_OpenWindow,
+	WDMsg_Exit,
 
 };
 
@@ -721,6 +727,14 @@ enum KlineMenu
 	KM_L1RPS,
 	KM_L2RPS,
 	KM_End,
+};
+
+enum WDMenu
+{
+	WDM_Return = 300,
+	WDM_New,
+	WDM_Open,
+	WDM_End,
 };
 
 enum ReceiveCommonMsgType
