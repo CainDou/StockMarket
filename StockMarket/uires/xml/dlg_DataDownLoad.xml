@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<SOUI name="window" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="500" height="300" margin="1,5,5,5" wndType="normal" toolWindow="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">数据下载</text>
+				<imgbtn name="btn_DlClose" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<text pos="40,40" size="60, 24">合约分类</text>
+			<text pos="40,80" size="60, 24">合约选择</text>
+			<text pos="40,120" size="60, 24">开始日期</text>
+			<dateTimePicker pos="110,120" size="120,24" name="Starttimepicker" padding="4,0,4,0" dropWidth="300" timeEnable="0">
+				<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+			</dateTimePicker>
+			<text pos="40,160" size="60, 24">结束日期</text>
+			<dateTimePicker pos="110,160" size="120,24" name="Endtimepicker" padding="4,0,4,0" dropWidth="300" timeEnable="0">
+				<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+			</dateTimePicker>
+			<!--
+			<group pos="108,37,@325,@30" headerHeight="0" margin="0,0,0,0" colorLine1="#ff0000ff" colorLine2="#ff0000ff" visible="0" >
+			</group>
+-->
+			<window pos="110,40,306,64" colorBkgnd="rgb(70,70,70)" colorText="#ffffff">
+				<radio name="radio_SingleIns" pos="0,0" size="96, 24" skin="_skin.sys.radio" checked="1" focusable="0">单独合约</radio>
+				<radio name="radio_GroupIns" pos="100,0" size="96, 24" skin="_skin.sys.radio" checked="0" focusable="0">组合合约</radio>
+			</window>
+			<edit name="edit_DownLoadInsID" pos="334,80" size="100, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" colorDisable="#505050ff" />
+			<radio name="radio_AllIns" pos="110,80" size="96, 24" skin="_skin.sys.radio" checked="1" focusable="0">所有合约</radio>
+			<radio name="radio_ContIns" pos="210,80" size="96, 24" skin="_skin.sys.radio" focusable="0">主力连续</radio>
+			<radio name="radio_Single" pos="310,80" size="20, 24" skin="_skin.sys.radio" focusable="0" />
+			<progress name="prog_download" pos="44,240,@424,@15" font="adding:2,face:微软雅黑" value="20" min="0" max="100" showPercent="1" visible="1" colorText="#ff0000ff" />
+			<button name="btn_DownLoad" pos="100,270" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">开始下载</button>
+			<button name="btn_DLCancel" pos="300,270" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">关闭</button>
+			<text name="txt_DLInfo" pos="40,200" size="424, 28" multiLines="0" valign="center" colorText="#00ffffff" />
+			<text pos="272,120" colorText="#ff0000ff" multiLines="1">说明：此页面下载历史数据后会\n覆盖原来的数据，在后续使用中\n不重新下载，只会增量更新</text>
+		</window>
+	</root>
+</SOUI>

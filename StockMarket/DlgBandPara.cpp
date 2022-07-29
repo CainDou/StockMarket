@@ -9,7 +9,7 @@ CDlgBandPara::CDlgBandPara() :SHostWnd(_T("LAYOUT:dlg_BandPara"))
 {
 }
 
-SOUI::CDlgBandPara::CDlgBandPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_BandPara"))
+CDlgBandPara::CDlgBandPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_BandPara"))
 {
 	m_rgGroup = rg;
 	m_hParWnd = hWnd;
@@ -20,12 +20,12 @@ CDlgBandPara::~CDlgBandPara()
 {
 }
 
-void SOUI::CDlgBandPara::OnClose()
+void CDlgBandPara::OnClose()
 {
 	CSimpleWnd::DestroyWindow();
 }
 
-void SOUI::CDlgBandPara::OnClickButtonOk()
+void CDlgBandPara::OnClickButtonOk()
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_BandParaN1");
 	strParaN1 = para1->GetWindowTextW();
@@ -69,21 +69,19 @@ void SOUI::CDlgBandPara::OnClickButtonOk()
 		m_BandPara.P = _wtoi(strParaP.GetBuffer(1));
 	else
 		m_BandPara.P = -1;
-	LPARAM lp = MAKELPARAM(m_rgGroup, KLINEMSG_BAND);
-	//SSendMessage(WM_KLINE_MSG, (WPARAM)&m_BandPara, lp);
-
-	::SendMessageW(m_hParWnd, WM_KLINE_MSG, (WPARAM)&m_BandPara, lp);
+	::SendMessageW(m_hParWnd, WM_KLINE_MSG, 
+		(WPARAM)&m_BandPara, KLINEMSG_BAND);
 	OnClose();
 
 }
 
-void SOUI::CDlgBandPara::OnClickButtonCancel()
+void CDlgBandPara::OnClickButtonCancel()
 {
 	OnClose();
 
 }
 
-void SOUI::CDlgBandPara::OnInit(EventArgs * e)
+void CDlgBandPara::OnInit(EventArgs * e)
 {
 	CIniFile ini(L".//config//config.ini");
 
@@ -96,7 +94,7 @@ void SOUI::CDlgBandPara::OnInit(EventArgs * e)
 
 }
 
-void SOUI::CDlgBandPara::OnClickButtonDefault()
+void CDlgBandPara::OnClickButtonDefault()
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_BandParaN1");
 	para1->SetWindowTextW(std::to_wstring(g_DefaultBandPara.N1).c_str());
@@ -118,7 +116,7 @@ void SOUI::CDlgBandPara::OnClickButtonDefault()
 
 }
 
-void SOUI::CDlgBandPara::OnClickButtonSetDefault()
+void CDlgBandPara::OnClickButtonSetDefault()
 {
 	BandPara_t tmpBandPara;
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_BandParaN1");
@@ -195,7 +193,7 @@ void SOUI::CDlgBandPara::OnClickButtonSetDefault()
 	SMessageBox(NULL, L"设置默认参数成功", L"通知", MB_OK);
 }
 
-void SOUI::CDlgBandPara::SetEditText(BandPara_t para)
+void CDlgBandPara::SetEditText(BandPara_t para)
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_BandParaN1");
 	para1->SetWindowTextW(std::to_wstring(para.N1).c_str());
@@ -216,7 +214,7 @@ void SOUI::CDlgBandPara::SetEditText(BandPara_t para)
 	para6->SetWindowTextW(std::to_wstring(para.P).c_str());
 }
 
-void SOUI::CDlgBandPara::OnFinalMessage(HWND hWnd)
+void CDlgBandPara::OnFinalMessage(HWND hWnd)
 {
 	__super::OnFinalMessage(hWnd);
 	delete this;

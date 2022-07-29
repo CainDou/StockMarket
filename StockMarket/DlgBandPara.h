@@ -33,7 +33,6 @@ namespace SOUI
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)
-			//		EVENT_ID_HANDLER(R.id.cbx_lines, EventCBSelChange::EventID, OnCbxChange)
 			EVENT_NAME_COMMAND(L"btn_BandClose", OnClose)
 			//	EVENT_ID_COMMAND(R.id.btn_menu, OnBtnMenu)
 			EVENT_NAME_COMMAND(L"btn_BandOK", OnClickButtonOk)

@@ -73,7 +73,7 @@ void SOUI::CDlgLogin::OnClickButtonCancel()
 	TraceLog("¹Ø±Õ³ÌÐò");
 	m_pNetClient->Stop();
 	//g_bExit = TRUE;
-	exit(-1);
+	EndDialog(-1);
 }
 
 void SOUI::CDlgLogin::OnInit(EventArgs * e)

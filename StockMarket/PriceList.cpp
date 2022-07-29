@@ -13,7 +13,7 @@ CPriceList::CPriceList()
 	m_bInit = FALSE;
 	m_bIsStockIndex = false;
 	m_bInsInited = FALSE;
-	//OutputDebugString(L"赋值不是stockIndex\n");
+	
 }
 
 void CPriceList::SetShowData(SStringA StockID, SStringA StockName,
@@ -82,6 +82,8 @@ void SOUI::CPriceList::Paint(IRenderTarget * pRT)
 		{
 			if (!m_pStkMarketVec->empty())
 				m_StockTick = m_pStkMarketVec->back();
+			else
+				m_StockTick = CommonStockMarket{ 0 };
 			if (m_pStkMarketVec->size() > 1)
 				m_preStockTick =
 				m_pStkMarketVec->at(m_pStkMarketVec->size() - 2);
@@ -93,6 +95,8 @@ void SOUI::CPriceList::Paint(IRenderTarget * pRT)
 		{
 			if (!m_pIdxMarketVec->empty())
 				m_IndexTick = m_pIdxMarketVec->back();
+			else
+				m_IndexTick = CommonIndexMarket{ 0 };
 			DrawIndexModeOne(pRT);
 		}
 	}
@@ -250,7 +254,7 @@ void CPriceList::DrawStockModeOne(IRenderTarget * pRT)
 	{
 		int nVol = m_StockTick.AskVolume[9 - i] / 100;
 		double fPrice = m_StockTick.AskPrice[9 - i];
-		if (nVol > 0)
+		if (nVol > 0 || fPrice >0)
 		{
 			pRT->SetTextColor(RGBA(255, 255, 255, 255));
 			_swprintf(szTmp, L"%d", nVol);
@@ -316,7 +320,7 @@ void CPriceList::DrawStockModeOne(IRenderTarget * pRT)
 	{
 		int nVol = m_StockTick.BidVolume[i] / 100;
 		double fPrice = m_StockTick.BidPrice[i];
-		if (nVol > 0)
+		if (nVol > 0 || fPrice>0)
 		{
 			pRT->SetTextColor(RGBA(255, 255, 255, 255));
 			_swprintf(szTmp, L"%d", nVol);
@@ -669,7 +673,7 @@ void SOUI::CPriceList::DrawIndexModeOne(IRenderTarget * pRT)
 	left = m_rect.left + 30;
 	right = m_rect.left + nWidth * 2;
 	if (m_IndexTick.LastPrice > 10000000
-		|| m_IndexTick.LastPrice < 0)
+		|| m_IndexTick.LastPrice <= 0)
 	{
 		_swprintf(szTmp, L"—");
 		pRT->DrawTextW(szTmp, wcslen(szTmp),

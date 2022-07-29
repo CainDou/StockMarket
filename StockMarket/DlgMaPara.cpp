@@ -10,7 +10,7 @@ CDlgMaPara::CDlgMaPara() :SHostWnd(_T("LAYOUT:dlg_MaPara"))
 {
 }
 
-SOUI::CDlgMaPara::CDlgMaPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_MaPara"))
+CDlgMaPara::CDlgMaPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_MaPara"))
 {
 	m_rgGroup = rg;
 	m_hParWnd = hWnd;
@@ -21,12 +21,12 @@ CDlgMaPara::~CDlgMaPara()
 {
 }
 
-void SOUI::CDlgMaPara::OnClose()
+void CDlgMaPara::OnClose()
 {
 	CSimpleWnd::DestroyWindow();
 }
 
-void SOUI::CDlgMaPara::OnClickButtonOk()
+void CDlgMaPara::OnClickButtonOk()
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
 	strPara1 = para1->GetWindowTextW();
@@ -55,20 +55,17 @@ void SOUI::CDlgMaPara::OnClickButtonOk()
 		nPara[3] = _wtoi(strPara4.GetBuffer(1));
 	else
 		nPara[3] = -1;
-	LPARAM lp = MAKELPARAM(m_rgGroup, KLINEMSG_MA);
-	//SSendMessage(WM_KLINE_MSG, (WPARAM)nPara, lp);
-
-	::SendMessageW(m_hParWnd, WM_KLINE_MSG, (WPARAM)nPara, lp);
+	::SendMessageW(m_hParWnd, WM_KLINE_MSG, (WPARAM)nPara, KLINEMSG_MA);
 	OnClose();
 
 }
 
-void SOUI::CDlgMaPara::OnClickButtonCancel()
+void CDlgMaPara::OnClickButtonCancel()
 {
 	OnClose();
 }
 
-void SOUI::CDlgMaPara::OnInit(EventArgs * e)
+void CDlgMaPara::OnInit(EventArgs * e)
 {
 	CIniFile ini(L".//config//config.ini");
 	g_nDefaultMaPara[0] = ini.GetInt(L"DefaultPara", L"MAPara1", 5);
@@ -78,7 +75,7 @@ void SOUI::CDlgMaPara::OnInit(EventArgs * e)
 
 }
 
-void SOUI::CDlgMaPara::OnClickButtonDefault()
+void CDlgMaPara::OnClickButtonDefault()
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
 	para1->SetWindowTextW(std::to_wstring(g_nDefaultMaPara[0]).c_str());
@@ -93,7 +90,7 @@ void SOUI::CDlgMaPara::OnClickButtonDefault()
 	para4->SetWindowTextW(std::to_wstring(g_nDefaultMaPara[3]).c_str());
 }
 
-void SOUI::CDlgMaPara::OnClickButtonSetDefault()
+void CDlgMaPara::OnClickButtonSetDefault()
 {
 	int tmpPara[4];
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
@@ -150,7 +147,7 @@ void SOUI::CDlgMaPara::OnClickButtonSetDefault()
 
 }
 
-void SOUI::CDlgMaPara::SetEditText(const int * pPara)
+void CDlgMaPara::SetEditText(const int * pPara)
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
 	para1->SetWindowTextW(std::to_wstring(pPara[0]).c_str());
@@ -166,7 +163,7 @@ void SOUI::CDlgMaPara::SetEditText(const int * pPara)
 
 }
 
-void SOUI::CDlgMaPara::OnFinalMessage(HWND hWnd)
+void CDlgMaPara::OnFinalMessage(HWND hWnd)
 {
 	__super::OnFinalMessage(hWnd);
 	delete this;

@@ -20,40 +20,38 @@ namespace SOUI
 		CDlgKbElf();
 		CDlgKbElf(HWND hParWnd);
 		~CDlgKbElf();
+	public:
+		SStringA GetShowPicInfo();
+		bool SetStockInfo(vector<StockInfo>& stock1Vec);
+		void ClearInput();
+		void SetEditInput(SStringW wstrInput);
+	protected:
 		void OnClose();
 		void OnInit(EventArgs *e);
-		LRESULT OnActive(UINT wlParam, BOOL whParam, HWND lParam);
-		bool SetStockInfo(SColorListCtrlEx* pPic, bool bFroceUpdate,
-			vector<StockInfo>* stock1Vec, vector<StockInfo>* stock2Vec=nullptr);
 		bool OnEditChange(EventArgs *e);
 		bool OnDbClick(EventArgs *e);
-		bool OnKeyDown(EventArgs *e);
-
-		std::pair<SStringA, SColorListCtrlEx*> GetShowPicInfo();
-
+		void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+		void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void SubscribeIns(SStringA SubIns);
-		void OnTimer(char cTimerID);
+		void OnTimer(UINT_PTR cTimerID);
 
 		SStringW InputToUpper(SStringW inPut);
 		SStringW InputToLower(SStringW inPut);
 
-		SStringW wstrInput;
-
+	protected:
+		SStringW m_wstrInput;
 		SStringA m_subIns;
-
 		HWND m_hParWnd;
-
-		int m_nGroup;
 		std::map<int, SStringA>m_Row2InsMap;
-
 		map<SStringA, StockInfo, greater<SStringA>> m_StockInfoMap;
-		SColorListCtrlEx* m_useList;
-
 		SEdit* m_pEdit;
 		SColorListCtrlEx *m_pList;
+		bool m_bFromSet;
 	protected:
 		//	virtual void OnFinalMessage(HWND hWnd);
 		void AddFindItem(int &InsCount, std::pair<const SStringA, StockInfo> &it);
+		virtual void OnFinalMessage(HWND hWnd);
+
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)
@@ -63,6 +61,8 @@ namespace SOUI
 			//HostWnd真实窗口消息处理
 			BEGIN_MSG_MAP_EX(CDlgTickFlowKbElf)
 			MSG_WM_TIMER(OnTimer)
+			MSG_WM_KEYDOWN(OnKeyDown)
+			MSG_WM_KEYUP(OnKeyUp)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()
@@ -70,3 +70,8 @@ namespace SOUI
 	};
 
 }
+inline SStringA CDlgKbElf::GetShowPicInfo()
+{
+	return m_subIns;
+}
+

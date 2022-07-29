@@ -9,7 +9,7 @@ CDlgMacdPara::CDlgMacdPara() :SHostWnd(_T("LAYOUT:dlg_macdPara"))
 {
 }
 
-SOUI::CDlgMacdPara::CDlgMacdPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_macdPara"))
+CDlgMacdPara::CDlgMacdPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_macdPara"))
 {
 	m_rgGroup = rg;
 	m_hParWnd = hWnd;
@@ -20,12 +20,12 @@ CDlgMacdPara::~CDlgMacdPara()
 {
 }
 
-void SOUI::CDlgMacdPara::OnClose()
+void CDlgMacdPara::OnClose()
 {
 	CSimpleWnd::DestroyWindow();
 }
 
-void SOUI::CDlgMacdPara::OnClickButtonOk()
+void CDlgMacdPara::OnClickButtonOk()
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_MacdPara1");
 	strPara1 = para1->GetWindowTextW();
@@ -47,22 +47,20 @@ void SOUI::CDlgMacdPara::OnClickButtonOk()
 	else
 		m_nMacdPara[2] = -1;
 
-	LPARAM lp = MAKELPARAM((USHORT)m_rgGroup, (USHORT)FSMSG_MACD);
-	//SSendMessage(WM_FENSHI_MSG, (WPARAM)m_nMacdPara, lp);
-	::SendMessageW(m_hParWnd, WM_FENSHI_MSG, (WPARAM)m_nMacdPara, lp);
+	::SendMessageW(m_hParWnd, WM_FENSHI_MSG, 
+		(WPARAM)m_nMacdPara, FSMSG_MACD);
 
-	lp = MAKELPARAM(m_rgGroup, KLINEMSG_MACD);
-	//SSendMessage(WM_KLINE_MSG, (WPARAM)m_nMacdPara, lp);
-	::SendMessageW(m_hParWnd, WM_KLINE_MSG, (WPARAM)m_nMacdPara, lp);
+	::SendMessageW(m_hParWnd, WM_KLINE_MSG, 
+		(WPARAM)m_nMacdPara, KLINEMSG_MACD);
 	OnClose();
 }
 
-void SOUI::CDlgMacdPara::OnClickButtonCancel()
+void CDlgMacdPara::OnClickButtonCancel()
 {
 	OnClose();
 }
 
-void SOUI::CDlgMacdPara::OnInit(EventArgs * e)
+void CDlgMacdPara::OnInit(EventArgs * e)
 {
 	CIniFile ini(L".//config//config.ini");
 	g_nDefaultMacdPara[0] = ini.GetInt(L"DefaultPara", L"MACDPara1", 12);
@@ -71,7 +69,7 @@ void SOUI::CDlgMacdPara::OnInit(EventArgs * e)
 
 }
 
-void SOUI::CDlgMacdPara::OnClickButtonDefault()
+void CDlgMacdPara::OnClickButtonDefault()
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_MacdPara1");
 	para1->SetWindowTextW(std::to_wstring(g_nDefaultMacdPara[0]).c_str());
@@ -83,7 +81,7 @@ void SOUI::CDlgMacdPara::OnClickButtonDefault()
 	para3->SetWindowTextW(std::to_wstring(g_nDefaultMacdPara[2]).c_str());
 }
 
-void SOUI::CDlgMacdPara::OnClickButtonSetDefault()
+void CDlgMacdPara::OnClickButtonSetDefault()
 {
 	int tmpPara[3];
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_MacdPara1");
@@ -128,7 +126,7 @@ void SOUI::CDlgMacdPara::OnClickButtonSetDefault()
 
 }
 
-void SOUI::CDlgMacdPara::SetEditText(const int * pPara)
+void CDlgMacdPara::SetEditText(const int * pPara)
 {
 	SEdit *para1 = FindChildByName2<SEdit>(L"edit_MacdPara1");
 	para1->SetWindowTextW(std::to_wstring(pPara[0]).c_str());
@@ -140,7 +138,7 @@ void SOUI::CDlgMacdPara::SetEditText(const int * pPara)
 	para3->SetWindowTextW(std::to_wstring(pPara[2]).c_str());
 }
 
-void SOUI::CDlgMacdPara::OnFinalMessage(HWND hWnd)
+void CDlgMacdPara::OnFinalMessage(HWND hWnd)
 {
 	__super::OnFinalMessage(hWnd);
 	delete this;

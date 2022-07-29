@@ -139,7 +139,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;E:\Zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_WINDOWS;STRICT;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BrowseInformation>true</BrowseInformation>
@@ -150,7 +150,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(SOUIPATH)\bin64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>utilitiesd.lib;souid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>utilitiesd.lib;souid.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
     <ResourceCompile>
@@ -190,12 +190,15 @@
     <ClCompile Include="DataProc.cpp" />
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
+    <ClCompile Include="DlgAddNew.cpp" />
     <ClCompile Include="DlgBandPara.cpp" />
     <ClCompile Include="DlgEmaPara.cpp" />
     <ClCompile Include="DlgKbElf.cpp" />
     <ClCompile Include="DlgLogin.cpp" />
     <ClCompile Include="DlgMacdPara.cpp" />
     <ClCompile Include="DlgMaPara.cpp" />
+    <ClCompile Include="DlgOpenWnd.cpp" />
+    <ClCompile Include="DlgSub.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="NetWorkClient.cpp" />
@@ -203,6 +206,7 @@
     <ClCompile Include="SColorListCtrlEx.cpp" />
     <ClCompile Include="SFenShiPic.cpp" />
     <ClCompile Include="SKlinePic.cpp" />
+    <ClCompile Include="SouiRealWndHandler.cpp" />
     <ClCompile Include="SSubPic.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
     <ClCompile Include="SKlineTip.cpp" />
@@ -214,6 +218,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StockMarket.cpp" />
+    <ClCompile Include="WndSynHandler.cpp" />
+    <ClCompile Include="WorkWnd.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc" />
@@ -222,12 +228,15 @@
     <ClInclude Include="DataProc.h" />
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
+    <ClInclude Include="DlgAddNew.h" />
     <ClInclude Include="DlgBandPara.h" />
     <ClInclude Include="DlgEmaPara.h" />
     <ClInclude Include="DlgKbElf.h" />
     <ClInclude Include="DlgLogin.h" />
     <ClInclude Include="DlgMacdPara.h" />
     <ClInclude Include="DlgMaPara.h" />
+    <ClInclude Include="DlgOpenWnd.h" />
+    <ClInclude Include="DlgSub.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="NetWorkClient.h" />
@@ -236,11 +245,14 @@
     <ClInclude Include="SColorListCtrlEx.h" />
     <ClInclude Include="SFenShiPic.h" />
     <ClInclude Include="SKlinePic.h" />
+    <ClInclude Include="SouiRealWndHandler.h" />
     <ClInclude Include="SSubPic.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
     <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="WndSynHandler.h" />
+    <ClInclude Include="WorkWnd.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\soui_res.rc2" />

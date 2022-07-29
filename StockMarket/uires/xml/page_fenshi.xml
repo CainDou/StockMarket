@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<include width="500" height="500" colorBkgnd="#000000ff">
+	<fenshiPic name="pic_fenshiPic" pos="1,1,-2,-2" colorBKgnd="#000000" font="size:12" />
+</include>
