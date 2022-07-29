@@ -15,7 +15,7 @@ CDlgAddNew::~CDlgAddNew()
 
 void SOUI::CDlgAddNew::OnInit(EventArgs * e)
 {
-	CIniFile ini(".//config//config.ini");
+	CIniFile ini(".//config//subWindow.ini");
 	nDefaultWndCount = ini.GetIntA("SubWindowName", "DefaultCount", 0);
 	nNameCount = ini.GetIntA("SubWindowName", "NameCount", 0);
 	SStringA str;
@@ -51,7 +51,7 @@ void SOUI::CDlgAddNew::OnBtnOK()
 			MB_ICONWARNING | MB_OKCANCEL))
 			return;
 	}
-	CIniFile ini(".//config//config.ini");
+	CIniFile ini(".//config//subWindow.ini");
 
 	if (strEdit == m_strDefaultName)
 	{

@@ -15,7 +15,7 @@ CDlgOpenWnd::~CDlgOpenWnd()
 void SOUI::CDlgOpenWnd::OnInit(EventArgs * e)
 {
 	pCbx = FindChildByName2<SComboBox>(L"cbx_open");
-	CIniFile ini(".//config//config.ini");
+	CIniFile ini(".//config//subWindow.ini");
 	nDefaultWndCount = ini.GetIntA("SubWindowName", "DefaultCount", 0);
 	nNameCount = ini.GetIntA("SubWindowName", "NameCount", 0);
 	SStringA str;
