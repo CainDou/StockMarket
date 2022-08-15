@@ -12,15 +12,18 @@
 #include <helper/SMenu.h>
 #include "IniFile.h"
 #include "DataProc.h"
+#include "DlgStockFilter.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
 #define MAX_TICK 6000
+#define MIN_DIFF 0.000001
 
 CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 {
 	m_pDlgKbElf = nullptr;
 	m_uThreadID = INVALID_THREADID;
+	m_bUseStockFilter = FALSE;
 }
 
 
@@ -41,8 +44,15 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 	{
 		m_pTextIndy->SetVisible(FALSE);
 		m_pBtnConn1->SetVisible(FALSE);
+		m_pBtnConn1->SetAttribute(L"size", L"0,22");
 		m_pBtnConn2->SetVisible(FALSE);
+		m_pBtnConn2->SetAttribute(L"size", L"0,22");
 		m_pTextTitle->SetWindowTextW(L"申万一级行业");
+		m_pCheckST->SetVisible(FALSE, TRUE);
+		m_pCheckSBM->SetVisible(FALSE, TRUE);
+		m_pCheckSTARM->SetVisible(FALSE, TRUE);
+		m_pCheckNewStock->SetVisible(FALSE, TRUE);
+
 	}
 	else if (Group_SWL2 == m_Group)
 	{
@@ -50,9 +60,21 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 		m_pBtnConn2->SetVisible(FALSE);
 		m_pBtnConn2->SetAttribute(L"size", L"0,22");
 		m_pTextTitle->SetWindowTextW(L"申万二级行业");
+		m_pCheckST->SetVisible(FALSE, TRUE);
+		m_pCheckSBM->SetVisible(FALSE, TRUE);
+		m_pCheckSTARM->SetVisible(FALSE, TRUE);
+		m_pCheckNewStock->SetVisible(FALSE, TRUE);
+
 	}
 	else if (Group_Stock == m_Group)
 		m_pTextTitle->SetWindowTextW(L"股票");
+
+	m_pDlgStockFilter = new CDlgStockFilter(m_uThreadID, m_Group);
+	m_pDlgStockFilter->Create(NULL);
+	m_pDlgStockFilter->CenterWindow(m_hParWnd);
+	m_pDlgStockFilter->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
+		SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME);
+
 }
 
 void CWorkWnd::InitShowConfig(InitPara initPara)
@@ -96,6 +118,18 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 		SetListShowIndyStr(m_pTextIndy);
 	}
 
+	m_bUseStockFilter = initPara.UseStockFilter;
+	m_bListShowST = initPara.ListShowST;
+	m_bListShowSBM = initPara.ListShowSBM;
+	m_bListShowSTARM = initPara.ListShowSTARM;
+	m_bListShowNewStock = initPara.ListShowNewStock;
+	m_pCheckST->SetCheck(m_bListShowST);
+	m_pCheckSBM->SetCheck(m_bListShowSBM);
+	m_pCheckSTARM->SetCheck(m_bListShowSTARM);
+	m_pCheckNewStock->SetCheck(m_bListShowNewStock);
+
+	SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
+
 }
 
 InitPara CWorkWnd::OutPutInitPara()
@@ -106,6 +140,12 @@ InitPara CWorkWnd::OutPutInitPara()
 	m_InitPara.Connect1 = m_bListConn1;
 	m_InitPara.Connect2 = m_bListConn2;
 	strcpy_s(m_InitPara.ShowIndy, m_ListShowInd);
+	m_InitPara.UseStockFilter = m_bUseStockFilter;
+	m_InitPara.ListShowST = m_bListShowST;
+	m_InitPara.ListShowSBM = m_bListShowSBM;
+	m_InitPara.ListShowSTARM = m_bListShowSTARM;
+	m_InitPara.ListShowNewStock = m_bListShowNewStock;
+
 	return m_InitPara;
 }
 
@@ -121,7 +161,6 @@ void CWorkWnd::InitList()
 		Subscriber(&CWorkWnd::OnListDbClick, this));
 	m_pList->GetEventSet()->subscribeEvent(EVT_LC_SELCHANGED,
 		Subscriber(&CWorkWnd::OnListLClick, this));
-	UpdateListShowStock();
 	SHeaderCtrlEx * pHeader =
 		(SHeaderCtrlEx *)m_pList->GetWindow(GSW_FIRSTCHILD);
 	pHeader->SetNoMoveCol(3);
@@ -130,6 +169,10 @@ void CWorkWnd::InitList()
 	pHeader->GetEventSet()->subscribeEvent(EVT_HEADER_ITEMSWAP,
 		Subscriber(&CWorkWnd::OnListHeaderSwap, this));
 	m_bListInited = true;
+	if (!m_bUseStockFilter)
+		UpdateListShowStock();
+	else
+		UpdateListFilterShowStock();
 	UpdateList();
 
 }
@@ -206,16 +249,37 @@ void CWorkWnd::CloseWnd()
 	m_SubPicShowNameVec.clear();
 	m_SubPicShowNameVec.shrink_to_fit();
 	m_ListPosMap.hash.clear();
+	m_MouseWheelMap.hash.clear();
+}
+
+void CWorkWnd::OutputStockFilterPara(vector<StockFilter>& sfVec)
+{
+	m_pDlgStockFilter->OutPutCondition(sfVec);
+}
+
+void CWorkWnd::InitStockFilterPara(vector<StockFilter>& sfVec)
+{
+	m_sfVec = sfVec;
+	m_pDlgStockFilter->InitList(m_bUseStockFilter, sfVec);
 }
 
 void CWorkWnd::OnInit(EventArgs * e)
 {
 	::InitializeCriticalSection(&m_csClose);
+	SYSTEMTIME st;
+	::GetLocalTime(&st);
+	m_nDate = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
+
 	m_pFenShiPic = FindChildByID2<SFenShiPic>(R.id.fenshiPic);
 	m_pKlinePic = FindChildByID2<SKlinePic>(R.id.klinePic);
 	m_pTextTitle = FindChildByID2<SStatic>(R.id.text_Group);
 	m_pTextIndy = FindChildByID2<SStatic>(R.id.text_ShowIndy);
 	m_pBtnMarket = FindChildByID2<SImageButton>(R.id.btn_Market);
+	m_pCheckST = FindChildByID2<SCheckBox>(R.id.chk_ST);
+	m_pCheckSBM = FindChildByID2<SCheckBox>(R.id.chk_SBM);
+	m_pCheckSTARM = FindChildByID2<SCheckBox>(R.id.chk_STARM);
+	m_pCheckNewStock = FindChildByID2<SCheckBox>(R.id.chk_NewStock);
+
 	m_pPeriodBtnMap[Period_FenShi] = 
 		FindChildByID2<SImageButton>(R.id.btn_FS);
 	m_pPeriodBtnMap[Period_1Min] =
@@ -232,9 +296,11 @@ void CWorkWnd::OnInit(EventArgs * e)
 		FindChildByID2<SImageButton>(R.id.btn_Day);
 	m_pBtnConn1 = FindChildByID2<SImageButton>(R.id.btn_ListConnect1);
 	m_pBtnConn2 = FindChildByID2<SImageButton>(R.id.btn_ListConnect2);
+	m_pBtnStockFilter = FindChildByID2<SImageButton>(R.id.btn_StockFilter);
 
 	InitProcFucMap();
 	InitNameVec();
+	InitStockFilterFunc();
 	m_workThread = thread(&CWorkWnd::DataProc, this);
 	m_uThreadID = *(unsigned*)&m_workThread.get_id();
 	m_pDlgKbElf = new CDlgKbElf(m_hWnd);
@@ -248,6 +314,8 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	switch (wp)
 	{
 	case WDMsg_UpdateList:
+		if (m_bUseStockFilter)
+			UpdateListFilterShowStock();
 		UpdateList();
 		if (m_pList->IsVisible())
 			m_pList->Invalidate();
@@ -259,14 +327,40 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			m_pKlinePic->Invalidate();
 		break;
 	case WDMsg_SubIns:
-		ShowPicWithNewID(m_pDlgKbElf->GetShowPicInfo());
+		if (m_pDlgKbElf->GetShowPicInfo() != m_strSubStock)
+			ShowPicWithNewID(m_pDlgKbElf->GetShowPicInfo());
+		else
+			SetSelectedPeriod(m_ListPeriod);
 		break;
-	case WDMsg_ChangeIndy:
-		UpdateListShowStock();
+	case WDMsg_ChangeShowList:
+		if(m_bUseStockFilter)
+			UpdateListFilterShowStock();
+		else
+			UpdateListShowStock();
+		UpdateList();
 		break;
 	case WDMsg_SetFocus:
 		CSimpleWnd::SetFocus();
 		break;
+	case WDMsg_ChangeStockFilter:
+		m_bUseStockFilter = (BOOL)lp;
+		if (m_bUseStockFilter)
+		{
+			SetBtnState(m_pBtnStockFilter, true);
+			SetBtnState(m_pBtnConn1, false);
+			SetBtnState(m_pBtnConn2, false);
+			m_pDlgStockFilter->OutPutCondition(m_sfVec);
+			m_bListConn1 = false;
+			m_bListConn2 = false;
+			m_ListShowInd = "";
+			::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdateList, 0);
+		}
+		else
+		{
+			SetBtnState(m_pBtnStockFilter, false);
+			UpdateListShowStock();
+		}
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveConfig, 0);
 	default:
 		break;
 	}
@@ -604,6 +698,33 @@ void CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 		}
 
 	}
+	else if (nChar == VK_RETURN)
+	{
+		if (m_bShowList)
+		{
+			int nSel = m_pList->GetSelectedItem();
+			if (nSel != -1)
+			{
+				SStringA StockID = StrW2StrA(m_pList->GetSubItemText(nSel, SHead_ID));
+				if (m_ListPosMap.hash.count(StockID) == 0)
+					StockID += "I";
+
+				m_PicPeriod = m_ListPeriod;
+				if (StockID != m_strSubStock)
+					ShowPicWithNewID(StockID);
+				else
+					SetSelectedPeriod(m_PicPeriod);
+
+			}
+		}
+		else
+		{
+			if (m_PicPeriod != Period_FenShi)
+				OnBtnFenShiClicked();
+			else
+				OnBtnDayClicked();
+		}
+	}
 }
 void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 {
@@ -680,7 +801,7 @@ BOOL CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	else
 	{
 		std::vector < pair<SStringA, int>>ListPosVec(
-			m_ListPosMap.hash.begin(), m_ListPosMap.hash.end());
+			m_MouseWheelMap.hash.begin(), m_MouseWheelMap.hash.end());
 		std::sort(ListPosVec.begin(), ListPosVec.end(),
 			[](const pair<SStringA, int> &a, const pair<SStringA, int> b)
 		{return a.second < b.second; });
@@ -711,6 +832,13 @@ void CWorkWnd::SwitchPic2List()
 	UpdateList();
 	m_pList->SetFocus();
 	m_pList->RequestRelayout();
+	m_bShowList = true;
+	m_pBtnMarket->SetWindowTextW(L"行情");
+	m_pCheckST->SetVisible(TRUE, TRUE);
+	m_pCheckSBM->SetVisible(TRUE, TRUE);
+	m_pCheckSTARM->SetVisible(TRUE, TRUE);
+	m_pCheckNewStock->SetVisible(TRUE, TRUE);
+
 
 }
 void CWorkWnd::SwitchList2Pic(int nPeriod)
@@ -731,6 +859,13 @@ void CWorkWnd::SwitchList2Pic(int nPeriod)
 		m_pKlinePic->SetFocus();
 		m_pKlinePic->RequestRelayout();
 	}
+	m_bShowList = false;
+	m_pBtnMarket->SetWindowTextW(L"个股");
+	m_pCheckST->SetVisible(FALSE, TRUE);
+	m_pCheckSBM->SetVisible(FALSE, TRUE);
+	m_pCheckSTARM->SetVisible(FALSE, TRUE);
+	m_pCheckNewStock->SetVisible(FALSE, TRUE);
+
 }
 
 void CWorkWnd::DataProc()
@@ -789,6 +924,10 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnKlineMacd;
 	m_dataHandleMap[WW_KlineBand] =
 		&CWorkWnd::OnKlineBand;
+	m_dataHandleMap[WW_ChangeStockFilter] =
+		&CWorkWnd::OnChangeStockFilter;
+	m_dataHandleMap[WW_SaveStockFilter] =
+		&CWorkWnd::OnSaveStockFilter;
 
 }
 void CWorkWnd::InitNameVec()
@@ -815,6 +954,39 @@ void CWorkWnd::InitNameVec()
 
 
 }
+void CWorkWnd::InitStockFilterFunc()
+{
+
+	m_SFPeriodMap[SFP_FS] =Period_FenShi;
+	m_SFPeriodMap[SFP_M1] = Period_1Min;
+	m_SFPeriodMap[SFP_M5] = Period_5Min;
+	m_SFPeriodMap[SFP_M15] = Period_15Min;
+	m_SFPeriodMap[SFP_M30] = Period_30Min;
+	m_SFPeriodMap[SFP_M60] = Period_60Min;
+	m_SFPeriodMap[SFP_D1] = Period_1Day;
+
+
+
+	m_SFIndexMap[SFI_ChgPct] = "chgPct";
+	m_SFIndexMap[SFI_Rps520] = "RPS520";
+	m_SFIndexMap[SFI_Macd520] = "MACD520";
+	m_SFIndexMap[SFI_Point520] = "Point520";
+	m_SFIndexMap[SFI_Rank520] = "Rank520";
+	m_SFIndexMap[SFI_Rps2060] = "RPS2060";
+	m_SFIndexMap[SFI_Macd2060] = "MACD2060";
+	m_SFIndexMap[SFI_Point2060] = "Point2060";
+	m_SFIndexMap[SFI_Rank2060] = "Rank2060";
+	m_SFIndexMap[SFI_Num] = "Num";
+
+
+	m_SFConditionMap[SFC_Greater] = &CWorkWnd::GreaterThan;
+	m_SFConditionMap[SFC_EqualOrGreater] = &CWorkWnd::EqualOrGreaterThan;
+	m_SFConditionMap[SFC_Equal] = &CWorkWnd::Equal;
+	m_SFConditionMap[SFC_EqualOrLess] = &CWorkWnd::EqualOrLessThan;
+	m_SFConditionMap[SFC_Less] = &CWorkWnd::LessThan;
+
+}
+
 bool CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
 {
 
@@ -886,11 +1058,12 @@ bool CWorkWnd::OnListDbClick(EventArgs * pEvtBase)
 	SStringA StockID = StrW2StrA(pList->GetSubItemText(nSel, SHead_ID));
 	if (m_ListPosMap.hash.count(StockID) == 0)
 		StockID += "I";
-	//m_strSubStock = StockID;
 
 	m_PicPeriod = m_ListPeriod;
-	ShowPicWithNewID(StockID);
-	m_bShowList = false;
+	if (StockID != m_strSubStock)
+		ShowPicWithNewID(StockID);
+	else
+		SetSelectedPeriod(m_PicPeriod);
 	return true;
 }
 bool CWorkWnd::OnListLClick(EventArgs * pEvtBase)
@@ -921,6 +1094,10 @@ void CWorkWnd::UpdateListShowStock()
 	SStringW tmp;
 	for (auto &it : m_InfoVec)
 	{
+		if (Group_Stock == m_Group)
+			if (!CheckStockFitDomain(it))
+				continue;
+
 		if (strInd == "" || strInd == it.ScaleID ||
 			strInd == it.SWL1ID || strInd == it.SWL2ID)
 		{
@@ -1034,6 +1211,72 @@ void CWorkWnd::UpdateList()
 
 }
 
+void CWorkWnd::UpdateListFilterShowStock()
+{
+	m_ListPosMap.hash.clear();
+	//m_pList->DeleteAllItems();
+	int nSelect = m_pList->GetSelectedItem();
+	int nNowItemCount = m_pList->GetItemCount();
+	int nCount = 0;
+	SStringW tmp;
+	for (auto &it : m_InfoVec)
+	{
+		if (Group_Stock == m_Group)
+			if (!CheckStockFitDomain(it))
+				continue;
+
+		bool bPassed = true;
+		for (auto &sf : m_sfVec)
+		{
+			if (!CheckStockDataPass(sf, it.SecurityID))
+			{
+				bPassed = false;
+				break;
+			}
+		}
+		if (bPassed)
+		{
+			if (nCount >= nNowItemCount)
+			{
+				tmp.Format(L"%d", nCount + 1);
+				m_pList->InsertItem(nCount, tmp);
+				SStringW strID = StrA2StrW(it.SecurityID);
+				if (strID.GetLength() > 6)
+					strID = strID.Left(6);
+				m_pList->SetSubItemText(nCount, SHead_ID,
+					strID);
+				m_pList->SetSubItemText(nCount, SHead_Name,
+					StrA2StrW(it.SecurityName));
+				m_ListPosMap.hash[it.SecurityID] = nCount;
+			}
+			else
+			{
+				tmp.Format(L"%d", nCount + 1);
+				m_pList->SetSubItemText(nCount,SHead_ID ,tmp);
+				SStringW strID = StrA2StrW(it.SecurityID);
+				if (strID.GetLength() > 6)
+					strID = strID.Left(6);
+				m_pList->SetSubItemText(nCount, SHead_ID,
+					strID);
+				m_pList->SetSubItemText(nCount, SHead_Name,
+					StrA2StrW(it.SecurityName));
+				m_ListPosMap.hash[it.SecurityID] = nCount;
+
+			}
+			nCount++;
+		}
+	}
+	while (nNowItemCount > nCount)
+	{
+		m_pList->DeleteItem(nCount);
+		--nNowItemCount;
+	}
+	m_pList->SetSelectedItem(nSelect < nCount ? nSelect : -1);
+	SetListShowIndyStr(m_pTextIndy);
+
+	m_pList->RequestRelayout();
+}
+
 void CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
 {
 
@@ -1043,6 +1286,7 @@ void CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
 			|| m_SortPara.nCol == 1
 			|| m_SortPara.nCol == 2)
 		{
+			m_MouseWheelMap.hash = m_ListPosMap.hash;
 			pList->Invalidate();
 			return;
 		}
@@ -1078,8 +1322,84 @@ void CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
 			stockID += "I";
 		m_ListPosMap.hash[stockID] = i;
 	}
+	m_MouseWheelMap.hash = m_ListPosMap.hash;
 	m_bListInited = true;
 }
+
+bool CWorkWnd::CheckStockFitDomain(StockInfo & si)
+{
+	if (!m_bListShowST)
+	{
+		if (NULL != strstr(si.SecurityName, "ST"))
+			return false;
+	}
+	//检测创业板
+	if (!m_bListShowSBM)
+	{
+		if (si.SecurityID[0] == '3')
+			return false;
+	}
+	//检测科创板
+	if (!m_bListShowSTARM)
+	{
+		if (si.SecurityID[0] == '6' &&
+			si.SecurityID[1] == '8' &&
+			si.SecurityID[2] == '8')
+			return false;
+	}
+	//检测新股
+	if (!m_bListShowNewStock)
+	{
+		if (m_nDate - si.IPODate < 10000)
+			return false;
+	}
+	return true;
+}
+
+bool CWorkWnd::CheckStockDataPass(StockFilter& sf,SStringA StockID)
+{
+	if (SFI_ChgPct == sf.index1)
+	{
+		double fClose = (m_pListDataMap->at(m_ListPeriod))[StockID]["close"].value;
+		double fPreClose = m_preCloseMap.hash[StockID];
+		if (fPreClose == 0)
+			return false;
+		double fChgPct = (fClose - fPreClose) / fPreClose * 100;
+		return (this->*m_SFConditionMap[sf.condition])(fChgPct, sf.num);
+	}
+	double data1 = (m_pListDataMap->at(m_SFPeriodMap[sf.period1]))\
+		[StockID][m_SFIndexMap[sf.index1]].value;
+	double data2 = sf.index2 == SFI_Num ? sf.num:
+		(m_pListDataMap->at(m_SFPeriodMap[sf.period1]))\
+		[StockID][m_SFIndexMap[sf.index2]].value;
+	return (this->*m_SFConditionMap[sf.condition])(data1, data2);
+}
+
+bool CWorkWnd::GreaterThan(double a, double b)
+{
+	return a > b;
+}
+
+bool CWorkWnd::EqualOrGreaterThan(double a, double b)
+{
+	return a >= b;
+}
+
+bool CWorkWnd::Equal(double a, double b)
+{
+	return (a == b) || (abs(a-b)<MIN_DIFF);
+}
+
+bool CWorkWnd::EqualOrLessThan(double a, double b)
+{
+	return a <= b;
+}
+
+bool CWorkWnd::LessThan(double a, double b)
+{
+	return a<b;
+}
+
 
 int CWorkWnd::SortDouble(void * para1, const void * para2,
 	const void * para3)
@@ -1410,6 +1730,12 @@ void CWorkWnd::OnBtnListConnect1Clicked()
 	if (!m_bListConn1)
 		m_ListShowInd = "";
 	SetBtnState(m_pBtnConn1, m_bListConn1);
+	if(m_bUseStockFilter)
+	{ 
+		m_bUseStockFilter = FALSE;
+		m_pDlgStockFilter->StopFilter();
+		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
+	}
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 }
@@ -1420,8 +1746,47 @@ void CWorkWnd::OnBtnListConnect2Clicked()
 	if (!m_bListConn2)
 		m_ListShowInd = "";
 	SetBtnState(m_pBtnConn2, m_bListConn2);
+	if (m_bUseStockFilter)
+	{
+		m_bUseStockFilter = FALSE;
+		m_pDlgStockFilter->StopFilter();
+		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
+	}
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
+}
+
+void CWorkWnd::OnBtnStockFilterClicked()
+{
+	if (m_pDlgStockFilter->IsWindowVisible())
+		m_pDlgStockFilter->ShowWindow(SW_HIDE);
+	else
+		m_pDlgStockFilter->ShowWindow(SW_SHOW);
+}
+
+void CWorkWnd::OnCheckST()
+{
+	m_bListShowST = m_pCheckST->IsChecked();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeShowList, 0);
+}
+
+void CWorkWnd::OnCheckSBM()
+{
+	m_bListShowSBM = m_pCheckSBM->IsChecked();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeShowList, 0);
+}
+
+void CWorkWnd::OnCheckSTARM()
+{
+	m_bListShowSTARM = m_pCheckSTARM->IsChecked();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeShowList, 0);
+
+}
+
+void CWorkWnd::OnCheckNewStock()
+{
+	m_bListShowNewStock = m_pCheckNewStock->IsChecked();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeShowList, 0);
 }
 
 void CWorkWnd::SetBtnState(SImageButton * nowBtn, SImageButton ** preBtn)
@@ -1471,19 +1836,16 @@ void CWorkWnd::OnBtnShowTypeChange(bool bFroceList)
 	}
 	if (m_bShowList)
 	{
-		m_pBtnMarket->SetWindowTextW(L"个股");
 		SetBtnState(m_ListPeriod, false);
 		SetBtnState(m_PicPeriod, true);
 		SetSelectedPeriod(m_ListPeriod);
 	}
 	else
 	{
-		m_pBtnMarket->SetWindowTextW(L"行情");
 		SetBtnState(m_PicPeriod, false);
 		SetBtnState(m_ListPeriod, true);
 		SwitchPic2List();
 	}
-	m_bShowList = !m_bShowList;
 }
 
 void CWorkWnd::OnBtnPeriedChange(int nPeriod)
@@ -1505,13 +1867,18 @@ void CWorkWnd::OnBtnPeriedChange(int nPeriod)
 
 void CWorkWnd::SetListShowIndyStr(SStatic * pText)
 {
-	if (m_ListShowInd == "")
-		pText->SetWindowTextW(L"当前分类:全市场");
+	if (m_bUseStockFilter)
+		pText->SetWindowTextW(L"当前分类:选股器");
 	else
 	{
-		SStringW strIndy = StrA2StrW(m_StockName.hash[m_ListShowInd]);
-		SStringW strText;
-		pText->SetWindowTextW(strText.Format(L"当前分类:%s", strIndy));
+		if (m_ListShowInd == "")
+			pText->SetWindowTextW(L"当前分类:全市场");
+		else
+		{
+			SStringW strIndy = StrA2StrW(m_StockName.hash[m_ListShowInd]);
+			SStringW strText;
+			pText->SetWindowTextW(strText.Format(L"当前分类:%s", strIndy));
+		}
 	}
 }
 
@@ -1668,7 +2035,6 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 		SetKlineShowData(nPeriod, TRUE);
 	}
 	SwitchList2Pic(nPeriod);
-
 }
 
 void CWorkWnd::ShowPicWithNewID(SStringA StockID,bool bForce)
@@ -1716,7 +2082,6 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID,bool bForce)
 		SetKlineShowData(m_PicPeriod, FALSE);
 	}
 	SwitchList2Pic(m_PicPeriod);
-	m_bShowList = false;
 }
 
 void CWorkWnd::SetDataFlagFalse()
@@ -1897,7 +2262,7 @@ void CWorkWnd::OnChangeShowIndy(int nMsgLength, const char * info)
 		&& m_bListConn2)
 		m_ListShowInd = IndexID;
 	::PostMessage(m_hWnd, WM_WINDOW_MSG,
-		WDMsg_ChangeIndy, NULL);
+		WDMsg_ChangeShowList, NULL);
 }
 
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)
@@ -1929,6 +2294,20 @@ void CWorkWnd::OnKlineBand(int nMsgLength, const char * info)
 	m_pKlinePic->ReProcBandData();
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
+
+void CWorkWnd::OnChangeStockFilter(int nMsgLength, const char * info)
+{
+	BOOL bUse = *(BOOL*)info;
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeStockFilter, bUse);
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		WDMsg_SaveConfig, NULL);
+}
+
+void CWorkWnd::OnSaveStockFilter(int nMsgLength, const char * info)
+{
+	::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveStockFilter, m_Group);
+}
+
 
 void CWorkWnd::ProcHisPointFromMsg(ReceivePointInfo * pRecvInfo,
 	const char * info, SStringA dataName1, SStringA dataName2)

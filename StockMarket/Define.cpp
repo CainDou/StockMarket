@@ -151,3 +151,19 @@ void TraceLog(char * log, ...)
 	::LeaveCriticalSection(&g_csLogFile);
 
 }
+
+bool _StockFilterPara::operator<(const _StockFilterPara & other) const
+{
+	if (index1 != other.index1)
+		return index1 < other.index1;
+	if (period1 != other.period1)
+		return period1 < other.period1;
+	if (condition != other.condition)
+		return condition < other.condition;
+	if (index2 != other.index2)
+		return index2 < other.index2;
+	if (period2 != other.period2)
+		return period2 < other.period2;
+	return num < other.num;
+
+}

@@ -66,7 +66,7 @@ void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
 	rcItem.OffsetRect(nOffset, 0);
 	rcNoMove.right = rcNoMove.left;
 	bool bFirst = true;
-	int right = 0;
+	int right = rcItem.left;
 	if (!m_bInitText)
 	{
 		for (int i = 0; i < m_arrItems.GetCount(); ++i)

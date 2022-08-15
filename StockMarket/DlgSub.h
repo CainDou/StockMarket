@@ -21,11 +21,13 @@ namespace SOUI
 		void	OnDestroy();
 		void	OnTimer(UINT_PTR nIDEvent);
 		void	OnBtnClose();
+		void	SaveStockFilterPara(int nGroup);
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
 
 	public:
 		void InitWorkWnd();
+		void InitStockFilter();
 		void InitConfig();
 		void SavePicConfig();
 	public:
