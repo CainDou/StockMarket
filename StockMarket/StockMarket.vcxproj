@@ -198,6 +198,7 @@
     <ClCompile Include="DlgMacdPara.cpp" />
     <ClCompile Include="DlgMaPara.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
+    <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
@@ -236,6 +237,7 @@
     <ClInclude Include="DlgMacdPara.h" />
     <ClInclude Include="DlgMaPara.h" />
     <ClInclude Include="DlgOpenWnd.h" />
+    <ClInclude Include="DlgStockFilter.h" />
     <ClInclude Include="DlgSub.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />

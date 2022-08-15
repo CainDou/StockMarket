@@ -7,9 +7,11 @@ namespace SOUI
 	class SFenShiPic;
 	class SKlinePic;
 	class CDlgKbElf;
+	class CDlgStockFilter;
 	class CWorkWnd : public SHostWnd
 	{
 		typedef void(CWorkWnd::*PDATAHANDLEFUNC)(int, const char*);
+		typedef bool(CWorkWnd::*PCOMPAREFUNC)(double, double);
 	public:
 		CWorkWnd();
 		~CWorkWnd();
@@ -32,6 +34,8 @@ namespace SOUI
 		void		SetPreClose(strHash<double> &preCloseMap);
 		void		SetParThreadID(UINT uThreadID);
 		void		CloseWnd();
+		void		OutputStockFilterPara(vector<StockFilter>& sfVec);
+		void		InitStockFilterPara(vector<StockFilter>& sfVec);
 		// 消息响应
 	protected:
 		void	OnInit(EventArgs *e);
@@ -49,6 +53,7 @@ namespace SOUI
 		void	DataProc();
 		void	InitProcFucMap();
 		void	InitNameVec();
+		void	InitStockFilterFunc();
 		//列表响应
 	public:
 		bool OnListHeaderClick(EventArgs *pEvtBase);
@@ -60,7 +65,17 @@ namespace SOUI
 	public:
 		void UpdateListShowStock();
 		void UpdateList();
+		void UpdateListFilterShowStock();
 		void SortList(SColorListCtrlEx* pList, bool bSortCode = false);
+
+		bool CheckStockFitDomain(StockInfo& si);
+		bool CheckStockDataPass(StockFilter& sf,SStringA StockID);
+		bool GreaterThan(double a, double b);
+		bool EqualOrGreaterThan(double a, double b);
+		bool Equal(double a, double b);
+		bool EqualOrLessThan(double a, double b);
+		bool LessThan(double a, double b);
+
 		int static __cdecl SortDouble(void *para1,
 			const void* para2, const void*para3);
 		int static __cdecl SortInt(void *para1,
@@ -80,6 +95,11 @@ namespace SOUI
 		void OnBtnDayClicked();
 		void OnBtnListConnect1Clicked();
 		void OnBtnListConnect2Clicked();
+		void OnBtnStockFilterClicked();
+		void OnCheckST();
+		void OnCheckSBM();
+		void OnCheckSTARM();
+		void OnCheckNewStock();
 
 		//按钮辅助操作
 		void SetBtnState(SImageButton* nowBtn, SImageButton** preBtn);
@@ -117,6 +137,8 @@ namespace SOUI
 		void OnKlineMa(int nMsgLength, const char* info);
 		void OnKlineMacd(int nMsgLength, const char* info);
 		void OnKlineBand(int nMsgLength, const char* info);
+		void OnChangeStockFilter(int nMsgLength, const char* info);
+		void OnSaveStockFilter(int nMsgLength, const char* info);
 
 
 		void ProcHisPointFromMsg(ReceivePointInfo*pRecvInfo, const char* info,
@@ -136,6 +158,12 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.btn_Day, OnBtnDayClicked)
 			EVENT_ID_COMMAND(R.id.btn_ListConnect1, OnBtnListConnect1Clicked)
 			EVENT_ID_COMMAND(R.id.btn_ListConnect2, OnBtnListConnect2Clicked)
+			EVENT_ID_COMMAND(R.id.btn_StockFilter, OnBtnStockFilterClicked)
+			EVENT_ID_COMMAND(R.id.chk_ST, OnCheckST)
+			EVENT_ID_COMMAND(R.id.chk_SBM, OnCheckSBM)
+			EVENT_ID_COMMAND(R.id.chk_STARM, OnCheckSTARM)
+			EVENT_ID_COMMAND(R.id.chk_NewStock, OnCheckNewStock)
+
 			EVENT_MAP_END()
 
 			BEGIN_MSG_MAP_EX(CWorkWnd)
@@ -159,6 +187,7 @@ namespace SOUI
 		map<int, SImageButton*> m_pPeriodBtnMap;
 		SImageButton* m_pBtnConn1;
 		SImageButton* m_pBtnConn2;
+		SImageButton* m_pBtnStockFilter;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
 		SColorListCtrlEx* m_pList;
@@ -166,6 +195,11 @@ namespace SOUI
 		SKlinePic* m_pKlinePic;
 		SImageButton* m_pPreSelBtn;
 		CDlgKbElf* m_pDlgKbElf;
+		CDlgStockFilter *m_pDlgStockFilter;
+		SCheckBox*	  m_pCheckST;
+		SCheckBox*	  m_pCheckSBM;
+		SCheckBox*	  m_pCheckSTARM;
+		SCheckBox*	  m_pCheckNewStock;
 
 		//子类
 	protected:
@@ -185,12 +219,24 @@ namespace SOUI
 		//列表相关数据
 	protected:
 		bool		m_bListInited;
+		BOOL		m_bUseStockFilter;
 		vector<vector<SStringA>> m_SubPicShowNameVec;
 		strHash<int>m_ListPosMap;
+		strHash<int>m_MouseWheelMap;
 		map<int, TimeLineMap> *m_pListDataMap;
 		strHash<double> m_preCloseMap;
 		strHash<SStringA> m_StockName;
 		vector<SStringA> m_dataNameVec;
+		vector<StockFilter> m_sfVec;
+		map<int, int> m_SFPeriodMap;
+		map<int, SStringA> m_SFIndexMap;
+		map<int, PCOMPAREFUNC> m_SFConditionMap;
+		int			m_nDate;
+		BOOL		m_bListShowST;
+		BOOL		m_bListShowSBM;
+		BOOL		m_bListShowSTARM;
+		BOOL		m_bListShowNewStock;
+
 		//分析图数据
 	protected:
 		map<int, map<SStringA, vector<CoreData>>> m_PointData;
@@ -199,7 +245,7 @@ namespace SOUI
 		map<int, vector<KlineType>>m_KlineMap;
 
 		bool m_bMarketGet;
-		map<int, bool>m_PointReadyMap;
+		map<int, int>m_PointReadyMap;
 		map<int, bool>m_KlineGetMap;
 		map<int, bool>m_PointGetMap;
 	protected:

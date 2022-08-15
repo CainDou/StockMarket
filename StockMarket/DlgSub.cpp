@@ -91,6 +91,9 @@ LRESULT CDlgSub::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	case WDMsg_SaveConfig:
 		SavePicConfig();
 		break;
+	case WDMsg_SaveStockFilter:
+		SaveStockFilterPara(int(lp));
+		break;
 	case WDMsg_Exit:
 		exit(0);
 		break;
@@ -141,6 +144,7 @@ void CDlgSub::InitWorkWnd()
 	vector<map<int, TimeLineMap>> *pListData = g_WndSyn.GetListData();
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
 	InitConfig();
+	InitStockFilter();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		m_WndMap[i]->SetParThreadID(m_DataThreadID);
@@ -148,6 +152,28 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
 		m_WndMap[i]->SetPreClose(preCloseMap);
 		m_WndMap[i]->InitList();
+	}
+
+}
+
+void CDlgSub::InitStockFilter()
+{
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		vector<StockFilter> sfVec;
+		SStringA strPath;
+		strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName, i);
+		std::ifstream ifile(strPath, std::ios::binary | std::ios::_Nocreate);
+		if (ifile.is_open())
+		{
+			int nSFParaSize = 0;
+			ifile.read((char*)&nSFParaSize, sizeof(nSFParaSize));
+			StockFilter sfPara = { 0 };
+			while (ifile.read((char*)&sfPara, nSFParaSize))
+				sfVec.emplace_back(sfPara);
+			m_WndMap[i]->InitStockFilterPara(sfVec);
+		}
+
 	}
 
 }
@@ -164,39 +190,39 @@ void CDlgSub::InitConfig()
 		SStringA strSection;
 		strSection.Format("Group%d", i);
 		initPara.bShowMA =
-			ini.GetIntA(strSection, "ShowMA") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowMA", 1) == 0 ? false : true;
 		initPara.bShowBandTarget =
 			ini.GetIntA(strSection, "ShowBand") == 0 ? false : true;
 		initPara.bShowAverage =
-			ini.GetIntA(strSection, "ShowAvg") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowAvg", 1) == 0 ? false : true;
 		initPara.bShowEMA =
-			ini.GetIntA(strSection, "ShowEMA") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowEMA", 1) == 0 ? false : true;
 		initPara.bShowTSCMACD =
-			ini.GetIntA(strSection, "ShowTSCMACD") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowTSCMACD", 1) == 0 ? false : true;
 		initPara.bShowTSCVolume =
-			ini.GetIntA(strSection, "ShowTSCVolume") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowTSCVolume", 1) == 0 ? false : true;
 		initPara.bShowKlineVolume =
-			ini.GetIntA(strSection, "ShowKlineVolume") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
 		initPara.bShowKlineMACD =
-			ini.GetIntA(strSection, "ShowKlineMACD") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[0] =
-			ini.GetIntA(strSection, "ShowTSCRPS") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowTSCRPS", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[1] =
-			ini.GetIntA(strSection, "ShowTSCL1RPS") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowTSCL1RPS", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[2] =
-			ini.GetIntA(strSection, "ShowTSCL2RPS") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowTSCL2RPS", 1) == 0 ? false : true;
 		initPara.bShowKlineRPS[0] =
-			ini.GetIntA(strSection, "ShowKlineRPS") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineRPS", 1) == 0 ? false : true;
 		initPara.bShowKlineRPS[1] =
-			ini.GetIntA(strSection, "ShowKlineL1RPS") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineL1RPS", 1) == 0 ? false : true;
 		initPara.bShowKlineRPS[2] =
-			ini.GetIntA(strSection, "ShowKlineL2RPS") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineL2RPS", 1) == 0 ? false : true;
 
 		initPara.nWidth = ini.GetIntA(strSection, "Width", 16);
 		initPara.bShowTSCDeal =
-			ini.GetIntA(strSection, "ShowTSCDeal") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowTSCDeal", 1) == 0 ? false : true;
 		initPara.bShowKlineDeal =
-			ini.GetIntA(strSection, "ShowKlineDeal") == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineDeal", 1) == 0 ? false : true;
 		initPara.nEMAPara[0] =
 			ini.GetIntA(strSection, "EMAPara1", 12);
 		initPara.nEMAPara[1] =
@@ -237,6 +263,16 @@ void CDlgSub::InitConfig()
 			== 0 ? false : true;
 		SStringA strStock = ini.GetStringA(strSection, "ShowIndustry", "");
 		strcpy_s(initPara.ShowIndy, strStock);
+		initPara.UseStockFilter = ini.GetIntA(strSection, "StockFilter", 0)
+			== 0 ? false : true;
+		initPara.ListShowST = ini.GetIntA(strSection, "ListShowST", 1)
+			== 0 ? false : true;
+		initPara.ListShowSBM = ini.GetIntA(strSection, "ListShowSBM", 1)
+			== 0 ? false : true;
+		initPara.ListShowSTARM = ini.GetIntA(strSection, "ListShowSTARM", 1)
+			== 0 ? false : true;
+		initPara.ListShowNewStock = ini.GetIntA(strSection, "ListShowNewSotck", 1)
+			== 0 ? false : true;
 
 		m_WndMap[i]->InitShowConfig(initPara);
 	}
@@ -294,7 +330,7 @@ void CDlgSub::SavePicConfig()
 		ini.WriteIntA(strSection, "ListConnent1", initPara.Connect1);
 		ini.WriteIntA(strSection, "ListConnent2", initPara.Connect2);
 		ini.WriteStringA(strSection, "ShowIndustry", initPara.ShowIndy);
-
+		ini.WriteIntA(strSection, "StockFilter", initPara.UseStockFilter);
 	}
 
 }
@@ -519,6 +555,25 @@ void CDlgSub::OnFinalMessage(HWND hWnd)
 void CDlgSub::OnBtnClose()
 {
 	GetNative()->SendMessage(WM_CLOSE);
+}
+
+void CDlgSub::SaveStockFilterPara(int nGroup)
+{
+	vector<StockFilter> sfVec;
+	m_WndMap[nGroup]->OutputStockFilterPara(sfVec);
+	if (!sfVec.empty())
+	{
+		SStringA strPath;
+		strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName,nGroup);
+		std::ofstream ofile(strPath, std::ios::binary);
+		if (ofile.is_open())
+		{
+			int paraSize = sizeof(StockFilter);
+			ofile.write((char*)&paraSize, sizeof(paraSize));
+			ofile.write((char*)&sfVec[0], paraSize * sfVec.size());
+			ofile.close();
+		}
+	}
 }
 
 void CDlgSub::OnMaximize()

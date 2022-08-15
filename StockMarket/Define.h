@@ -119,6 +119,7 @@ typedef struct _StockInfo
 	char SWL1ID[8];
 	char SWL2ID[8];
 	char ScaleID[8];
+	int	 IPODate;
 }StockInfo;
 
 typedef struct _ReceiveInfo
@@ -291,7 +292,8 @@ enum WorkWndMsg
 	WW_KlineMacd,
 	WW_KlineBand,
 	WW_InnerMsgEnd,
-
+	WW_ChangeStockFilter,
+	WW_SaveStockFilter,
 };
 
 
@@ -311,11 +313,13 @@ enum WDMSG
 	WDMsg_SubIns,
 	WDMsg_HideWindow,
 	WDMsg_ReInit,
-	WDMsg_ChangeIndy,
+	WDMsg_ChangeShowList,
 	WDMsg_SetFocus,
 	WDMsg_SaveConfig,
 	WDMsg_NewWindow,
 	WDMsg_OpenWindow,
+	WDMsg_ChangeStockFilter,
+	WDMsg_SaveStockFilter,
 	WDMsg_Exit,
 
 };
@@ -791,6 +795,11 @@ typedef struct InitPara
 	bool Connect1;
 	bool Connect2;
 	char ShowIndy[8];
+	bool UseStockFilter;
+	bool ListShowST;
+	bool ListShowSBM;
+	bool ListShowSTARM;
+	bool ListShowNewStock;
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
@@ -799,6 +808,84 @@ typedef struct InitPara
 		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
 		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
 		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
-		Connect1(false), Connect2(false), ShowIndy("")
+		Connect1(false), Connect2(false), ShowIndy(""),UseStockFilter(false),
+		ListShowST(true), ListShowSBM(true),
+		ListShowSTARM(true), ListShowNewStock(true)
 	{}
 }InitPara_t;
+
+enum SF_FUNC
+{
+	SFF_Add=0,
+	SFF_Change,
+	SFF_Delete,
+	SFF_Count,
+};
+
+enum SF_PERIOD
+{
+	SFP_Null = -1,
+	SFP_D1=0,
+	SFP_FS,
+	SFP_M1,
+	SFP_M5,
+	SFP_M15,
+	SFP_M30,
+	SFP_M60,
+	SFP_Count,
+};
+
+enum SF_INDEX
+{
+	SFI_ChgPct =0,
+	SFI_Rps520,
+	SFI_Macd520,
+	SFI_Point520,
+	SFI_Rank520,
+	SFI_Rps2060,
+	SFI_Macd2060,
+	SFI_Point2060,
+	SFI_Rank2060,
+	SFI_Num,
+	SFI_Count,
+};
+
+enum SF_CONDITION
+{
+	SFC_Greater=0,
+	SFC_EqualOrGreater,
+	SFC_Equal,
+	SFC_EqualOrLess,
+	SFC_Less,
+	SFC_Count,
+};
+
+typedef struct _StockFilterPara
+{
+	bool operator <(const _StockFilterPara& other) const;
+	double num;
+	int index1;
+	int period1;
+	int condition;
+	int index2;
+	int period2;
+}StockFilter;
+
+enum SF_LISTHEAD
+{
+	SFLH_ID = 0,
+	SFLH_Index1,
+	SFLH_Period1,
+	SFLH_Condition,
+	SFLH_Index2,
+	SFLH_Period2OrNum,
+};
+
+enum SF_DOMAIN
+{
+	SFD_ST=0,
+	SFD_SBM,
+	SFD_STARM,
+	SFD_NewStock,
+	SFD_Count,
+};
