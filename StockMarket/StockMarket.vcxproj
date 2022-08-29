@@ -202,6 +202,9 @@
     <ClCompile Include="DlgSub.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MainDlg.cpp" />
+    <ClCompile Include="MD5.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="NetWorkClient.cpp" />
     <ClCompile Include="PriceList.cpp" />
     <ClCompile Include="SColorListCtrlEx.cpp" />
@@ -241,6 +244,7 @@
     <ClInclude Include="DlgSub.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="MainDlg.h" />
+    <ClInclude Include="MD5.h" />
     <ClInclude Include="NetWorkClient.h" />
     <ClInclude Include="PriceList.h" />
     <ClInclude Include="resource.h" />

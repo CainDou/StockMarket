@@ -2,6 +2,8 @@
 #include "WndSynHandler.h"
 #include "IniFile.h"
 #include "zlib.h"
+#include <io.h>
+#include "MD5.h"
 
 HANDLE g_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 HANDLE g_hLoginEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -22,8 +24,9 @@ CWndSynHandler::CWndSynHandler()
 
 CWndSynHandler::~CWndSynHandler()
 {
-	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
-		NULL, LoginMsg_Exit);
+	if (m_pLoginDlg)
+		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
+			NULL, LoginMsg_Exit);
 	m_NetClinet.Stop();
 	SendMsg(m_RpsProcThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
@@ -39,7 +42,6 @@ CWndSynHandler::~CWndSynHandler()
 void CWndSynHandler::Run()
 {
 	InitializeCriticalSection(&m_cs);
-	InitLogFile();
 	InitCommonSetting();
 	InitNetConfig();
 	SetVectorSize();
@@ -51,6 +53,8 @@ void CWndSynHandler::Run()
 	tMsgSyn = thread(&CWndSynHandler::MsgProc, this);
 	m_uMsgThreadID = *(unsigned*)&tMsgSyn.get_id();
 	m_NetClinet.SetWndHandle(m_hMain);
+	if (!CheckCmdLine())
+		exit(0);
 	tLogin = thread(&CWndSynHandler::Login, this);
 	WaitForSingleObject(g_hLoginEvent, INFINITE);
 	if (bExit)	exit(0);
@@ -59,7 +63,7 @@ void CWndSynHandler::Run()
 	m_NetClinet.RegisterHandle(NetHandle);
 	m_NetClinet.Start(m_uNetThreadID, this);
 	SendInfo info;
-	info.MsgType = SendType_Connect;
+	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
 	send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
 	WaitForSingleObject(g_hEvent, INFINITE);
@@ -467,6 +471,112 @@ void CWndSynHandler::SetPointDataCapacity()
 	}
 }
 
+bool CWndSynHandler::CheckCmdLine()
+{
+	TraceLog("cmdLine:%s", StrW2StrA(m_strCmdLine));
+	if (m_strCmdLine == L"-NoCheck")
+		return true;
+	else
+	{
+		if (!m_NetClinet.OnConnect(m_strIPAddr, m_nIPPort))
+			return true;
+
+		SStringA strMD5 = "";
+		SStringA strFileMD5 = "";
+		while (GetAutoUpdateFileVer(strMD5))
+			break;
+		ifstream ifile(".\\AutoUpdate.exe", std::ios::binary);
+		if (ifile.is_open())
+		{
+			MD5 MD5(ifile);
+			strFileMD5 = MD5.toString().c_str();
+			ifile.close();
+		}
+		if (strFileMD5 == "" || strMD5 != strFileMD5)
+		{
+			while (GetAutoUpdateFile(strMD5))
+				break;
+		}
+		STARTUPINFOA si;
+		PROCESS_INFORMATION pi;
+
+		ZeroMemory(&si, sizeof(si));
+		si.cb = sizeof(si);
+		ZeroMemory(&pi, sizeof(pi));
+
+		CreateProcessA(NULL, "AutoUpdate", NULL, NULL, FALSE, 0,
+			NULL, NULL, &si, &pi);
+		::CloseHandle(pi.hProcess);
+		::CloseHandle(pi.hThread);
+	}
+	return false;
+}
+
+
+bool CWndSynHandler::GetAutoUpdateFile(SStringA strMD5)
+{
+	SendInfo si = { 0 };
+	si.MsgType = ComSend_UpdateFile;
+	::send(m_NetClinet.GetSocket(), (char*)&si, sizeof(si), 0);
+	ReceiveInfo recvInfo;
+	int nRecv = 0;
+	while (true)
+	{
+		int nRet = ::recv(m_NetClinet.GetSocket(), (char*)&recvInfo + nRecv,
+			sizeof(recvInfo) - nRecv, 0);
+		nRecv += nRet;
+		if (nRecv == sizeof(recvInfo))
+			break;
+	}
+	bool bSuccess = false;
+	char *buffer = new char[recvInfo.DataSize];
+	if (ReceiveData(m_NetClinet.GetSocket(), recvInfo.DataSize, '#', buffer))
+	{
+		MD5 md5(buffer, recvInfo.SrcDataSize);
+		if (md5.toString().c_str() == strMD5)
+		{
+			std::ofstream ofile(".\\AutoUpdate.exe", std::ios::binary);
+			if (ofile.is_open())
+			{
+				ofile.write(buffer, recvInfo.SrcDataSize);
+				ofile.close();
+				bSuccess = true;
+			}
+		}
+	}
+	delete[]buffer;
+	buffer = nullptr;
+	return bSuccess;
+
+}
+
+bool CWndSynHandler::GetAutoUpdateFileVer(SStringA &strMD5)
+{
+	SendInfo si = { 0 };
+	si.MsgType = ComSend_UpdateFileVer;
+	::send(m_NetClinet.GetSocket(), (char*)&si, sizeof(si), 0);
+	ReceiveInfo recvInfo;
+	int nRecv = 0;
+	while (true)
+	{
+		int nRet = ::recv(m_NetClinet.GetSocket(), (char*)&recvInfo + nRecv,
+			sizeof(recvInfo) - nRecv, 0);
+		nRecv += nRet;
+		if (nRecv == sizeof(recvInfo))
+			break;
+	}
+	bool bSuccess = false;
+	char *buffer = new char[recvInfo.DataSize];
+	if (ReceiveData(m_NetClinet.GetSocket(), recvInfo.DataSize, '#', buffer))
+	{
+		strMD5 = buffer;
+		bSuccess = true;
+	}
+	delete[]buffer;
+	buffer = nullptr;
+	return bSuccess;
+}
+
 bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	int &nOffset, ReceiveInfo &recvInfo)
 {
@@ -477,7 +587,7 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 		if (m_NetClinet.OnConnect(m_strIPAddr, m_nIPPort))
 		{
 			SendIDInfo_t info = { 0 };
-			info.MsgType = SendType_ReConnect;
+			info.MsgType = ComSend_ReConnect;
 			info.ClinetID = m_NetClinet.GetClientID();
 			::send(m_NetClinet.GetSocket(), (char*)&info,
 				sizeof(info), 0);
@@ -974,7 +1084,7 @@ void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 					for (auto &dataPair : tmDataMap)
 					{
 						if (dataPair.first.Find("Point") != -1
-							&&!dataPair.second.empty())
+							&& !dataPair.second.empty())
 						{
 							strcpy_s(data.second.first, dataPair.first);
 							data.second.second = dataPair.second.back();
@@ -1155,7 +1265,7 @@ void CWndSynHandler::ReInit()
 	WaitForSingleObject(g_hLoginEvent, INFINITE);
 	ResetEvent(g_hLoginEvent);
 	SendInfo info;
-	info.MsgType = SendType_Connect;
+	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
 	send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
 	WaitForSingleObject(g_hEvent, INFINITE);
@@ -1167,7 +1277,7 @@ void CWndSynHandler::ReInit()
 		WaitForSingleObject(g_hLoginEvent, INFINITE);
 		ResetEvent(g_hLoginEvent);
 		SendInfo info;
-		info.MsgType = SendType_Connect;
+		info.MsgType = ComSend_Connect;
 		strcpy(info.str, "StkMarket");
 		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
 		WaitForSingleObject(g_hEvent, INFINITE);

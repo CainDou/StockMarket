@@ -34,6 +34,7 @@ public:
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
 	strHash<double> GetCloseMap() const;
+	void SetCmdLine(LPCTSTR lpstrCmdLine);
 
 	//³õÊ¼»¯º¯Êý
 protected:
@@ -50,6 +51,9 @@ protected:
 	void InitSynHandleMap();
 	bool CheckInfoRecv();
 	void SetPointDataCapacity();
+	bool CheckCmdLine();
+	bool GetAutoUpdateFile(SStringA strMD5);
+	bool GetAutoUpdateFileVer(SStringA &strMD5);
 
 protected:
 	bool ReceiveData(SOCKET socket, int size, char end,
@@ -105,7 +109,6 @@ protected:
 	void OnHisKline(int nMsgLength, const char* info);
 	void OnCloseInfo(int nMsgLength, const char* info);
 	void OnReinit(int nMsgLength, const char* info);
-
 public:
 	vector<SStringA> m_dataNameVec;
 	vector<SStringA> m_comDataNameVec;
@@ -157,6 +160,7 @@ protected:
 	bool m_bServerReady;
 	bool bExit;
 	CRITICAL_SECTION m_cs;
+	SStringW m_strCmdLine;
 
 };
 
@@ -203,4 +207,9 @@ inline UINT CWndSynHandler::GetThreadID() const
 inline strHash<double> CWndSynHandler::GetCloseMap() const
 {
 	return m_preCloseMap;
+}
+
+inline void CWndSynHandler::SetCmdLine(LPCTSTR lpstrCmdLine)
+{
+	m_strCmdLine = lpstrCmdLine;
 }

@@ -87,16 +87,24 @@ enum RecvMsgType
 
 enum SendMsgType
 {
-	SendType_Connect = 0,
-	SendType_ReConnect,
 	SendType_MsgNoUse = 100,
 	SendType_GetHisPoint,
 	SendType_IndexMarket,
 	SendType_StockMarket,
 	SendType_HisPeriodKline,
 	SendType_SubIns,
+
 };
 
+enum ComSendMsgType
+{
+	ComSend_Connect = 0,
+	ComSend_ReConnect,
+	ComSend_FileVer = 1000,
+	ComSend_File,
+	ComSend_UpdateFile,
+	ComSend_UpdateFileVer,
+};
 
 typedef struct _SortPara
 {
@@ -744,7 +752,12 @@ enum WDMenu
 enum ReceiveCommonMsgType
 {
 	RecvMsg_ClientID = 170000,
+	RecvMsg_ClientFileVer,
+	RecvMsg_ClientFile,
+	RecvMsg_UpdateFile,
+	RecvMsg_UpdateFileVer,
 };
+
 
 enum eSubPic
 {
