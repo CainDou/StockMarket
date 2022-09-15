@@ -348,6 +348,8 @@ void CWndSynHandler::InitDataHandleMap()
 		&CWndSynHandler::OnUpdateLastDayEma;
 	m_dataHandleMap[ClearOldData] =
 		&CWndSynHandler::OnClearData;
+	m_dataHandleMap[UpdateTFMarket] =
+		&CWndSynHandler::OnUpdateTFMarket;
 
 }
 
@@ -381,7 +383,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgWait;
 	m_netHandleMap[RecvMsg_Reinit]
 		= &CWndSynHandler::OnMsgReInit;
-
+	m_netHandleMap[RecvMsg_RTTFMarket]
+		= &CWndSynHandler::OnMsgRTTFMarket;
 }
 
 void CWndSynHandler::InitSynHandleMap()
@@ -884,6 +887,17 @@ void CWndSynHandler::OnMsgReInit(SOCKET netSocket, ReceiveInfo & recvInfo)
 		NULL, 0);
 }
 
+void CWndSynHandler::OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	TimeLineData stkInfo = { 0 };
+	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+		SendMsg(m_RpsProcThreadID, UpdateTFMarket,
+			buffer, recvInfo.DataSize);
+	delete[]buffer;
+	buffer = nullptr;
+}
+
 void CWndSynHandler::OnNoDefineMsg(SOCKET netSocket, ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -1001,6 +1015,54 @@ void CWndSynHandler::OnUpdateLastDayEma(int nMsgLength, const char* info) {
 		}
 	}
 
+}
+
+void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
+{
+	int dataCount = nMsgLength / sizeof(TickFlowMarket);
+	TickFlowMarket* dataArr = (TickFlowMarket*)info;
+	for (int i = 0; i < dataCount; ++i)
+		m_TFMarketHash[dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
+	for (auto &it : m_TFMarketHash)
+	{
+		for (auto& data : it.second.hash)
+		{
+			auto &tfMarket = data.second;
+			double fDelta1 =
+				(tfMarket.ActBuyVol*1.0 - tfMarket.ActSellVol) /
+				(tfMarket.ActBuyVol*1.0 + tfMarket.ActSellVol) * 100;
+			auto &dataMap = m_listDataMap[Group_Stock];
+			CoreData cd = { 0 };
+			cd.time = tfMarket.nTime;
+			cd.value = fDelta1;
+			dataMap[it.first][data.first]["ABSR"] = cd;
+			double fActBuyVol = tfMarket.ActBuyVol*1.0
+				/ tfMarket.uActBuyOrderCount*tfMarket.uPasSellOrderCount;
+			double fActSelVol = tfMarket.ActSellVol*1.0 /
+				tfMarket.uActSellOrderCount*tfMarket.uPasBuyOrderCount;
+			double fDelta2 = (fActBuyVol - fActSelVol)
+				/ (fActBuyVol + fActSelVol) * 100;
+			cd.value = fDelta2;
+			dataMap[it.first][data.first]["A2PBSR"] = cd;
+
+
+			double avgBuyVol = tfMarket.ActBuyVol * 1.0
+				/ tfMarket.uActBuyOrderCount;
+			double avgSellVol = tfMarket.ActSellVol * 1.0
+				/ tfMarket.uActSellOrderCount;
+			double avgRatio = (avgBuyVol - avgSellVol)
+				/ (avgBuyVol + avgSellVol) * 100;
+			cd.value = avgRatio;
+			dataMap[it.first][data.first]["AABSR"] = cd;
+
+
+			double fPocRatio = (tfMarket.fPOC - tfMarket.fPrice)
+				/ tfMarket.fPrice * 100;
+			cd.value = fPocRatio;
+			dataMap[it.first][data.first]["POCR"] = cd;
+
+		}
+	}
 }
 
 void CWndSynHandler::OnClearData(int nMsgLength, const char * info)

@@ -17,6 +17,8 @@ public:
 	CRect GetItemRect(UINT iItem) const;
 	bool isItemShowVisble(UINT iItem);
 	void SetItemShowVisible(int iItem, bool visible);
+	int GetTotalWidth();
+	int GetItemWidth(int iItem, bool bFroced);
 
 protected:
 	virtual void OnPaint(IRenderTarget * pRT);

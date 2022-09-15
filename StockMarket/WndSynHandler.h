@@ -31,6 +31,7 @@ public:
 	void GetListInsVec(vector<vector<StockInfo>> &ListInsVec,
 		 strHash<SStringA>& StockNameVec);
 	vector<map<int, TimeLineMap>>* GetListData();
+	map<int, strHash<TickFlowMarket>>* GetTFMarket();
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
 	strHash<double> GetCloseMap() const;
@@ -84,6 +85,7 @@ protected:
 	void OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgWait(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgReInit(SOCKET netSocket, ReceiveInfo &recvInfo);
+	void OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnNoDefineMsg(SOCKET netSocket, ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -91,6 +93,7 @@ protected:
 	void OnTimeLineUpdate(int nMsgLength, const char* info);
 	void OnTodayTimeLineProc(int nMsgLength, const char* info);
 	void OnUpdateLastDayEma(int nMsgLength, const char* info);
+	void OnUpdateTFMarket(int nMsgLength, const char* info);
 	void OnClearData(int nMsgLength, const char* info);
 	//同步窗口数据处理
 protected:
@@ -117,6 +120,7 @@ public:
 	map<int, strHash<StockInfo>> m_ListStockInfoMap;
 	strHash<SStringA> m_StockName;
 	vector<int> m_PeriodVec;
+	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
 
 protected:
 	map<int, BOOL> m_NetHandleFlag;
@@ -191,6 +195,11 @@ inline void CWndSynHandler::GetListInsVec(
 inline vector<map<int, TimeLineMap>>* CWndSynHandler::GetListData()
 {
 	return &m_listDataMap;
+}
+
+inline map<int, strHash<TickFlowMarket>>* CWndSynHandler::GetTFMarket()
+{
+	return &m_TFMarketHash;
 }
 
 inline void CWndSynHandler::GetSubPicShowNameVec(

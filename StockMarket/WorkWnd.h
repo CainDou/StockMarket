@@ -224,9 +224,11 @@ namespace SOUI
 		strHash<int>m_ListPosMap;
 		strHash<int>m_MouseWheelMap;
 		map<int, TimeLineMap> *m_pListDataMap;
+		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
 		strHash<double> m_preCloseMap;
 		strHash<SStringA> m_StockName;
 		vector<SStringA> m_dataNameVec;
+		vector<SStringA> m_tfNameVec;
 		vector<StockFilter> m_sfVec;
 		map<int, int> m_SFPeriodMap;
 		map<int, SStringA> m_SFIndexMap;

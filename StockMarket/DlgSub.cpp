@@ -150,6 +150,11 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetParThreadID(m_DataThreadID);
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
+		if (i == Group_Stock)
+		{
+			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
+			m_WndMap[i]->SetDataPoint(pTFMarket, DT_TFMarket);
+		}
 		m_WndMap[i]->SetPreClose(preCloseMap);
 		m_WndMap[i]->InitList();
 	}

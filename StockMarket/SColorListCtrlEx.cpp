@@ -340,7 +340,6 @@ namespace SOUI
 			}
 		}
 
-
 		SetScrollPos(TRUE, m_siVer.nPos, TRUE);
 		SetScrollPos(FALSE, m_siHoz.nPos, TRUE);
 
@@ -474,7 +473,7 @@ namespace SOUI
 		}
 		m_arrItems.RemoveAll();
 
-		UpdateScrollBar();
+		//UpdateScrollBar();
 	}
 
 

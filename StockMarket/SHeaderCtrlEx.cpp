@@ -193,6 +193,24 @@ void SHeaderCtrlEx::SetItemShowVisible(int iItem, bool visible)
 	//发出调节宽度消息
 	EventHeaderItemChanged evt(this);
 	evt.iItem = iItem;
-	evt.nWidth = GetItemWidth(iItem);
+	evt.nWidth = GetItemWidth(iItem,false);
 	FireEvent(evt);
+}
+
+int SHeaderCtrlEx::GetTotalWidth()
+{
+	int nRet = 0;
+	for (UINT i = 0; i < m_arrItems.GetCount(); i++)
+	{
+		nRet += GetItemWidth(i,true);
+	}
+	return nRet;
+}
+
+int SHeaderCtrlEx::GetItemWidth(int iItem, bool bFroced)
+{
+	if (iItem < 0 || (UINT)iItem >= m_arrItems.GetCount()) return -1;
+	if(!bFroced)
+		if (!m_arrItems[iItem].bVisible) return 0;
+	return m_arrItems[iItem].cx.toPixelSize(GetScale());
 }

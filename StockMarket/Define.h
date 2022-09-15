@@ -83,6 +83,7 @@ enum RecvMsgType
 	RecvMsg_CloseInfo,
 	RecvMsg_Wait,
 	RecvMsg_Reinit,
+	RecvMsg_RTTFMarket,
 };
 
 enum SendMsgType
@@ -217,7 +218,12 @@ enum SListHead
 	SHead_MACD2060,
 	SHead_Point2060,
 	SHead_Rank2060,
-	SHead_ItmeCount,
+	SHead_CommonItmeCount,
+	SHead_ActBuySellRatio = SHead_CommonItmeCount,
+	SHead_ActToPasBuySellRatio,
+	SHead_AvgBuySellRatio,
+	SHead_POCRatio,
+	SHead_StockItemCount,
 };
 
 typedef struct SendInfo
@@ -251,6 +257,7 @@ enum DataProcType
 	UpdateTodayData,
 	UpdateLastDayEma,
 	ClearOldData,
+	UpdateTFMarket,
 	Msg_ReInit=77777,
 	Msg_Exit = 88888,
 };
@@ -662,7 +669,7 @@ enum TimePreiod
 	Period_30Min = 30,
 	Period_60Min = 60,
 	Period_1Day = 1440,
-	//Period_NULL = 65535,
+	Period_End = 65535,
 };
 
 void InitLogFile();
@@ -778,6 +785,7 @@ typedef struct _DataGetInfo
 enum 
 {
 	DT_ListData=0,
+	DT_TFMarket,
 	DT_IndexMarket,
 	DT_StockMarket,
 	DT_Kline,
@@ -860,6 +868,10 @@ enum SF_INDEX
 	SFI_Point2060,
 	SFI_Rank2060,
 	SFI_Num,
+	SFI_ABSR,
+	SFI_A2PBSR,
+	SFI_AABSR,
+	SFI_POCR,
 	SFI_Count,
 };
 
@@ -902,3 +914,20 @@ enum SF_DOMAIN
 	SFD_NewStock,
 	SFD_Count,
 };
+
+typedef struct _TickFlowMarket
+{
+	SecurityID SecurityID;
+	int nDelta;						//K线的Delta值
+	uint64_t nVolume;						//K线的总成交量
+	int nPeriod;
+	double fPrice;
+	double fPOC;						//POC价格
+	uint32_t nTime;						//时间
+	uint64_t ActBuyVol;
+	uint64_t ActSellVol;
+	uint32_t uActBuyOrderCount;	//股票主动买入订单数 或 期货多开量
+	uint32_t uActSellOrderCount;	//股票主动卖出订单数 或 期货空开量
+	uint32_t uPasBuyOrderCount;	//股票被动买入订单数 或 期货空平量
+	uint32_t uPasSellOrderCount;	//股票被动卖出订单数 或 期货多平量
+}TickFlowMarket;

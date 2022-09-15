@@ -167,6 +167,11 @@ void SOUI::CDlgStockFilter::InitStringMap()
 	m_IndexMap[SFI_Point2060] = L"2060分数";
 	m_IndexMap[SFI_Rank2060] = L"2060排名";
 	m_IndexMap[SFI_Num] = L"数值";
+	m_IndexMap[SFI_ABSR] = L"主动量比";
+	m_IndexMap[SFI_A2PBSR] = L"主动转被动量比";
+	m_IndexMap[SFI_AABSR] = L"平均主动量比";
+	m_IndexMap[SFI_POCR] = L"最多成交价比";
+
 
 	m_ReverseIndexMap[L"涨跌幅"] = SFI_ChgPct;
 	m_ReverseIndexMap[L"RPS520"] = SFI_Rps520;
@@ -178,7 +183,10 @@ void SOUI::CDlgStockFilter::InitStringMap()
 	m_ReverseIndexMap[L"2060分数"] = SFI_Point2060;
 	m_ReverseIndexMap[L"2060排名"] = SFI_Rank2060;
 	m_ReverseIndexMap[L"数值"] = SFI_Num;
-
+	m_ReverseIndexMap[L"主动量比"] = SFI_ABSR;
+	m_ReverseIndexMap[L"主动转被动量比"] = SFI_A2PBSR;
+	m_ReverseIndexMap[L"平均主动量比"] = SFI_AABSR;
+	m_ReverseIndexMap[L"最多成交价比"] = SFI_POCR;
 
 	m_ConditionMap[SFC_Greater] = L"大于";
 	m_ConditionMap[SFC_EqualOrGreater] = L"大于等于";
