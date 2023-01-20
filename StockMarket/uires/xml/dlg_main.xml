@@ -5,6 +5,7 @@
 			<icon pos="10,8" src="ICON_LOGO:16" />
 			<text pos="29,9" colorText="#00FFFF">@string/title</text>
 			<imgbtn pos="[20,5" size="50,30" tip="窗口多开" animate="0" text="多窗口" name="btn_mulitWindow" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" />
+			<imgbtn pos="[20,5" size="50,30" tip="公式编辑" animate="0" text="公式" name="btn_EditFunc" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" />
 			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
 			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />

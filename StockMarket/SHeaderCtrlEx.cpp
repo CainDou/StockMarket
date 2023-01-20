@@ -76,43 +76,57 @@ void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
 		}
 		m_bInitText = true;
 	}
-	for (UINT i = 0; i < m_arrItems.GetCount(); i++)
+	if (m_nNoMoveCol > 0)
 	{
-		if (!m_arrVisble[i])continue;
+		for (UINT i = 0; i < m_arrItems.GetCount(); i++)
+		{
+			if (!m_arrVisble[i])continue;
 
-		m_arrItems[i].bVisible = true;
-		rcItem.left = rcItem.right;
-		rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
-		rcNoMove.left = rcNoMove.right;
-		rcNoMove.right = rcNoMove.left + m_arrItems[i].cx.toPixelSize(GetScale());
-		if (i < m_nNoMoveCol)
-		{
-			CRect rcTmp(rcItem);
-			rcItem = rcNoMove;
-			rcNoMove = rcTmp;
-			right = rcItem.right;
+			m_arrItems[i].bVisible = true;
+			rcItem.left = rcItem.right;
+			rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
+			rcNoMove.left = rcNoMove.right;
+			rcNoMove.right = rcNoMove.left + m_arrItems[i].cx.toPixelSize(GetScale());
+			if (i < m_nNoMoveCol)
+			{
+				CRect rcTmp(rcItem);
+				rcItem = rcNoMove;
+				rcNoMove = rcTmp;
+				right = rcItem.right;
+			}
+			else if (rcItem.left < right)
+			{
+				m_arrItems[i].bVisible = false;
+				continue;
+			}
+			else if (rcItem.left >= right && bFirst)
+			{
+				int  diff = rcItem.left - right;
+				rcItem.left = right;
+				rcItem.right -= diff;
+				bFirst = false;
+			}
+			if (rcItem.right > rcClient.right) break;
+			DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
+			if (i < m_nNoMoveCol)
+			{
+				CRect rcTmp(rcItem);
+				rcItem = rcNoMove;
+				rcNoMove = rcTmp;
+			}
 		}
-		else if (rcItem.left < right)
+	}
+	else
+	{
+		for (UINT i = 0; i < m_arrItems.GetCount(); i++)
 		{
-			m_arrItems[i].bVisible = false;
-			continue;
+			if (!m_arrVisble[i]) continue;
+			m_arrItems[i].bVisible = true;
+			rcItem.left = rcItem.right;
+			rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
+			DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
+			if (rcItem.right >= rcClient.right) break;
 		}
-		else if (rcItem.left >= right && bFirst)
-		{
-			int  diff = rcItem.left - right;
-			rcItem.left = right;
-			rcItem.right -= diff;
-			bFirst = false;
-		}
-		if (rcItem.right > rcClient.right) break;
-		DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
-		if (i < m_nNoMoveCol)
-		{
-			CRect rcTmp(rcItem);
-			rcItem = rcNoMove;
-			rcNoMove = rcTmp;
-		}
-
 	}
 	if (rcItem.right < rcClient.right)
 	{

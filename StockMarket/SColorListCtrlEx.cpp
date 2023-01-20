@@ -761,22 +761,25 @@ namespace SOUI
 			m_pHeader->GetItem(nCol, &hdi);
 			rcCol.left = rcCol.right;
 			rcCol.right = rcCol.left + hdi.cx.toPixelSize(GetScale());
-			rcNoMove.left = rcNoMove.right;
-			rcNoMove.right = rcNoMove.left + hdi.cx.toPixelSize(GetScale());
-			if (nCol < nNoMoveCol)
+			if (nNoMoveCol > 0)
 			{
-				CRect rcTmp(rcCol);
-				rcCol = rcNoMove;
-				rcNoMove = rcTmp;
-				right = rcCol.right;
-			}
-			else if (rcCol.left < right) continue;
-			else if (rcCol.left >= right && bFirst)
-			{
-				int  diff = rcCol.left - right;
-				rcCol.left = right;
-				rcCol.right -= diff;
-				bFirst = false;
+				rcNoMove.left = rcNoMove.right;
+				rcNoMove.right = rcNoMove.left + hdi.cx.toPixelSize(GetScale());
+				if (nCol < nNoMoveCol)
+				{
+					CRect rcTmp(rcCol);
+					rcCol = rcNoMove;
+					rcNoMove = rcTmp;
+					right = rcCol.right;
+				}
+				else if (rcCol.left < right) continue;
+				else if (rcCol.left >= right && bFirst)
+				{
+					int  diff = rcCol.left - right;
+					rcCol.left = right;
+					rcCol.right -= diff;
+					bFirst = false;
+				}
 			}
 
 			rcVisiblePart.IntersectRect(rcItem, rcCol);
@@ -843,7 +846,7 @@ namespace SOUI
 			}
 			pRT->DrawText(subItem.strText, subItem.cchTextMax, rcText, align);
 
-			if (nCol < nNoMoveCol)
+			if (nNoMoveCol > 0 && nCol < nNoMoveCol)
 			{
 				CRect rcTmp(rcCol);
 				rcCol = rcNoMove;

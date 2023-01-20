@@ -116,12 +116,14 @@ public:
 	vector<SStringA> m_dataNameVec;
 	vector<SStringA> m_comDataNameVec;
 	vector<SStringA> m_uniDataNameVec;
+	map<string, SStringA> m_dataInComData;
+	map<string, SStringA> m_dataInUniData;
+
 	vector<vector<SStringA>> m_SubPicShowNameVec;
 	map<int, strHash<StockInfo>> m_ListStockInfoMap;
 	strHash<SStringA> m_StockName;
 	vector<int> m_PeriodVec;
 	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
-
 protected:
 	map<int, BOOL> m_NetHandleFlag;
 	char *todayDataBuffer;
@@ -148,6 +150,7 @@ public:
 	vector<map<int, TimeLineMap>>m_listDataMap;
 	vector<map<int, TimeLineArrMap> >m_dataVec;
 	map<int, TimeLineArrMap> m_commonDataMap;	// 用来保存通用的需要使用所有数据数据
+	map<int,map<int, unordered_map<string, map<string, double>>>> m_allDataHash;
 
 	//调用子类
 protected:
@@ -164,6 +167,7 @@ protected:
 	bool m_bServerReady;
 	bool bExit;
 	CRITICAL_SECTION m_cs;
+	CRITICAL_SECTION m_csFilterData;
 	SStringW m_strCmdLine;
 
 };

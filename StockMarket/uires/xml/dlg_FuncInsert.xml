@@ -1,0 +1,45 @@
+﻿<?xml version="1.0"?>
+<SOUI name="InsertFunc" title="插入函数" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="500" height="550" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+	<root cache="1" colorBkgnd="rgb(50,50,50)">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑"  cache="1" margin="1,1,1,1"  colorBorder="#c0c0c0ff" >
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" >插入函数</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1"  />
+		</caption>
+		<window pos="0,30,120,-180"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="1,0,1,1"  >
+		<listbox name="lb_class" pos="0,0,-0,-0"  hotTrack="0" itemHeight="20" colorText="#FFFFFF" colorSelText="#FFFF00" colorItemSelBkgnd="rgb(234,128,16)" text-x="20"  >
+			<items>
+				<item text="全部函数" icon="1" />
+				<item text="序列行情函数" icon="1" />
+				<item text="逻辑函数" icon="1" />
+				<item text="选择函数" icon="1"  />
+				<item text="数学函数" icon="1"  />
+				<item text="即时行情函数" icon="1"/>
+				<item text="操作符" icon="1"  />
+				<item text="相对强度" icon="1"  />
+				<item text="资金流" icon="1"  />
+			</items>
+		</listbox>
+		</window>
+		<window pos="[0,30,-0,-180"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="0,0,1,1">
+			<color_listctrlex name="lc_func" pos="0,0,-0,-0"  hotTrack="1" itemHeight="20" headerHeight="0"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF"  colorText="#ffffffff"  cache="1">
+				<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+					<items>
+						<item width="130">公式</item>
+						<item width="230">简介</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window pos="0,-180,-0,-25"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff"  colorBorder="#c0c0c0ff" margin="1,0,1,1">
+		<edit name = "edit_funcDscp" pos="0,0,-0,-0" wordWrap="1" vscrollBar="1" colorBkgnd="#ffffff" colorText="#000000" readOnly="1" multiLines="1"/>
+		</window>
+		<window pos="0,-25,-0,-0"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff"  colorBorder="#c0c0c0ff" margin="1,0,1,1">
+		<capsedit name="edit_FindFunc" pos="10,2,150,@20]" colorText="#000000" colorBkgnd="#ffffff"/>
+		<imgbtn name="btn_Find" skin="skin_ButtonGrayBlack" pos="[10,{0,@80,@20" animate="1" text="查找" colorText="#ffffff" />
+		<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="320,{0,@80,@20" animate="1" text="确定" colorText="#ffffff" />
+		<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[10,{0,@80,@20" animate="1" text="取消" colorText="#ffffff" />
+		</window>
+
+	</root>
+</SOUI>

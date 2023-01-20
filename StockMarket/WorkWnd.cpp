@@ -272,15 +272,15 @@ void CWorkWnd::CloseWnd()
 	m_MouseWheelMap.hash.clear();
 }
 
-void CWorkWnd::OutputStockFilterPara(vector<StockFilter>& sfVec)
+void CWorkWnd::OutputStockFilterPara(SFPlan &sfPlan)
 {
-	m_pDlgStockFilter->OutPutCondition(sfVec);
+	m_pDlgStockFilter->OutPutCondition(sfPlan);
 }
 
-void CWorkWnd::InitStockFilterPara(vector<StockFilter>& sfVec)
+void CWorkWnd::InitStockFilterPara(SFPlan &sfPlan)
 {
-	m_sfVec = sfVec;
-	m_pDlgStockFilter->InitList(m_bUseStockFilter, sfVec);
+	m_sfPlan = sfPlan;
+	m_pDlgStockFilter->InitList(m_bUseStockFilter, sfPlan);
 }
 
 void CWorkWnd::OnInit(EventArgs * e)
@@ -369,7 +369,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			SetBtnState(m_pBtnStockFilter, true);
 			SetBtnState(m_pBtnConn1, false);
 			SetBtnState(m_pBtnConn2, false);
-			m_pDlgStockFilter->OutPutCondition(m_sfVec);
+			m_pDlgStockFilter->OutPutCondition(m_sfPlan);
 			m_bListConn1 = false;
 			m_bListConn2 = false;
 			m_ListShowInd = "";
@@ -1290,7 +1290,7 @@ void CWorkWnd::UpdateListFilterShowStock()
 				continue;
 
 		bool bPassed = true;
-		for (auto &sf : m_sfVec)
+		for (auto &sf : m_sfPlan.condVec)
 		{
 			if (!CheckStockDataPass(sf, it.SecurityID))
 			{
@@ -1420,23 +1420,24 @@ bool CWorkWnd::CheckStockFitDomain(StockInfo & si)
 	return true;
 }
 
-bool CWorkWnd::CheckStockDataPass(StockFilter& sf, SStringA StockID)
+bool CWorkWnd::CheckStockDataPass(SFCondition& sf, SStringA StockID)
 {
-	if (SFI_ChgPct == sf.index1)
-	{
-		double fClose = (m_pListDataMap->at(m_ListPeriod))[StockID]["close"].value;
-		double fPreClose = m_preCloseMap.hash[StockID];
-		if (fPreClose == 0)
-			return false;
-		double fChgPct = (fClose - fPreClose) / fPreClose * 100;
-		return (this->*m_SFConditionMap[sf.condition])(fChgPct, sf.num);
-	}
-	double data1 = (m_pListDataMap->at(m_SFPeriodMap[sf.period1]))\
-		[StockID][m_SFIndexMap[sf.index1]].value;
-	double data2 = sf.index2 == SFI_Num ? sf.num :
-		(m_pListDataMap->at(m_SFPeriodMap[sf.period1]))\
-		[StockID][m_SFIndexMap[sf.index2]].value;
-	return (this->*m_SFConditionMap[sf.condition])(data1, data2);
+	//if (SFI_ChgPct == sf.index1)
+	//{
+	//	double fClose = (m_pListDataMap->at(m_ListPeriod))[StockID]["close"].value;
+	//	double fPreClose = m_preCloseMap.hash[StockID];
+	//	if (fPreClose == 0)
+	//		return false;
+	//	double fChgPct = (fClose - fPreClose) / fPreClose * 100;
+	//	return (this->*m_SFConditionMap[sf.condition])(fChgPct, sf.num);
+	//}
+	//double data1 = (m_pListDataMap->at(m_SFPeriodMap[sf.period1]))\
+	//	[StockID][m_SFIndexMap[sf.index1]].value;
+	//double data2 = sf.index2 == SFI_Num ? sf.num :
+	//	(m_pListDataMap->at(m_SFPeriodMap[sf.period1]))\
+	//	[StockID][m_SFIndexMap[sf.index2]].value;
+	//return (this->*m_SFConditionMap[sf.condition])(data1, data2);
+	return true;
 }
 
 bool CWorkWnd::GreaterThan(double a, double b)
@@ -1799,7 +1800,7 @@ void CWorkWnd::OnBtnListConnect1Clicked()
 	if (m_bUseStockFilter)
 	{
 		m_bUseStockFilter = FALSE;
-		m_pDlgStockFilter->StopFilter();
+		//m_pDlgStockFilter->StopFilter();
 		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 	}
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
@@ -1815,7 +1816,7 @@ void CWorkWnd::OnBtnListConnect2Clicked()
 	if (m_bUseStockFilter)
 	{
 		m_bUseStockFilter = FALSE;
-		m_pDlgStockFilter->StopFilter();
+		//m_pDlgStockFilter->StopFilter();
 		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 	}
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,

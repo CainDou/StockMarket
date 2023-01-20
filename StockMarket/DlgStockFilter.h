@@ -1,5 +1,8 @@
 #pragma once
 #include<set>
+#include <fstream>
+#include "FrmlManager.h"
+
 namespace SOUI
 {
 	class SColorListCtrlEx;
@@ -11,29 +14,33 @@ namespace SOUI
 		BOOL	OnInitDialog(EventArgs* e);
 		void	OnBtnClose();
 		void	OnBtnOK();
-		void	InitList(bool bUse, vector<StockFilter> &sfVec);
+		void	InitList(bool bUse, SFPlan& sfPlan);
 		void	InitComboBox();
-		void	OnCheckUse();
-		void	StopFilter();
-
+		void	InitFrmlCombox();
 		void	InitStringMap();
-		void	OutPutCondition(vector<StockFilter> &sfVec);
-	protected:
-		void	ListAddItem(StockFilter& sf);
-		void	ListChangeItem(int nRow, StockFilter& sf);
-		void	ListDeleteItem(int nRow);
-		bool	GetListItem(int nRow, StockFilter& sf);
-	protected:
-		bool	OnCbxFuncChange(EventArgs * e);
-		bool	OnCbxIndex1Change(EventArgs * e);
-		bool	OnCbxIndex2Change(EventArgs * e);
-		void	OnCbxFuncAdd();
-		void	OnCbxFuncChange();
-		void	OnCbxFuncDelete();
+		void	OutPutCondition(SFPlan& sfPlan);
+		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
+		CRect   GetLastCharRect(IRenderTarget*pRT, SStringW str,CRect clinetRC,int nLineHei);
+		static void	SaveConditonsList(std::ofstream &fs, SFPlan &sfPlan);
+		static void	ReadConditonsList(std::ifstream &fs, SFPlan &sfPlan);
 
-		void	AddConditon();
-		void	ChangeCondition();
-		void	DeleteCondition();
+	protected:
+		void	ListAddItem(SFCondition& sf);
+		bool	GetListItem(int nRow, SFCondition& sf);
+		void	SearchFrml(int nDirect, SStringW strKey);
+		void	ChangeParaSetting(int nSel);
+
+	protected:
+		bool	OnCbxFrmlChange(EventArgs * e);
+		void	OnBtnAddConditon();
+		void	OnBtnDeleteCondition();
+		void	OnBtnFind();
+		void	OnBtnUsage();
+		void	OnBtnEdit();
+		void	OnBtnRead();
+		void	OnBtnSave();
+		void	OnRadioCliecked();
+
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);
@@ -42,13 +49,22 @@ namespace SOUI
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInitDialog)
 			EVENT_NAME_COMMAND(L"btn_OK", OnBtnOK)
+			EVENT_NAME_COMMAND(L"btn_Cancel", OnBtnClose)
 			EVENT_NAME_COMMAND(L"btn_close", OnBtnClose)
-			EVENT_NAME_COMMAND(L"chk_use", OnCheckUse)
-
+			EVENT_NAME_COMMAND(L"btn_Find", OnBtnFind)
+			EVENT_NAME_COMMAND(L"btn_Usage", OnBtnUsage)
+			EVENT_NAME_COMMAND(L"btn_Edit", OnBtnEdit)
+			EVENT_NAME_COMMAND(L"btn_Add", OnBtnAddConditon)
+			EVENT_NAME_COMMAND(L"btn_Delete", OnBtnDeleteCondition)
+			EVENT_NAME_COMMAND(L"btn_Save", OnBtnSave)
+			EVENT_NAME_COMMAND(L"btn_Read", OnBtnRead)
+			EVENT_NAME_COMMAND(L"rdb_and", OnRadioCliecked)
+			EVENT_NAME_COMMAND(L"rdb_or", OnRadioCliecked)
 			EVENT_MAP_END()
 
 			//HostWnd真实窗口消息处理
 			BEGIN_MSG_MAP_EX(CDlgStockFilter)
+			MESSAGE_HANDLER(WM_FILTER_MSG, OnMsg)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()
@@ -57,37 +73,26 @@ namespace SOUI
 	protected:
 		SCheckBox*	  m_pCheckUse;
 		SColorListCtrlEx* m_pList;
-		SComboBox*	  m_pCbxFunc;
-		SComboBox*	  m_pCbxID;
-		SComboBox*	  m_pCbxPeriod1;
-		SComboBox*	  m_pCbxIndex1;
-		SComboBox*	  m_pCbxCondition;
-		SComboBox*	  m_pCbxIndex2;
-		SComboBox*	  m_pCbxPeriod2;
-		SStatic*	  m_pTextID;
-		SStatic*	  m_pTextPeriod1;
-		SStatic*	  m_pTextIndex1;
-		SStatic*	  m_pTextCondition;
-		SStatic*	  m_pTextIndex2;
-		SStatic*	  m_pTextPeriod2;
-		SStatic*	  m_pTextNum;
-		SEdit*		  m_pEditNum;
+		SComboBox*	  m_pCbxFrml;
+		SComboBox*	  m_pCbxPeriod;
+		SRadioBox*	  m_pRdbAnd;
+		SRadioBox*	  m_pRdbOr;
+		SStatic*		m_pTextParaTitle;
+		//SStatic*	  m_pTextParaStart[16];
+		SEdit*		  m_pEditPara[16];
+		//SStatic*	  m_pTextParaEnd[16];
 
 	protected:
 		HWND m_hParWnd;
 		SStringA m_strParWnd;
 		RpsGroup	m_Group;
-		map<int, SStringW> m_FuncMap;
 		map<int, SStringW> m_PeriodMap;
-		map<int, SStringW> m_IndexMap;
-		map<int, SStringW> m_ConditionMap;
-		map<SStringW, int> m_ReverseFuncMap;
-		map<SStringW, int> m_ReversePeriodMap;
-		map<SStringW, int> m_ReverseIndexMap;
-		map<SStringW, int> m_ReverseConditionMap;
-		std::set<StockFilter> m_sfSet;
+		vector<FrmlFullInfo> m_FrmlVec;
+		SFPlan m_sfPlan;
+		SFPlan m_tmpSFPlan;
 		UINT m_uParThreadID;
-
+		BOOL m_bCondsChanged;
+		BOOL m_bUseSF;
 	};
 
 

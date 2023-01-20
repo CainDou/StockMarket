@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "WndSynHandler.h"
+#include "FrmlManager.h"
 #include "IniFile.h"
 #include "zlib.h"
 #include <io.h>
@@ -42,12 +43,15 @@ CWndSynHandler::~CWndSynHandler()
 void CWndSynHandler::Run()
 {
 	InitializeCriticalSection(&m_cs);
+	InitializeCriticalSection(&m_csFilterData);
+
 	InitCommonSetting();
 	InitNetConfig();
 	SetVectorSize();
 	InitDataHandleMap();
 	InitNetHandleMap();
 	InitSynHandleMap();
+	CFrmlManager::InitFrmlManage();
 	tRpsCalc = thread(&CWndSynHandler::DataProc, this);
 	m_RpsProcThreadID = *(unsigned*)&tRpsCalc.get_id();
 	tMsgSyn = thread(&CWndSynHandler::MsgProc, this);
@@ -911,7 +915,6 @@ void CWndSynHandler::OnTimeLineUpdate(int nMsgLength, const char * info) {
 		return;
 	int dataCount = nMsgLength / sizeof(TimeLineData);
 	TimeLineData *dataArr = (TimeLineData *)info;
-
 	for (int i = 0; i < m_PeriodVec.size(); ++i)
 	{
 		int Period = m_PeriodVec[i];
@@ -952,6 +955,9 @@ void CWndSynHandler::OnTimeLineUpdate(int nMsgLength, const char * info) {
 			m_ListInsVec[Group_Stock]);
 
 	}
+	
+	::EnterCriticalSection(&m_csFilterData);
+	::LeaveCriticalSection(&m_csFilterData);
 	SendMsg(m_uMsgThreadID, Syn_Point, nullptr, 0);
 	SendMsg(m_uMsgThreadID, Syn_ListData, nullptr, 0);
 

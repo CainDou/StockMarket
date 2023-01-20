@@ -1,0 +1,21 @@
+﻿<?xml version="1.0"?>
+<SOUI name="window" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="310" height="300" margin="1,5,5,5" wndType="normal" toolWindow="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff" font="face:微软雅黑">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">选择选股方案</text>
+				<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<color_listctrlex name="lc_planName" pos="5,[5,@230,-5"  hotTrack="1" itemHeight="20" headerHeight="0"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#FFFFFFFF" colorItemBkgnd2="#FFFFFFFF"  colorText="#000000ff"  cache="1" colorBkgnd="#FFFFFFFF">
+				<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+					<items>
+						<item width="210">公式</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<button name="btn_OK" pos="[10,{5" size="60, 24" colorText="#000000" skin="_skin.sys.btn.normal" font="face:微软雅黑,size:14">确定</button>
+			<button name="btn_cancel" pos="{0,[10" size="60, 24" colorText="#000000" skin="_skin.sys.btn.normal" font="face:微软雅黑,size:14">取消</button>
+			<button name="btn_delete" pos="{0,[10" size="60, 24" colorText="#000000" skin="_skin.sys.btn.normal" font="face:微软雅黑,size:14">删除方案</button>
+		</window>
+	</root>
+</SOUI>

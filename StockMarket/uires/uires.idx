@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -17,6 +17,13 @@
 		<file name="dlg_newWindow" path="xml\dlg_newWindow.xml" />
 		<file name="dlg_openWindow" path="xml\dlg_openWindow.xml" />
 		<file name="dlg_stockFilter" path="xml\dlg_stockFilter.xml" />
+		<file name="dlg_FilterFrmlEditor" path="xml\dlg_FilterFrmlEditor.xml" />
+		<file name="dlg_FuncInsert" path="xml\dlg_FuncInsert.xml" />
+		<file name="dlg_FrmlManage" path="xml\dlg_FrmlManage.xml" />
+		<file name="dlg_FrmlFind" path="xml\dlg_FrmlFind.xml" />
+		<file name="dlg_SaveFrmlList" path="xml\dlg_SaveFrmlList.xml" />
+		<file name="dlg_ReadFrmlList" path="xml\dlg_ReadFrmlList.xml" />
+		<file name="dlg_messagebox" path="xml\dlg_messagebox.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -26,6 +33,7 @@
 	<IMG>
 		<file name="default_scrollbar_png" path="image\default.scrollbar.png" />
 		<file name="skin_lcex_header_arrow" path="image\lcex_header_arrow.png" />
+		<file name="png_treeicon" path="image\TreeIcon.png" />
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />

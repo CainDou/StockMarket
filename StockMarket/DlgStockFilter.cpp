@@ -1,12 +1,22 @@
 #include "stdafx.h"
 #include "DlgStockFilter.h"
 #include "SColorListCtrlEx.h"
+#include "DlgStkFilterEditor.h"
+#include "DlgFrmlFind.h"
+#include "DlgSaveFrmlList.h"
+#include "DlgReadFrmlList.h"
+#include <sstream>
+#include <io.h>
+#include <direct.h>
 
+#define INTERHEIGHT 2
 CDlgStockFilter::CDlgStockFilter(UINT uParThreadID, RpsGroup Group)
 	:SHostWnd(_T("LAYOUT:dlg_stockFilter"))
 {
 	m_uParThreadID = uParThreadID;
 	m_Group = Group;
+	m_bCondsChanged = FALSE;
+	m_bUseSF = FALSE;
 }
 
 
@@ -18,22 +28,16 @@ BOOL SOUI::CDlgStockFilter::OnInitDialog(EventArgs * e)
 {
 	m_pCheckUse = FindChildByID2<SCheckBox>(R.id.chk_use);
 
-	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.ls_filter);
-	m_pCbxFunc = FindChildByID2<SComboBox>(R.id.cbx_func);
-	m_pTextID = FindChildByID2<SStatic>(R.id.text_ID);
-	m_pCbxID = FindChildByID2<SComboBox>(R.id.cbx_ID);
-	m_pTextPeriod1 = FindChildByID2<SStatic>(R.id.text_period1);
-	m_pCbxPeriod1 = FindChildByID2<SComboBox>(R.id.cbx_period1);
-	m_pTextIndex1 = FindChildByID2<SStatic>(R.id.text_index1);
-	m_pCbxIndex1 = FindChildByID2<SComboBox>(R.id.cbx_index1);
-	m_pTextCondition = FindChildByID2<SStatic>(R.id.text_condition);
-	m_pCbxCondition = FindChildByID2<SComboBox>(R.id.cbx_condition);
-	m_pTextIndex2 = FindChildByID2<SStatic>(R.id.text_index2);
-	m_pCbxIndex2 = FindChildByID2<SComboBox>(R.id.cbx_index2);
-	m_pTextPeriod2 = FindChildByID2<SStatic>(R.id.text_period2);
-	m_pCbxPeriod2 = FindChildByID2<SComboBox>(R.id.cbx_period2);
-	m_pTextNum = FindChildByID2<SStatic>(R.id.text_num);
-	m_pEditNum = FindChildByID2<SEdit>(R.id.edit_num);
+	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.lc_cond);
+	m_pCbxFrml = FindChildByID2<SComboBox>(R.id.cbx_frml);
+	m_pCbxPeriod = FindChildByID2<SComboBox>(R.id.cbx_period);
+	m_pRdbAnd = FindChildByID2<SRadioBox>(R.id.rdb_and);
+	m_pRdbOr = FindChildByID2<SRadioBox>(R.id.rdb_or);
+	m_pTextParaTitle = FindChildByID2<SStatic>(R.id.text_paratitle);
+	//m_pTextParaTitle->SetAttribute(L"multiLines", L"1");
+	SStringW tmpStr;
+	for (int i = 0; i < 16; ++i)
+		m_pEditPara[i] = FindChildByName2<SEdit>(tmpStr.Format(L"edit_para%d", i + 1));
 	InitStringMap();
 	InitComboBox();
 	return TRUE;
@@ -41,68 +45,38 @@ BOOL SOUI::CDlgStockFilter::OnInitDialog(EventArgs * e)
 
 void SOUI::CDlgStockFilter::OnBtnClose()
 {
-	ShowWindow(SW_HIDE);
+	if (m_bCondsChanged)
+	{
+		if (SMessageBox(m_hWnd, L"条件列表发生了改变，确定不保存直接退出吗?",
+			L"警告", MB_ICONWARNING | MB_OKCANCEL) == IDOK)
+		{
+			m_bCondsChanged = FALSE;
+			m_pList->DeleteAllItems();
+			for (int i = 0; i < m_sfPlan.condVec.size(); ++i)
+				ListAddItem(m_sfPlan.condVec[i]);
+			if (m_sfPlan.state == CS_And)
+				m_pRdbAnd->SetCheck(TRUE);
+			else
+				m_pRdbOr->SetCheck(TRUE);
+			m_pCheckUse->SetCheck(m_bUseSF);
+			ShowWindow(SW_HIDE);
+		}
+	}
+	else
+		ShowWindow(SW_HIDE);
+
 }
 
 void SOUI::CDlgStockFilter::OnBtnOK()
 {
-	int nSel = m_pCbxFunc->GetCurSel();
-	if (SFF_Add == nSel)
-		AddConditon();
-	else if (SFF_Change == nSel)
-		ChangeCondition();
-	else if (SFF_Delete == nSel)
-		DeleteCondition();
-}
-
-void SOUI::CDlgStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
-{
-	SStringW strTmp;
-	for (int i = 0; i < sfVec.size(); ++i)
-	{
-		ListAddItem(sfVec[i]);
-		m_pCbxID->InsertItem(i, strTmp.Format(L"条件%d", i + 1), NULL, 0);
-		m_sfSet.insert(sfVec[i]);
-	}
-	m_pCheckUse->SetCheck(bUse);
-
-}
-
-void SOUI::CDlgStockFilter::InitComboBox()
-{
-	for (int i = SFF_Add; i < SFF_Count; ++i)
-		m_pCbxFunc->InsertItem(i, m_FuncMap[i], NULL, 0);
-	m_pCbxFunc->SetCurSel(0);
-	m_pCbxFunc->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
-		Subscriber(&CDlgStockFilter::OnCbxFuncChange, this));
-	OnCbxFuncAdd();
-	for (int i = SFP_D1; i < SFP_Count; ++i)
-	{
-		m_pCbxPeriod1->InsertItem(i, m_PeriodMap[i], NULL, 0);
-		m_pCbxPeriod2->InsertItem(i, m_PeriodMap[i], NULL, 0);
-	}
-	m_pCbxPeriod1->SetCurSel(0);
-	m_pCbxPeriod2->SetCurSel(0);
-	for (int i = SFI_ChgPct; i < SFI_Count; ++i)
-		m_pCbxIndex1->InsertItem(i, m_IndexMap[i], NULL, 0);
-	for (int i = SFI_Rps520; i < SFI_Count; ++i)
-		m_pCbxIndex2->InsertItem(i - 1, m_IndexMap[i], NULL, 0);
-	m_pCbxIndex1->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
-		Subscriber(&CDlgStockFilter::OnCbxIndex1Change, this));
-	m_pCbxIndex1->SetCurSel(SFI_ChgPct);
-	m_pCbxIndex2->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
-		Subscriber(&CDlgStockFilter::OnCbxIndex2Change, this));
-	m_pCbxIndex2->SetCurSel(SFI_Num - 1);
-
-	for (int i = SFC_Greater; i < SFC_Count; ++i)
-		m_pCbxCondition->InsertItem(i, m_ConditionMap[i], NULL, 0);
-	m_pCbxCondition->SetCurSel(0);
-
-}
-
-void SOUI::CDlgStockFilter::OnCheckUse()
-{
 	BOOL bUsed = m_pCheckUse->IsChecked();
+	if (m_bCondsChanged)
+	{
+		m_sfPlan = m_tmpSFPlan;
+		SendMsg(m_uParThreadID, WW_SaveStockFilter,
+			(char*)&bUsed, sizeof(bUsed));
+		m_bCondsChanged = FALSE;
+	}
 	if (bUsed)
 	{
 		if (m_pList->GetItemCount() == 0)
@@ -110,6 +84,7 @@ void SOUI::CDlgStockFilter::OnCheckUse()
 			m_pCheckUse->SetCheck(FALSE);
 			SMessageBox(m_hWnd, L"条件为空，请添加条件后重试！",
 				L"错误", MB_ICONERROR | MB_OK);
+			return;
 		}
 		else
 		{
@@ -120,23 +95,60 @@ void SOUI::CDlgStockFilter::OnCheckUse()
 	else
 		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
 		(char*)&bUsed, sizeof(bUsed));
+	m_bUseSF = bUsed;
+	ShowWindow(SW_HIDE);
 
 }
 
-void SOUI::CDlgStockFilter::StopFilter()
+void SOUI::CDlgStockFilter::InitList(bool bUse, SFPlan& sfPlan)
 {
-	m_pCheckUse->SetCheck(FALSE);
+	m_sfPlan = sfPlan;
+	m_tmpSFPlan = sfPlan;
+	for (int i = 0; i < sfPlan.condVec.size(); ++i)
+		ListAddItem(sfPlan.condVec[i]);
+	m_pCheckUse->SetCheck(bUse);
+	if (sfPlan.state == CS_And)
+		m_pRdbAnd->SetCheck(TRUE);
+	else
+		m_pRdbOr->SetCheck(TRUE);
 }
+
+void SOUI::CDlgStockFilter::InitComboBox()
+{
+	InitFrmlCombox();
+	for (int i = SFP_D1; i < SFP_Count; ++i)
+		m_pCbxPeriod->InsertItem(i, m_PeriodMap[i], NULL, 0);
+	m_pCbxPeriod->SetCurSel(0);
+
+}
+
+void SOUI::CDlgStockFilter::InitFrmlCombox()
+{
+	m_pCbxFrml->ResetContent();
+	m_FrmlVec.clear();
+	auto frmlMap = CFrmlManager::GetFormulaMap();
+	for (auto &it : frmlMap)
+	{
+		if (eFU_Filter == it.second.useType)
+		{
+			SStringW strTmp;
+			strTmp.Format(L"%s  -%s", StrA2StrW(it.second.name.c_str()),
+				StrA2StrW(it.second.descption.c_str()));
+			m_pCbxFrml->InsertItem(m_FrmlVec.size(), strTmp, NULL, 0);
+			m_FrmlVec.emplace_back(it.second);
+		}
+	}
+	m_pCbxFrml->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
+		Subscriber(&CDlgStockFilter::OnCbxFrmlChange, this));
+	m_pCbxFrml->SetCurSel(0);
+	ChangeParaSetting(0);
+}
+
+
 
 void SOUI::CDlgStockFilter::InitStringMap()
 {
-	m_FuncMap[SFF_Add] = L"新增";
-	m_FuncMap[SFF_Change] = L"修改";
-	m_FuncMap[SFF_Delete] = L"删除";
 
-	m_ReverseFuncMap[L"新增"] = SFF_Add;
-	m_ReverseFuncMap[L"修改"] = SFF_Change;
-	m_ReverseFuncMap[L"删除"] = SFF_Delete;
 
 	m_PeriodMap[SFP_Null] = L"-";
 	m_PeriodMap[SFP_D1] = L"1日";
@@ -147,390 +159,535 @@ void SOUI::CDlgStockFilter::InitStringMap()
 	m_PeriodMap[SFP_M30] = L"30分钟";
 	m_PeriodMap[SFP_M60] = L"60分钟";
 
-	m_ReversePeriodMap[L"-"] = SFP_Null;
-	m_ReversePeriodMap[L"1日"] = SFP_D1;
-	m_ReversePeriodMap[L"分时"] = SFP_FS;
-	m_ReversePeriodMap[L"1分钟"] = SFP_M1;
-	m_ReversePeriodMap[L"5分钟"] = SFP_M5;
-	m_ReversePeriodMap[L"15分钟"] = SFP_M15;
-	m_ReversePeriodMap[L"30分钟"] = SFP_M30;
-	m_ReversePeriodMap[L"60分钟"] = SFP_M60;
-
-
-	m_IndexMap[SFI_ChgPct] = L"涨跌幅";
-	m_IndexMap[SFI_Rps520] = L"RPS520";
-	m_IndexMap[SFI_Macd520] = L"Macd520";
-	m_IndexMap[SFI_Point520] = L"520分数";
-	m_IndexMap[SFI_Rank520] = L"520排名";
-	m_IndexMap[SFI_Rps2060] = L"RPS2060";
-	m_IndexMap[SFI_Macd2060] = L"Macd2060";
-	m_IndexMap[SFI_Point2060] = L"2060分数";
-	m_IndexMap[SFI_Rank2060] = L"2060排名";
-	m_IndexMap[SFI_Num] = L"数值";
-	m_IndexMap[SFI_ABSR] = L"主动量比";
-	m_IndexMap[SFI_A2PBSR] = L"主动转被动量比";
-	m_IndexMap[SFI_AABSR] = L"平均主动量比";
-	m_IndexMap[SFI_POCR] = L"最多成交价比";
-
-
-	m_ReverseIndexMap[L"涨跌幅"] = SFI_ChgPct;
-	m_ReverseIndexMap[L"RPS520"] = SFI_Rps520;
-	m_ReverseIndexMap[L"Macd520"] = SFI_Macd520;
-	m_ReverseIndexMap[L"520分数"] = SFI_Point520;
-	m_ReverseIndexMap[L"520排名"] = SFI_Rank520;
-	m_ReverseIndexMap[L"RPS2060"] = SFI_Rps2060;
-	m_ReverseIndexMap[L"Macd2060"] = SFI_Macd2060;
-	m_ReverseIndexMap[L"2060分数"] = SFI_Point2060;
-	m_ReverseIndexMap[L"2060排名"] = SFI_Rank2060;
-	m_ReverseIndexMap[L"数值"] = SFI_Num;
-	m_ReverseIndexMap[L"主动量比"] = SFI_ABSR;
-	m_ReverseIndexMap[L"主动转被动量比"] = SFI_A2PBSR;
-	m_ReverseIndexMap[L"平均主动量比"] = SFI_AABSR;
-	m_ReverseIndexMap[L"最多成交价比"] = SFI_POCR;
-
-	m_ConditionMap[SFC_Greater] = L"大于";
-	m_ConditionMap[SFC_EqualOrGreater] = L"大于等于";
-	m_ConditionMap[SFC_Equal] = L"等于";
-	m_ConditionMap[SFC_EqualOrLess] = L"小于等于";
-	m_ConditionMap[SFC_Less] = L"小于";
-
-	m_ReverseConditionMap[L"大于"] = SFC_Greater;
-	m_ReverseConditionMap[L"大于等于"] = SFC_EqualOrGreater;
-	m_ReverseConditionMap[L"等于"] = SFC_Equal;
-	m_ReverseConditionMap[L"小于等于"] = SFC_EqualOrLess;
-	m_ReverseConditionMap[L"小于"] = SFC_Less;
+	//m_ReversePeriodMap[L"-"] = SFP_Null;
+	//m_ReversePeriodMap[L"1日"] = SFP_D1;
+	//m_ReversePeriodMap[L"分时"] = SFP_FS;
+	//m_ReversePeriodMap[L"1分钟"] = SFP_M1;
+	//m_ReversePeriodMap[L"5分钟"] = SFP_M5;
+	//m_ReversePeriodMap[L"15分钟"] = SFP_M15;
+	//m_ReversePeriodMap[L"30分钟"] = SFP_M30;
+	//m_ReversePeriodMap[L"60分钟"] = SFP_M60;
 
 }
 
-void SOUI::CDlgStockFilter::OutPutCondition(vector<StockFilter>& sfVec)
+void SOUI::CDlgStockFilter::OutPutCondition(SFPlan& sfPlan)
 {
-	sfVec.clear();
-	for (int i = 0; i < m_pList->GetItemCount(); ++i)
-	{
-		StockFilter sf = { 0 };
-		if (GetListItem(i, sf))
-			sfVec.emplace_back(sf);
-	}
-
+	sfPlan = m_sfPlan;
 }
 
-void SOUI::CDlgStockFilter::ListAddItem(StockFilter & sf)
+LRESULT SOUI::CDlgStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 {
-	int nID = m_pList->GetItemCount() + 1;
-	SStringW strTmp;
-	strTmp.Format(L"%d", nID);
-	m_pList->InsertItem(nID - 1, strTmp);
-	m_pList->SetSubItemText(nID - 1, SFLH_Index1, m_IndexMap[sf.index1]);
-	m_pList->SetSubItemText(nID - 1, SFLH_Period1, m_PeriodMap[sf.period1]);
-	m_pList->SetSubItemText(nID - 1, SFLH_Condition, m_ConditionMap[sf.condition]);
-	m_pList->SetSubItemText(nID - 1, SFLH_Index2, m_IndexMap[sf.index2]);
-	if (sf.index2 == SFI_Num)
+	FILTERMSG msg = (FILTERMSG)lp;
+	switch (msg)
 	{
-		strTmp.Format(L"%.02f", sf.num);
-		m_pList->SetSubItemText(nID - 1, SFLH_Period2OrNum, strTmp);
+	case FilterMsg_ReinitFrml:
+		InitFrmlCombox();
+		break;
+	case FilterMsg_Search:
+	{
+		pair<int, SStringW>* pSearchMsg = (pair<int, SStringW>*)wp;
+		SearchFrml(pSearchMsg->first, pSearchMsg->second);
 	}
-	else
-		m_pList->SetSubItemText(nID - 1, SFLH_Period2OrNum, m_PeriodMap[sf.period2]);
-}
-
-void SOUI::CDlgStockFilter::ListChangeItem(int nRow, StockFilter & sf)
-{
-	SStringW strTmp;
-	m_pList->SetSubItemText(nRow, SFLH_Index1, m_IndexMap[sf.index1]);
-	m_pList->SetSubItemText(nRow, SFLH_Period1, m_PeriodMap[sf.period1]);
-	m_pList->SetSubItemText(nRow, SFLH_Condition, m_ConditionMap[sf.condition]);
-	m_pList->SetSubItemText(nRow, SFLH_Index2, m_IndexMap[sf.index2]);
-	if (sf.index2 == SFI_Num)
+	break;
+	case FilterMsg_UpdateFrml:
 	{
-		strTmp.Format(L"%.02f", sf.num);
-		m_pList->SetSubItemText(nRow, SFLH_Period2OrNum, strTmp);
-	}
-	else
-		m_pList->SetSubItemText(nRow, SFLH_Period2OrNum, m_PeriodMap[sf.period2]);
-
-}
-
-void SOUI::CDlgStockFilter::ListDeleteItem(int nRow)
-{
-	m_pList->DeleteItem(nRow);
-	SStringW strTmp;
-	for (int i = nRow; i < m_pList->GetItemCount(); ++i)
-		m_pList->SetSubItemText(i, SFLH_ID, strTmp.Format(L"%d", i + 1));
-}
-
-bool SOUI::CDlgStockFilter::GetListItem(int nRow, StockFilter& sf)
-{
-	if (nRow >= m_pList->GetItemCount())
-		return false;
-	SStringW strTmp = m_pList->GetSubItemText(nRow, SFLH_Index1);
-	sf.index1 = m_ReverseIndexMap[strTmp];
-	strTmp = m_pList->GetSubItemText(nRow, SFLH_Period1);
-	sf.period1 = m_ReversePeriodMap[strTmp];
-	strTmp = m_pList->GetSubItemText(nRow, SFLH_Condition);
-	sf.condition = m_ReverseConditionMap[strTmp];
-	strTmp = m_pList->GetSubItemText(nRow, SFLH_Index2);
-	sf.index2 = m_ReverseIndexMap[strTmp];
-	strTmp = m_pList->GetSubItemText(nRow, SFLH_Period2OrNum);
-	if (SFI_Num == sf.index2)
-		sf.num = _wtof(strTmp);
-	else
-		sf.period2 = m_ReversePeriodMap[strTmp];
-	return true;
-}
-
-
-bool SOUI::CDlgStockFilter::OnCbxFuncChange(EventArgs * e)
-{
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
-	int nSel = pEvt->nCurSel;
-	if (SFF_Add == nSel)
-		OnCbxFuncAdd();
-	if (SFF_Change == nSel)
-		OnCbxFuncChange();
-	if (SFF_Delete == nSel)
-		OnCbxFuncDelete();
-	return true;
-}
-
-bool SOUI::CDlgStockFilter::OnCbxIndex1Change(EventArgs * e)
-{
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
-	int nSel = pEvt->nCurSel;
-	if (SFI_ChgPct == nSel)
-	{
-		m_pTextNum->SetVisible(TRUE, TRUE);
-		m_pEditNum->SetVisible(TRUE, TRUE);
-		m_pTextPeriod1->SetVisible(FALSE, TRUE);
-		m_pCbxPeriod1->SetVisible(FALSE, TRUE);
-		m_pTextPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
-		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
-		m_pTextPeriod2->SetVisible(FALSE, TRUE);
-		m_pCbxPeriod2->SetVisible(FALSE, TRUE);
-		m_pCbxIndex2->SetCurSel(SFI_Num - 1);
-		m_pCbxIndex2->EnableWindow(FALSE, TRUE);
-	}
-	else
-	{
-		m_pTextPeriod1->SetVisible(TRUE, TRUE);
-		m_pCbxPeriod1->SetVisible(TRUE, TRUE);
-		m_pTextPeriod1->SetAttribute(L"pos", L"5,[5");
-		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[5,-5,@20");
-		m_pCbxIndex2->EnableWindow(TRUE, TRUE);
-	}
-	return true;
-
-}
-
-bool SOUI::CDlgStockFilter::OnCbxIndex2Change(EventArgs * e)
-{
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
-	int nSel = pEvt->nCurSel;
-	if (SFI_Num == nSel + 1)
-	{
-		m_pTextNum->SetVisible(TRUE, TRUE);
-		m_pEditNum->SetVisible(TRUE, TRUE);
-		m_pTextPeriod2->SetVisible(FALSE, TRUE);
-		m_pCbxPeriod2->SetVisible(FALSE, TRUE);
-	}
-	else
-	{
-		m_pTextNum->SetVisible(FALSE, TRUE);
-		m_pEditNum->SetVisible(FALSE, TRUE);
-		m_pTextPeriod2->SetVisible(TRUE, TRUE);
-		m_pCbxPeriod2->SetVisible(TRUE, TRUE);
-	}
-	return true;
-}
-
-void SOUI::CDlgStockFilter::OnCbxFuncAdd()
-{
-	m_pTextID->SetAttribute(L"pos", L"5,[0,5,[0");
-	m_pCbxID->SetAttribute(L"pos", L"5,[0,5,[0");
-	m_pTextID->SetVisible(FALSE);
-	m_pCbxID->SetVisible(FALSE);
-	m_pTextIndex1->SetVisible(TRUE);
-	m_pCbxIndex1->SetVisible(TRUE);
-	m_pTextPeriod1->SetVisible(TRUE);
-	m_pCbxPeriod1->SetVisible(TRUE);
-	m_pTextCondition->SetVisible(TRUE);
-	m_pCbxCondition->SetVisible(TRUE);
-	m_pTextIndex2->SetVisible(TRUE);
-	m_pCbxIndex2->SetVisible(TRUE);
-	if (m_pCbxIndex2->GetCurSel() == SFI_Num - 1)
-	{
-		m_pTextNum->SetVisible(TRUE, TRUE);
-		m_pEditNum->SetVisible(TRUE, TRUE);
-	}
-	else
-	{
-		m_pTextPeriod2->SetVisible(TRUE, TRUE);
-		m_pCbxPeriod2->SetVisible(TRUE, TRUE);
-	}
-
-}
-
-void SOUI::CDlgStockFilter::OnCbxFuncChange()
-{
-	m_pTextID->SetAttribute(L"pos", L"5,[5");
-	m_pCbxID->SetAttribute(L"pos", L"5,[5,-5,@20");
-
-	m_pTextID->SetVisible(TRUE);
-	m_pCbxID->SetVisible(TRUE);
-	m_pTextIndex1->SetVisible(TRUE);
-	m_pCbxIndex1->SetVisible(TRUE);
-	m_pTextPeriod1->SetVisible(TRUE);
-	m_pCbxPeriod1->SetVisible(TRUE);
-	m_pTextCondition->SetVisible(TRUE);
-	m_pCbxCondition->SetVisible(TRUE);
-	m_pTextIndex2->SetVisible(TRUE);
-	m_pCbxIndex2->SetVisible(TRUE);
-	if (m_pCbxIndex2->GetCurSel() == SFI_Num - 1)
-	{
-		m_pTextNum->SetVisible(TRUE, TRUE);
-		m_pEditNum->SetVisible(TRUE, TRUE);
-	}
-	else
-	{
-		m_pTextPeriod2->SetVisible(TRUE, TRUE);
-		m_pCbxPeriod2->SetVisible(TRUE, TRUE);
-	}
-
-}
-
-void SOUI::CDlgStockFilter::OnCbxFuncDelete()
-{
-	m_pTextID->SetAttribute(L"pos", L"5,[5");
-	m_pCbxID->SetAttribute(L"pos", L"5,[5,-5,@20");
-	m_pTextID->SetVisible(TRUE);
-	m_pCbxID->SetVisible(TRUE);
-	m_pTextIndex1->SetVisible(FALSE);
-	m_pCbxIndex1->SetVisible(FALSE);
-	m_pTextPeriod1->SetVisible(FALSE);
-	m_pCbxPeriod1->SetVisible(FALSE);
-	m_pTextCondition->SetVisible(FALSE);
-	m_pCbxCondition->SetVisible(FALSE);
-	m_pTextIndex2->SetVisible(FALSE);
-	m_pCbxIndex2->SetVisible(FALSE);
-	m_pTextPeriod2->SetVisible(FALSE);
-	m_pCbxPeriod2->SetVisible(FALSE);
-	m_pTextNum->SetVisible(FALSE);
-	m_pEditNum->SetVisible(FALSE);
-
-}
-
-void SOUI::CDlgStockFilter::AddConditon()
-{
-	StockFilter sf = { 0 };
-	sf.index1 = m_pCbxIndex1->GetCurSel();
-	if (SFI_ChgPct == sf.index1)
-		sf.period1 = SFP_Null;
-	else
-		sf.period1 = m_pCbxPeriod1->GetCurSel();
-	sf.condition = m_pCbxCondition->GetCurSel();
-	sf.index2 = m_pCbxIndex2->GetCurSel() + 1;
-	if (sf.index2 != SFI_Num)
-		sf.period2 = m_pCbxPeriod2->GetCurSel();
-	else
-		sf.num = _wtof(m_pEditNum->GetWindowTextW());
-	if (m_sfSet.count(sf))
-	{
-		SMessageBox(m_hWnd, L"已包含相同条件，添加失败", L"警告", MB_OK | MB_ICONERROR);
-		return;
-	}
-	m_sfSet.insert(sf);
-	int nIDCount = m_pList->GetItemCount();
-	ListAddItem(sf);
-	SStringW strTmp;
-	m_pCbxID->InsertItem(nIDCount,
-		strTmp.Format(L"条件%d", nIDCount + 1), NULL, 0);
-	SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
-	if (m_pCheckUse->IsChecked())
-	{
-		BOOL bUse = TRUE;
-		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-			(char*)&bUse, sizeof(bUse));
-	}
-}
-
-void SOUI::CDlgStockFilter::ChangeCondition()
-{
-
-	StockFilter sf = { 0 };
-	sf.index1 = m_pCbxIndex1->GetCurSel();
-	if (SFI_ChgPct == sf.index1)
-		sf.period1 = SFP_Null;
-	else
-		sf.period1 = m_pCbxPeriod1->GetCurSel();
-	sf.condition = m_pCbxCondition->GetCurSel();
-	sf.index2 = m_pCbxIndex2->GetCurSel() + 1;
-	if (sf.index2 != SFI_Num)
-		sf.period2 = m_pCbxPeriod2->GetCurSel();
-	else
-		sf.num = _wtof(m_pEditNum->GetWindowTextW());
-	if (m_sfSet.count(sf))
-	{
-		SMessageBox(m_hWnd, L"已包含相同条件，修改失败", L"警告", MB_OK | MB_ICONERROR);
-		return;
-	}
-	m_sfSet.insert(sf);
-	int nID = m_pCbxID->GetCurSel();
-	StockFilter oriSf = { 0 };
-	GetListItem(nID, oriSf);
-	m_sfSet.erase(oriSf);
-	ListChangeItem(nID, sf);
-	SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
-	if (m_pCheckUse->IsChecked())
-	{
-		BOOL bUse = TRUE;
-		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-			(char*)&bUse, sizeof(bUse));
-	}
-}
-
-void SOUI::CDlgStockFilter::DeleteCondition()
-{
-	if (m_pList->GetItemCount() == 0)
-	{
-		SMessageBox(m_hWnd, L"当前无条件可以删除", L"错误", MB_OK | MB_ICONERROR);
-		return;
-	}
-	int nID = m_pCbxID->GetCurSel();
-	StockFilter oriSf = { 0 };
-	GetListItem(nID, oriSf);
-	m_sfSet.erase(oriSf);
-	ListDeleteItem(nID);
-	int nItemCount = m_pCbxID->GetCount();
-	m_pCbxID->DeleteString(nItemCount - 1);
-	if (nID >= m_pCbxID->GetCount())
-		m_pCbxID->SetCurSel(m_pCbxID->GetCount() - 1);
-	if (m_pCbxID->GetCount() == 0)
-		m_pCbxID->SetWindowTextW(L"");
-	m_pList->RequestRelayout();
-	SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
-	if (m_pCheckUse->IsChecked())
-	{
-
-		if (m_pList->GetItemCount() > 0)
+		FrmlFullInfo * pFrml = (FrmlFullInfo *)wp;
+		for (auto &it : m_FrmlVec)
 		{
-			BOOL bUse = TRUE;
-			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-				(char*)&bUse, sizeof(bUse));
+			if (it.name == pFrml->name)
+			{
+				it = *pFrml;
+				break;
+			}
+		}
+	}
+	break;
+	case FilterMsg_SaveFrmlList:
+	{
+		if (_access(".\\filter", 0) != 0)
+			_mkdir(".\\filter");
+		string  strPlanName = *(string *)wp;
+		std::ofstream ofile(strPlanName);
+		if (ofile.is_open())
+			SaveConditonsList(ofile,m_tmpSFPlan);
+	}
+	break;
+	case FilterMsg_ReadFrmlList:
+	{
+		if (_access(".\\filter", 0) != 0)
+			_mkdir(".\\filter");
+		string  strPlanName = *(string *)wp;
+		std::ifstream ifile(strPlanName);
+		if (ifile.is_open())
+		{
+			ReadConditonsList(ifile, m_tmpSFPlan);
+			for (int i = 0; i < m_tmpSFPlan.condVec.size(); ++i)
+				ListAddItem(m_tmpSFPlan.condVec[i]);
+			m_bCondsChanged = TRUE;
+		}
+	}
+	break;
+
+	default:
+		break;
+	}
+	return 0;
+}
+
+CRect SOUI::CDlgStockFilter::GetLastCharRect(IRenderTarget *pRT, SStringW str,
+	CRect clinetRC, int nLineHei)
+{
+	CRect rc = clinetRC;
+	int nLine = 0;
+	SStringW tmpStr = L"";
+	CSize szChar;
+	for (int i = 0; i < str.GetLength(); ++i)
+	{
+		if (str[i] != '\n')
+			tmpStr += str[i];
+		else
+		{
+			tmpStr = L"";
+			++nLine;
+		}
+	}
+	if (tmpStr.IsEmpty())
+	{
+		rc.top += nLine *(nLineHei + INTERHEIGHT);
+		rc.right = rc.left;
+		rc.bottom = rc.top + nLineHei;
+	}
+	else
+	{
+		pRT->MeasureText(tmpStr, tmpStr.GetLength(), &szChar);
+		int nWidth = szChar.cx;
+		if (nWidth < clinetRC.Width())
+		{
+			rc.top += nLine *(nLineHei + INTERHEIGHT);
+			rc.right = rc.left + nWidth;
+			rc.bottom = rc.top + nLineHei;
 		}
 		else
 		{
-			m_pCheckUse->SetCheck(FALSE);
-			BOOL bUse = FALSE;
-			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-				(char*)&bUse, sizeof(bUse));
-			SMessageBox(m_hWnd, L"当前选股器无条件，自动关闭!", L"提示", MB_OK);
+			int nNeedLine = nWidth / clinetRC.Width();
+			nLine += nNeedLine;
+			int nPos = tmpStr.GetLength() - 1;
+			WCHAR* buffer = tmpStr.GetBuffer(tmpStr.GetLength() + 1);
+			pRT->MeasureText(buffer + nPos,
+				tmpStr.GetLength() - nPos, &szChar);
+			int nNewWidth = szChar.cx;
+			while ((nWidth - nNewWidth) / clinetRC.Width() == nNeedLine)
+			{
+				--nPos;
+				pRT->MeasureText(buffer + nPos,
+					tmpStr.GetLength() - nPos, &szChar);
+				nNewWidth = szChar.cx;
+			}
+			rc.top += nLine *(nLineHei + INTERHEIGHT);
+			rc.right = rc.left + nNewWidth;
+			rc.bottom = rc.top + nLineHei;
+		}
+	}
+	return rc;
+}
 
+void SOUI::CDlgStockFilter::ListAddItem(SFCondition & sf)
+{
+	int nID = m_pList->GetItemCount();
+	SStringW strItem;
+	strItem.Format(L"%s(", StrA2StrW(sf.frml.c_str()));
+	for (int i = 0; i < sf.paraVec.size(); ++i)
+	{
+		if (i == 0)
+			strItem.Format(L"%s%g", strItem, sf.paraVec[i]);
+		else
+			strItem.Format(L"%s,%g", strItem, sf.paraVec[i]);
+	}
+	strItem.Format(L"%s) %s", strItem, m_PeriodMap[sf.nPeriod]);
+	m_pList->InsertItem(nID, strItem);
+	m_pList->RequestRelayout();
+	//m_sfVec.emplace_back(sf);
+
+}
+
+
+bool SOUI::CDlgStockFilter::GetListItem(int nRow, SFCondition& sf)
+{
+	if (nRow >= m_pList->GetItemCount())
+		return false;
+	sf = m_tmpSFPlan.condVec[nRow];
+	return true;
+}
+
+void SOUI::CDlgStockFilter::SearchFrml(int nDirect, SStringW strKey)
+{
+	int nSel = m_pCbxFrml->GetCurSel();
+	string strSearch = StrW2StrA(strKey);
+	if (SD_Up == nDirect)
+	{
+		for (int i = nSel - 1; i >= 0; --i)
+		{
+			if (m_FrmlVec[i].name.find(strSearch) != string::npos
+				|| m_FrmlVec[i].descption.find(strSearch) != string::npos)
+			{
+				m_pCbxFrml->SetCurSel(i);
+				ChangeParaSetting(i);
+				return;
+			}
+		}
+		for (int i = m_pCbxFrml->GetCount() - 1; i > nSel; --i)
+		{
+			if (m_FrmlVec[i].name.find(strSearch) != string::npos
+				|| m_FrmlVec[i].descption.find(strSearch) != string::npos)
+			{
+				m_pCbxFrml->SetCurSel(i);
+				ChangeParaSetting(i);
+				return;
+			}
 		}
 
 	}
+	else
+	{
+		for (int i = nSel + 1; i < m_pCbxFrml->GetCount(); ++i)
+		{
+			if (m_FrmlVec[i].name.find(strSearch) != string::npos
+				|| m_FrmlVec[i].descption.find(strSearch) != string::npos)
+			{
+				m_pCbxFrml->SetCurSel(i);
+				ChangeParaSetting(i);
+				return;
+			}
+		}
+		for (int i = 0; i < nSel; ++i)
+		{
+			if (m_FrmlVec[i].name.find(strSearch) != string::npos
+				|| m_FrmlVec[i].descption.find(strSearch) != string::npos)
+			{
+				m_pCbxFrml->SetCurSel(i);
+				ChangeParaSetting(i);
+				return;
+			}
+		}
 
+	}
+}
+
+void SOUI::CDlgStockFilter::ChangeParaSetting(int nSel)
+{
+	auto &frml = m_FrmlVec[nSel];
+	//int nParaCount = frml.para.size();	
+	//if (frml.paraElf.empty())
+	//{
+	//	m_pTextParaTitle->SetVisible(TRUE, TRUE);
+	//	for (int i = 0; i < 16; ++i)
+	//	{
+	//		m_pTextParaStart[i]->SetVisible(TRUE, TRUE);
+	//		m_pEditPara[i]->SetVisible(TRUE, TRUE);
+	//		m_pTextParaEnd[i]->SetVisible(TRUE, TRUE);
+	//	}
+	//	return;
+	//}
+
+	//for (int i = 0; i < nParaCount; ++i)
+	//{
+	//	m_pTextParaStart[i]->SetVisible(TRUE, TRUE);
+	//	m_pEditPara[i]->SetVisible(TRUE, TRUE);
+	//	m_pTextParaEnd[i]->SetVisible(TRUE, TRUE);
+	//}
+	//for (int i = nParaCount; i < 16; ++i)
+	//{
+	//	m_pTextParaStart[i]->SetVisible(FALSE, TRUE);
+	//	m_pEditPara[i]->SetVisible(FALSE, TRUE);
+	//	m_pTextParaEnd[i]->SetVisible(FALSE, TRUE);
+	//}
+	string str = frml.paraElf;
+
+	size_t pos = -1;
+	map<size_t, int>PosParaMap;
+	map<size_t, int>ParaLengthMap;
+
+	while ((pos = str.find("PARAM#", pos + 1)) != string::npos)
+	{
+		string strNum = "";
+		for (int i = pos + 6; i < pos + 8 && i < str.size(); ++i)
+		{
+			if (str[i] >= '0' && str[i] <= '9')
+				strNum += str[i];
+		}
+		if (!strNum.empty())
+		{
+			int nWidth = strNum.size();
+			int nNum = atoi(strNum.c_str());
+			if (nNum > 16)
+			{
+				nNum = strNum[0] - '0';
+				nWidth = 1;
+			}
+			nNum -= 1;
+			if (nNum < 0)
+				continue;
+
+			PosParaMap[pos] = nNum;
+			ParaLengthMap[pos] = 6 + nWidth;
+		}
+	}
+	int nOffset = 0;
+	map<int, CRect> EditRcMap;
+	IRenderTarget* pRT = m_pTextParaTitle->GetRenderTarget();
+	SIZE szChar;
+	pRT->MeasureText(_T("A"), 1, &szChar);
+	int nLineHei = szChar.cy;
+	CRect clientRc = m_pTextParaTitle->GetClientRect();
+	int nLine = 1;
+	for (auto &it : PosParaMap)
+	{
+		string tmpStr = str.substr(it.first + nOffset, ParaLengthMap[it.first]);
+		SStringW tmpWstr = StrA2StrW(tmpStr.c_str());
+		pRT->MeasureText(tmpWstr, tmpWstr.GetLength(), &szChar);
+		int nWidth = szChar.cx;
+		tmpStr = str.substr(0, it.first + nOffset);
+		tmpWstr = StrA2StrW(tmpStr.c_str());
+		CRect rc = GetLastCharRect(pRT, tmpWstr, clientRc, nLineHei);
+		if (clientRc.right - rc.right < nWidth)
+		{
+			tmpStr += '\n';
+			tmpStr += str.substr(it.first + nOffset);
+			str = tmpStr;
+			++nOffset;
+			rc.top = rc.bottom;
+			rc.bottom += nLineHei;
+			rc.left = clientRc.left + 1;
+			rc.right = rc.left + nWidth;
+		}
+		else
+		{
+			rc.left = rc.right + 1;
+			rc.right += nWidth;
+		}
+		EditRcMap[it.second] = rc;
+	}
+	m_pTextParaTitle->ReleaseRenderTarget(pRT);
+	m_pTextParaTitle->SetWindowTextW(StrA2StrW(str.c_str()));
+	for (int i = 0; i < 16; ++i)
+	{
+		if (EditRcMap.count(i) == 0)
+			m_pEditPara[i]->SetVisible(FALSE, TRUE);
+		else
+		{
+			m_pEditPara[i]->SetVisible(TRUE, TRUE);
+			m_pEditPara[i]->Move(EditRcMap[i]);
+			SStringW tmp;
+			m_pEditPara[i]->SetWindowTextW(tmp.Format(L"%g",
+				frml.paraSetting[frml.para[i]].def));
+		}
+	}
+	//bool bFirst = true;
+	//int nPara = 0;
+	//while (getline(ss, buffer))
+	//{
+	//	if (bFirst)
+	//	{
+	//		if (buffer.find("PARAM#") == string::npos)
+	//		{
+	//			m_pTextParaTitle->SetAttribute(L"pos", L"5,20");
+	//			m_pTextParaTitle->SetWindowTextW(StrA2StrW(buffer.c_str()));
+	//		}
+	//		else
+	//		{
+	//			m_pTextParaTitle->SetAttribute(L"pos", L"5,16,5,16");
+	//			auto pos = buffer.find("#PARAM", 0);
+	//			int nPara = buffer[pos + 6] - '0';
+	//			string strStart = buffer.substr(0, pos);
+	//			m_pTextParaStart[nPara]->SetWindowTextW(StrA2StrW(buffer.c_str()));
+	//		}
+	//		bFirst = false;
+	//	}
+	//}
+
+}
+
+void SOUI::CDlgStockFilter::SaveConditonsList(ofstream &fs, SFPlan &sfPlan)
+{
+	char cEnd = 0;
+	for (auto &it : sfPlan.condVec)
+	{
+		fs.write("<condition>", strlen("<condition>"));
+		fs.write(it.frml.c_str(), it.frml.size());
+		fs.write(&cEnd, 1);
+		int nParaSize = it.paraVec.size();
+		fs.write((char*)&nParaSize, sizeof(nParaSize));
+		for (auto &para : it.paraVec)
+			fs.write((char*)&para, sizeof(para));
+		fs.write((char*)&it.nPeriod, sizeof(it.nPeriod));
+		fs.write("</condition>", strlen("</condition>"));
+	}
+	fs.write("<state>", strlen("<state>"));
+	fs.write((char*)&sfPlan.state, sizeof(sfPlan.state));
+	fs.write("</state>", strlen("</state>"));
+
+}
+
+void SOUI::CDlgStockFilter::ReadConditonsList(ifstream &fs, SFPlan &sfPlan)
+{
+	char ch = 0;
+	string msg = "";
+	while (fs.read(&ch, 1))
+		msg += ch;
+	size_t nStartPos = 0;
+	size_t nEndPos = 0;
+	sfPlan.condVec.clear();
+	while (nStartPos != string::npos)
+	{
+		nStartPos = msg.find("<condition>", nEndPos);
+		nEndPos = msg.find("</condition>", nStartPos);
+		if (nStartPos != string::npos && nEndPos != string::npos)
+		{
+			SFCondition sf;
+			string condMsg = msg.substr(nStartPos + 11, nEndPos - nStartPos - 11);
+			size_t pos = 0;
+			for (pos; pos < condMsg.size(); ++pos)
+			{
+				if (condMsg[pos] == '\0')
+				{
+					sf.frml = condMsg.substr(0, pos - 1);
+					break;
+				}
+			}
+			++pos;
+			int nParaSize = *(int*)(condMsg.c_str() + pos);
+			pos += sizeof(nParaSize);
+			sf.paraVec.reserve(nParaSize);
+			for (int i = 0; i < nParaSize; ++i)
+			{
+				sf.paraVec.emplace_back(*(double*)(condMsg.c_str() + pos));
+				pos += sizeof(double);
+			}
+			sf.nPeriod = *(int*)(condMsg.c_str() + pos);
+			sfPlan.condVec.emplace_back(sf);
+		}
+	}
+	nStartPos = msg.find("<state>", nEndPos);
+	nEndPos = msg.find("</state>", nStartPos);
+	sfPlan.state = *(ConditionsState*)(msg.c_str() + nStartPos + 7);
+
+
+}
+
+
+bool SOUI::CDlgStockFilter::OnCbxFrmlChange(EventArgs * e)
+{
+	EventCBSelChange *pEvt = (EventCBSelChange*)e;
+	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	int nSel = pEvt->nCurSel;
+	ChangeParaSetting(nSel);
+	return true;
+}
+
+
+void SOUI::CDlgStockFilter::OnBtnAddConditon()
+{
+	int nSel = m_pCbxFrml->GetCurSel();
+	auto &frml = m_FrmlVec[nSel];
+	SFCondition sf;
+	sf.frml = frml.name;
+	for (int i = 0; i < frml.para.size(); ++i)
+	{
+		if (m_pEditPara[i]->IsVisible())
+			sf.paraVec.emplace_back(_wtof(m_pEditPara[i]->GetWindowTextW()));
+		else
+			sf.paraVec.emplace_back(frml.paraSetting[frml.para[i]].def);
+	}
+	sf.nPeriod = m_pCbxPeriod->GetCurSel();
+	ListAddItem(sf);
+	m_tmpSFPlan.condVec.emplace_back(sf);
+	m_pList->SetSelectedItem(m_pList->GetItemCount() - 1);
+	m_bCondsChanged = TRUE;
+}
+
+void SOUI::CDlgStockFilter::OnBtnDeleteCondition()
+{
+	int nSel = m_pList->GetSelectedItem();
+	if (nSel < 0)
+		return;
+	m_pList->DeleteItem(nSel);
+	m_pList->RequestRelayout();
+	if(nSel > 0)
+		m_pList->SetSelectedItem(nSel - 1);
+	else
+		m_pList->SetSelectedItem(0);
+	for (int i = nSel; i < m_tmpSFPlan.condVec.size() - 1; ++i)
+		m_tmpSFPlan.condVec[i] = m_tmpSFPlan.condVec[i + 1];
+	m_tmpSFPlan.condVec.pop_back();
+	m_bCondsChanged = TRUE;
+
+}
+
+void SOUI::CDlgStockFilter::OnBtnFind()
+{
+	int nSel = m_pCbxFrml->GetCurSel();
+	CDlgFrmlFind *pDlg = new CDlgFrmlFind(m_hWnd);
+	pDlg->Create(m_hWnd);
+	pDlg->CenterWindow(m_hWnd);
+	pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	pDlg->ShowWindow(SW_SHOWDEFAULT);
+	::EnableWindow(m_hWnd, FALSE);
+}
+
+void SOUI::CDlgStockFilter::OnBtnUsage()
+{
+	int nSel = m_pCbxFrml->GetCurSel();
+	SStringW strUsage = StrA2StrW(m_FrmlVec[nSel].usage.c_str());
+	SStringW title;
+	title.Format(L"[%s]指标用法", StrA2StrW(m_FrmlVec[nSel].name.c_str()));
+	SMessageBox(m_hWnd, strUsage, title, MB_OK);
+}
+
+void SOUI::CDlgStockFilter::OnBtnEdit()
+{
+	int nSel = m_pCbxFrml->GetCurSel();
+	CDlgStkFilterEditor *pDlg = new CDlgStkFilterEditor(m_hWnd, m_FrmlVec[nSel], TRUE);
+	pDlg->Create(m_hWnd);
+	pDlg->CenterWindow(m_hWnd);
+	pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	pDlg->ShowWindow(SW_SHOWDEFAULT);
+	::EnableWindow(m_hWnd, FALSE);
+
+}
+
+void SOUI::CDlgStockFilter::OnBtnRead()
+{
+	CDlgReadFrmlList *pDlg = new CDlgReadFrmlList(m_hWnd);
+	pDlg->Create(m_hWnd);
+	pDlg->CenterWindow(m_hWnd);
+	pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	pDlg->ShowWindow(SW_SHOWDEFAULT);
+	::EnableWindow(m_hWnd, FALSE);
+
+}
+
+void SOUI::CDlgStockFilter::OnBtnSave()
+{
+	if (0 == m_pList->GetItemCount())
+	{
+		SMessageBox(m_hWnd, L"当前条件为空，请添加条件后再试!", L"警告", MB_OK | MB_ICONWARNING);
+		return;
+	}
+	CDlgSaveFrmlList *pDlg = new CDlgSaveFrmlList(m_hWnd);
+	pDlg->Create(m_hWnd);
+	pDlg->CenterWindow(m_hWnd);
+	pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	pDlg->ShowWindow(SW_SHOWDEFAULT);
+	::EnableWindow(m_hWnd, FALSE);
+}
+
+void SOUI::CDlgStockFilter::OnRadioCliecked()
+{
+	if (m_pRdbAnd->IsChecked())
+		m_tmpSFPlan.state = CS_And;
+	else
+		m_tmpSFPlan.state = CS_Or;
+	m_bCondsChanged = TRUE;
 
 }
 

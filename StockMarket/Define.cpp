@@ -2,6 +2,8 @@
 #include "Define.h"
 #include<fstream>
 #include<io.h>
+#include <ShlObj.h>
+
 #define SendBufLen          64
 
 char g_strLogFile[MAX_PATH] = "";
@@ -152,18 +154,160 @@ void TraceLog(char * log, ...)
 
 }
 
-bool _StockFilterPara::operator<(const _StockFilterPara & other) const
+void OutputDebugStringFormat(char * fmt, ...)
 {
-	if (index1 != other.index1)
-		return index1 < other.index1;
-	if (period1 != other.period1)
-		return period1 < other.period1;
-	if (condition != other.condition)
-		return condition < other.condition;
-	if (index2 != other.index2)
-		return index2 < other.index2;
-	if (period2 != other.period2)
-		return period2 < other.period2;
-	return num < other.num;
+	char tracebuf[SendBufLen * 10] = { 0 };
+	va_list argp;
+	int len = 0;
+
+	va_start(argp, fmt);
+	len = vsprintf(tracebuf, fmt, argp);
+	va_end(argp);
+
+	OutputDebugStringA(tracebuf);
 
 }
+
+HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[], size_t arrySize,
+	LPCTSTR filePath)
+{
+	IFileDialog* pfd = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL,
+		CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		if (filePath)
+		{
+			PIDLIST_ABSOLUTE pidl;
+			hr = ::SHParseDisplayName(filePath, 0, &pidl, SFGAO_FOLDER, 0);
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* psi;
+				hr = ::SHCreateShellItem(NULL, NULL, pidl, &psi);
+				if (SUCCEEDED(hr))
+				{
+					pfd->SetFolder(psi);
+				}
+				ILFree(pidl);
+			}
+		}
+
+		DWORD dwFlags;
+		hr = pfd->GetOptions(&dwFlags);
+		if (SUCCEEDED(hr))
+		{
+			hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST);
+			if (SUCCEEDED(hr))
+			{
+				hr = pfd->SetFileTypes(arrySize, fileType);
+				if (SUCCEEDED(hr))
+				{
+					hr = pfd->SetFileTypeIndex(1);
+					if (SUCCEEDED(hr))
+					{
+
+						hr = pfd->Show(NULL);
+						if (SUCCEEDED(hr))
+						{
+							IShellItem *pSelItem;
+
+							hr = pfd->GetResult(&pSelItem);
+							if (SUCCEEDED(hr))
+							{
+
+								LPWSTR pszFilePath = NULL;
+								hr = pSelItem->GetDisplayName(
+									SIGDN_DESKTOPABSOLUTEPARSING, &pszFilePath);
+								if (SUCCEEDED(hr))
+								{
+									wcscpy(FileName, pszFilePath);
+									CoTaskMemFree(pszFilePath);
+								}
+								pSelItem->Release();
+							}
+						}
+					}
+
+				}
+
+
+			}
+		}
+		pfd->Release();
+	}
+	return hr;
+}
+
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
+	COMDLG_FILTERSPEC fileType[], size_t arrySize, LPCTSTR filePath)
+{
+	IFileDialog* pfd = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog,
+		NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		if (filePath)
+		{
+			PIDLIST_ABSOLUTE pidl;
+			hr = ::SHParseDisplayName(filePath, NULL,&pidl, SFGAO_FOLDER, NULL);
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* psi;
+				hr = ::SHCreateShellItem(NULL, NULL, pidl, &psi);
+				if (SUCCEEDED(hr))
+				{
+					pfd->SetFolder(psi);
+				}
+				ILFree(pidl);
+			}
+		}
+		DWORD dwFlags;
+
+		hr = pfd->GetOptions(&dwFlags);
+		if (SUCCEEDED(hr))
+		{
+			hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
+			if (SUCCEEDED(hr))
+			{
+				hr = pfd->SetFileTypes(arrySize, fileType);
+				if (SUCCEEDED(hr))
+				{
+					hr = pfd->SetFileTypeIndex(1);
+					if (SUCCEEDED(hr))
+					{
+						hr = pfd->SetFileName(DefaultFileName);
+						if (SUCCEEDED(hr))
+						{
+
+							//hr=pfd->SetFolder()
+							hr = pfd->Show(NULL);
+							if (SUCCEEDED(hr))
+							{
+								IShellItem *pSelItem;
+
+								hr = pfd->GetResult(&pSelItem);
+								if (SUCCEEDED(hr))
+								{
+
+									LPWSTR pszFilePath = NULL;
+									hr = pSelItem->GetDisplayName(
+										SIGDN_DESKTOPABSOLUTEPARSING, &pszFilePath);
+									if (SUCCEEDED(hr))
+									{
+										wcscpy(FileName, pszFilePath);
+										CoTaskMemFree(pszFilePath);
+									}
+									pSelItem->Release();
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
+		pfd->Release();
+	}
+	return hr;
+}
+

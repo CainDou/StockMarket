@@ -1,15 +1,16 @@
-﻿<SOUI name="dlg_open" title="打开窗口" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="360" height="240" margin="1,5,5,5" wndType="normal" appWnd="0">
+<?xml version="1.0"?>
+<SOUI name="dlg_open" title="打开窗口" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="360" height="240" margin="1,5,5,5" wndType="normal" appWnd="0">
 	<root cache="1" colorBkgnd="rgb(50,50,50)">
-		<window pos="0,0,-0,-0"  colorText="#00ffffff">
+		<window pos="0,0,-0,-0" colorText="#00ffffff">
 			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
 				<icon pos="10,8" src="ICON_LOGO:16" />
 				<text pos="29,9" name="txt_title" colorText="#00ffffff">打开窗口</text>
 			</caption>
 			<text pos="29,39" name="txt_title" colorText="#00ffffff">选择需要打开的窗口</text>
 			<combobox name="cbx_open" class="cls_edit" pos="60,60,300,85" dropDown="1" dropHeight="100" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0" colorBorder="#ff0000ff" margin="1,1,1,1">
-					<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
-					<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
-				</combobox>
+				<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
+				<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
+			</combobox>
 			<imgbtn name="btn_OK" pos="70,180" size="80, 24" tip="" animate="1" colorText="#000000ff">确定</imgbtn>
 			<imgbtn name="btn_cancel" pos="210,180" size="80, 24" tip="" animate="1" colorText="#000000ff">取消</imgbtn>
 		</window>

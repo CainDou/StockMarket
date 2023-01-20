@@ -885,16 +885,24 @@ enum SF_CONDITION
 	SFC_Count,
 };
 
-typedef struct _StockFilterPara
+typedef struct _StockFilterCondition
 {
-	bool operator <(const _StockFilterPara& other) const;
-	double num;
-	int index1;
-	int period1;
-	int condition;
-	int index2;
-	int period2;
-}StockFilter;
+	string frml;
+	vector<double> paraVec;
+	int nPeriod;
+}SFCondition;
+
+enum ConditionsState
+{
+	CS_And=0,
+	CS_Or,
+};
+
+typedef struct _StockFiltrePlan
+{
+	vector<SFCondition> condVec;
+	ConditionsState state;
+}SFPlan;
 
 enum SF_LISTHEAD
 {
@@ -931,3 +939,37 @@ typedef struct _TickFlowMarket
 	uint32_t uPasBuyOrderCount;	//股票被动买入订单数 或 期货空平量
 	uint32_t uPasSellOrderCount;	//股票被动卖出订单数 或 期货多平量
 }TickFlowMarket;
+
+void OutputDebugStringFormat(char *fmt, ...);
+
+enum FUNCMSG
+{
+	FNCMsg_InsertFunc=0,
+};
+
+
+enum FORMULAMSG
+{
+	FrmlMsg_AddFrml = 0,
+	FrmlMsg_ChangeFrml,
+};
+
+enum FILTERMSG
+{
+	FilterMsg_ReinitFrml=0,
+	FilterMsg_Search,
+	FilterMsg_UpdateFrml,
+	FilterMsg_SaveFrmlList,
+	FilterMsg_ReadFrmlList,
+
+};
+
+enum SerachDir
+{
+	SD_Up=0,
+	SD_Down
+};
+
+HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[],size_t arrySize,LPCTSTR filePath);
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
+	COMDLG_FILTERSPEC fileType[], size_t arrySize,LPCTSTR filePath);
