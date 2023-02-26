@@ -23,6 +23,7 @@ BOOL SOUI::CDlgSaveFrmlList::OnInitDialog(EventArgs * e)
 void SOUI::CDlgSaveFrmlList::OnBtnClose()
 {
 	::EnableWindow(m_hParWnd, TRUE);
+	::SwitchToThisWindow(m_hParWnd,TRUE);
 	CSimpleWnd::DestroyWindow();
 }
 

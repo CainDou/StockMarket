@@ -255,6 +255,7 @@ LRESULT SOUI::CDlgStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHa
 		if (_access(".\\filter", 0) != 0)
 			_mkdir(".\\filter");
 		string  strPlanName = *(string *)wp;
+		strPlanName = ".\\filter\\" + strPlanName + ".sfl";
 		std::ofstream ofile(strPlanName);
 		if (ofile.is_open())
 			SaveConditonsList(ofile, m_tmpSFPlan);
@@ -265,6 +266,7 @@ LRESULT SOUI::CDlgStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHa
 		if (_access(".\\filter", 0) != 0)
 			_mkdir(".\\filter");
 		string  strPlanName = *(string *)wp;
+		strPlanName = ".\\filter\\" + strPlanName + ".sfl";
 		std::ifstream ifile(strPlanName);
 		if (ifile.is_open())
 		{
