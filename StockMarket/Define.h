@@ -84,6 +84,7 @@ enum RecvMsgType
 	RecvMsg_Wait,
 	RecvMsg_Reinit,
 	RecvMsg_RTTFMarket,
+	RecvMsg_RTRps,
 };
 
 enum SendMsgType
@@ -219,10 +220,18 @@ enum SListHead
 	SHead_Point2060,
 	SHead_Rank2060,
 	SHead_CommonItmeCount,
-	SHead_ActBuySellRatio = SHead_CommonItmeCount,
+	SHead_TickFlowStart = SHead_CommonItmeCount,
+	SHead_ActBuySellRatio = SHead_TickFlowStart,
 	SHead_ActToPasBuySellRatio,
 	SHead_AvgBuySellRatio,
 	SHead_POCRatio,
+	SHead_Volume,
+	SHead_ActSellVolume,
+	SHead_ActBuyVolume,
+	SHead_Open,
+	SHead_High,
+	SHead_Low,
+	SHead_Amount,
 	SHead_StockItemCount,
 };
 
@@ -258,6 +267,7 @@ enum DataProcType
 	UpdateLastDayEma,
 	ClearOldData,
 	UpdateTFMarket,
+	UpdateRtRps,
 	Msg_ReInit=77777,
 	Msg_Exit = 88888,
 };
@@ -280,6 +290,7 @@ enum SynMsg
 	Syn_HisKline,
 	Syn_CloseInfo,
 	Syn_Reinit,
+	Syn_FilterData,
 
 };
 
@@ -786,6 +797,7 @@ enum
 {
 	DT_ListData=0,
 	DT_TFMarket,
+	DT_FilterData,
 	DT_IndexMarket,
 	DT_StockMarket,
 	DT_Kline,
@@ -885,16 +897,24 @@ enum SF_CONDITION
 	SFC_Count,
 };
 
-typedef struct _StockFilterPara
+typedef struct _StockFilterCondition
 {
-	bool operator <(const _StockFilterPara& other) const;
-	double num;
-	int index1;
-	int period1;
-	int condition;
-	int index2;
-	int period2;
-}StockFilter;
+	string frml;
+	vector<double> paraVec;
+	int nPeriod;
+}SFCondition;
+
+enum ConditionsState
+{
+	CS_And=0,
+	CS_Or,
+};
+
+typedef struct _StockFiltrePlan
+{
+	vector<SFCondition> condVec;
+	ConditionsState state;
+}SFPlan;
 
 enum SF_LISTHEAD
 {
@@ -923,6 +943,11 @@ typedef struct _TickFlowMarket
 	int nPeriod;
 	double fPrice;
 	double fPOC;						//POC价格
+	double fOpen;
+	double fHigh;
+	double fLow;
+	double fClose;
+	double fAmount;
 	uint32_t nTime;						//时间
 	uint64_t ActBuyVol;
 	uint64_t ActSellVol;
@@ -930,4 +955,68 @@ typedef struct _TickFlowMarket
 	uint32_t uActSellOrderCount;	//股票主动卖出订单数 或 期货空开量
 	uint32_t uPasBuyOrderCount;	//股票被动买入订单数 或 期货空平量
 	uint32_t uPasSellOrderCount;	//股票被动卖出订单数 或 期货多平量
+	double ABSR;
+	double A2PBSR;
+	double AABSR;
+	double POCR;
 }TickFlowMarket;
+
+void OutputDebugStringFormat(char *fmt, ...);
+
+enum FUNCMSG
+{
+	FNCMsg_InsertFunc=0,
+};
+
+
+enum FORMULAMSG
+{
+	FrmlMsg_AddFrml = 0,
+	FrmlMsg_ChangeFrml,
+};
+
+enum FILTERMSG
+{
+	FilterMsg_ReinitFrml=0,
+	FilterMsg_Search,
+	FilterMsg_UpdateFrml,
+	FilterMsg_SaveFrmlList,
+	FilterMsg_ReadFrmlList,
+
+};
+
+enum SerachDir
+{
+	SD_Up=0,
+	SD_Down
+};
+
+HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[],size_t arrySize,LPCTSTR filePath);
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
+	COMDLG_FILTERSPEC fileType[], size_t arrySize,LPCTSTR filePath);
+
+typedef struct _RtRpsData
+{
+	SecurityID SecurityID;
+	int nGroup;
+	double fPrice;
+	int nDate;
+	int nTime;
+	int nPeriod;
+	double fMacd520;
+	double fMacd2060;
+	double fRps520;
+	double fRps2060;
+	double fPoint520;
+	double fPoint2060;
+	int	nRank520;
+	int nRank2060;
+	double fL1Point520;
+	double fL1Point2060;
+	int	nL1Rank520;
+	int nL1Rank2060;
+	double fL2Point520;
+	double fL2Point2060;
+	int	nL2Rank520;
+	int nL2Rank2060;
+}RtRps;

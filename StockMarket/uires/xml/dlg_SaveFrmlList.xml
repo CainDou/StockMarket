@@ -1,0 +1,15 @@
+﻿<?xml version="1.0"?>
+<SOUI name="window" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="300" height="160" margin="1,5,5,5" wndType="normal" toolWindow="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff" font="face:微软雅黑">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">保存条件</text>
+				<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<text pos="20,40" >请输入存盘文件名(不写扩展名):</text>
+			<edit name="edit_fileName" pos="20,80,-20,@20"  colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<button name="btn_OK" pos="150,120" size="60, 24" colorText="#000000" skin="_skin.sys.btn.normal">确定</button>
+			<button name="btn_cancel" pos="220,120" size="60, 24" colorText="#000000" skin="_skin.sys.btn.normal">取消</button>
+		</window>
+	</root>
+</SOUI>

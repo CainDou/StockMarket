@@ -34,8 +34,8 @@ namespace SOUI
 		void		SetPreClose(strHash<double> &preCloseMap);
 		void		SetParThreadID(UINT uThreadID);
 		void		CloseWnd();
-		void		OutputStockFilterPara(vector<StockFilter>& sfVec);
-		void		InitStockFilterPara(vector<StockFilter>& sfVec);
+		void		OutputStockFilterPara(SFPlan &sfPlan);
+		void		InitStockFilterPara(SFPlan &sfPlan);
 		// œ˚œ¢œÏ”¶
 	protected:
 		void	OnInit(EventArgs *e);
@@ -69,7 +69,7 @@ namespace SOUI
 		void SortList(SColorListCtrlEx* pList, bool bSortCode = false);
 
 		bool CheckStockFitDomain(StockInfo& si);
-		bool CheckStockDataPass(StockFilter& sf,SStringA StockID);
+		bool CheckStockDataPass(SFCondition& sf,SStringA StockID);
 		bool GreaterThan(double a, double b);
 		bool EqualOrGreaterThan(double a, double b);
 		bool Equal(double a, double b);
@@ -225,14 +225,18 @@ namespace SOUI
 		strHash<int>m_MouseWheelMap;
 		map<int, TimeLineMap> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
+		map<int, strHash<map<string, double>>>* m_pFilterDataMap;
 		strHash<double> m_preCloseMap;
 		strHash<SStringA> m_StockName;
 		vector<SStringA> m_dataNameVec;
 		vector<SStringA> m_tfNameVec;
-		vector<StockFilter> m_sfVec;
-		map<int, int> m_SFPeriodMap;
-		map<int, SStringA> m_SFIndexMap;
-		map<int, PCOMPAREFUNC> m_SFConditionMap;
+		SFPlan m_sfPlan;
+		vector<BOOL> m_frmlExistVec;
+		//map<int, int> m_SFPeriodMap;
+		//map<int, SStringA> m_SFIndexMap;
+		//map<int, PCOMPAREFUNC> m_SFConditionMap;
+
+
 		int			m_nDate;
 		BOOL		m_bListShowST;
 		BOOL		m_bListShowSBM;

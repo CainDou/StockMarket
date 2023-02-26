@@ -1,0 +1,15 @@
+﻿<?xml version="1.0"?>
+<SOUI name="window" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="365" height="120" margin="1,5,5,5" wndType="normal" toolWindow="0">
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff" font="face:微软雅黑">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<text pos="5,4" name="txt_title">查找公式</text>
+				<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<text pos="20,53" >输入查找关键词</text>
+			<capsedit name="edit_keyWord" pos="[5,53" size="210, 20" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<button name="btn_upFind" pos="40,90" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">向上查找</button>
+			<button name="btn_downFind" pos="225,90" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">向下查找</button>
+		</window>
+	</root>
+</SOUI>

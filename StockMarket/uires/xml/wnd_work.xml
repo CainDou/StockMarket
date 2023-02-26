@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <SOUI name="wnd_work" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,1,1,1" translucent="0" colorBorder="#FF0000">
 	<root cache="1" colorBkgnd="#000000ff" focusable="1">
 		<window pos="0,0,-0,-0" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" translucent="0">
@@ -15,11 +15,10 @@
 			<imgbtn pos="[0,2" size="25,20" tip="申万2级行情列表联动" animate="0" text="联2" name="btn_ListConnect2" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,2" size="25,20" tip="选股器" animate="0" text="选股" name="btn_StockFilter" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<text pos="[5,3" colorText="#c0c0c0ff" name="text_ShowIndy">当前分类:全市场</text>
-				<check name="chk_ST" pos="[5,{0" checked="0">ST股</check>
-				<check name="chk_SBM" pos="[5,{0" checked="0">创业板</check>
-				<check name="chk_STARM" pos="[5,{0" checked="0">科创板</check>
-				<check name="chk_NewStock" pos="[5,{0" checked="0">上市不满一年</check>
-
+			<check name="chk_ST" pos="[5,{0" checked="0">ST股</check>
+			<check name="chk_SBM" pos="[5,{0" checked="0">创业板</check>
+			<check name="chk_STARM" pos="[5,{0" checked="0">科创板</check>
+			<check name="chk_NewStock" pos="[5,{0" checked="0">上市不满一年</check>
 			<color_listctrlex name="ls_rps" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
 				<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 					<items>

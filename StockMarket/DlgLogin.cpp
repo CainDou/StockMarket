@@ -3,6 +3,7 @@
 #include<process.h>
 
 extern HANDLE g_hLoginEvent;
+extern HANDLE g_hEvent;
 
 SOUI::CDlgLogin::CDlgLogin() :SHostDialog(_T("LAYOUT:dlg_login"))
 {
@@ -69,7 +70,7 @@ void SOUI::CDlgLogin::OnClickButtonCancel()
 	//CSimpleWnd::DestroyWindow();
 
 	//m_bLogin = false;
-	//SetEvent(g_hLoginEvent);
+	SetEvent(g_hEvent);
 	TraceLog("¹Ø±Õ³ÌÐò");
 	m_pNetClient->Stop();
 	//g_bExit = TRUE;

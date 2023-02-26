@@ -3,7 +3,7 @@
 #include "IniFile.h"
 #include <fstream>
 #include "WndSynHandler.h"
-
+#include "DlgStockFilter.h"
 
 
 
@@ -142,6 +142,8 @@ void CDlgSub::InitWorkWnd()
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
 	vector<map<int, TimeLineMap>> *pListData = g_WndSyn.GetListData();
+	vector<map<int, strHash<map<string, double>>>>* pFilterData =
+		g_WndSyn.GetFilterData();
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
 	InitConfig();
 	InitStockFilter();
@@ -150,6 +152,7 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetParThreadID(m_DataThreadID);
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
+		m_WndMap[i]->SetDataPoint(&pFilterData->at(i), DT_FilterData);
 		if (i == Group_Stock)
 		{
 			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
@@ -165,18 +168,15 @@ void CDlgSub::InitStockFilter()
 {
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
-		vector<StockFilter> sfVec;
+		SFPlan sfPlan;
 		SStringA strPath;
-		strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName, i);
-		std::ifstream ifile(strPath, std::ios::binary | std::ios::_Nocreate);
+		strPath.Format(".//filter//%s_SF_%d.sfl", m_strWindowName, i);
+		std::ifstream ifile(strPath, std::ios::_Nocreate);
 		if (ifile.is_open())
 		{
-			int nSFParaSize = 0;
-			ifile.read((char*)&nSFParaSize, sizeof(nSFParaSize));
-			StockFilter sfPara = { 0 };
-			while (ifile.read((char*)&sfPara, nSFParaSize))
-				sfVec.emplace_back(sfPara);
-			m_WndMap[i]->InitStockFilterPara(sfVec);
+			CDlgStockFilter::ReadConditonsList(ifile, sfPlan);
+			m_WndMap[i]->InitStockFilterPara(sfPlan);
+			ifile.close();
 		}
 
 	}
@@ -564,18 +564,16 @@ void CDlgSub::OnBtnClose()
 
 void CDlgSub::SaveStockFilterPara(int nGroup)
 {
-	vector<StockFilter> sfVec;
-	m_WndMap[nGroup]->OutputStockFilterPara(sfVec);
-	if (!sfVec.empty())
+	SFPlan sfPlan;
+	m_WndMap[nGroup]->OutputStockFilterPara(sfPlan);
+	if (!sfPlan.condVec.empty())
 	{
 		SStringA strPath;
-		strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName,nGroup);
-		std::ofstream ofile(strPath, std::ios::binary);
+		strPath.Format(".//filter//%s_SF_%d.sfl", m_strWindowName,nGroup);
+		std::ofstream ofile(strPath);
 		if (ofile.is_open())
 		{
-			int paraSize = sizeof(StockFilter);
-			ofile.write((char*)&paraSize, sizeof(paraSize));
-			ofile.write((char*)&sfVec[0], paraSize * sfVec.size());
+			CDlgStockFilter::SaveConditonsList(ofile, sfPlan);
 			ofile.close();
 		}
 	}

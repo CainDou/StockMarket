@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "WndSynHandler.h"
+#include "FrmlManager.h"
 #include "IniFile.h"
 #include "zlib.h"
 #include <io.h>
@@ -19,6 +20,7 @@ CWndSynHandler::CWndSynHandler()
 	todayDataBuffer = nullptr;
 	todayDataSize = 0;
 	bExit = false;
+	m_bFirstData = true;
 }
 
 
@@ -42,12 +44,15 @@ CWndSynHandler::~CWndSynHandler()
 void CWndSynHandler::Run()
 {
 	InitializeCriticalSection(&m_cs);
+	InitializeCriticalSection(&m_csFilterData);
+
 	InitCommonSetting();
 	InitNetConfig();
 	SetVectorSize();
 	InitDataHandleMap();
 	InitNetHandleMap();
 	InitSynHandleMap();
+	CFrmlManager::InitFrmlManage();
 	tRpsCalc = thread(&CWndSynHandler::DataProc, this);
 	m_RpsProcThreadID = *(unsigned*)&tRpsCalc.get_id();
 	tMsgSyn = thread(&CWndSynHandler::MsgProc, this);
@@ -58,7 +63,7 @@ void CWndSynHandler::Run()
 	tLogin = thread(&CWndSynHandler::Login, this);
 	WaitForSingleObject(g_hLoginEvent, INFINITE);
 	if (bExit)	exit(0);
-	ResetEvent(g_hLoginEvent);
+	//ResetEvent(g_hLoginEvent);
 	m_NetHandleFlag.clear();
 	m_NetClinet.RegisterHandle(NetHandle);
 	m_NetClinet.Start(m_uNetThreadID, this);
@@ -74,7 +79,7 @@ void CWndSynHandler::Run()
 			NULL, LoginMsg_WaitAndTry);
 		WaitForSingleObject(g_hLoginEvent, INFINITE);
 		if (bExit)	exit(0);
-		ResetEvent(g_hLoginEvent);
+		//ResetEvent(g_hLoginEvent);
 		ResetEvent(g_hEvent);
 		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
 		WaitForSingleObject(g_hEvent, INFINITE);
@@ -90,10 +95,10 @@ void CWndSynHandler::Run()
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 		(WPARAM)Info.GetBuffer(1), LoginMsg_UpdateText);
 
-	Info = L"处理当日历史数据，请等待...";
-	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
-		(WPARAM)Info.GetBuffer(1), LoginMsg_UpdateText);
-	WaitForSingleObject(g_hLoginEvent, INFINITE);
+	//Info = L"处理当日历史数据，请等待...";
+	//::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
+	//	(WPARAM)Info.GetBuffer(1), LoginMsg_UpdateText);
+	//WaitForSingleObject(g_hLoginEvent, INFINITE);
 	if (bExit)	exit(0);
 
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG, NULL, LoginMsg_HideWnd);
@@ -350,6 +355,8 @@ void CWndSynHandler::InitDataHandleMap()
 		&CWndSynHandler::OnClearData;
 	m_dataHandleMap[UpdateTFMarket] =
 		&CWndSynHandler::OnUpdateTFMarket;
+	m_dataHandleMap[UpdateRtRps] =
+		&CWndSynHandler::OnUpdateRtRps;
 
 }
 
@@ -385,6 +392,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgReInit;
 	m_netHandleMap[RecvMsg_RTTFMarket]
 		= &CWndSynHandler::OnMsgRTTFMarket;
+	m_netHandleMap[RecvMsg_RTRps]
+		= &CWndSynHandler::OnMsgRtRps;
 }
 
 void CWndSynHandler::InitSynHandleMap()
@@ -424,15 +433,13 @@ bool CWndSynHandler::CheckInfoRecv()
 {
 	BOOL bReady =
 		m_NetHandleFlag[RecvMsg_ClientID] &
-		m_NetHandleFlag[RecvMsg_TodayTimeLine] &
-		m_NetHandleFlag[RecvMsg_LastDayEma] &
-		m_NetHandleFlag[RecvMsg_TodayTimeLine];
+		m_NetHandleFlag[RecvMsg_CloseInfo];
 	if (bReady == TRUE)
 	{
 		if (MSG_SUCC == m_NetHandleFlag[RecvMsg_StockInfo])
 		{
-			SendMsg(m_RpsProcThreadID, UpdateTodayData,
-				todayDataBuffer, todayDataSize);
+			//SendMsg(m_RpsProcThreadID, UpdateTodayData,
+			//	todayDataBuffer, todayDataSize);
 			TraceLog("所有信息接收完毕");
 			delete[]todayDataBuffer;
 			todayDataBuffer = nullptr;
@@ -858,13 +865,13 @@ void CWndSynHandler::OnMsgHisKline(SOCKET netSocket, ReceiveInfo & recvInfo)
 void CWndSynHandler::OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 {
 	TraceLog("开始接收昨日收盘数据");
-	m_NetHandleFlag[RecvMsg_TodayTimeLine] = FALSE;
+	m_NetHandleFlag[RecvMsg_CloseInfo] = FALSE;
 	char *buffer = new char[recvInfo.DataSize];
 	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
 	{
 		SendMsg(m_uMsgThreadID, Syn_CloseInfo,
 			buffer, recvInfo.DataSize);
-		m_NetHandleFlag[RecvMsg_TodayTimeLine] = TRUE;
+		m_NetHandleFlag[RecvMsg_CloseInfo] = TRUE;
 		TraceLog("接收昨日收盘数据成功");
 	}
 	else
@@ -872,6 +879,7 @@ void CWndSynHandler::OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 	delete[]buffer;
 	buffer = nullptr;
+	//SetEvent(g_hEvent);
 
 }
 
@@ -898,6 +906,18 @@ void CWndSynHandler::OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
+void CWndSynHandler::OnMsgRtRps(SOCKET netSocket, ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	TimeLineData stkInfo = { 0 };
+	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+		SendMsg(m_RpsProcThreadID, UpdateRtRps,
+			buffer, recvInfo.DataSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnNoDefineMsg(SOCKET netSocket, ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -911,7 +931,6 @@ void CWndSynHandler::OnTimeLineUpdate(int nMsgLength, const char * info) {
 		return;
 	int dataCount = nMsgLength / sizeof(TimeLineData);
 	TimeLineData *dataArr = (TimeLineData *)info;
-
 	for (int i = 0; i < m_PeriodVec.size(); ++i)
 	{
 		int Period = m_PeriodVec[i];
@@ -952,6 +971,9 @@ void CWndSynHandler::OnTimeLineUpdate(int nMsgLength, const char * info) {
 			m_ListInsVec[Group_Stock]);
 
 	}
+	
+	::EnterCriticalSection(&m_csFilterData);
+	::LeaveCriticalSection(&m_csFilterData);
 	SendMsg(m_uMsgThreadID, Syn_Point, nullptr, 0);
 	SendMsg(m_uMsgThreadID, Syn_ListData, nullptr, 0);
 
@@ -1021,45 +1043,139 @@ void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
 {
 	int dataCount = nMsgLength / sizeof(TickFlowMarket);
 	TickFlowMarket* dataArr = (TickFlowMarket*)info;
+	int nCount = 0;
+	int nErrName = 0;
 	for (int i = 0; i < dataCount; ++i)
 		m_TFMarketHash[dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
 	for (auto &it : m_TFMarketHash)
 	{
 		for (auto& data : it.second.hash)
 		{
+			//if(data.second.nTime)
 			auto &tfMarket = data.second;
-			double fDelta1 =
-				(tfMarket.ActBuyVol*1.0 - tfMarket.ActSellVol) /
-				(tfMarket.ActBuyVol*1.0 + tfMarket.ActSellVol) * 100;
 			auto &dataMap = m_listDataMap[Group_Stock];
+			if (strlen(tfMarket.SecurityID) != 6)
+				++nErrName;
 			CoreData cd = { 0 };
 			cd.time = tfMarket.nTime;
-			cd.value = fDelta1;
+			cd.value = tfMarket.ABSR;
 			dataMap[it.first][data.first]["ABSR"] = cd;
-			double fActBuyVol = tfMarket.ActBuyVol*1.0
-				/ tfMarket.uActBuyOrderCount*tfMarket.uPasSellOrderCount;
-			double fActSelVol = tfMarket.ActSellVol*1.0 /
-				tfMarket.uActSellOrderCount*tfMarket.uPasBuyOrderCount;
-			double fDelta2 = (fActBuyVol - fActSelVol)
-				/ (fActBuyVol + fActSelVol) * 100;
-			cd.value = fDelta2;
+			cd.value = tfMarket.A2PBSR;
 			dataMap[it.first][data.first]["A2PBSR"] = cd;
-
-
-			double avgBuyVol = tfMarket.ActBuyVol * 1.0
-				/ tfMarket.uActBuyOrderCount;
-			double avgSellVol = tfMarket.ActSellVol * 1.0
-				/ tfMarket.uActSellOrderCount;
-			double avgRatio = (avgBuyVol - avgSellVol)
-				/ (avgBuyVol + avgSellVol) * 100;
-			cd.value = avgRatio;
+			cd.value = tfMarket.AABSR;
 			dataMap[it.first][data.first]["AABSR"] = cd;
-
-
-			double fPocRatio = (tfMarket.fPOC - tfMarket.fPrice)
-				/ tfMarket.fPrice * 100;
-			cd.value = fPocRatio;
+			cd.value = tfMarket.POCR;
 			dataMap[it.first][data.first]["POCR"] = cd;
+			cd.value = tfMarket.nVolume;
+			dataMap[it.first][data.first]["VOLUME"] = cd;
+			cd.value = tfMarket.fOpen;
+			dataMap[it.first][data.first]["OPEN"] = cd;
+			cd.value = tfMarket.fHigh;
+			dataMap[it.first][data.first]["HIGH"] = cd;
+			cd.value = tfMarket.fLow;
+			dataMap[it.first][data.first]["LOW"] = cd;
+			cd.value = tfMarket.fAmount;
+			dataMap[it.first][data.first]["AMOUNT"] = cd;
+			cd.value = tfMarket.ActBuyVol;
+			dataMap[it.first][data.first]["ABV"] = cd;
+			cd.value = tfMarket.ActSellVol;
+			dataMap[it.first][data.first]["ASV"] = cd;
+
+			//更新选股器数据
+			auto &filterMap = m_FilterDataMap[Group_Stock][it.first].hash[data.first];
+			if (tfMarket.fOpen == 0 ||tfMarket.fHigh == 0 || tfMarket.fLow == 0 || tfMarket.fClose == 0)
+			{
+				OutputDebugStringFormat("%s 周期%d错误,o:%.02f,h:%.02f,l:%.02f,c:%.02f\n", tfMarket.SecurityID,
+					tfMarket.nPeriod, tfMarket.fOpen, tfMarket.fHigh, tfMarket.fLow, tfMarket.fClose);
+				nCount++;
+			}
+			filterMap["VOL"] = tfMarket.nVolume;
+			filterMap["HIGH"] = tfMarket.fHigh;
+			filterMap["LOW"] = tfMarket.fLow;
+			filterMap["OPEN"] = tfMarket.fOpen;
+			filterMap["CLOSE"] = tfMarket.fClose;
+			filterMap["AMOUNT"] = tfMarket.fAmount;
+			filterMap["POC"] = tfMarket.fPOC;
+			filterMap["ABV"] = tfMarket.ActBuyVol;
+			filterMap["ASV"] = tfMarket.ActSellVol;
+			filterMap["ABO"] = tfMarket.uActBuyOrderCount;
+			filterMap["ASO"] = tfMarket.uActSellOrderCount;
+			filterMap["PBO"] = tfMarket.uPasBuyOrderCount;
+			filterMap["PSO"] = tfMarket.uPasSellOrderCount;
+			filterMap["ABSR"] = tfMarket.ABSR;
+			filterMap["A2PBSR"] = tfMarket.A2PBSR;
+			filterMap["AABSR"] = tfMarket.AABSR;
+			filterMap["POCR"] = tfMarket.POCR;
+		}
+	}
+	OutputDebugStringFormat("共有%d个数据计算错误 %d个代码错误\n",nCount,nErrName);
+
+	if (m_bFirstData)
+	{
+		SetEvent(g_hEvent);
+		m_bFirstData = false;
+	}
+	SendMsg(m_uMsgThreadID, Syn_Point, nullptr, 0);
+	SendMsg(m_uMsgThreadID, Syn_ListData, nullptr, 0);
+}
+
+void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
+{
+	int dataCount = nMsgLength / sizeof(RtRps);
+	RtRps* dataArr = (RtRps*)info;
+	for (int i = 0; i < dataCount; ++i)
+		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
+	for (auto &it : m_RtRpsHash)
+	{
+		for (auto &periodData : it.second)
+		{
+			for (auto& data : periodData.second.hash)
+			{
+				auto& rpsData = data.second;
+				CoreData cd = { 0 };
+				cd.date = rpsData.nDate;
+				cd.time = rpsData.nTime;
+				cd.value = rpsData.fPrice;
+				auto &dataMap = m_listDataMap[it.first];
+				dataMap[periodData.first][data.first]["close"] = cd;
+				cd.value = rpsData.fMacd520;
+				dataMap[periodData.first][data.first]["MACD520"] = cd;
+				cd.value = rpsData.fRps520;
+				dataMap[periodData.first][data.first]["RPS520"] = cd;
+				cd.value = rpsData.fMacd2060;
+				dataMap[periodData.first][data.first]["MACD2060"] = cd;
+				cd.value = rpsData.fRps2060;
+				dataMap[periodData.first][data.first]["RPS2060"] = cd;
+				cd.value = rpsData.fPoint520;
+				dataMap[periodData.first][data.first]["Point520"] = cd;
+				cd.value = rpsData.nRank520;
+				dataMap[periodData.first][data.first]["Rank520"] = cd;
+				cd.value = rpsData.fPoint2060;
+				dataMap[periodData.first][data.first]["Point2060"] = cd;
+				cd.value = rpsData.nRank2060;
+				dataMap[periodData.first][data.first]["Rank2060"] = cd;
+				//更新选股器数据
+				auto &filterMap = m_FilterDataMap[it.first][periodData.first].hash[data.first];
+				filterMap["LASTPX"] = rpsData.fPrice;
+				double fPreClose = m_preCloseMap.hash[data.first];
+				filterMap["CHG"] = (rpsData.fPrice - fPreClose) / fPreClose * 100;
+				filterMap["MACD520"] = rpsData.fMacd520;
+				filterMap["MACD2060"] = rpsData.fMacd2060;
+				filterMap["RPS520"] = rpsData.fRps520;
+				filterMap["RPS2060"] = rpsData.fRps2060;
+				filterMap["RANK520"] = rpsData.nRank520;
+				filterMap["RANK2060"] = rpsData.nRank2060;
+				filterMap["POINT520"] = rpsData.fPoint520;
+				filterMap["POINT2060"] = rpsData.fPoint2060;
+				filterMap["RANK520L1"] = rpsData.nL1Rank520;
+				filterMap["RANK2060L1"] = rpsData.nL1Rank2060;
+				filterMap["POINT520L1"] = rpsData.fL1Point520;
+				filterMap["POINT2060L1"] = rpsData.fL1Point2060;
+				filterMap["RANK520L2"] = rpsData.nL2Rank520;
+				filterMap["RANK2060L2"] = rpsData.nL1Rank2060;
+				filterMap["POINT520L2"] = rpsData.fL2Point520;
+				filterMap["POINT2060L2"] = rpsData.fL2Point2060;
+			}
 
 		}
 	}
@@ -1115,12 +1231,13 @@ void CWndSynHandler::OnGetPoint(int nMsgLength, const char * info)
 	memcpy_s(msg + 8, 16, &pDataMap, 8);
 	SendMsg(m_hWndMap[pDgInfo->hWnd], Syn_TodayPoint,
 		msg, 16);
-	if (Period_FenShi != pDgInfo->Period)
-		GetHisPoint(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	//if (Period_FenShi != pDgInfo->Period)
+	GetHisPoint(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
 }
 
 void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
 {
+
 	for (auto &it : m_hWndMap)
 		SendMsg(it.second, Syn_ListData, NULL, 0);
 
@@ -1135,25 +1252,38 @@ void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 		{
 			vector<pair<int, pair<char[16], CoreData>>>subDataVec;
 			::EnterCriticalSection(&m_cs);
-			auto &dataMap = m_dataVec[subInfo.first];
+			auto &dataMap = m_RtRpsHash[subInfo.first];
 			for (auto &periodDataPair : dataMap)
 			{
-				if (periodDataPair.second.count(subInfo.second))
+				if (periodDataPair.second.hash.count(subInfo.second))
 				{
 					pair<int, pair<char[16], CoreData>> data;
 					data.first = periodDataPair.first;
-					auto &tmDataMap = periodDataPair.second[subInfo.second];
-					for (auto &dataPair : tmDataMap)
+					auto &rpsData = periodDataPair.second.hash[subInfo.second];
+					data.second.second.date = rpsData.nDate;
+					data.second.second.time = rpsData.nTime;
+					data.second.second.value = rpsData.fPoint520;
+					strcpy_s(data.second.first, "Point520");
+					subDataVec.emplace_back(data);
+					data.second.second.value = rpsData.fPoint2060;
+					strcpy_s(data.second.first, "Point2060");
+					subDataVec.emplace_back(data);
+					if (subInfo.first == Group_Stock)
 					{
-						if (dataPair.first.Find("Point") != -1
-							&& !dataPair.second.empty())
-						{
-							strcpy_s(data.second.first, dataPair.first);
-							data.second.second = dataPair.second.back();
-							subDataVec.emplace_back(data);
-						}
-					}
+						data.second.second.value = rpsData.fL1Point520;
+						strcpy_s(data.second.first, "L1Point520");
+						subDataVec.emplace_back(data);
+						data.second.second.value = rpsData.fL1Point2060;
+						strcpy_s(data.second.first, "L1Point2060");
+						subDataVec.emplace_back(data);
+						data.second.second.value = rpsData.fL2Point520;
+						strcpy_s(data.second.first, "L2Point520");
+						subDataVec.emplace_back(data);
+						data.second.second.value = rpsData.fL2Point2060;
+						strcpy_s(data.second.first, "L2Point2060");
+						subDataVec.emplace_back(data);
 
+					}
 				}
 			}
 			if (!subDataVec.empty())
@@ -1275,7 +1405,6 @@ void CWndSynHandler::OnCloseInfo(int nMsgLength, const char * info)
 	m_preCloseMap.hash.clear();
 	for (int i = 0; i < dataCount; ++i)
 		m_preCloseMap.hash[dataArr[i].first] = dataArr[i].second;
-
 	for (auto &it : m_hWndMap)
 		SendMsg(m_hWndMap[it.first], Syn_CloseInfo,
 			info, nMsgLength);
@@ -1297,6 +1426,7 @@ void CWndSynHandler::SetVectorSize()
 	m_ListInsVec.resize(Group_Count);
 	m_ListInfoVec.resize(Group_Count);
 	m_listDataMap.resize(Group_Count);
+	m_FilterDataMap.resize(Group_Count);
 }
 
 void CWndSynHandler::ClearData()
@@ -1306,6 +1436,9 @@ void CWndSynHandler::ClearData()
 	m_listDataMap.clear();
 	m_ListInfoVec.clear();
 	m_commonDataMap.clear();
+	m_FilterDataMap.clear();
+	m_TFMarketHash.clear();
+	m_RtRpsHash.clear();
 }
 
 void CWndSynHandler::ReInit()
@@ -1326,6 +1459,7 @@ void CWndSynHandler::ReInit()
 	SendMsg(m_RpsProcThreadID, ClearOldData, NULL, 0);
 	WaitForSingleObject(g_hLoginEvent, INFINITE);
 	ResetEvent(g_hLoginEvent);
+	m_bFirstData = true;
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
@@ -1337,7 +1471,7 @@ void CWndSynHandler::ReInit()
 		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 			NULL, LoginMsg_WaitAndTry);
 		WaitForSingleObject(g_hLoginEvent, INFINITE);
-		ResetEvent(g_hLoginEvent);
+		//ResetEvent(g_hLoginEvent);
 		SendInfo info;
 		info.MsgType = ComSend_Connect;
 		strcpy(info.str, "StkMarket");
@@ -1358,7 +1492,7 @@ void CWndSynHandler::ReInit()
 	strInfo = L"处理当日历史数据，请等待...";
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 		(WPARAM)strInfo.GetBuffer(1), LoginMsg_UpdateText);
-	WaitForSingleObject(g_hLoginEvent, INFINITE);
+	//WaitForSingleObject(g_hLoginEvent, INFINITE);
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG, NULL, LoginMsg_HideWnd);
 
 }

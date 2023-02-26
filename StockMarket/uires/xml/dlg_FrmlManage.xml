@@ -1,0 +1,19 @@
+﻿<?xml version="1.0"?>
+<SOUI name="FrmlManager" title="公式管理器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="500" height="550" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+	<root cache="1" colorBkgnd="rgb(50,50,50)">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑"  cache="1" margin="1,1,1,1"  colorBorder="#c0c0c0ff" >
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" >公式管理器</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1"  />
+		</caption>
+		<window pos="0,30,-120,-0"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="1,0,1,1"  >
+			<treectrl  name="tc_frml" pos="0,0,-0,-0" itemHeight="30" checkBox="0" font="underline:1" colorBkgnd="#ffffff" hasLines="true" iconSkin="skin_tree_icon" colorItemSelBkgnd="#5080a0ff"/>
+		</window>
+		<window pos="[0,30,-0,-0"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="0,0,1,1">
+			<imgbtn name="btn_New" skin="skin_ButtonGrayBlack" pos="20,30,@80,@25" animate="1" text="新建" colorText="#ffffff"  />
+			<imgbtn name="btn_Change" skin="skin_ButtonGrayBlack" pos="20,[30,@80,@25" animate="1" text="修改" colorText="#ffffff" />
+			<imgbtn name="btn_Delete" skin="skin_ButtonGrayBlack" pos="20,[30,@80,@25" animate="1" text="删除" colorText="#ffffff"  />
+			<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="20,-50,@80,@25" animate="1" text="关闭" colorText="#ffffff" />
+		</window>
+	</root>
+</SOUI>

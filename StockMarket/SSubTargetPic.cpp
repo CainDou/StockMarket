@@ -606,6 +606,8 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 	CAutoRefPtr<IPen> penWhite, penYellow, oldPen,
 		penRed, penBlue, penGreen, penPurple;
 	CAutoRefPtr<IBrush> bBrush, bOldBrush;
+	if (m_nAllLineNum == 0)
+		return;
 	int width = int(m_rcImage.Width() / m_nAllLineNum / 2 + 0.5);
 
 
