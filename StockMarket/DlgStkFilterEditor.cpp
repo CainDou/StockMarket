@@ -203,7 +203,7 @@ BOOL CDlgStkFilterEditor::UpdateStrFormat(SCapsRichEdit* pEdit, SStringW & str)
 			}
 			else
 			{
-				if (isalnum(str[nPos]) || str[nPos] == '.')
+				if (iswalnum(str[nPos]) || str[nPos] == '.')
 				{
 					if (!bIsInPara)
 					{
@@ -419,7 +419,7 @@ BOOL CDlgStkFilterEditor::FrmlTest()
 		m_pEditName->SetFocus();
 		return FALSE;
 	}
-	else if (isdigit(wstrName[0]))
+	else if (iswdigit(wstrName[0]))
 	{
 		SMessageBox(NULL, L"公式名称不能以数字开头！", L"错误", MB_OK | MB_ICONERROR);
 		m_pEditName->SetFocus();
@@ -497,7 +497,7 @@ BOOL CDlgStkFilterEditor::CheckParam()
 		SStringW strName = m_pEditParaName[i]->GetWindowTextW();
 		if (strName.IsEmpty())
 			break;
-		if (!isalpha(strName[0]))
+		if (!iswalpha(strName[0]))
 		{
 			SMessageBox(NULL,
 				strErr.Format(L"参数%d错误!参数只能以字母开头", i + 1),
@@ -655,14 +655,17 @@ SStringW CDlgStkFilterEditor::GetFrmlTrans(int nFuncNum, map<int, string>& Trans
 
 void CDlgStkFilterEditor::OnBtnOK()
 {
+
 	if (FrmlTest())
 	{
 		m_FrmlInfo.name = StrW2StrA(m_pEditName->GetWindowTextW());
 		m_FrmlInfo.descption = StrW2StrA(m_pEditDscp->GetWindowTextW());
 		m_FrmlInfo.code = StrW2StrA(m_pReFrml->GetWindowTextW());
 		m_FrmlInfo.usage = StrW2StrA(m_PEditExplain->GetWindowTextW());
+		m_FrmlInfo.paraElf = StrW2StrA(m_pEditParam->GetWindowTextW());
 		m_FrmlInfo.useType = eFU_Filter;
 		m_FrmlInfo.subdivision = m_pCbxType->GetCurSel();
+
 		if (!m_bFromStkFilter)
 		{
 			if (m_bNew)
@@ -673,6 +676,7 @@ void CDlgStkFilterEditor::OnBtnOK()
 		else
 		{
 			CFrmlManager::ChangeFormula(m_FrmlInfo.name, m_FrmlInfo);
+			CFrmlManager::SaveFormulas();
 			::SendMessage(m_hParWnd, WM_FILTER_MSG, (WPARAM)&m_FrmlInfo, FilterMsg_UpdateFrml);
 		}
 

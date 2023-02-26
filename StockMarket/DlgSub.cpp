@@ -142,6 +142,8 @@ void CDlgSub::InitWorkWnd()
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
 	vector<map<int, TimeLineMap>> *pListData = g_WndSyn.GetListData();
+	vector<map<int, strHash<map<string, double>>>>* pFilterData =
+		g_WndSyn.GetFilterData();
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
 	InitConfig();
 	InitStockFilter();
@@ -150,6 +152,7 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetParThreadID(m_DataThreadID);
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
+		m_WndMap[i]->SetDataPoint(&pFilterData->at(i), DT_FilterData);
 		if (i == Group_Stock)
 		{
 			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();

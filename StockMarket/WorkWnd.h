@@ -225,14 +225,18 @@ namespace SOUI
 		strHash<int>m_MouseWheelMap;
 		map<int, TimeLineMap> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
+		map<int, strHash<map<string, double>>>* m_pFilterDataMap;
 		strHash<double> m_preCloseMap;
 		strHash<SStringA> m_StockName;
 		vector<SStringA> m_dataNameVec;
 		vector<SStringA> m_tfNameVec;
 		SFPlan m_sfPlan;
-		map<int, int> m_SFPeriodMap;
-		map<int, SStringA> m_SFIndexMap;
-		map<int, PCOMPAREFUNC> m_SFConditionMap;
+		vector<BOOL> m_frmlExistVec;
+		//map<int, int> m_SFPeriodMap;
+		//map<int, SStringA> m_SFIndexMap;
+		//map<int, PCOMPAREFUNC> m_SFConditionMap;
+
+
 		int			m_nDate;
 		BOOL		m_bListShowST;
 		BOOL		m_bListShowSBM;

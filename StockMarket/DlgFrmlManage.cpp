@@ -174,7 +174,20 @@ void SOUI::CDlgFrmlManage::OnBtnDelete()
 {
 	HSTREEITEM selItem = m_pTreeFrml->GetSelectedItem();
 	string frmlName = m_FrmlPosMap[selItem];
-	CFrmlManager::DeleteFormula(frmlName);
+	if (CFrmlManager::GetFrmlUseCount(frmlName) <= 0)
+	{
+		if (SMessageBox(m_hWnd, L"确定要删除当前公吗?",
+			L"提示", MB_ICONQUESTION | MB_OKCANCEL) == IDOK)
+			CFrmlManager::DeleteFormula(frmlName);
+		else
+			return;
+	}
+	else
+	{
+		SMessageBox(m_hWnd, L"当前公式正在使用，无法删除！",
+			L"错误", MB_ICONERROR | MB_OK);
+		return;
+	}
 	UpdateFrmlTree();
 }
 

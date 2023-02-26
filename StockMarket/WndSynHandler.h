@@ -32,6 +32,7 @@ public:
 		 strHash<SStringA>& StockNameVec);
 	vector<map<int, TimeLineMap>>* GetListData();
 	map<int, strHash<TickFlowMarket>>* GetTFMarket();
+	vector<map<int,strHash<map<string, double>>>>* GetFilterData();
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
 	strHash<double> GetCloseMap() const;
@@ -86,6 +87,7 @@ protected:
 	void OnMsgWait(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgReInit(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
+	void OnMsgRtRps(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnNoDefineMsg(SOCKET netSocket, ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -94,6 +96,7 @@ protected:
 	void OnTodayTimeLineProc(int nMsgLength, const char* info);
 	void OnUpdateLastDayEma(int nMsgLength, const char* info);
 	void OnUpdateTFMarket(int nMsgLength, const char* info);
+	void OnUpdateRtRps(int nMsgLength, const char* info);
 	void OnClearData(int nMsgLength, const char* info);
 	//同步窗口数据处理
 protected:
@@ -116,19 +119,20 @@ public:
 	vector<SStringA> m_dataNameVec;
 	vector<SStringA> m_comDataNameVec;
 	vector<SStringA> m_uniDataNameVec;
-	map<string, SStringA> m_dataInComData;
-	map<string, SStringA> m_dataInUniData;
 
 	vector<vector<SStringA>> m_SubPicShowNameVec;
 	map<int, strHash<StockInfo>> m_ListStockInfoMap;
 	strHash<SStringA> m_StockName;
 	vector<int> m_PeriodVec;
 	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
+	map<int,map<int, strHash<RtRps>>> m_RtRpsHash;
+	vector<map<int,strHash<map<string, double>>>> m_FilterDataMap;
 protected:
 	map<int, BOOL> m_NetHandleFlag;
 	char *todayDataBuffer;
 	unsigned long todayDataSize;
 	bool			m_bTodayInit;
+	bool			m_bFirstData;
 
 protected:
 	thread tLogin;
@@ -204,6 +208,11 @@ inline vector<map<int, TimeLineMap>>* CWndSynHandler::GetListData()
 inline map<int, strHash<TickFlowMarket>>* CWndSynHandler::GetTFMarket()
 {
 	return &m_TFMarketHash;
+}
+
+inline vector<map<int, strHash<map<string, double>>>>* CWndSynHandler::GetFilterData()
+{
+	return &m_FilterDataMap;
 }
 
 inline void CWndSynHandler::GetSubPicShowNameVec(

@@ -38,7 +38,7 @@ BOOL SOUI::CDlgStockFilter::OnInitDialog(EventArgs * e)
 	SStringW tmpStr;
 	for (int i = 0; i < 16; ++i)
 		m_pEditPara[i] = FindChildByName2<SEdit>(tmpStr.Format(L"edit_para%d", i + 1));
-	InitStringMap();
+	InitPeriodMap();
 	InitComboBox();
 	return TRUE;
 }
@@ -59,24 +59,21 @@ void SOUI::CDlgStockFilter::OnBtnClose()
 			else
 				m_pRdbOr->SetCheck(TRUE);
 			m_pCheckUse->SetCheck(m_bUseSF);
+			m_tmpSFPlan = m_sfPlan;
 			ShowWindow(SW_HIDE);
 		}
 	}
 	else
+	{
+		m_pCheckUse->SetCheck(m_bUseSF);
 		ShowWindow(SW_HIDE);
+	}
 
 }
 
 void SOUI::CDlgStockFilter::OnBtnOK()
 {
 	BOOL bUsed = m_pCheckUse->IsChecked();
-	if (m_bCondsChanged)
-	{
-		m_sfPlan = m_tmpSFPlan;
-		SendMsg(m_uParThreadID, WW_SaveStockFilter,
-			(char*)&bUsed, sizeof(bUsed));
-		m_bCondsChanged = FALSE;
-	}
 	if (bUsed)
 	{
 		if (m_pList->GetItemCount() == 0)
@@ -88,13 +85,38 @@ void SOUI::CDlgStockFilter::OnBtnOK()
 		}
 		else
 		{
-			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-				(char*)&bUsed, sizeof(bUsed));
+			for (auto &it : m_tmpSFPlan.condVec)
+			{
+				if (CFrmlManager::CheckNameIsUseful(it.frml))
+				{
+					SMessageBox(m_hWnd, L"组合条件中有不存在的公式！",
+						L"错误", MB_ICONERROR | MB_OK);
+					return;
+				}
+
+			}
 		}
 	}
-	else
-		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
+	if (m_bUseSF)
+	{
+		for (auto &it : m_sfPlan.condVec)
+			CFrmlManager::DecreaseFrmlUseCount(it.frml);
+	}
+	if (m_bCondsChanged)
+	{
+		m_sfPlan = m_tmpSFPlan;
+		m_bCondsChanged = FALSE;
+		SendMsg(m_uParThreadID, WW_SaveStockFilter, nullptr, 0);
+	}
+	if (bUsed)
+	{
+		for (auto &it : m_sfPlan.condVec)
+			CFrmlManager::IncreaseFrmlUseCount(it.frml);
+	}
+
+	SendMsg(m_uParThreadID, WW_ChangeStockFilter,
 		(char*)&bUsed, sizeof(bUsed));
+
 	m_bUseSF = bUsed;
 	ShowWindow(SW_HIDE);
 
@@ -105,7 +127,11 @@ void SOUI::CDlgStockFilter::InitList(bool bUse, SFPlan& sfPlan)
 	m_sfPlan = sfPlan;
 	m_tmpSFPlan = sfPlan;
 	for (int i = 0; i < sfPlan.condVec.size(); ++i)
+	{
 		ListAddItem(sfPlan.condVec[i]);
+		if (bUse)
+			CFrmlManager::IncreaseFrmlUseCount(sfPlan.condVec[i].frml);
+	}
 	m_pCheckUse->SetCheck(bUse);
 	if (sfPlan.state == CS_And)
 		m_pRdbAnd->SetCheck(TRUE);
@@ -117,16 +143,25 @@ void SOUI::CDlgStockFilter::InitComboBox()
 {
 	InitFrmlCombox();
 	for (int i = SFP_D1; i < SFP_Count; ++i)
-		m_pCbxPeriod->InsertItem(i, m_PeriodMap[i], NULL, 0);
+		m_pCbxPeriod->InsertItem(i, m_PeriodStrMap[m_PeriodMap[i]], NULL, 0);
 	m_pCbxPeriod->SetCurSel(0);
 
 }
 
 void SOUI::CDlgStockFilter::InitFrmlCombox()
 {
+	string strSel = "";
+	if (m_pCbxFrml->GetCount() > 0)
+	{
+		int nSel = m_pCbxFrml->GetCurSel();
+		if (nSel >= 0)
+			strSel = m_FrmlVec[nSel].name;
+	}
 	m_pCbxFrml->ResetContent();
 	m_FrmlVec.clear();
 	auto frmlMap = CFrmlManager::GetFormulaMap();
+	int nSel = 0;
+	int nItemCount = 0;
 	for (auto &it : frmlMap)
 	{
 		if (eFU_Filter == it.second.useType)
@@ -136,28 +171,40 @@ void SOUI::CDlgStockFilter::InitFrmlCombox()
 				StrA2StrW(it.second.descption.c_str()));
 			m_pCbxFrml->InsertItem(m_FrmlVec.size(), strTmp, NULL, 0);
 			m_FrmlVec.emplace_back(it.second);
+			if (it.second.name == strSel)
+				nSel = nItemCount;
+			++nItemCount;
 		}
 	}
 	m_pCbxFrml->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
 		Subscriber(&CDlgStockFilter::OnCbxFrmlChange, this));
-	m_pCbxFrml->SetCurSel(0);
-	ChangeParaSetting(0);
+	m_pCbxFrml->SetCurSel(nSel);
+	ChangeParaSetting(nSel);
 }
 
 
 
-void SOUI::CDlgStockFilter::InitStringMap()
+void SOUI::CDlgStockFilter::InitPeriodMap()
 {
 
 
-	m_PeriodMap[SFP_Null] = L"-";
-	m_PeriodMap[SFP_D1] = L"1日";
-	m_PeriodMap[SFP_FS] = L"分时";
-	m_PeriodMap[SFP_M1] = L"1分钟";
-	m_PeriodMap[SFP_M5] = L"5分钟";
-	m_PeriodMap[SFP_M15] = L"15分钟";
-	m_PeriodMap[SFP_M30] = L"30分钟";
-	m_PeriodMap[SFP_M60] = L"60分钟";
+	m_PeriodStrMap[Period_End] = L"-";
+	m_PeriodStrMap[Period_1Day] = L"1日";
+	m_PeriodStrMap[Period_FenShi] = L"分时";
+	m_PeriodStrMap[Period_1Min] = L"1分钟";
+	m_PeriodStrMap[Period_5Min] = L"5分钟";
+	m_PeriodStrMap[Period_15Min] = L"15分钟";
+	m_PeriodStrMap[Period_30Min] = L"30分钟";
+	m_PeriodStrMap[Period_60Min] = L"60分钟";
+
+	m_PeriodMap[SFP_Null] = Period_End;
+	m_PeriodMap[SFP_D1] = Period_1Day;
+	m_PeriodMap[SFP_FS] = Period_FenShi;
+	m_PeriodMap[SFP_M1] = Period_1Min;
+	m_PeriodMap[SFP_M5] = Period_5Min;
+	m_PeriodMap[SFP_M15] = Period_15Min;
+	m_PeriodMap[SFP_M30] = Period_30Min;
+	m_PeriodMap[SFP_M60] = Period_60Min;
 
 	//m_ReversePeriodMap[L"-"] = SFP_Null;
 	//m_ReversePeriodMap[L"1日"] = SFP_D1;
@@ -174,6 +221,7 @@ void SOUI::CDlgStockFilter::OutPutCondition(SFPlan& sfPlan)
 {
 	sfPlan = m_sfPlan;
 }
+
 
 LRESULT SOUI::CDlgStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 {
@@ -209,7 +257,7 @@ LRESULT SOUI::CDlgStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHa
 		string  strPlanName = *(string *)wp;
 		std::ofstream ofile(strPlanName);
 		if (ofile.is_open())
-			SaveConditonsList(ofile,m_tmpSFPlan);
+			SaveConditonsList(ofile, m_tmpSFPlan);
 	}
 	break;
 	case FilterMsg_ReadFrmlList:
@@ -221,6 +269,7 @@ LRESULT SOUI::CDlgStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHa
 		if (ifile.is_open())
 		{
 			ReadConditonsList(ifile, m_tmpSFPlan);
+			m_pList->DeleteAllItems();
 			for (int i = 0; i < m_tmpSFPlan.condVec.size(); ++i)
 				ListAddItem(m_tmpSFPlan.condVec[i]);
 			m_bCondsChanged = TRUE;
@@ -303,7 +352,7 @@ void SOUI::CDlgStockFilter::ListAddItem(SFCondition & sf)
 		else
 			strItem.Format(L"%s,%g", strItem, sf.paraVec[i]);
 	}
-	strItem.Format(L"%s) %s", strItem, m_PeriodMap[sf.nPeriod]);
+	strItem.Format(L"%s) %s", strItem, m_PeriodStrMap[sf.nPeriod]);
 	m_pList->InsertItem(nID, strItem);
 	m_pList->RequestRelayout();
 	//m_sfVec.emplace_back(sf);
@@ -375,32 +424,10 @@ void SOUI::CDlgStockFilter::SearchFrml(int nDirect, SStringW strKey)
 
 void SOUI::CDlgStockFilter::ChangeParaSetting(int nSel)
 {
+	if (nSel >= m_FrmlVec.size())
+		return;
 	auto &frml = m_FrmlVec[nSel];
-	//int nParaCount = frml.para.size();	
-	//if (frml.paraElf.empty())
-	//{
-	//	m_pTextParaTitle->SetVisible(TRUE, TRUE);
-	//	for (int i = 0; i < 16; ++i)
-	//	{
-	//		m_pTextParaStart[i]->SetVisible(TRUE, TRUE);
-	//		m_pEditPara[i]->SetVisible(TRUE, TRUE);
-	//		m_pTextParaEnd[i]->SetVisible(TRUE, TRUE);
-	//	}
-	//	return;
-	//}
 
-	//for (int i = 0; i < nParaCount; ++i)
-	//{
-	//	m_pTextParaStart[i]->SetVisible(TRUE, TRUE);
-	//	m_pEditPara[i]->SetVisible(TRUE, TRUE);
-	//	m_pTextParaEnd[i]->SetVisible(TRUE, TRUE);
-	//}
-	//for (int i = nParaCount; i < 16; ++i)
-	//{
-	//	m_pTextParaStart[i]->SetVisible(FALSE, TRUE);
-	//	m_pEditPara[i]->SetVisible(FALSE, TRUE);
-	//	m_pTextParaEnd[i]->SetVisible(FALSE, TRUE);
-	//}
 	string str = frml.paraElf;
 
 	size_t pos = -1;
@@ -540,9 +567,9 @@ void SOUI::CDlgStockFilter::ReadConditonsList(ifstream &fs, SFPlan &sfPlan)
 	while (nStartPos != string::npos)
 	{
 		nStartPos = msg.find("<condition>", nEndPos);
-		nEndPos = msg.find("</condition>", nStartPos);
-		if (nStartPos != string::npos && nEndPos != string::npos)
+		if (nStartPos != string::npos)
 		{
+			nEndPos = msg.find("</condition>", nStartPos);
 			SFCondition sf;
 			string condMsg = msg.substr(nStartPos + 11, nEndPos - nStartPos - 11);
 			size_t pos = 0;
@@ -550,7 +577,7 @@ void SOUI::CDlgStockFilter::ReadConditonsList(ifstream &fs, SFPlan &sfPlan)
 			{
 				if (condMsg[pos] == '\0')
 				{
-					sf.frml = condMsg.substr(0, pos - 1);
+					sf.frml = condMsg.substr(0, pos);
 					break;
 				}
 			}
@@ -598,7 +625,7 @@ void SOUI::CDlgStockFilter::OnBtnAddConditon()
 		else
 			sf.paraVec.emplace_back(frml.paraSetting[frml.para[i]].def);
 	}
-	sf.nPeriod = m_pCbxPeriod->GetCurSel();
+	sf.nPeriod = m_PeriodMap[m_pCbxPeriod->GetCurSel()];
 	ListAddItem(sf);
 	m_tmpSFPlan.condVec.emplace_back(sf);
 	m_pList->SetSelectedItem(m_pList->GetItemCount() - 1);
@@ -612,7 +639,7 @@ void SOUI::CDlgStockFilter::OnBtnDeleteCondition()
 		return;
 	m_pList->DeleteItem(nSel);
 	m_pList->RequestRelayout();
-	if(nSel > 0)
+	if (nSel > 0)
 		m_pList->SetSelectedItem(nSel - 1);
 	else
 		m_pList->SetSelectedItem(0);
@@ -681,14 +708,21 @@ void SOUI::CDlgStockFilter::OnBtnSave()
 	::EnableWindow(m_hWnd, FALSE);
 }
 
-void SOUI::CDlgStockFilter::OnRadioCliecked()
+void SOUI::CDlgStockFilter::OnRadioAndCliecked()
 {
 	if (m_pRdbAnd->IsChecked())
-		m_tmpSFPlan.state = CS_And;
-	else
-		m_tmpSFPlan.state = CS_Or;
+		return;
+	m_tmpSFPlan.state = CS_And;
 	m_bCondsChanged = TRUE;
 
+}
+
+void SOUI::CDlgStockFilter::OnRadioOrCliecked()
+{
+	if (m_pRdbOr->IsChecked())
+		return;
+	m_tmpSFPlan.state = CS_Or;
+	m_bCondsChanged = TRUE;
 }
 
 void SOUI::CDlgStockFilter::OnFinalMessage(HWND hWnd)

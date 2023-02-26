@@ -120,7 +120,7 @@ typedef struct _CalcCell
 	map<int, string> UserVar;
 	map<int, double> ConstVar;
 	double Res(const map<string, double>& SysVarMap,
-		const map<string, double>& UserVarMap);
+		const map<string, double>& UserVarMap) const;
 	bool SaveToFile(ofstream & ofile, int nLevel);
 	bool GetDataFromString(string& str,int nLevel);
 protected:

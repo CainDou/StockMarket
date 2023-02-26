@@ -17,7 +17,7 @@ namespace SOUI
 		void	InitList(bool bUse, SFPlan& sfPlan);
 		void	InitComboBox();
 		void	InitFrmlCombox();
-		void	InitStringMap();
+		void	InitPeriodMap();
 		void	OutPutCondition(SFPlan& sfPlan);
 		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 		CRect   GetLastCharRect(IRenderTarget*pRT, SStringW str,CRect clinetRC,int nLineHei);
@@ -39,7 +39,8 @@ namespace SOUI
 		void	OnBtnEdit();
 		void	OnBtnRead();
 		void	OnBtnSave();
-		void	OnRadioCliecked();
+		void	OnRadioAndCliecked();
+		void	OnRadioOrCliecked();
 
 
 	protected:
@@ -58,8 +59,8 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"btn_Delete", OnBtnDeleteCondition)
 			EVENT_NAME_COMMAND(L"btn_Save", OnBtnSave)
 			EVENT_NAME_COMMAND(L"btn_Read", OnBtnRead)
-			EVENT_NAME_COMMAND(L"rdb_and", OnRadioCliecked)
-			EVENT_NAME_COMMAND(L"rdb_or", OnRadioCliecked)
+			EVENT_NAME_COMMAND(L"rdb_and", OnRadioAndCliecked)
+			EVENT_NAME_COMMAND(L"rdb_or", OnRadioOrCliecked)
 			EVENT_MAP_END()
 
 			//HostWnd真实窗口消息处理
@@ -86,7 +87,8 @@ namespace SOUI
 		HWND m_hParWnd;
 		SStringA m_strParWnd;
 		RpsGroup	m_Group;
-		map<int, SStringW> m_PeriodMap;
+		map<int, SStringW> m_PeriodStrMap;
+		map<int, int> m_PeriodMap;
 		vector<FrmlFullInfo> m_FrmlVec;
 		SFPlan m_sfPlan;
 		SFPlan m_tmpSFPlan;

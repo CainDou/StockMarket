@@ -7,6 +7,9 @@
 set<string> CFrmlManager::m_FrmlName = set<string>();
 map<string, FrmlFullInfo>  CFrmlManager::m_FrmlMap
 = map<string, FrmlFullInfo>();
+map<string, int> CFrmlManager::m_FrmlUseMap = map<string, int>();
+CRITICAL_SECTION  CFrmlManager::m_cs = CRITICAL_SECTION();
+
 CFrmlManager::CFrmlManager()
 {
 }
@@ -18,36 +21,45 @@ CFrmlManager::~CFrmlManager()
 
 BOOL CFrmlManager::InitFrmlManage()
 {
+	::InitializeCriticalSection(&m_cs);
 	GetFormulas();
 	return 0;
 }
 
 BOOL CFrmlManager::CheckNameIsUseful(string strName)
 {
+	Lock();
 	BOOL bUseful =  m_FrmlName.count(strName) == 0;
+	UnLock();
 	return bUseful;
 }
 
 BOOL CFrmlManager::AddNewFormula(FrmlFullInfo & info)
 {
+	Lock();
 	m_FrmlMap[info.name] = info;
 	m_FrmlName.insert(info.name);
+	UnLock();
 	return TRUE;
 }
 
 BOOL CFrmlManager::ChangeFormula(string oldName, FrmlFullInfo & info)
 {
+	Lock();
 	m_FrmlMap.erase(oldName);
 	m_FrmlName.erase(oldName);
 	m_FrmlMap[info.name] = info;
 	m_FrmlName.insert(info.name);
+	UnLock();
 	return TRUE;
 }
 
 BOOL CFrmlManager::DeleteFormula(string oldName)
 {
+	Lock();
 	m_FrmlMap.erase(oldName);
 	m_FrmlName.erase(oldName);
+	UnLock();
 	return TRUE;
 }
 
@@ -59,9 +71,11 @@ BOOL CFrmlManager::SaveFormulas()
 	ofstream ofile(fileName, ios::binary);
 	if (ofile.is_open())
 	{
+		Lock();
 		for (auto &it : m_FrmlMap)
 				SaveFormula(ofile, it.second);
 		ofile.close();
+		UnLock();
 	}
 	else
 		return FALSE;
@@ -95,8 +109,10 @@ BOOL CFrmlManager::GetFormulas()
 				FrmlFullInfo info = { "" };
 				if (GetFormula(funMsg, info))
 				{
+					Lock();
 					m_FrmlMap[info.name] = info;
 					m_FrmlName.insert(info.name);
+					UnLock();
 				}
 			}
 		}
@@ -109,6 +125,32 @@ BOOL CFrmlManager::GetFormulas()
 map<string, FrmlFullInfo> CFrmlManager::GetFormulaMap()
 {
 	return m_FrmlMap;
+}
+
+const FrmlFullInfo & CFrmlManager::GetFormula(string name)
+{
+	return m_FrmlMap[name];
+}
+
+void CFrmlManager::IncreaseFrmlUseCount(string name)
+{
+	UnLock();
+	m_FrmlUseMap[name]++;
+	UnLock();
+}
+
+void CFrmlManager::DecreaseFrmlUseCount(string name)
+{
+	UnLock();
+	m_FrmlUseMap[name]--;
+	UnLock();
+}
+
+int CFrmlManager::GetFrmlUseCount(string name)
+{
+	if (m_FrmlUseMap.count(name) == 0)
+		return 0;
+	return m_FrmlUseMap[name];
 }
 
 BOOL CFrmlManager::SaveFormula(ofstream & ofile, FrmlFullInfo & info)
@@ -252,4 +294,49 @@ string CFrmlManager::GetStringData(string & str, string begTag, string endTag)
 	if (nStartPos != string::npos && nEndPos != string::npos)
 		return str.substr(nStartPos + begTag.size(), nEndPos - nStartPos - begTag.size());
 	return "";
+}
+
+BOOL CFrmlManager::InitSysFrml()
+{
+	return 0;
+}
+
+BOOL CFrmlManager::InitIndexConditionFrml()
+{
+	return 0;
+}
+
+BOOL CFrmlManager::InitFundamentalFrml()
+{
+	return 0;
+}
+
+BOOL CFrmlManager::InitRealTimeFrml()
+{
+	return 0;
+}
+
+BOOL CFrmlManager::InitTendencyFrml()
+{
+	return 0;
+}
+
+BOOL CFrmlManager::InitFormFrml()
+{
+	return 0;
+}
+
+BOOL CFrmlManager::InitOtherFrml()
+{
+	return 0;
+}
+
+void CFrmlManager::Lock()
+{
+	::EnterCriticalSection(&m_cs);
+}
+
+void CFrmlManager::UnLock()
+{
+	::LeaveCriticalSection(&m_cs);
 }

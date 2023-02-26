@@ -1481,7 +1481,7 @@ eEleType CFrmlCompiler::GetElementType(const string & str)
 	return et;
 }
 
-double _CalcCell::Res(const map<string, double>& SysVarMap, const map<string, double>& UserVarMap)
+double _CalcCell::Res(const map<string, double>& SysVarMap, const map<string, double>& UserVarMap) const
 {
 	if (!bFuncMapInited)
 	{
@@ -1492,13 +1492,16 @@ double _CalcCell::Res(const map<string, double>& SysVarMap, const map<string, do
 	for (auto &it : FucPara)
 		varMap[it.first] = it.second.Res(SysVarMap, UserVarMap);
 	for (auto &it : SysVar)
+	{
+		if (SysVarMap.count(it.second) == 0)
+			return 0;
 		varMap[it.first] = SysVarMap.at(it.second);
+	}
 	for (auto &it : UserVar)
 		varMap[it.first] = UserVarMap.at(it.second);
 	for (auto &it : ConstVar)
 		varMap[it.first] = it.second;
 	return (*FuncMap[OptOrFunc])(varMap);
-
 }
 
 bool _CalcCell::SaveToFile(ofstream & ofile, int nLevel)
@@ -1873,4 +1876,9 @@ double LESSOREQUAL(map<int, double>& paraMap)
 double UNEQUAL(map<int, double>& paraMap)
 {
 	return paraMap[0] != paraMap[1];
+}
+
+double NEG(map<int, double>& paraMap)
+{
+	return 0.0;
 }

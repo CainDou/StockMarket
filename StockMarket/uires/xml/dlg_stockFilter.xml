@@ -16,8 +16,7 @@
 			<imgbtn name="btn_Usage" skin="skin_ButtonGrayBlack" pos="[5,5,@80,@20" animate="1" text="用法注释" />
 			<imgbtn name="btn_Edit" skin="skin_ButtonGrayBlack" pos="[5,5,@80,@20" animate="1" text="查看公式" />
 			<group pos="5,30,@300,-5" align="left" headerHeight="0" text="计算参数" >
-				<text pos = "5,20,-5,-30" name = "text_paratitle" multiLines="1"  valign="top"   wordWrap="1" readOnly="1" font="size:13,face:微软雅黑" interHeight="2">参数设置
-PARAM</text>
+				<text pos = "5,20,-5,-30" name = "text_paratitle" multiLines="1"  valign="top"   wordWrap="1" readOnly="1" font="size:13,face:微软雅黑" interHeight="2">参数设置</text>
 				<!--<edit pos = "5,[4,-5,-30" name = "text_p1start" multiLines="1"  valign="top"   wordWrap="1">
 				</edit>-->
 				<edit pos = "5,40,@60,@16" name = "edit_para1" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF"/>

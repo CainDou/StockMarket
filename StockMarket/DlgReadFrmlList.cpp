@@ -71,14 +71,21 @@ void SOUI::CDlgReadFrmlList::OnBtnDelete()
 	int nSel = m_pListPlanName->GetSelectedItem();
 	if (nSel < 0)
 		return;
-	string planName =".\\filter\\";
-	planName += m_palnNameVec[nSel];
-	planName += ".sfl";
-	remove(planName.c_str());
-	for (int i = nSel; i < m_palnNameVec.size() -1; ++i)
-		m_palnNameVec[i] = m_palnNameVec[i + 1];
-	m_palnNameVec.pop_back();
-	m_bDelete = TRUE;
+	SStringW str;
+	str.Format(L"确定要删除方案:%s吗?", m_pListPlanName->GetSubItemText(nSel, 0));
+	if (SMessageBox(m_hWnd, str, L"提示", MB_ICONQUESTION | MB_OKCANCEL) == IDOK)
+	{
+		string planName = ".\\filter\\";
+		planName += m_palnNameVec[nSel];
+		planName += ".sfl";
+		remove(planName.c_str());
+		for (int i = nSel; i < m_palnNameVec.size() - 1; ++i)
+			m_palnNameVec[i] = m_palnNameVec[i + 1];
+		m_palnNameVec.pop_back();
+		m_pListPlanName->DeleteItem(nSel);
+		m_bDelete = TRUE;
+		m_pListPlanName->RequestRelayout();
+	}
 }
 
 void SOUI::CDlgReadFrmlList::OnFinalMessage(HWND hWnd)
