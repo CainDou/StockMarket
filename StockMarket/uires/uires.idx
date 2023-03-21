@@ -24,6 +24,7 @@
 		<file name="dlg_SaveFrmlList" path="xml\dlg_SaveFrmlList.xml" />
 		<file name="dlg_ReadFrmlList" path="xml\dlg_ReadFrmlList.xml" />
 		<file name="dlg_messagebox" path="xml\dlg_messagebox.xml" />
+		<file name="dlg_TradeSimulate" path="xml\dlg_TradeSimulate.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
