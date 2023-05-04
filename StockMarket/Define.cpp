@@ -69,6 +69,38 @@ bool GetFileKlineData(SStringA InsID, vector<KlineType>& dataVec, bool bIsDay)
 	return false;
 }
 
+TimePreiod & operator++(TimePreiod & tp)
+{
+
+	{
+		switch (tp)
+		{
+		case Period_FenShi:
+			tp = Period_1Min;
+			break;
+		case Period_1Min:
+			tp = Period_5Min;
+			break;
+		case Period_5Min:
+			tp = Period_15Min;
+			break;
+		case Period_15Min:
+			tp = Period_30Min;
+			break;
+		case Period_30Min:
+			tp = Period_60Min;
+			break;
+		case Period_60Min:
+			tp = Period_1Day;
+			break;
+		default:
+			tp = Period_End;
+			break;
+		}
+		return tp;
+	}
+}
+
 void InitLogFile()
 {
 	::InitializeCriticalSection(&g_csLogFile);
@@ -311,3 +343,38 @@ HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
 	return hr;
 }
 
+bool _UsedPointInfo::operator<(const _UsedPointInfo & other) const
+{
+	if (this->type != other.type)
+		return this->type < other.type;
+	else if (this->srcDataName != other.srcDataName)
+		return this->srcDataName < other.srcDataName;
+	else
+		return this->range < other.range;
+}
+
+bool _UsedPointInfo::operator==(const _UsedPointInfo & other) const
+{
+	if (this->type != other.type)
+		return false;
+	else if (this->srcDataName != other.srcDataName)
+		return false;
+	else if(this->range != other.range)
+		return false;
+	return true;
+}
+
+bool _StockFilterPara::operator<(const _StockFilterPara & other) const
+{
+	if (index1 != other.index1)
+		return index1 < other.index1;
+	if (period1 != other.period1)
+		return period1 < other.period1;
+	if (condition != other.condition)
+		return condition < other.condition;
+	if (index2 != other.index2)
+		return index2 < other.index2;
+	if (period2 != other.period2)
+		return period2 < other.period2;
+	return num < other.num;
+}

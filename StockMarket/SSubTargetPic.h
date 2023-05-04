@@ -51,7 +51,9 @@ namespace SOUI
 		SSubTargetPic();
 		~SSubTargetPic();
 
-		void		SetSubPicName(SStringA strName);
+		void		SetSubPicInfo(ShowPointInfo showInfo);
+		void		SetSubTitleInfo(SStringA strTitle);
+		ShowPointInfo GetSubPicInfo();
 		void		SetShowData(int nIndex, bool nGroup);
 		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec, vector<SStringA> dataNameVec,
 			SStringA StockID, SStringA StockName);
@@ -62,7 +64,7 @@ namespace SOUI
 		void		SetOffset2Zero();
 		CRect*		GetPicRect();
 		void		SetPicRect(CRect rc);
-		void		OnPaint(IRenderTarget *pRT);
+		void		Paint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
 		void		InitColorAndPen(IRenderTarget *pRT);
@@ -75,7 +77,7 @@ namespace SOUI
 		void		SetOffset(int nOffset);
 		void		SetShowNum(int nNum);
 		void		DrawKeyDownMouseLine(IRenderTarget * pRT,BOOL bDoubleFlash = FALSE);
-
+		BOOL		CheckIsSelectClicked(CPoint pt);
 	protected:
 		void		GetMaxDiff();		//判断坐标最大最小值和k线条数
 		BOOL		IsInRect(int x, int y);	
@@ -85,7 +87,8 @@ namespace SOUI
 		int			GetYPos(double fDiff, BOOL bIsRight);
 		void		OnTimer(char cTimerID);
 		int			OnCreate(LPCREATESTRUCT lpCreateStruct);
-		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
+		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), 
+			UINT uFormat = DT_SINGLELINE,int nSize=12);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		HandleMissData(InStockData f1, int time);
 		void		DrawMouseData(IRenderTarget * pRT, int xPos);
@@ -102,7 +105,8 @@ namespace SOUI
 		double		m_fMinR;
 		double		m_fDeltaL;
 		double		m_fDeltaR;
-		SStringW	m_strPicName;
+		SStringW	m_strTitle;
+		ShowPointInfo m_ShowInfo;
 		vector<CoreData> **m_pData;
 		vector<SStringA> m_dataNameVec;
 		vector<BOOL> m_bRightArr;
@@ -132,12 +136,23 @@ namespace SOUI
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
 		bool		m_bUseWidth;
-
+		CRect		m_rcTargetSel;
+		BOOL		m_bPenInit;
 	};
 
-	inline void SSubTargetPic::SetSubPicName(SStringA strName)
+	inline void SSubTargetPic::SetSubPicInfo(ShowPointInfo showInfo)
 	{
-		m_strPicName = StrA2StrW(strName);
+		m_ShowInfo = showInfo;
+	}
+
+	inline void SSubTargetPic::SetSubTitleInfo(SStringA strTitle)
+	{
+		m_strTitle = StrA2StrW(strTitle);
+	}
+
+	inline ShowPointInfo SSubTargetPic::GetSubPicInfo()
+	{
+		return m_ShowInfo;
 	}
 
 	inline SStringA SSubTargetPic::GetShowStock() const

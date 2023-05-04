@@ -1,0 +1,20 @@
+﻿<?xml version="1.0"?>
+<SOUI name="TargetSelect" title="选择指标" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="350" height="300" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+	<root cache="1" colorBkgnd="rgb(50,50,50)">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑"  cache="1" margin="1,1,1,1"  colorBorder="#c0c0c0ff" >
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" >选择指标</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1"  />
+		</caption>
+		<window pos="0,30,-0,-25"  cache="1" font="face:微软雅黑,size:15" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="1,0,1,1"  >
+		<listbox name="lb_target" pos="0,0,-0,-0"  hotTrack="0" itemHeight="25" colorText="#FFFFFF" colorSelText="#FFFF00" colorItemSelBkgnd="rgb(234,128,16)" text-x="40" sbSkin="skin_default_scrollbar_png" />
+		</window>
+		<window pos="0,-25,-0,-0"  cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff"  colorBorder="#c0c0c0ff" margin="1,0,1,1">
+		<edit name="edit_FindTarget" pos="10,2,150,@20]" colorText="#000000" colorBkgnd="#ffffff"/>
+		<imgbtn name="btn_Find" skin="skin_ButtonGrayBlack" pos="[10,{0,@50,@20" animate="1" text="查找" colorText="#ffffff" />
+		<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="[10,{0,@50,@20" animate="1" text="确定" colorText="#ffffff" />
+		<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[10,{0,@50,@20" animate="1" text="取消" colorText="#ffffff" />
+		</window>
+
+	</root>
+</SOUI>

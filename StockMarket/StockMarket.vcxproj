@@ -187,11 +187,11 @@
     <Text Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DataProc.cpp" />
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
     <ClCompile Include="DlgAddNew.cpp" />
     <ClCompile Include="DlgBandPara.cpp" />
+    <ClCompile Include="DlgComboStockFilter.cpp" />
     <ClCompile Include="DlgEmaPara.cpp" />
     <ClCompile Include="DlgFrmlFind.cpp" />
     <ClCompile Include="DlgFuncInsert.cpp" />
@@ -203,6 +203,7 @@
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
     <ClCompile Include="DlgSaveFrmlList.cpp" />
+    <ClCompile Include="DlgSelTarget.cpp" />
     <ClCompile Include="DlgStkFilterEditor.cpp" />
     <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
@@ -238,11 +239,11 @@
     <ResourceCompile Include="StockMarket.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DataProc.h" />
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="DlgAddNew.h" />
     <ClInclude Include="DlgBandPara.h" />
+    <ClInclude Include="DlgComboStockFilter.h" />
     <ClInclude Include="DlgEmaPara.h" />
     <ClInclude Include="DlgFrmlFind.h" />
     <ClInclude Include="DlgFuncInsert.h" />
@@ -254,6 +255,7 @@
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
     <ClInclude Include="DlgSaveFrmlList.h" />
+    <ClInclude Include="DlgSelTarget.h" />
     <ClInclude Include="DlgStkFilterEditor.h" />
     <ClInclude Include="DlgStockFilter.h" />
     <ClInclude Include="DlgSub.h" />
@@ -295,11 +297,13 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="uires\smenu\menu_new.xml" />
     <Xml Include="uires\uidef\init.xml" />
     <Xml Include="uires\values\color.xml" />
     <Xml Include="uires\values\skin.xml" />
     <Xml Include="uires\values\string.xml" />
     <Xml Include="uires\xml\dlg_main.xml" />
+    <Xml Include="uires\xml\dlg_stockFilter.xml" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="uires\image\soui.ico" />

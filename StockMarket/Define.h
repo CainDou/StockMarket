@@ -21,6 +21,8 @@ typedef char SecurityID[8];
 #define MAX_DATA_COUNT		10500
 #define MAX_MA_COUNT		4
 
+#define MAX_NAME_LENGTH		32
+
 struct hash_SStringA
 {
 	size_t operator()(const SStringA& str) const
@@ -36,7 +38,25 @@ public:
 	unordered_map<SStringA, type, hash_SStringA> hash;
 };
 
+template<typename type>
+struct strVecHash
+{
+	unordered_map<SStringA, vector<type>,
+		hash_SStringA> vecHash;
+};
 
+
+template<typename type>
+struct strMapHash
+{
+	unordered_map<SStringA, map<SStringA, type>, hash_SStringA> mapHash;
+};
+
+template<typename type>
+struct strMapVecHash
+{
+	unordered_map<SStringA, map<SStringA, vector<type>>, hash_SStringA> mapVecHash;
+};
 
 
 //typedef struct _TimeLineData
@@ -63,8 +83,8 @@ typedef struct  _TimeLineData
 }TimeLineData;
 
 
-typedef unordered_map<SStringA, map<SStringA, CoreData>, hash_SStringA> TimeLineMap;
-typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> TimeLineArrMap;
+//typedef unordered_map<SStringA, map<SStringA, CoreData>, hash_SStringA> TimeLineMap;
+//typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> TimeLineArrMap;
 
 
 enum RecvMsgType
@@ -73,7 +93,7 @@ enum RecvMsgType
 	RecvMsg_RTTimeLine,
 	RecvMsg_TodayTimeLine,
 	RecvMsg_NoUse,
-	RecvMsg_HisPoint,
+	RecvMsg_HisRpsPoint,
 	RecvMsg_LastDayEma,
 	RecvMsg_RTIndexMarket,
 	RecvMsg_RTStockMarket,
@@ -85,16 +105,19 @@ enum RecvMsgType
 	RecvMsg_Reinit,
 	RecvMsg_RTTFMarket,
 	RecvMsg_RTRps,
+	RecvMsg_HisSecPoint,
+
 };
 
 enum SendMsgType
 {
 	SendType_MsgNoUse = 100,
-	SendType_GetHisPoint,
+	SendType_GetHisRpsPoint,
 	SendType_IndexMarket,
 	SendType_StockMarket,
 	SendType_HisPeriodKline,
 	SendType_SubIns,
+	SendType_GetHisSecPoint,
 
 };
 
@@ -196,7 +219,7 @@ typedef struct _ReceivePointInfo
 			&ri, sizeof(ri));
 	}
 	int MsgType;
-	char InsID[10];
+	char Message[10];
 	int Group;
 	int Period;
 	unsigned long TotalDataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
@@ -211,14 +234,24 @@ enum SListHead
 	SHead_Name,
 	SHead_LastPx,
 	SHead_ChangePct,
-	SHead_RPS520,
-	SHead_MACD520,
-	SHead_Point520,
-	SHead_Rank520,
-	SHead_RPS2060,
-	SHead_MACD2060,
-	SHead_Point2060,
-	SHead_Rank2060,
+	SHead_CloseRPS520,
+	SHead_CloseMACD520,
+	SHead_ClosePoint520,
+	SHead_CloseRank520,
+	SHead_CloseRPS2060,
+	SHead_CloseMACD2060,
+	SHead_ClosePoint2060,
+	SHead_CloseRank2060,
+	SHead_AmountRPS520,
+	SHead_AmountMACD520,
+	SHead_AmountPoint520,
+	SHead_AmountRank520,
+	SHead_AmountRPS2060,
+	SHead_AmountMACD2060,
+	SHead_AmountPoint2060,
+	SHead_AmountRank2060,
+	SHead_AmountPoint,
+	SHead_AmountRank,
 	SHead_CommonItmeCount,
 	SHead_TickFlowStart = SHead_CommonItmeCount,
 	SHead_ActBuySellRatio = SHead_TickFlowStart,
@@ -257,32 +290,32 @@ SStringW StrA2StrW(const SStringA &sstrSrcA);
 
 SStringA StrW2StrA(const SStringW &cstrSrcW);
 
-int SendMsg(unsigned uThreadId, unsigned MsgType,const char *SendBuf, unsigned BufLen);
+int SendMsg(unsigned uThreadId, unsigned MsgType, const char *SendBuf, unsigned BufLen);
 int	RecvMsg(int  msgQId, char** buf, int& length, int timeout);
 
 enum DataProcType
 {
-	UpdateData=10000,
+	UpdateData = 10000,
 	UpdateTodayData,
 	UpdateLastDayEma,
 	ClearOldData,
 	UpdateTFMarket,
 	UpdateRtRps,
-	Msg_ReInit=77777,
+	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };
 
 enum SynMsg
 {
-	Syn_AddWnd=20000,
+	Syn_AddWnd = 20000,
 	Syn_RemoveWnd,
 	Syn_ListData,
 	Syn_GetMarket,
 	Syn_GetKline,
 	Syn_GetPoint,
 	Syn_Point,
-	Syn_TodayPoint,
-	Syn_HisPoint,
+	Syn_NoUse,
+	Syn_HisRpsPoint,
 	Syn_RTIndexMarket,
 	Syn_RTStockMarket,
 	Syn_HisIndexMarket,
@@ -291,6 +324,8 @@ enum SynMsg
 	Syn_CloseInfo,
 	Syn_Reinit,
 	Syn_FilterData,
+	Syn_GetSecPoint,
+	Syn_HisSecPoint,
 
 };
 
@@ -301,8 +336,8 @@ enum WorkWndMsg
 	WW_GetKline,
 	WW_GetPoint,
 	WW_Point,
-	WW_TodayPoint,
-	WW_HisPoint,
+	WW_NoUse,
+	WW_HisRpsPoint,
 	WW_RTIndexMarket,
 	WW_RTStockMarket,
 	WW_HisIndexMarket,
@@ -320,6 +355,8 @@ enum WorkWndMsg
 	WW_InnerMsgEnd,
 	WW_ChangeStockFilter,
 	WW_SaveStockFilter,
+	WW_HisSecPoint,
+
 };
 
 
@@ -346,6 +383,7 @@ enum WDMSG
 	WDMsg_OpenWindow,
 	WDMsg_ChangeStockFilter,
 	WDMsg_SaveStockFilter,
+	WDMsg_ChangePointTarget,
 	WDMsg_Exit,
 
 };
@@ -426,16 +464,17 @@ typedef struct CommonIndexMarket
 };
 
 
-typedef struct KlineType
+typedef struct _KlineWithAmount
 {
+	int date;		//日期
+	int time;		//时间
 	double open;	//开
 	double high;	//高
 	double low;		//低
 	double close;	//收
 	double vol;		//量
-	int date;		//日期
-	int time;		//时间
-};
+	double amount;	//金额
+}KlineType;
 
 typedef struct MACDType
 {
@@ -588,8 +627,11 @@ typedef struct _AllKPIC_INFO {
 	double			fMa[MAX_MA_COUNT][MAX_DATA_COUNT];
 	double			fMax;
 	double			fMin;
-	double			fSubMax;
-	double			fSubMin;
+	double			fVolMax;
+	double			fVolMin;
+	double			fAmountMax;
+	double			fAmountMin;
+	double			fLastAmount;
 	int				nLast1MinTime;		//最新更新所用的1MinK线的时间
 	int				nLastVolume;		//最后使用K线更新时累计的区间内成交量
 	int				nLastTradingDay;	//最后使用K线更新的交易日
@@ -605,8 +647,8 @@ typedef struct _AllKPIC_INFO {
 		ZeroMemory(fMa, sizeof(fMa));
 		fMax = 0;
 		fMin = 0;
-		fSubMax = 0;
-		fSubMin = 0;
+		fVolMax = 0;
+		fVolMin = 0;
 		nTotal = 0;
 		nLast1MinTime = 0;
 		nLastVolume = 0;
@@ -683,6 +725,8 @@ enum TimePreiod
 	Period_End = 65535,
 };
 
+TimePreiod& operator ++(TimePreiod &tp);
+
 void InitLogFile();
 void TraceLog(char* log, ...);
 
@@ -705,7 +749,7 @@ typedef struct LoginInfo
 
 enum FSMSG
 {
-	FSMSG_UPDATE=0,
+	FSMSG_UPDATE = 0,
 	FSMSG_EMA,
 	FSMSG_MACD,
 	FSMSG_COUNT,
@@ -719,26 +763,29 @@ enum KLINEMSG
 	KLINEMSG_BAND,
 };
 
-enum DATAMSG
-{
-	DM_MARKET = 0,
-	DM_HISKLINE,
-	DM_HISPOINT,
-};
-
 enum FSMenu
 {
 	FM_Return = 100,
 	FM_Deal,
 	FM_Volume,
 	FM_MACD,
-	FM_RPS,
+	//FM_RPS,
+	FM_PonitWndNum,
 	FM_MacdPara,
 	FM_Avg,
 	FM_EMA,
 	FM_EmaPara,
-	FM_L1RPS,
-	FM_L2RPS,
+	//FM_L1RPS,
+	//FM_L2RPS,
+	FM_PointWnd0,
+	FM_PointWnd1,
+	FM_PointWnd2,
+	FM_PointWnd3,
+	FM_PointWnd4,
+	FM_PointWnd5,
+	FM_PointWnd6,
+	FM_PointWnd7,
+	FM_PointWnd8,
 	FM_End,
 };
 
@@ -750,12 +797,23 @@ enum KlineMenu
 	KM_Band,
 	KM_Volume,
 	KM_MACD,
-	KM_RPS,
+	//KM_RPS,
+	KM_PonitWndNum,
 	KM_MacdPara,
 	KM_BandPara,
 	KM_MaPara,
-	KM_L1RPS,
-	KM_L2RPS,
+	//KM_L1RPS,
+	//KM_L2RPS,
+	KM_PointWnd0,
+	KM_PointWnd1,
+	KM_PointWnd2,
+	KM_PointWnd3,
+	KM_PointWnd4,
+	KM_PointWnd5,
+	KM_PointWnd6,
+	KM_PointWnd7,
+	KM_PointWnd8,
+
 	KM_End,
 };
 
@@ -765,6 +823,14 @@ enum WDMenu
 	WDM_New,
 	WDM_Open,
 	WDM_End,
+};
+
+//指标选择
+enum TSMenu
+{
+	TSM_Close = 400,
+	TSM_Select,
+	TSM_End,
 };
 
 enum ReceiveCommonMsgType
@@ -793,9 +859,10 @@ typedef struct _DataGetInfo
 	int Period;
 }DataGetInfo;
 
-enum 
+
+enum
 {
-	DT_ListData=0,
+	DT_ListData = 0,
 	DT_TFMarket,
 	DT_FilterData,
 	DT_IndexMarket,
@@ -804,52 +871,10 @@ enum
 	DT_Point,
 };
 
-typedef struct InitPara
-{
-	bool bShowMA;
-	bool bShowBandTarget;
-	bool bShowAverage;
-	bool bShowEMA;
-	bool bShowTSCMACD;
-	bool bShowTSCVolume;
-	bool bShowKlineVolume;
-	bool bShowKlineMACD;
-	bool bShowTSCRPS[3];
-	bool bShowKlineRPS[3];
-	int  nWidth;
-	bool bShowTSCDeal;
-	bool bShowKlineDeal;
-	int  nEMAPara[2];
-	int  nMACDPara[3];
-	int	 nMAPara[4];
-	int	 nJiange;
-	BandPara_t  BandPara;
-	int Period;
-	bool Connect1;
-	bool Connect2;
-	char ShowIndy[8];
-	bool UseStockFilter;
-	bool ListShowST;
-	bool ListShowSBM;
-	bool ListShowSTARM;
-	bool ListShowNewStock;
-	InitPara() :bShowMA(true), bShowBandTarget(false),
-		bShowAverage(true), bShowEMA(true),
-		bShowTSCMACD(true), bShowTSCVolume(false),
-		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
-		bShowKlineRPS{ false ,false,false }, nWidth(9),
-		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
-		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
-		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
-		Connect1(false), Connect2(false), ShowIndy(""),UseStockFilter(false),
-		ListShowST(true), ListShowSBM(true),
-		ListShowSTARM(true), ListShowNewStock(true)
-	{}
-}InitPara_t;
 
 enum SF_FUNC
 {
-	SFF_Add=0,
+	SFF_Add = 0,
 	SFF_Change,
 	SFF_Delete,
 	SFF_Count,
@@ -858,7 +883,7 @@ enum SF_FUNC
 enum SF_PERIOD
 {
 	SFP_Null = -1,
-	SFP_D1=0,
+	SFP_D1 = 0,
 	SFP_FS,
 	SFP_M1,
 	SFP_M5,
@@ -870,26 +895,87 @@ enum SF_PERIOD
 
 enum SF_INDEX
 {
-	SFI_ChgPct =0,
-	SFI_Rps520,
-	SFI_Macd520,
-	SFI_Point520,
-	SFI_Rank520,
-	SFI_Rps2060,
-	SFI_Macd2060,
-	SFI_Point2060,
-	SFI_Rank2060,
+	SFI_ChgPct = 0,
+	SFI_CloseRps520,
+	SFI_CloseMacd520,
+	SFI_ClosePoint520,
+	SFI_CloseRank520,
+	SFI_CloseRps2060,
+	SFI_CloseMacd2060,
+	SFI_ClosePoint2060,
+	SFI_CloseRank2060,
 	SFI_Num,
 	SFI_ABSR,
 	SFI_A2PBSR,
 	SFI_AABSR,
 	SFI_POCR,
+	SFI_Vol,
+	SFI_Amount,
+	SFI_AmountRps520,
+	SFI_AmountMacd520,
+	SFI_AmountPoint520,
+	SFI_AmountRank520,
+	SFI_AmountRps2060,
+	SFI_AmountMacd2060,
+	SFI_AmountPoint2060,
+	SFI_AmountRank2060,
+	SFI_AmountPoint,
+	SFI_AmountRank,
+	SFI_CloseRps520L1,
+	SFI_CloseMacd520L1,
+	SFI_ClosePoint520L1,
+	SFI_CloseRank520L1,
+	SFI_CloseRps2060L1,
+	SFI_CloseMacd2060L1,
+	SFI_ClosePoint2060L1,
+	SFI_CloseRank2060L1,
+	SFI_AmountRps520L1,
+	SFI_AmountMacd520L1,
+	SFI_AmountPoint520L1,
+	SFI_AmountRank520L1,
+	SFI_AmountRps2060L1,
+	SFI_AmountMacd2060L1,
+	SFI_AmountPoint2060L1,
+	SFI_AmountRank2060L1,
+	SFI_AmountPointL1,
+	SFI_AmountRankL1,
+	SFI_CloseRps520L2,
+	SFI_CloseMacd520L2,
+	SFI_ClosePoint520L2,
+	SFI_CloseRank520L2,
+	SFI_CloseRps2060L2,
+	SFI_CloseMacd2060L2,
+	SFI_ClosePoint2060L2,
+	SFI_CloseRank2060L2,
+	SFI_AmountRps520L2,
+	SFI_AmountMacd520L2,
+	SFI_AmountPoint520L2,
+	SFI_AmountRank520L2,
+	SFI_AmountRps2060L2,
+	SFI_AmountMacd2060L2,
+	SFI_AmountPoint2060L2,
+	SFI_AmountRank2060L2,
+	SFI_AmountPointL2,
+	SFI_AmountRankL2,
+	SFI_ABV,
+	SFI_ASV,
+	SFI_ABO,
+	SFI_ASO,
+	SFI_PBO,
+	SFI_PSO,
+
+	SFI_Open,
+	SFI_High,
+	SFI_Low,
+	SFI_Close,
+
 	SFI_Count,
+
 };
 
 enum SF_CONDITION
 {
-	SFC_Greater=0,
+	SFC_Greater = 0,
 	SFC_EqualOrGreater,
 	SFC_Equal,
 	SFC_EqualOrLess,
@@ -906,7 +992,7 @@ typedef struct _StockFilterCondition
 
 enum ConditionsState
 {
-	CS_And=0,
+	CS_And = 0,
 	CS_Or,
 };
 
@@ -928,7 +1014,7 @@ enum SF_LISTHEAD
 
 enum SF_DOMAIN
 {
-	SFD_ST=0,
+	SFD_ST = 0,
 	SFD_SBM,
 	SFD_STARM,
 	SFD_NewStock,
@@ -965,7 +1051,7 @@ void OutputDebugStringFormat(char *fmt, ...);
 
 enum FUNCMSG
 {
-	FNCMsg_InsertFunc=0,
+	FNCMsg_InsertFunc = 0,
 };
 
 
@@ -977,7 +1063,7 @@ enum FORMULAMSG
 
 enum FILTERMSG
 {
-	FilterMsg_ReinitFrml=0,
+	FilterMsg_ReinitFrml = 0,
 	FilterMsg_Search,
 	FilterMsg_UpdateFrml,
 	FilterMsg_SaveFrmlList,
@@ -987,22 +1073,16 @@ enum FILTERMSG
 
 enum SerachDir
 {
-	SD_Up=0,
+	SD_Up = 0,
 	SD_Down
 };
 
-HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[],size_t arrySize,LPCTSTR filePath);
+HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[], size_t arrySize, LPCTSTR filePath);
 HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
-	COMDLG_FILTERSPEC fileType[], size_t arrySize,LPCTSTR filePath);
+	COMDLG_FILTERSPEC fileType[], size_t arrySize, LPCTSTR filePath);
 
-typedef struct _RtRpsData
+typedef struct _rpsdata
 {
-	SecurityID SecurityID;
-	int nGroup;
-	double fPrice;
-	int nDate;
-	int nTime;
-	int nPeriod;
 	double fMacd520;
 	double fMacd2060;
 	double fRps520;
@@ -1019,4 +1099,142 @@ typedef struct _RtRpsData
 	double fL2Point2060;
 	int	nL2Rank520;
 	int nL2Rank2060;
+}sRps;
+
+typedef struct _sectionData
+{
+	double point;
+	double pointL1;
+	double pointL2;
+	int rank;
+	int rankL1;
+	int rankL2;
+}sSection;
+
+typedef struct _RtRpsData
+{
+	SecurityID SecurityID;
+	int nGroup;
+	double fPrice;
+	int nDate;
+	int nTime;
+	int nPeriod;
+	sRps rpsClose;
+	sRps rpsAmount;
+	sSection secAmount;
 }RtRps;
+
+inline double EMA(int nCount, double preEMA, double data)
+{
+	return preEMA*(nCount - 1) / (nCount + 1) + data * 2 / (nCount + 1);
+}
+
+enum ePointType
+{
+	eRpsPoint = 0,
+	eSecPoint,
+};
+
+typedef struct _UsedPointInfo
+{
+	ePointType type;
+	SStringA srcDataName;
+	SStringA range;
+	SStringA showName;
+	bool operator <(const _UsedPointInfo& other) const;
+	bool operator ==(const _UsedPointInfo& other) const;
+}ShowPointInfo;
+
+ 
+
+// 具体的打分数据类型
+enum ePointDataType
+{
+	eFullMarketPointStart,
+	eRpsPoint_Close = eFullMarketPointStart,
+	eRpsPoint_Amount,
+	eSecPoint_Amount,
+	eFullMarketPointEnd,
+	eIndyMarketPointStart = eFullMarketPointEnd,
+	eRpsPoint_L1_Close = eIndyMarketPointStart,
+	eRpsPoint_L2_Close,
+	eRpsPoint_L1_Amount,
+	eRpsPoint_L2_Amount,
+	eSecPoint_L1_Amount,
+	eSecPoint_L2_Amount,
+	eIndyMarketPointEnd,
+};
+
+typedef struct _ExDataDetInfo :public DataGetInfo
+{
+	ePointType Type;
+	char* exMsg;
+}ExDataGetInfo;
+
+
+typedef struct InitPara
+{
+	bool bShowMA;
+	bool bShowBandTarget;
+	bool bShowAverage;
+	bool bShowEMA;
+	bool bShowTSCMACD;
+	bool bShowTSCVolume;
+	bool bShowKlineVolume;
+	bool bShowKlineMACD;
+	bool bShowTSCRPS[3];
+	bool bShowKlineRPS[3];
+	int  nWidth;
+	bool bShowTSCDeal;
+	bool bShowKlineDeal;
+	int  nEMAPara[2];
+	int  nMACDPara[3];
+	int	 nMAPara[4];
+	int	 nJiange;
+	BandPara_t  BandPara;
+	int Period;
+	bool Connect1;
+	bool Connect2;
+	char ShowIndy[8];
+	bool UseStockFilter;
+	bool ListShowST;
+	bool ListShowSBM;
+	bool ListShowSTARM;
+	bool ListShowNewStock;
+	int nTSCPointWndNum;
+	int nKlinePointWndNum;
+	vector<ShowPointInfo> TSCPonitWndInfo;
+	vector<ShowPointInfo> KlinePonitWndInfo;
+
+	InitPara() :bShowMA(true), bShowBandTarget(false),
+		bShowAverage(true), bShowEMA(true),
+		bShowTSCMACD(true), bShowTSCVolume(false),
+		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
+		bShowKlineRPS{ false ,false,false }, nWidth(9),
+		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
+		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
+		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
+		Connect1(false), Connect2(false), ShowIndy(""), UseStockFilter(false),
+		ListShowST(true), ListShowSBM(true),
+		ListShowSTARM(true), ListShowNewStock(true)
+	{}
+}InitPara_t;
+
+enum eSortDataType
+{
+	eSDT_Double=0,
+	eSDT_Int,
+	eSDT_String,
+	eSDT_BigDouble,
+};
+
+typedef struct _StockFilterPara
+{
+	bool operator <(const _StockFilterPara& other) const;
+	double num;
+	int index1;
+	int period1;
+	int condition;
+	int index2;
+	int period2;
+}StockFilter;

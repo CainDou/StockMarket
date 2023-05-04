@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <SOUI name="wnd_work" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,1,1,1" translucent="0" colorBorder="#FF0000">
 	<root cache="1" colorBkgnd="#000000ff" focusable="1">
 		<window pos="0,0,-0,-0" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" translucent="0">
@@ -27,14 +27,24 @@
 						<item width="110">证券名称</item>
 						<item width="75">最新价</item>
 						<item width="60">涨幅%</item>
-						<item width="65">rps520</item>
-						<item width="80">MACD520</item>
-						<item width="65">520分数</item>
-						<item width="60">520排名</item>
-						<item width="70">rps2060</item>
-						<item width="90">MACD2060</item>
-						<item width="70">2060分数</item>
-						<item width="65">2060排名</item>
+						<item width="95">收盘价rps520</item>
+						<item width="120">收盘价MACD520</item>
+						<item width="105">收盘价520分数</item>
+						<item width="105">收盘价520排名</item>
+						<item width="110">收盘价rps2060</item>
+						<item width="130">收盘价MACD2060</item>
+						<item width="115">收盘价2060分数</item>
+						<item width="115">收盘价2060排名</item>
+						<item width="95">成交额rps520</item>
+						<item width="120">成交额MACD520</item>
+						<item width="105">成交额520分数</item>
+						<item width="105">成交额520排名</item>
+						<item width="110">成交额rps2060</item>
+						<item width="130">成交额MACD2060</item>
+						<item width="115">成交额2060分数</item>
+						<item width="115">成交额2060排名</item>
+						<item width="130">成交额截面分数</item>
+						<item width="130">成交额截面排名</item>
 					</items>
 				</headerex>
 			</color_listctrlex>

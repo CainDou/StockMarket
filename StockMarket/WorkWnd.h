@@ -8,6 +8,8 @@ namespace SOUI
 	class SKlinePic;
 	class CDlgKbElf;
 	class CDlgStockFilter;
+	class CDlgComboStockFilter;
+
 	class CWorkWnd : public SHostWnd
 	{
 		typedef void(CWorkWnd::*PDATAHANDLEFUNC)(int, const char*);
@@ -25,8 +27,8 @@ namespace SOUI
 		void		SetDataPoint(void* pData, int DataType);
 		void		SetPicUnHandled();
 		void		ReSetPic();
-		void		UpdateTodayPointData(SStringA pointName,
-			vector<CoreData> &dataVec, bool bLast);
+		//void		UpdateTodayPointData(SStringA pointName,
+		//	vector<CoreData> &dataVec, bool bLast);
 		unsigned	GetThreadID() const;
 		RpsGroup	GetGroup() const;
 		void		SetListInfo(vector<StockInfo>& infoVec,
@@ -35,7 +37,11 @@ namespace SOUI
 		void		SetParThreadID(UINT uThreadID);
 		void		CloseWnd();
 		void		OutputStockFilterPara(SFPlan &sfPlan);
+		void		OutputComboStockFilterPara(vector<StockFilter>& sfVec);
 		void		InitStockFilterPara(SFPlan &sfPlan);
+		void		InitComboStockFilterPara(vector<StockFilter>& sfVec);
+		void		SetPointInfo(map<ePointDataType, ShowPointInfo> &infoMap);
+
 		// 消息响应
 	protected:
 		void	OnInit(EventArgs *e);
@@ -44,9 +50,11 @@ namespace SOUI
 		LRESULT OnKlineMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 		void	OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
+		void	OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnRButtonUp(UINT nFlags, CPoint point);
+		void	OnLButtonUp(UINT nFlags, CPoint point);
 		BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 		void	SwitchPic2List();
 		void	SwitchList2Pic(int nPeriod);
@@ -65,11 +73,16 @@ namespace SOUI
 	public:
 		void UpdateListShowStock();
 		void UpdateList();
+		void UpdateRpsData(int nRow, sRps &rps, int nStart, int nEnd);
+		void UpdateSecData(int nRow, sSection &sec, int nStart, int nEnd);
+		void UpdateTFData(int nRow, TickFlowMarket& tfData,double fPreClose);
 		void UpdateListFilterShowStock();
 		void SortList(SColorListCtrlEx* pList, bool bSortCode = false);
 
 		bool CheckStockFitDomain(StockInfo& si);
 		bool CheckStockDataPass(SFCondition& sf,SStringA StockID);
+		bool CheckCmbStockDataPass(StockFilter& sf, SStringA StockID);
+
 		bool GreaterThan(double a, double b);
 		bool EqualOrGreaterThan(double a, double b);
 		bool Equal(double a, double b);
@@ -81,6 +94,8 @@ namespace SOUI
 		int static __cdecl SortInt(void *para1,
 			const void* para2, const void*para3);
 		int static __cdecl SortStr(void *para1,
+			const void* para2, const void*para3);
+		int static __cdecl SortBigDouble(void *para1,
 			const void* para2, const void*para3);
 
 		//按钮响应
@@ -108,8 +123,8 @@ namespace SOUI
 		void OnBtnShowTypeChange(bool bFroceList = false);
 		void OnBtnPeriedChange(int nPeriod);
 		void SetListShowIndyStr(SStatic* pText);
-		void SetFenShiShowData();
-		void SetKlineShowData(int nPeriod, BOOL bNeedReCalc);
+		void SetFenShiShowData(vector<ShowPointInfo>&infoVec,int nStartWnd = 0);
+		void SetKlineShowData(vector<ShowPointInfo>&infoVec,int nPeriod, BOOL bNeedReCalc,int nStartWnd = 0);
 		void GetBelongingIndyName(vector<SStringA>& nameVec);
 
 		//订阅功能
@@ -117,20 +132,24 @@ namespace SOUI
 		void SetSelectedPeriod(int nPeriod);
 		void ShowPicWithNewID(SStringA stockID,bool bForce = false);
 		void SetDataFlagFalse();
+		void GetPointData(ShowPointInfo &info, SStringA StockID,int nPeriod);
 		//数据更新处理
+		void UpdateTmData(vector<CoreData>& comData, CoreData& data);
 	protected:
 		//外部消息处理
 		void OnUpdateListData(int nMsgLength, const char* info);
 		void OnUpdatePoint(int nMsgLength, const char* info);
-		void OnUpdateTodayPoint(int nMsgLength, const char* info);
+		//void OnUpdateTodayPoint(int nMsgLength, const char* info);
 		void OnUpdateHisKline(int nMsgLength, const char* info);
-		void OnUpdateHisPoint(int nMsgLength, const char* info);
+		void OnUpdateHisRpsPoint(int nMsgLength, const char* info);
 		void OnUpdateIndexMarket(int nMsgLength, const char* info);
 		void OnUpdateStockMarket(int nMsgLength, const char* info);
 		void OnUpdateHisIndexMarket(int nMsgLength, const char* info);
 		void OnUpdateHisStockMarket(int nMsgLength, const char* info);
 		void OnUpdateCloseInfo(int nMsgLength, const char* info);
 		void OnChangeShowIndy(int nMsgLength, const char* info);
+		void OnUpdateHisSecPoint(int nMsgLength, const char* info);
+
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
 		void OnFenShiMacd(int nMsgLength, const char* info);
@@ -140,9 +159,12 @@ namespace SOUI
 		void OnChangeStockFilter(int nMsgLength, const char* info);
 		void OnSaveStockFilter(int nMsgLength, const char* info);
 
-
-		void ProcHisPointFromMsg(ReceivePointInfo*pRecvInfo, const char* info,
-			SStringA dataName1, SStringA dataName2);
+		//辅助函数
+		BOOL GetAttPara(char * msg, map<SStringA, SStringA>& paraMap);
+		void ProcHisRpsPointFromMsg(ReceivePointInfo*pRecvInfo, const char* info,
+			SStringA dataName1, SStringA dataName2,char* attchMsg,int attMsgSize);
+		void ProcHisSecPointFromMsg(ReceivePointInfo*pRecvInfo, const char* info,
+			SStringA dataName, char* attchMsg, int attMsgSize);
 
 
 	protected:
@@ -172,10 +194,13 @@ namespace SOUI
 			MESSAGE_HANDLER(WM_KLINE_MSG, OnKlineMsg)
 			COMMAND_RANGE_HANDLER_EX(FM_Return, FM_End, OnFSMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(KM_Return, KM_End, OnKlineMenuCmd)
+			COMMAND_RANGE_HANDLER_EX(TSM_Close, TSM_End, OnTarSelMenuCmd)
+
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_MOUSEWHEEL(OnMouseWheel)
 			MSG_WM_KEYUP(OnKeyUp)
 			MSG_WM_RBUTTONUP(OnRButtonUp)
+			MSG_WM_LBUTTONUP(OnLButtonUp)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()
@@ -196,6 +221,7 @@ namespace SOUI
 		SImageButton* m_pPreSelBtn;
 		CDlgKbElf* m_pDlgKbElf;
 		CDlgStockFilter *m_pDlgStockFilter;
+		CDlgComboStockFilter *m_pDlgCmbStockFilter;
 		SCheckBox*	  m_pCheckST;
 		SCheckBox*	  m_pCheckSBM;
 		SCheckBox*	  m_pCheckSTARM;
@@ -220,10 +246,11 @@ namespace SOUI
 	protected:
 		bool		m_bListInited;
 		BOOL		m_bUseStockFilter;
-		vector<vector<SStringA>> m_SubPicShowNameVec;
+		//vector<vector<SStringA>> m_SubPicShowNameVec;
+		map< ePointType, map<SStringA, vector<SStringA>>>m_SubPicShowNameVec;
 		strHash<int>m_ListPosMap;
 		strHash<int>m_MouseWheelMap;
-		map<int, TimeLineMap> *m_pListDataMap;
+		map<int, strHash<RtRps>> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
 		map<int, strHash<map<string, double>>>* m_pFilterDataMap;
 		strHash<double> m_preCloseMap;
@@ -231,10 +258,12 @@ namespace SOUI
 		vector<SStringA> m_dataNameVec;
 		vector<SStringA> m_tfNameVec;
 		SFPlan m_sfPlan;
+		vector<StockFilter> m_sfVec;
 		vector<BOOL> m_frmlExistVec;
-		//map<int, int> m_SFPeriodMap;
-		//map<int, SStringA> m_SFIndexMap;
-		//map<int, PCOMPAREFUNC> m_SFConditionMap;
+		map<ePointDataType, ShowPointInfo> m_pointInfoMap;
+		map<int, int> m_SFPeriodMap;
+		map<int, string> m_SFIndexMap;
+		map<int, PCOMPAREFUNC> m_SFConditionMap;
 
 
 		int			m_nDate;
@@ -242,6 +271,8 @@ namespace SOUI
 		BOOL		m_bListShowSBM;
 		BOOL		m_bListShowSTARM;
 		BOOL		m_bListShowNewStock;
+		map<SListHead, eSortDataType> m_ListDataSortMap;
+		map<SListHead, int> m_ListDataDecMap;
 
 		//分析图数据
 	protected:
@@ -251,9 +282,11 @@ namespace SOUI
 		map<int, vector<KlineType>>m_KlineMap;
 
 		bool m_bMarketGet;
-		map<int, int>m_PointReadyMap;
+		map<int, map<SStringA,BOOL>>m_PointGetMap;
 		map<int, bool>m_KlineGetMap;
-		map<int, bool>m_PointGetMap;
+		//map<SStringA,map<int, bool>>m_PointGetMap;
+		//set<ShowPointInfo> m_PointUseMap;
+		map<ePointType, int> m_PointDataCount;
 	protected:
 		unordered_map<int, PDATAHANDLEFUNC>m_dataHandleMap;
 		vector<StockInfo> m_InfoVec;

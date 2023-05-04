@@ -7,13 +7,14 @@
 #include"DealList.h"
 #include"PriceList.h"
 #include "SSubTargetPic.h"
+#include <set>
 
 using std::vector;
 #define MOVE_ONESTEP		10		//每次平移的数据量
 #define K_WIDTH_TOTAL		16		//k线占用总宽度(在x轴上)
 //一些基本的界面框架信息
 #define RC_LEFT				48
-#define RC_RIGHT			40
+#define RC_RIGHT			48
 #define RC_TOP				25
 #define RC_BOTTOM			40
 
@@ -33,6 +34,8 @@ SKlinePic::SKlinePic()
 {
 
 	::InitializeCriticalSection(&m_cs);
+	::InitializeCriticalSection(&m_csSub);
+
 	m_style.m_bBkgndBlend = 0;
 	m_bFocusable = 1; //可以获取焦点
 					  //	m_nKWidth = K_WIDTH_TOTAL;
@@ -63,7 +66,7 @@ SKlinePic::SKlinePic()
 	m_bClearTip = false;
 	m_nPreX = -1;
 	m_nPreY = -1;
-	m_pbShowSubPic = nullptr;
+	//m_pbShowSubPic = nullptr;
 	m_bTodayMarketReady = false;
 	m_bHisKlineReady = false;
 	m_bHisPointReady = false;
@@ -93,29 +96,92 @@ SKlinePic::~SKlinePic()
 			delete m_ppSubPic[i];
 		delete[]m_ppSubPic;
 	}
-	if (m_pbShowSubPic)
-		delete[]m_pbShowSubPic;
+	//if (m_pbShowSubPic)
+	//	delete[]m_pbShowSubPic;
 }
 
-void SKlinePic::InitSubPic(int nNum, vector<SStringA> & picNameVec)
+void SKlinePic::InitSubPic(int nNum)
 {
-	if (m_ppSubPic)
-	{
-		for (int i = 0; i < m_nSubPicNum; ++i)
-			delete m_ppSubPic[i];
-		delete[]m_ppSubPic;
-	}
 
-	if (m_pbShowSubPic)
-		delete[]m_pbShowSubPic;
 	m_nSubPicNum = nNum;
 	m_ppSubPic = new SSubTargetPic*[nNum];
 	for (int i = 0; i < nNum; ++i)
 	{
 		m_ppSubPic[i] = new SSubTargetPic;
-		m_ppSubPic[i]->SetSubPicName(picNameVec[i]);
+		//m_ppSubPic[i]->SetSubPicName(picNameVec[i]);
 	}
-	m_pbShowSubPic = new BOOL[nNum];
+	//m_pbShowSubPic = new BOOL[nNum];
+}
+
+void SKlinePic::ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec)
+{
+	::EnterCriticalSection(&m_csSub);
+	SSubTargetPic** ppTmpSubPicArr = new SSubTargetPic*[nNum];
+	if (nNum > m_nSubPicNum)
+	{
+		for (int i = 0; i < m_nSubPicNum; ++i)
+			ppTmpSubPicArr[i] = m_ppSubPic[i];
+		delete[]m_ppSubPic;
+		m_ppSubPic = nullptr;
+		m_ppSubPic = ppTmpSubPicArr;
+		for (int i = m_nSubPicNum; i < nNum; ++i)
+		{
+			m_ppSubPic[i] = new SSubTargetPic;
+			m_ppSubPic[i]->SetSubPicInfo(infoVec[i - m_nSubPicNum]);
+			m_ppSubPic[i]->SetOffset(m_nMove);
+			m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+		}
+
+	}
+	else if (nNum < m_nSubPicNum)
+	{
+		for (int i = 0; i < nNum; ++i)
+			ppTmpSubPicArr[i] = m_ppSubPic[i];
+		for (int i = nNum; i < m_nSubPicNum; ++i)
+			delete m_ppSubPic[i];
+		delete[]m_ppSubPic;
+		m_ppSubPic = nullptr;
+		m_ppSubPic = ppTmpSubPicArr;
+	}
+
+	m_nSubPicNum = nNum;
+	::LeaveCriticalSection(&m_csSub);
+
+}
+
+vector<ShowPointInfo> SOUI::SKlinePic::GetSubPicDataToGet(int nNum, map<ePointDataType, ShowPointInfo>& infoMap)
+{
+	::EnterCriticalSection(&m_csSub);
+	vector<ShowPointInfo> infoVec;
+	SSubTargetPic** ppTmpSubPicArr = new SSubTargetPic*[nNum];
+	if (nNum > m_nSubPicNum)
+	{
+		auto  tmpInfoMap = infoMap;
+		for (int i = 0; i < m_nSubPicNum; ++i)
+		{
+			auto spi = m_ppSubPic[i]->GetSubPicInfo();
+			for (auto &it : infoMap)
+			{
+				if (it.second == spi)
+				{
+					if (tmpInfoMap.size() > 1)
+						tmpInfoMap.erase(it.first);
+					break;
+				}
+
+			}
+		}
+		for (int i = m_nSubPicNum; i < nNum; ++i)
+		{
+			auto& infoPair = tmpInfoMap.begin();
+			infoVec.emplace_back(infoPair->second);
+			if (tmpInfoMap.size() > 1)
+				tmpInfoMap.erase(infoPair->first);
+
+		}
+	}
+	::LeaveCriticalSection(&m_csSub);
+	return infoVec;
 }
 
 
@@ -130,8 +196,11 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_nKWidth = para.nWidth;
 	m_bShowDeal = para.bShowKlineDeal;
 	m_bShowMacd = para.bShowKlineMACD;
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
-		m_pbShowSubPic[i] = para.bShowKlineRPS[i];
+		m_ppSubPic[i]->SetSubPicInfo(para.KlinePonitWndInfo[i]);
+	::LeaveCriticalSection(&m_csSub);
+
 	m_nMACDPara[0] = para.nMACDPara[0];
 	m_nMACDPara[1] = para.nMACDPara[1];
 	m_nMACDPara[2] = para.nMACDPara[2];
@@ -152,8 +221,15 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.nWidth = m_nKWidth;
 	para.bShowKlineDeal = m_bShowDeal;
 	para.bShowKlineMACD = m_bShowMacd;
+	::EnterCriticalSection(&m_csSub);
+	para.nKlinePointWndNum = m_nSubPicNum;
 	for (int i = 0; i < m_nSubPicNum; ++i)
-		para.bShowKlineRPS[i] = m_pbShowSubPic[i];
+	{
+		para.KlinePonitWndInfo.resize(m_nSubPicNum);
+		para.KlinePonitWndInfo[i] = m_ppSubPic[i]->GetSubPicInfo();
+	}
+	::LeaveCriticalSection(&m_csSub);
+
 	para.nMACDPara[0] = m_nMACDPara[0];
 	para.nMACDPara[1] = m_nMACDPara[1];
 	para.nMACDPara[2] = m_nMACDPara[2];
@@ -175,11 +251,14 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonIn
 	m_pStkMarketVec = nullptr;
 	m_bIsStockIndex = true;
 	m_strStockName = StockName;
+	::EnterCriticalSection(&m_csSub);
+
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
 		m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
 		m_ppSubPic[i]->SetOffset2Zero();
 	}
+	::LeaveCriticalSection(&m_csSub);
 
 	m_pPriceList->SetShowData(subIns, m_strStockName, pIdxMarketVec);
 	m_pDealList->SetShowData(subIns, pIdxMarketVec);
@@ -196,40 +275,68 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonSt
 	m_pIdxMarketVec = nullptr;
 	m_bIsStockIndex = false;
 	m_strStockName = StockName;
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
 		m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
 		m_ppSubPic[i]->SetOffset2Zero();
 	}
+	::LeaveCriticalSection(&m_csSub);
+
 	m_pPriceList->SetShowData(subIns, m_strStockName, pStkMarketVec);
 	m_pDealList->SetShowData(subIns, pStkMarketVec);
 }
 
 void SKlinePic::SetSubPicShowData(int nIndex, bool nGroup)
 {
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 		m_ppSubPic[i]->SetShowData(nIndex, nGroup);
+	::LeaveCriticalSection(&m_csSub);
+
 }
 
 void SKlinePic::SetSubPicShowData(int nDataCount[],
 	vector<vector<vector<CoreData>*>>& data, vector<vector<BOOL>> bRightVec,
-	vector<vector<SStringA>> dataNameVec, SStringA StockID, SStringA StockName)
+	vector<vector<SStringA>> dataNameVec, SStringA StockID, SStringA StockName,
+	int nStartWnd)
 {
-	for (int i = 0; i < m_nSubPicNum; ++i)
+	::EnterCriticalSection(&m_csSub);
+	for (int i = nStartWnd; i < m_nSubPicNum; ++i)
+	{
+		int nTargetCount = i - nStartWnd;
 		m_ppSubPic[i]->SetShowData(
-			nDataCount[i], &data[i][0], bRightVec[i], dataNameVec[i],
+			nDataCount[nTargetCount], &data[nTargetCount][0],
+			bRightVec[nTargetCount], dataNameVec[nTargetCount],
 			StockID, StockName);
+	}
+	::LeaveCriticalSection(&m_csSub);
+
+}
+
+void SOUI::SKlinePic::SetSubPicShowData(int nDataCount, vector<vector<CoreData>*>& data, vector<BOOL> bRightVec,
+	vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName)
+{
+	m_ppSubPic[m_nChangeNum]->SetShowData(
+		nDataCount, &data[0],
+		bRightVec, dataNameVec,
+		StockID, StockName);
 }
 
 void SKlinePic::ReSetSubPicData(int nDataCount,
 	vector<CoreData>* data[],
 	vector<BOOL>& bRightVec)
 {
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
-		m_ppSubPic[i]->SetOffset2Zero();
+		m_ppSubPic[i]->SetOffset(m_nMove);
 		m_ppSubPic[i]->ReSetShowData(nDataCount, data, bRightVec);
+		m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+
 	}
+	::LeaveCriticalSection(&m_csSub);
+
 }
 
 void SKlinePic::SetParentHwnd(HWND hParWnd)
@@ -270,7 +377,7 @@ void SKlinePic::SetHisPointState(bool bReady)
 
 bool SOUI::SKlinePic::GetDataReadyState()
 {
-	return m_bTodayMarketReady&m_bHisKlineReady & m_bHisPointReady;
+	return m_bTodayMarketReady&m_bHisKlineReady;
 }
 
 void SKlinePic::ClearTip()
@@ -355,10 +462,35 @@ void SKlinePic::DrawMainUpperMarket(IRenderTarget * pRT, KlineType & data)
 {
 	SStringW strMarket;
 
-	strMarket.Format(L"%s 日期:%04d-%02d-%02d 时间:%02d:%02d 开:%.02f 高:%.02f 低:%.02f 收:%.02f 量:%.0f",
+	strMarket.Format(L"%s 日期:%04d-%02d-%02d 时间:%02d:%02d 开:%.02f 高:%.02f 低:%.02f 收:%.02f",
 		StrA2StrW(m_strStockName), data.date / 10000, data.date % 10000 / 100, data.date % 100,
 		data.time / 100, data.time % 100,
-		data.open, data.high, data.low, data.close, ceil(data.vol));
+		data.open, data.high, data.low, data.close);
+	SStringW strVol;
+	if (data.vol > 1'000'000'000)
+		strVol.Format(L"%.01f亿", data.vol / 100'000'000);
+	else if (data.vol > 100'000'000)
+		strVol.Format(L"%.02f亿", data.vol / 100'000'000);
+	else if (data.vol > 1'000'000)
+		strVol.Format(L"%.0f万", data.vol / 10000);
+	else if (data.vol > 10'000)
+		strVol.Format(L"%.02f万", data.vol / 10000);
+	else
+		strVol.Format(L"%.0f", data.vol);
+
+	SStringW strAmt;
+	if (data.amount > 1'000'000'000)
+		strAmt.Format(L"%.01f亿", data.amount / 100'000'000);
+	else if (data.amount > 100'000'000)
+		strAmt.Format(L"%.02f亿", data.amount / 100'000'000);
+	else if (data.amount > 1'000'000)
+		strAmt.Format(L"%.0f万", data.amount / 10000);
+	else if (data.amount > 10'000)
+		strAmt.Format(L"%.02f万", data.amount / 10000);
+	else
+		strAmt.Format(L"%.0f", data.amount);
+
+	strMarket.Format(L"%s 量:%s 金额:%s", strMarket, strVol, strAmt);
 
 	DrawTextonPic(pRT, CRect(m_rcImage.left, m_rcImage.top - 20, m_rcImage.right, m_rcImage.top), strMarket);
 }
@@ -530,58 +662,51 @@ void SKlinePic::SetWindowRect()
 	{
 		if (m_bIsStockIndex)
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, 
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
 				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 160);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, 
-				m_rcAll.top + 165,m_rcAll.right + 30, m_rcAll.bottom + 30);
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 180,
+				m_rcAll.top + 165, m_rcAll.right + 30, m_rcAll.bottom + 30);
 		}
 		else
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180, 
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
 				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 580);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180, 
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 180,
 				m_rcAll.top + 585, m_rcAll.right + 30, m_rcAll.bottom + 30);
 		}
-		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top, 
+		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top,
 			m_rcAll.right - 240, m_rcAll.bottom);
 	}
 
-	CRect *pSubRect[MAX_SUBWINDOW];
-	int nShowCount = 0;
+	vector<CRect*>pSubRect;
 	if (m_bShowVolume)
-	{
-		pSubRect[nShowCount] = &m_rcVolume;
-		nShowCount++;
-	}
+		pSubRect.emplace_back(&m_rcVolume);
 	else m_rcVolume.SetRectEmpty();
 
 	if (m_bShowMacd)
-	{
-		pSubRect[nShowCount] = &m_rcMACD;
-		nShowCount++;
-	}
+		pSubRect.emplace_back(&m_rcMACD);
 	else m_rcMACD.SetRectEmpty();
 
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
-	{
-		if (m_pbShowSubPic[i])
-		{
-			pSubRect[nShowCount] = m_ppSubPic[i]->GetPicRect();
-			nShowCount++;
-		}
-		else
-			m_ppSubPic[i]->SetPicRect(CRect(0, 0, 0, 0));
-	}
+		pSubRect.emplace_back(m_ppSubPic[i]->GetPicRect());
+	::LeaveCriticalSection(&m_csSub);
+
 	int preBottom = m_rcImage.top;
-	int nowBottom = m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2;
-	m_rcMain.SetRect(m_rcImage.left, m_rcImage.top, 
-		m_rcImage.right, m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * 2);
+	int nowBottom = m_rcImage.top +
+		m_rcImage.Height() / (pSubRect.size() + 2) * 2;
+	m_rcMain.SetRect(m_rcImage.left, m_rcImage.top, m_rcImage.right,
+		m_rcImage.top + m_rcImage.Height() / (pSubRect.size() + 2) * 2);
 	preBottom = nowBottom;
-	for (int i = 0; i < nShowCount; ++i)
+	SStringA str;
+	for (int i = 0; i < pSubRect.size(); ++i)
 	{
-		nowBottom = m_rcImage.top + m_rcImage.Height() / (nShowCount + 2) * (3 + i);
-		pSubRect[i]->SetRect(m_rcImage.left, preBottom, m_rcImage.right, nowBottom);
+		nowBottom = m_rcImage.top + m_rcImage.Height()
+			/ (pSubRect.size() + 2) * (3 + i);
+		pSubRect[i]->SetRect(m_rcImage.left, preBottom,
+			m_rcImage.right, nowBottom);
 		preBottom = nowBottom;
+
 	}
 
 }
@@ -805,10 +930,10 @@ int SKlinePic::ProcMACDData(int nPos, MACDData_t * pMacdData)
 	}
 	else
 	{
-		pMacdData->EMA12[nPos] = m_dataHandler.EMA(m_nMACDPara[0], pMacdData->EMA12[nPos - 1], Data[nPos].close);
-		pMacdData->EMA26[nPos] = m_dataHandler.EMA(m_nMACDPara[1], pMacdData->EMA26[nPos - 1], Data[nPos].close);
+		pMacdData->EMA12[nPos] = EMA(m_nMACDPara[0], pMacdData->EMA12[nPos - 1], Data[nPos].close);
+		pMacdData->EMA26[nPos] = EMA(m_nMACDPara[1], pMacdData->EMA26[nPos - 1], Data[nPos].close);
 		pMacdData->DIF[nPos] = pMacdData->EMA12[nPos] - pMacdData->EMA26[nPos];
-		pMacdData->DEA[nPos] = m_dataHandler.EMA(m_nMACDPara[2], pMacdData->DEA[nPos - 1], pMacdData->DIF[nPos]);
+		pMacdData->DEA[nPos] = EMA(m_nMACDPara[2], pMacdData->DEA[nPos - 1], pMacdData->DIF[nPos]);
 		pMacdData->MACD[nPos] = 2 * (pMacdData->DIF[nPos] - pMacdData->DEA[nPos]);
 	}
 
@@ -871,10 +996,12 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 		pRT->CreatePen(PS_SOLID, RGBA(100, 100, 100, 255), 1, &m_penGray);
 
 		m_bPaintInit = true;
-		for (int i = 0; i < m_nSubPicNum; ++i)
-			m_ppSubPic[i]->InitColorAndPen(pRT);
 
 	}
+	::EnterCriticalSection(&m_csSub);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+		m_ppSubPic[i]->InitColorAndPen(pRT);
+	::LeaveCriticalSection(&m_csSub);
 
 	pRT->SetAttribute(L"antiAlias", L"0", FALSE);
 
@@ -899,7 +1026,7 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 			pts[0].SetPoint(m_rcImage.right + RC_FSLEFT + 1, m_rcAll.top - 25);
 			pts[1].SetPoint(m_rcImage.right + RC_FSLEFT + 1, m_rcAll.bottom + 35);
 			pRT->DrawLines(pts, 2);
-			pts[0].SetPoint(m_rcImage.right + RC_FSLEFT + 1, 
+			pts[0].SetPoint(m_rcImage.right + RC_FSLEFT + 1,
 				m_pPriceList->m_rect.bottom - 5);
 			pts[1].SetPoint(m_rcAll.right + RC_FSLEFT + 1,
 				m_pPriceList->m_rect.bottom - 5);
@@ -936,8 +1063,11 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 
 		CPoint po(m_nMouseX, m_nMouseY);
 		m_nMouseX = m_nMouseY = -1;
+		::EnterCriticalSection(&m_csSub);
 		for (int i = 0; i < m_nSubPicNum; ++i)
 			m_ppSubPic[i]->SetMousePosDefault();
+		::LeaveCriticalSection(&m_csSub);
+
 		LONGLONG llTmp3 = GetTickCount64();
 		if (m_bKeyDown)
 			DrawKeyDownLine(pRT, m_bClearTip);
@@ -1023,7 +1153,7 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			SStringW s1 = GetYPrice(nY);
 			double fPrice = _wtof(s1);
 			if (fPrice<15000 && fPrice>-15000)
-				DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 16), s1, RGBA(255, 0, 0, 255), DT_CENTER);
+				DrawTextonPic(pRT, CRect(m_rcMain.right - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 16), s1, RGBA(255, 0, 0, 255), DT_CENTER);
 			//		pRT->TextOut(m_rcUpper.left - RC_LEFT + 8, nY - 6, s1, -1);
 		}
 	}
@@ -1053,6 +1183,9 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			pts[4] = pts[0];
 			pRT->DrawLines(pts, 4);
 			pRT->SelectObject(oldPen);
+			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, m_rcVolume.top, m_rcImage.left, m_rcVolume.top + 18), L"成交量", RGBA(255, 0, 0, 255), DT_CENTER);
+			DrawTextonPic(pRT, CRect(m_rcMain.right, m_rcVolume.top, m_rcImage.right + RC_RIGHT - 2, m_rcVolume.top + 18), L"金额", RGBA(255, 0, 0, 255), DT_CENTER);
+
 		}
 
 		//副图区横向虚线
@@ -1067,8 +1200,11 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 
 			if (m_bDataInited)
 			{
-				SStringW s1 = GetFuTuYPrice(nY);
-				DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
+				SStringW sl = GetFuTuYPrice(nY);
+				DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 9), sl, RGBA(255, 0, 0, 255), DT_CENTER);
+				SStringW sr = GetFuTuYPrice(nY, true);
+				DrawTextonPic(pRT, CRect(m_rcMain.right, nY - 9, m_rcImage.right + RC_RIGHT - 2, nY + 9), sr, RGBA(255, 255, 0, 255), DT_CENTER);
+
 			}
 		}
 		pRT->ReleaseDC(pdc);
@@ -1117,11 +1253,13 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 
 	}
 
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
-		if (m_pbShowSubPic[i])
-			m_ppSubPic[i]->DrawArrow(pRT);
+		m_ppSubPic[i]->DrawArrow(pRT);
 	}
+	::LeaveCriticalSection(&m_csSub);
+
 }
 
 
@@ -1170,12 +1308,18 @@ void SKlinePic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 			m_nMove = nTotal - m_nEnd;
 		}
 
+		::EnterCriticalSection(&m_csSub);
 		for (int i = 0; i < m_nSubPicNum; ++i)
 			m_ppSubPic[i]->SetOffset(m_nMove);
+		::LeaveCriticalSection(&m_csSub);
+
 		m_bReSetFirstLine = false;
 	}
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 		m_ppSubPic[i]->SetShowNum(m_nEnd - m_nFirst);
+	::LeaveCriticalSection(&m_csSub);
+
 	//	}
 	//判断最大最小值
 	double fMax = -100000000000000;
@@ -1247,23 +1391,36 @@ void SKlinePic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 void SKlinePic::GetFuTuMaxDiff()		//判断副图坐标最大最小值和k线条数
 {
 	//判断最大最小值
-	double fMax = -100000000000000;
-	double fMin = 0;
+	double fVolMax = -100000000000000;
+	double fVolMin = 0;
+	double fAmtMax = -100000000000000;
+	double fAmtMin = 0;
 
 	auto &data = m_pAll->data;
 	for (int j = m_nFirst; j < m_nEnd; j++)
 	{
-		if (data[j].vol > fMax)
-			fMax = data[j].vol;
+		if (data[j].vol > fVolMax)
+			fVolMax = data[j].vol;
+		if (data[j].amount > fAmtMax)
+			fAmtMax = data[j].amount;
 	}
 
 
-	m_pAll->fSubMax = fMax;
-	m_pAll->fSubMin = fMin;
-	if (m_pAll->fSubMax == fMin)
-		m_pAll->fSubMax = m_pAll->fSubMax * 1.1;
-	if (m_pAll->fSubMax == 0)
-		m_pAll->fSubMax = 1;
+	m_pAll->fVolMax = fVolMax;
+	m_pAll->fVolMin = fVolMin;
+	m_pAll->fAmountMax = fAmtMax;
+	m_pAll->fAmountMin = fAmtMin;
+
+	if (m_pAll->fVolMax == m_pAll->fVolMin)
+		m_pAll->fVolMax = m_pAll->fVolMax * 1.1;
+	if (m_pAll->fVolMax == 0)
+		m_pAll->fVolMax = 1;
+
+	if (m_pAll->fAmountMax == m_pAll->fAmountMin)
+		m_pAll->fAmountMax = m_pAll->fAmountMax * 1.1;
+	if (m_pAll->fAmountMax == 0)
+		m_pAll->fAmountMax = 1;
+
 }
 
 BOOL SKlinePic::IsInRect(int x, int y, int nMode)	//是否在坐标中,0为全部,1为上方,2为下方
@@ -1289,20 +1446,53 @@ BOOL SKlinePic::IsInRect(int x, int y, int nMode)	//是否在坐标中,0为全部,1为上方
 	return FALSE;
 }
 
-int SKlinePic::GetFuTuYPos(double fDiff)	//获得附图y位置
+int SKlinePic::GetFuTuYPos(double fDiff, bool bAmt)	//获得附图y位置
 {
-	double fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fSubMax))  * (m_rcVolume.Height() - 5) + RC_MAX;
+	double fPos = 0;
+	if (!bAmt)
+		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fVolMax))  * (m_rcVolume.Height() - 5) + RC_MAX;
+	else
+		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fAmountMax))  * (m_rcVolume.Height() - 5) + RC_MAX;
 	int nPos = (int)fPos;
 	return nPos;
 }
 
-SStringW SKlinePic::GetFuTuYPrice(int nY)
+SStringW SKlinePic::GetFuTuYPrice(int nY, bool bAmt)
 {
 	SStringW strRet; strRet.Empty();
-	if (nY > m_rcVolume.bottom || nY < m_rcVolume.top)
-		return strRet;
-	double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 5)  * m_pAll->fSubMax;
-	strRet.Format(L"%.0f", fDiff);
+	if (!bAmt)
+	{
+		if (nY > m_rcVolume.bottom || nY < m_rcVolume.top)
+			return strRet;
+		double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 5)  * m_pAll->fVolMax;
+		if (fDiff > 1'000'000'000)
+			strRet.Format(L"%.01f亿", fDiff / 100'000'000);
+		else if (fDiff > 100'000'000)
+			strRet.Format(L"%.02f亿", fDiff / 100'000'000);
+		else if (fDiff > 1'000'000)
+			strRet.Format(L"%.0f万", fDiff / 10000);
+		else if (fDiff > 10'000)
+			strRet.Format(L"%.02f万", fDiff / 10000);
+		else
+			strRet.Format(L"%.0f", fDiff);
+	}
+	else
+	{
+		if (nY > m_rcVolume.bottom || nY < m_rcVolume.top)
+			return strRet;
+		double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 5)  * m_pAll->fAmountMax;
+		if (fDiff > 1'000'000'000)
+			strRet.Format(L"%.01f亿", fDiff / 100'000'000);
+		else if (fDiff > 100'000'000)
+			strRet.Format(L"%.02f亿", fDiff / 100'000'000);
+		else if (fDiff > 1'000'000)
+			strRet.Format(L"%.0f万", fDiff / 10000);
+		else if (fDiff > 10'000)
+			strRet.Format(L"%.02f万", fDiff / 10000);
+		else
+			strRet.Format(L"%.0f", fDiff);
+
+	}
 	return strRet;
 
 }
@@ -1405,8 +1595,6 @@ SStringW SKlinePic::GetAllYPrice(int nY)
 {
 	if (nY >= m_rcMain.top && nY <= m_rcMain.bottom)
 		return  GetYPrice(nY);
-	if (nY >= m_rcVolume.top && nY <= m_rcVolume.bottom)
-		return  GetFuTuYPrice(nY);
 	if (nY >= m_rcMACD.top && nY <= m_rcMACD.bottom)
 		return  GetMACDYPrice(nY);
 	return SStringW(L"");
@@ -1428,8 +1616,11 @@ void SKlinePic::OnMouseMove(UINT nFlags, CPoint point)
 	if (m_bKeyDown)
 	{
 		m_bKeyDown = false;
+		::EnterCriticalSection(&m_csSub);
 		for (int i = 0; i < m_nSubPicNum; ++i)
 			m_ppSubPic[i]->SetMouseMove();
+		::LeaveCriticalSection(&m_csSub);
+
 		Invalidate();
 		return;
 	}
@@ -1543,12 +1734,15 @@ void SKlinePic::DrawKeyDownLine(IRenderTarget * pRT, bool bClearTip)
 
 	auto &data = m_pAll->data[m_nMouseLinePos];
 	DrawBarInfo(pRT, m_nMouseLinePos);
+	::EnterCriticalSection(&m_csSub);
 
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
 		m_ppSubPic[i]->SetNowKeyDownLinePos(nx);
 		m_ppSubPic[i]->DrawKeyDownMouseLine(pRT, TRUE);
 	}
+	::LeaveCriticalSection(&m_csSub);
+
 	if (bClearTip)
 	{
 		m_pTip->ClearTip();
@@ -1643,11 +1837,13 @@ void SKlinePic::DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint)
 		if (nx >= 0 && nx < m_pAll->nTotal && data.date>0)
 			DrawMoveTime(pRT, p.x, data.date, data.time, true);
 	}
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
-		if (m_pbShowSubPic[i])
-			m_ppSubPic[i]->DrawMouse(pRT, p, bFromOnPaint);;
+		m_ppSubPic[i]->DrawMouse(pRT, p, bFromOnPaint);;
 	}
+	::LeaveCriticalSection(&m_csSub);
+
 	m_nMouseX = p.x;
 	m_nMouseY = p.y;
 }
@@ -1771,6 +1967,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	CPoint *DIFLine = new CPoint[m_nEnd - m_nFirst];
 	CPoint *DEALine = new CPoint[m_nEnd - m_nFirst];
 	CPoint **MaLine = new CPoint*[4];
+	vector<CPoint> AmtLine(m_nEnd - m_nFirst);
 	for (int i = 0; i < 4; ++i)
 		MaLine[i] = new CPoint[m_nEnd - m_nFirst];
 
@@ -1780,6 +1977,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 		x = i * TOTALZOOMWIDTH + 1 + m_rcMain.left;
 		auto data = m_pAll->data[nOffset];
 		int nVolume = m_pAll->data[nOffset].vol;
+		double fAmount = m_pAll->data[nOffset].amount;
 		//if (!(m_rgGroup != Group_Stock && m_strSubIns[0] == '0'))
 		//	nVolume = ceil(nVolume / 100);
 		//int nVolume1;
@@ -1901,6 +2099,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 		if (m_bShowVolume)
 		{
+			AmtLine[i].SetPoint(x + ZOOMWIDTH / 2, GetFuTuYPos(fAmount,true));
 			if (nVolume != 0)
 			{
 
@@ -2032,6 +2231,12 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 		}
 	}
 
+
+	if (m_bShowVolume)
+	{
+		pRT->SelectObject(m_penWhite);
+		pRT->DrawLines(&AmtLine[0], m_nEnd - m_nFirst);
+	}
 	if (m_bShowMacd)
 	{
 		pRT->SelectObject(m_penWhite);
@@ -2041,6 +2246,8 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 		pRT->DrawLines(DEALine, m_nEnd - m_nFirst);
 
 	}
+
+
 
 	pRT->SelectObject(oldPen);
 	pRT->SelectObject(bOldBrush);
@@ -2066,12 +2273,13 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	DIFLine = nullptr;
 	DEALine = nullptr;
 	MaLine = nullptr;
-
+	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
-		if (m_pbShowSubPic[i])
-			m_ppSubPic[i]->DrawData(pRT);
+		m_ppSubPic[i]->DrawData(pRT);
 	}
+	::LeaveCriticalSection(&m_csSub);
+
 }
 
 
@@ -2224,22 +2432,83 @@ void SKlinePic::ReProcBandData()
 
 void SKlinePic::ChangePeriod(int nPeriod, BOOL bNeedReCalc)
 {
-	m_nPeriod = nPeriod;
-	if (bNeedReCalc && GetDataReadyState())
-		DataProc();
+	if (m_nPeriod != nPeriod)
+	{
+		m_nPeriod = nPeriod;
+		if (bNeedReCalc && GetDataReadyState())
+			DataProc();
+	}
 }
 
-void SKlinePic::SetBelongingIndy(vector<SStringA>& strNameVec)
+void SKlinePic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)
 {
-	for (int i = SP_SWINDYL1; i < m_nSubPicNum; ++i)
-	{
-		SStringA str;
-		m_ppSubPic[i]->SetSubPicName(str.Format("%d级行业:%s",
-			i, strNameVec[i - 1]));
-	}
 	m_strL1Indy = strNameVec[0];
 	m_strL2Indy = strNameVec[1];
 	m_pPriceList->SetIndyName(strNameVec);
+	::EnterCriticalSection(&m_csSub);
+	for (int i = nStartWnd; i < m_nSubPicNum; ++i)
+	{
+		auto info = m_ppSubPic[i]->GetSubPicInfo();
+		SStringA str;
+		if ("L1" == info.range)
+			str.Format("行业:%s", strNameVec[0]);
+		else if ("L2" == info.range)
+			str.Format("行业:%s", strNameVec[1]);
+		str.Format("%s %s", info.showName, str);
+		m_ppSubPic[i]->SetSubTitleInfo(str);
+	}
+	::LeaveCriticalSection(&m_csSub);
+
+}
+
+void SKlinePic::GetShowPointInfo(vector<ShowPointInfo>& infoVec)
+{
+	::EnterCriticalSection(&m_csSub);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		infoVec.emplace_back(m_ppSubPic[i]->GetSubPicInfo());
+	}
+	::LeaveCriticalSection(&m_csSub);
+
+}
+
+BOOL SKlinePic::CheckTargetSelectIsClicked(CPoint pt)
+{
+	::EnterCriticalSection(&m_csSub);
+	for (int i = 0; i < m_nSubPicNum; ++i)
+	{
+		if (m_ppSubPic[i]->CheckIsSelectClicked(pt))
+		{
+			m_nChangeNum = i;
+			return TRUE;
+		}
+	}
+	::LeaveCriticalSection(&m_csSub);
+
+	return FALSE;
+}
+
+void SOUI::SKlinePic::CloseSinglePointWnd()
+{
+	::EnterCriticalSection(&m_csSub);
+	SSubTargetPic** ppTmpSubPicArr = new SSubTargetPic*[m_nSubPicNum - 1];
+	for (int i = 0; i < m_nChangeNum; ++i)
+		ppTmpSubPicArr[i] = m_ppSubPic[i];
+	for (int i = m_nChangeNum; i < m_nSubPicNum - 1; ++i)
+		ppTmpSubPicArr[i] = m_ppSubPic[i + 1];
+	delete m_ppSubPic[m_nChangeNum];
+	delete[]m_ppSubPic;
+	m_ppSubPic = ppTmpSubPicArr;
+	m_nSubPicNum -= 1;
+	::LeaveCriticalSection(&m_csSub);
+
+	Invalidate();
+}
+
+void SOUI::SKlinePic::SetSelPointWndInfo(ShowPointInfo & info, SStringA strTitle)
+{
+	m_ppSubPic[m_nChangeNum]->SetSubPicInfo(info);
+	m_ppSubPic[m_nChangeNum]->SetSubTitleInfo(strTitle);
 
 }
 
@@ -2359,8 +2628,11 @@ void SKlinePic::OnDbClickedKline(UINT nFlags, CPoint point)
 		m_nMouseX = m_nPreX;
 		m_nMouseY = m_nPreY;
 	}
+	::EnterCriticalSection(&m_csSub);
+
 	for (int i = 0; i < m_nSubPicNum; ++i)
 		m_ppSubPic[i]->SetMouseLineState(m_bShowMouseLine);
+	::LeaveCriticalSection(&m_csSub);
 
 	Invalidate();
 }
@@ -2385,8 +2657,11 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 				++m_nJiange;
 
 			//m_nJiange = false;
+			::EnterCriticalSection(&m_csSub);
 			for (int i = 0; i < m_nSubPicNum; ++i)
 				m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+			::LeaveCriticalSection(&m_csSub);
+
 			Invalidate();
 			break;
 		}
@@ -2395,8 +2670,10 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		m_nKWidth += 2;
 		if (m_nKWidth > 64)
 			m_nKWidth = 65;
+		::EnterCriticalSection(&m_csSub);
 		for (int i = 0; i < m_nSubPicNum; ++i)
 			m_ppSubPic[i]->SetShowWidth(m_nKWidth, 2);
+		::LeaveCriticalSection(&m_csSub);
 
 		Invalidate();
 
@@ -2421,8 +2698,11 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 				--m_nJiange;
 			else
 				++m_nZoomRatio;
+			::EnterCriticalSection(&m_csSub);
 			for (int i = 0; i < m_nSubPicNum; ++i)
 				m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
+			::LeaveCriticalSection(&m_csSub);
+
 			Invalidate();
 			//}
 			break;
@@ -2430,8 +2710,10 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		m_nKWidth -= 2;
 		if (m_nKWidth < 1)
 			m_nKWidth = 1;
+		::EnterCriticalSection(&m_csSub);
 		for (int i = 0; i < m_nSubPicNum; ++i)
 			m_ppSubPic[i]->SetShowWidth(m_nKWidth, 2);
+		::LeaveCriticalSection(&m_csSub);
 
 		Invalidate();
 
@@ -2478,8 +2760,11 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			if (m_nMouseLinePos < m_nFirst)
 			{
 				m_nMove++;
+				::EnterCriticalSection(&m_csSub);
 				for (int i = 0; i < m_nSubPicNum; ++i)
 					m_ppSubPic[i]->SetOffset(m_nMove);
+				::LeaveCriticalSection(&m_csSub);
+
 				m_bClearTip = true;
 				Invalidate();
 				break;
@@ -2487,8 +2772,10 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			if (m_nMouseLinePos >= m_nFirst + m_nMaxKNum)
 			{
 				m_nMove--;
+				::EnterCriticalSection(&m_csSub);
 				for (int i = 0; i < m_nSubPicNum; ++i)
 					m_ppSubPic[i]->SetOffset(m_nMove);
+				::LeaveCriticalSection(&m_csSub);
 				m_bClearTip = true;
 
 				Invalidate();
@@ -2565,11 +2852,23 @@ void SKlinePic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
 {
 	pRT->SelectObject(m_bBrushBlack);
 	if (bNew)
-		pRT->FillRectangle(CRect(m_rcMain.right + 1, m_rcMain.top, m_rcMain.right + RC_RIGHT, m_rcVolume.bottom + RC_BOTTOM - 10));
+		pRT->FillRectangle(CRect(m_rcMain.right + 1, m_rcMain.top, m_rcMain.right + RC_RIGHT, m_rcMain.bottom /*+ RC_BOTTOM - 10*/));
 
-	SStringW str = GetAllYPrice(y);
-	if (str != L"")
-		DrawTextonPic(pRT, CRect(m_rcMain.right + 2, y + -6, m_rcMain.right + RC_RIGHT, y + 15), str);
+	if (y >= m_rcVolume.top && y <= m_rcVolume.bottom)
+	{
+		SStringW sl = GetFuTuYPrice(y);
+		DrawTextonPic(pRT, CRect(m_rcMain.left -RC_LEFT, y + -6, m_rcMain.left, y + 15), sl);
+		SStringW sr = GetFuTuYPrice(y,true);
+		DrawTextonPic(pRT, CRect(m_rcMain.right + 2, y + -6, m_rcMain.right + RC_RIGHT, y + 15), sr);
+
+	}
+	else
+	{
+		SStringW str = GetAllYPrice(y);
+		if (str != L"")
+			DrawTextonPic(pRT, CRect(m_rcMain.right + 2, y + -6, m_rcMain.right + RC_RIGHT, y + 15), str);
+
+	}
 
 }
 
@@ -2704,49 +3003,6 @@ void SKlinePic::DataInit()
 
 }
 
-bool SKlinePic::GenerateMultiMinFromOne(int nCount, KlineType & data, int nPeriod)
-{
-	auto &target = m_pAll->data[nCount];
-	int time = 0;
-	if (nPeriod != 60)
-	{
-		int left = data.time % 100 % nPeriod;
-		time = left == 0 ? data.time : data.time - left + nPeriod;
-		if (time % 100 == 60)
-			time = ((time / 100) + 1) * 100;
-	}
-	else
-	{
-		if (time >= 930 && time <= 1030)
-			time = 1030;
-		if (time > 1030 && time <= 1130)
-			time = 1130;
-		if (time >= 1300 && time <= 1400)
-			time = 1400;
-		if (time > 1400 && time <= 1500)
-			time = 1500;
-	}
-	if (time != target.time)
-	{
-		if (target.date == 0)
-		{
-			target = data;
-			return false;
-		}
-		else
-		{
-			m_pAll->data[++nCount] = data;
-			return true;
-		}
-	}
-
-	target.close = data.close;
-	target.high = max(target.high, data.high);
-	target.low = max(target.low, data.low);
-	target.vol += data.vol;
-	return false;
-
-}
 
 void SKlinePic::SingleDataProc()
 {
@@ -2938,6 +3194,7 @@ void SKlinePic::StockTickToKline(int nCount, CommonStockMarket & tick, bool bNew
 		kline.high = tick.LastPrice;
 		kline.low = tick.LastPrice;
 		kline.vol = (tick.Volume - m_pAll->nLastVolume) / 100;
+		kline.amount = tick.Turnover - m_pAll->fLastAmount;
 		kline.time = time;
 		kline.date = m_nTradingDay;
 	}
@@ -2947,8 +3204,11 @@ void SKlinePic::StockTickToKline(int nCount, CommonStockMarket & tick, bool bNew
 		kline.high = max(tick.LastPrice, kline.high);
 		kline.low = min(tick.LastPrice, kline.low);
 		kline.vol += (tick.Volume - m_pAll->nLastVolume) / 100;
+		kline.amount += tick.Turnover - m_pAll->fLastAmount;
+
 	}
 	m_pAll->nLastVolume = tick.Volume;
+	m_pAll->fLastAmount = tick.Turnover;
 }
 
 void SKlinePic::StockTickToDayKline(int nCount, CommonStockMarket & tick)
@@ -2959,6 +3219,7 @@ void SKlinePic::StockTickToDayKline(int nCount, CommonStockMarket & tick)
 	kline.high = tick.HighPrice;
 	kline.low = tick.LowPrice;
 	kline.vol = tick.Volume / 100;
+	kline.amount = tick.Turnover;
 	kline.date = m_nTradingDay;
 	kline.time = 0;
 }
@@ -3052,6 +3313,7 @@ void SKlinePic::IndexTickToKline(int nCount, CommonIndexMarket & tick, bool bNew
 		kline.high = tick.LastPrice;
 		kline.low = tick.LastPrice;
 		kline.vol = tick.Volume - m_pAll->nLastVolume;
+		kline.amount = tick.Turnover - m_pAll->fLastAmount;
 		if (m_strSubIns[0] != '0')
 			kline.vol /= 100;
 		kline.time = time;
@@ -3066,8 +3328,11 @@ void SKlinePic::IndexTickToKline(int nCount, CommonIndexMarket & tick, bool bNew
 			kline.vol += (tick.Volume - m_pAll->nLastVolume) / 100;
 		else
 			kline.vol += (tick.Volume - m_pAll->nLastVolume);
+		kline.amount += tick.Turnover - m_pAll->fLastAmount;
+
 	}
 	m_pAll->nLastVolume = tick.Volume;
+	m_pAll->fLastAmount = tick.Turnover;
 }
 
 void SKlinePic::IndexTickToDayKline(int nCount, CommonIndexMarket & tick)
@@ -3078,6 +3343,7 @@ void SKlinePic::IndexTickToDayKline(int nCount, CommonIndexMarket & tick)
 	kline.high = tick.HighPrice;
 	kline.low = tick.LowPrice;
 	kline.vol = m_strSubIns[0] == '0' ? tick.Volume : tick.Volume / 100;
+	kline.amount = tick.Turnover;
 	kline.date = m_nTradingDay;
 	kline.time = 0;
 }

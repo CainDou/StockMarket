@@ -11,8 +11,10 @@
 #include"DlgEmaPara.h"
 #include <helper/SMenu.h>
 #include "IniFile.h"
-#include "DataProc.h"
 #include "DlgStockFilter.h"
+#include <sstream>
+#include "DlgSelTarget.h"
+#include "DlgComboStockFilter.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
@@ -26,6 +28,7 @@ CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 	m_bUseStockFilter = FALSE;
 	m_bShowList = true;
 	m_pFilterDataMap = nullptr;
+	m_pTFMarketHash = nullptr;
 }
 
 
@@ -35,7 +38,7 @@ CWorkWnd::~CWorkWnd()
 		SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
 	if (m_workThread.joinable())
 		m_workThread.join();
-	if (m_pDlgStockFilter)
+	if (m_pDlgKbElf)
 		m_pDlgKbElf->DestroyWindow();
 	m_pPreSelBtn = nullptr;
 }
@@ -87,10 +90,13 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 
 	}
 
-	m_pDlgStockFilter = new CDlgStockFilter(m_uThreadID, m_Group);
-	m_pDlgStockFilter->Create(NULL);
-	m_pDlgStockFilter->CenterWindow(m_hParWnd);
-	m_pDlgStockFilter->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
+	//2023.5.4修改 将m_pDlgStockFilter 改为 m_pDlgCmbStockFilter
+	//在保留新版本的情况下 将其对外接口隐藏 回退老版本
+
+	m_pDlgCmbStockFilter = new CDlgComboStockFilter(m_uThreadID, m_Group);
+	m_pDlgCmbStockFilter->Create(NULL);
+	m_pDlgCmbStockFilter->CenterWindow(m_hParWnd);
+	m_pDlgCmbStockFilter->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
 		SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME);
 
 }
@@ -104,16 +110,16 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 	SubPicWndNameVec.emplace_back("2级行业RPS");
 
 	m_InitPara = initPara;
-	if (Group_Stock == m_Group)
-	{
-		m_pFenShiPic->InitSubPic(MAX_SUBPIC, SubPicWndNameVec);
-		m_pKlinePic->InitSubPic(MAX_SUBPIC, SubPicWndNameVec);
-	}
-	else
-	{
-		m_pFenShiPic->InitSubPic(1, SubPicWndNameVec);
-		m_pKlinePic->InitSubPic(1, SubPicWndNameVec);
-	}
+	//if (Group_Stock == m_Group)
+	//{
+	m_pFenShiPic->InitSubPic(m_InitPara.nTSCPointWndNum);
+	m_pKlinePic->InitSubPic(m_InitPara.nKlinePointWndNum);
+	//}
+	//else
+	//{
+	//	m_pFenShiPic->InitSubPic(1);
+	//	m_pKlinePic->InitSubPic(1);
+	//}
 	m_pFenShiPic->SetRpsGroup(m_Group);
 	m_pFenShiPic->InitShowPara(m_InitPara);
 	m_pKlinePic->SetRpsGroup(m_Group);
@@ -194,19 +200,43 @@ void CWorkWnd::InitList()
 		m_pList->InsertColumn(SHead_AvgBuySellRatio, L"平均量比%", 80);
 		m_pList->InsertColumn(SHead_POCRatio, L"最多成交价格比%", 120);
 		m_pList->InsertColumn(SHead_Volume, L"成交量", 80);
-		m_pList->InsertColumn(SHead_ActSellVolume,L"内盘", 80);
+		m_pList->InsertColumn(SHead_ActSellVolume, L"内盘", 80);
 		m_pList->InsertColumn(SHead_ActBuyVolume, L"外盘", 80);
 		m_pList->InsertColumn(SHead_Open, L"开盘", 80);
 		m_pList->InsertColumn(SHead_High, L"最高", 80);
-		m_pList->InsertColumn(SHead_Low,L"最低", 80);
+		m_pList->InsertColumn(SHead_Low, L"最低", 80);
 		m_pList->InsertColumn(SHead_Amount, L"成交额", 80);
 	}
+	
+	m_ListDataSortMap[SHead_ID] = eSDT_Int;
+	m_ListDataSortMap[SHead_Name] = eSDT_String;
+	m_ListDataSortMap[SHead_CloseRank520] = eSDT_Int;
+	m_ListDataSortMap[SHead_CloseRank2060] = eSDT_Int;
+	m_ListDataSortMap[SHead_AmountMACD520] = eSDT_BigDouble;
+	m_ListDataSortMap[SHead_AmountRank520] = eSDT_Int;
+	m_ListDataSortMap[SHead_AmountMACD2060] = eSDT_BigDouble;
+	m_ListDataSortMap[SHead_AmountRank2060] = eSDT_Int;
+	m_ListDataSortMap[SHead_Volume] = eSDT_Int;
+	m_ListDataSortMap[SHead_ActSellVolume] = eSDT_Int;
+	m_ListDataSortMap[SHead_ActBuyVolume] = eSDT_Int;
+	m_ListDataSortMap[SHead_Amount] = eSDT_BigDouble;
+
+	m_ListDataDecMap[SHead_LastPx] = 2;
+	m_ListDataDecMap[SHead_ChangePct] = 2;
+	m_ListDataDecMap[SHead_ActBuySellRatio] = 2;
+	m_ListDataDecMap[SHead_ActToPasBuySellRatio] = 2;
+	m_ListDataDecMap[SHead_AvgBuySellRatio] = 2;
+	m_ListDataDecMap[SHead_POCRatio] = 2;
+	m_ListDataDecMap[SHead_Open] = 2;
+	m_ListDataDecMap[SHead_High] = 2;
+	m_ListDataDecMap[SHead_Low] = 2;
 
 	m_bListInited = true;
 	if (!m_bUseStockFilter)
 		UpdateListShowStock();
 	else
 		UpdateListFilterShowStock();
+	m_MouseWheelMap.hash = m_ListPosMap.hash;
 	UpdateList();
 
 }
@@ -225,13 +255,13 @@ void CWorkWnd::SetDataPoint(void * pData, int DataType)
 	switch (DataType)
 	{
 	case DT_ListData:
-		m_pListDataMap = (map<int, TimeLineMap>*)pData;
+		m_pListDataMap = (map<int, strHash<RtRps>>*)pData;
 		break;
 	case DT_TFMarket:
 		m_pTFMarketHash = (map<int, strHash<TickFlowMarket>>*)pData;
 		break;
 	case DT_FilterData:
-		m_pFilterDataMap = (map<int,strHash<map<string, double>>>*)pData;
+		m_pFilterDataMap = (map<int, strHash<map<string, double>>>*)pData;
 		break;
 	default:
 		break;
@@ -258,13 +288,13 @@ void CWorkWnd::SetListInfo(vector<StockInfo>& infoVec,
 	m_pDlgKbElf->SetStockInfo(m_InfoVec);
 }
 
-void CWorkWnd::UpdateTodayPointData(SStringA pointName,
-	vector<CoreData>& dataVec, bool bLast)
-{
-	m_PointData[m_PicPeriod][pointName] = dataVec;
-	if (bLast)
-		m_PointReadyMap[m_PicPeriod] = true;
-}
+//void CWorkWnd::UpdateTodayPointData(SStringA pointName,
+//	vector<CoreData>& dataVec, bool bLast)
+//{
+//	m_PointData[m_PicPeriod][pointName] = dataVec;
+//	if (bLast)
+//		m_PointReadyMap[m_PicPeriod][pointName] = TRUE;
+//}
 
 void CWorkWnd::CloseWnd()
 {
@@ -285,11 +315,11 @@ void CWorkWnd::CloseWnd()
 	m_StockName.hash.clear();
 	m_dataNameVec.clear();
 	m_dataNameVec.shrink_to_fit();
-	m_PointReadyMap.clear();
+	//m_PointReadyMap.clear();
 	m_KlineGetMap.clear();
 	m_PointGetMap.clear();
 	m_SubPicShowNameVec.clear();
-	m_SubPicShowNameVec.shrink_to_fit();
+	//m_SubPicShowNameVec.shrink_to_fit();
 	m_ListPosMap.hash.clear();
 	m_MouseWheelMap.hash.clear();
 }
@@ -297,6 +327,11 @@ void CWorkWnd::CloseWnd()
 void CWorkWnd::OutputStockFilterPara(SFPlan &sfPlan)
 {
 	m_pDlgStockFilter->OutPutCondition(sfPlan);
+}
+
+void SOUI::CWorkWnd::OutputComboStockFilterPara(vector<StockFilter>& sfVec)
+{
+	m_pDlgCmbStockFilter->OutPutCondition(sfVec);
 }
 
 void CWorkWnd::InitStockFilterPara(SFPlan &sfPlan)
@@ -309,6 +344,24 @@ void CWorkWnd::InitStockFilterPara(SFPlan &sfPlan)
 	}
 	m_pDlgStockFilter->InitList(m_bUseStockFilter, sfPlan);
 }
+
+void SOUI::CWorkWnd::InitComboStockFilterPara(vector<StockFilter>& sfVec)
+{
+	m_sfVec = sfVec;
+	m_pDlgCmbStockFilter->InitList(m_bUseStockFilter, sfVec);
+}
+
+void CWorkWnd::SetPointInfo(map<ePointDataType, ShowPointInfo>& infoMap)
+{
+	if (m_Group == Group_Stock)
+		m_pointInfoMap = infoMap;
+	else
+	{
+		for (int i = eFullMarketPointStart; i < eFullMarketPointEnd; ++i)
+			m_pointInfoMap[(ePointDataType)i] = infoMap[(ePointDataType)i];
+	}
+}
+
 
 void CWorkWnd::OnInit(EventArgs * e)
 {
@@ -396,7 +449,8 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			SetBtnState(m_pBtnStockFilter, true);
 			SetBtnState(m_pBtnConn1, false);
 			SetBtnState(m_pBtnConn2, false);
-			m_pDlgStockFilter->OutPutCondition(m_sfPlan);
+			//m_pDlgStockFilter->OutPutCondition(m_sfPlan);
+			m_pDlgCmbStockFilter->OutPutCondition(m_sfVec);
 			m_bListConn1 = false;
 			m_bListConn2 = false;
 			m_ListShowInd = "";
@@ -408,6 +462,54 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			UpdateListShowStock();
 		}
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveConfig, 0);
+	case WDMsg_ChangePointTarget:
+	{
+		ePointDataType pointData = (ePointDataType)lp;
+		auto &info = m_pointInfoMap[pointData];
+		GetPointData(info, m_strSubStock, m_PicPeriod);
+		int dataCount = m_PointDataCount[info.type];
+		vector<vector<CoreData>*> tmpDataArr(dataCount);
+		vector<BOOL> rightVec(dataCount);
+		vector<SStringA> dataNameVec;
+		for (int i = 0; i < dataCount; ++i)
+		{
+			SStringA dataName = info.srcDataName +
+				m_SubPicShowNameVec[info.type][info.range][i];
+			tmpDataArr[i] = &m_PointData[m_PicPeriod][dataName];
+			dataNameVec.emplace_back(dataName);
+			rightVec[i] = TRUE;
+		}
+		SStringA strTitle = "";
+		if (Group_Stock == m_Group)
+		{
+			vector<SStringA> nameVec;
+			GetBelongingIndyName(nameVec);
+			if ("L1" == info.range)
+				strTitle.Format("行业:%s", nameVec[0]);
+			else if ("L2" == info.range)
+				strTitle.Format("行业:%s", nameVec[1]);
+			strTitle.Format("%s %s", info.showName, strTitle);
+		}
+
+		if (m_pFenShiPic->IsVisible())
+		{
+			m_pFenShiPic->SetSelPointWndInfo(info, strTitle);
+			m_pFenShiPic->SetSubPicShowData(dataCount, tmpDataArr,
+				rightVec, dataNameVec, m_strSubStock,
+				m_StockName.hash[m_strSubStock]);
+
+		}
+		else if (m_pKlinePic->IsVisible())
+		{
+			m_pKlinePic->SetSelPointWndInfo(info, strTitle);
+			m_pKlinePic->SetSubPicShowData(dataCount, tmpDataArr,
+				rightVec, dataNameVec, m_strSubStock,
+				m_StockName.hash[m_strSubStock]);
+		}
+
+
+	}
+	break;
 	default:
 		break;
 	}
@@ -491,13 +593,6 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
-	case FM_RPS:
-		m_pFenShiPic->SetRpsState(SP_FULLMARKET);
-		m_pFenShiPic->Invalidate();
-		bState = m_pFenShiPic->GetRpsState(SP_FULLMARKET);
-		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
-			WDMsg_SaveConfig, NULL);
-		break;
 	case FM_MacdPara:
 	{
 		CDlgMacdPara *pDlg = new CDlgMacdPara(m_Group, m_hWnd);
@@ -532,20 +627,50 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		pDlg->ShowWindow(SW_SHOWDEFAULT);
 	}
 	break;
-	case FM_L1RPS:
-		m_pFenShiPic->SetRpsState(SP_SWINDYL1);
+	case FM_PointWnd0:
+	case FM_PointWnd1:
+	case FM_PointWnd2:
+	case FM_PointWnd3:
+	case FM_PointWnd4:
+	case FM_PointWnd5:
+	case FM_PointWnd6:
+	case FM_PointWnd7:
+	case FM_PointWnd8:
+	{
+		int nWndNum = nID - FM_PointWnd0;
+		int nOldWndNum = m_pFenShiPic->GetShowSubPicNum();
+		vector<ShowPointInfo> infoVec = m_pFenShiPic->GetSubPicDataToGet(nWndNum, m_pointInfoMap);
+		m_pFenShiPic->ReSetSubPic(nWndNum, infoVec);
+		std::set<ShowPointInfo>pointGetSet;
+		for (auto &it : infoVec)
+		{
+			if (pointGetSet.count(it) == 0)
+			{
+				GetPointData(it, m_strSubStock, Period_FenShi);
+				pointGetSet.insert(it);
+			}
+		}
+		SetFenShiShowData(infoVec, nOldWndNum);
 		m_pFenShiPic->Invalidate();
-		bState = m_pFenShiPic->GetRpsState(SP_SWINDYL1);
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
-	case FM_L2RPS:
-		m_pFenShiPic->SetRpsState(SP_SWINDYL2);
-		m_pFenShiPic->Invalidate();
-		bState = m_pFenShiPic->GetRpsState(SP_SWINDYL2);
-		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
-			WDMsg_SaveConfig, NULL);
-		break;
+	}
+
+	//case FM_L1RPS:
+	//	m_pFenShiPic->SetRpsState(SP_SWINDYL1);
+	//	m_pFenShiPic->Invalidate();
+	//	bState = m_pFenShiPic->GetRpsState(SP_SWINDYL1);
+	//	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+	//		WDMsg_SaveConfig, NULL);
+	//	break;
+	//case FM_L2RPS:
+	//	m_pFenShiPic->SetRpsState(SP_SWINDYL2);
+	//	m_pFenShiPic->Invalidate();
+	//	bState = m_pFenShiPic->GetRpsState(SP_SWINDYL2);
+	//	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+	//		WDMsg_SaveConfig, NULL);
+	//	break;
 	default:
 		break;
 	}
@@ -593,13 +718,13 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
-	case KM_RPS:
-		m_pKlinePic->SetRpsState(SP_FULLMARKET);
-		m_pKlinePic->Invalidate();
-		bState = m_pKlinePic->GetRpsState(SP_FULLMARKET);
-		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
-			WDMsg_SaveConfig, NULL);
-		break;
+		//case KM_RPS:
+		//	m_pKlinePic->SetRpsState(SP_FULLMARKET);
+		//	m_pKlinePic->Invalidate();
+		//	bState = m_pKlinePic->GetRpsState(SP_FULLMARKET);
+		//	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+		//		WDMsg_SaveConfig, NULL);
+		//	break;
 	case KM_MacdPara:
 	{
 		CDlgMacdPara *pDlg = new CDlgMacdPara(m_Group, m_hWnd);
@@ -630,23 +755,77 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		pDlg->ShowWindow(SW_SHOWDEFAULT);
 	}
 	break;
-	case KM_L1RPS:
-		m_pKlinePic->SetRpsState(SP_SWINDYL1);
+	//case KM_L1RPS:
+	//	m_pKlinePic->SetRpsState(SP_SWINDYL1);
+	//	m_pKlinePic->Invalidate();
+	//	bState = m_pKlinePic->GetRpsState(SP_SWINDYL1);
+	//	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+	//		WDMsg_SaveConfig, NULL);
+	//	break;
+	//case KM_L2RPS:
+	//	m_pKlinePic->SetRpsState(SP_SWINDYL2);
+	//	m_pKlinePic->Invalidate();
+	//	bState = m_pKlinePic->GetRpsState(SP_SWINDYL2);
+	//	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+	//		WDMsg_SaveConfig, NULL);
+	//	break;
+	case KM_PointWnd0:
+	case KM_PointWnd1:
+	case KM_PointWnd2:
+	case KM_PointWnd3:
+	case KM_PointWnd4:
+	case KM_PointWnd5:
+	case KM_PointWnd6:
+	case KM_PointWnd7:
+	case KM_PointWnd8:
+	{
+		int nWndNum = nID - KM_PointWnd0;
+		int nOldWndNum = m_pKlinePic->GetShowSubPicNum();
+		vector<ShowPointInfo> infoVec = m_pKlinePic->GetSubPicDataToGet(nWndNum, m_pointInfoMap);
+		m_pKlinePic->ReSetSubPic(nWndNum, infoVec);
+
+		std::set<ShowPointInfo>pointGetSet;
+		for (auto &it : infoVec)
+		{
+			if (pointGetSet.count(it) == 0)
+			{
+				GetPointData(it, m_strSubStock, m_PicPeriod);
+				pointGetSet.insert(it);
+			}
+		}
+		SetKlineShowData(infoVec, m_PicPeriod, FALSE, nOldWndNum);
 		m_pKlinePic->Invalidate();
-		bState = m_pKlinePic->GetRpsState(SP_SWINDYL1);
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
-	case KM_L2RPS:
-		m_pKlinePic->SetRpsState(SP_SWINDYL2);
-		m_pKlinePic->Invalidate();
-		bState = m_pKlinePic->GetRpsState(SP_SWINDYL2);
-		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
-			WDMsg_SaveConfig, NULL);
-		break;
+	}
 
 	default:
 		break;
+	}
+}
+void CWorkWnd::OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
+{
+	switch (nID)
+	{
+	case TSM_Close:
+		if (m_pFenShiPic->IsVisible())
+			m_pFenShiPic->CloseSinglePointWnd();
+		else if (m_pKlinePic->IsVisible())
+			m_pKlinePic->CloseSinglePointWnd();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case TSM_Select:
+	{
+		CDlgSelTarget *pDlg = new CDlgSelTarget(m_hWnd, m_pointInfoMap);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
 	}
 }
 void CWorkWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -789,18 +968,18 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 			menu.CheckMenuItem(FM_Volume, MF_CHECKED);
 		if (m_pFenShiPic->GetMacdState())
 			menu.CheckMenuItem(FM_MACD, MF_CHECKED);
-		if (m_pFenShiPic->GetRpsState(SP_FULLMARKET))
-			menu.CheckMenuItem(FM_RPS, MF_CHECKED);
+		int nWndNum = m_pFenShiPic->GetShowSubPicNum();
+		menu.CheckMenuItem(FM_PointWnd0 + nWndNum, MF_CHECKED);
 		if (m_pFenShiPic->GetAvgState())
 			menu.CheckMenuItem(FM_Avg, MF_CHECKED);
 		if (m_pFenShiPic->GetEmaState())
 			menu.CheckMenuItem(FM_EMA, MF_CHECKED);
-		int nSubPicNum = m_pFenShiPic->GetShowSubPicNum();
-		for (int i = SP_SWINDYL1; i < nSubPicNum; ++i)
-		{
-			if (m_pFenShiPic->GetRpsState(i))
-				menu.CheckMenuItem(FM_EmaPara + i, MF_CHECKED);
-		}
+		//int nSubPicNum = m_pFenShiPic->GetShowSubPicNum();
+		//for (int i = SP_SWINDYL1; i < nSubPicNum; ++i)
+		//{
+		//	if (m_pFenShiPic->GetRpsState(i))
+		//		menu.CheckMenuItem(FM_EmaPara + i, MF_CHECKED);
+		//}
 		ClientToScreen(&point);
 		menu.TrackPopupMenu(0, point.x, point.y, m_hWnd);
 		return;
@@ -816,23 +995,40 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 			menu.CheckMenuItem(KM_Volume, MF_CHECKED);
 		if (m_pKlinePic->GetMacdState())
 			menu.CheckMenuItem(KM_MACD, MF_CHECKED);
-		if (m_pKlinePic->GetRpsState(SP_FULLMARKET))
-			menu.CheckMenuItem(KM_RPS, MF_CHECKED);
+		int nWndNum = m_pKlinePic->GetShowSubPicNum();
+		//if (m_pKlinePic->GetRpsState(SP_FULLMARKET))
+		menu.CheckMenuItem(KM_PointWnd0 + nWndNum, MF_CHECKED);
 		if (m_pKlinePic->GetMaState())
 			menu.CheckMenuItem(KM_MA, MF_CHECKED);
 		if (m_pKlinePic->GetBandState())
 			menu.CheckMenuItem(KM_Band, MF_CHECKED);
-		int nSubPicNum = m_pKlinePic->GetShowSubPicNum();
-		for (int i = SP_SWINDYL1; i < nSubPicNum; ++i)
-		{
-			if (m_pKlinePic->GetRpsState(i))
-				menu.CheckMenuItem(KM_MaPara + i, MF_CHECKED);
-		}
+		//int nSubPicNum = m_pKlinePic->GetShowSubPicNum();
+		//for (int i = SP_SWINDYL1; i < nSubPicNum; ++i)
+		//{
+		//	if (m_pKlinePic->GetRpsState(i))
+		//		menu.CheckMenuItem(KM_MaPara + i, MF_CHECKED);
+		//}
 
 		ClientToScreen(&point);
 		menu.TrackPopupMenu(0, point.x, point.y, m_hWnd);
 		return;
 
+	}
+}
+void CWorkWnd::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	SetMsgHandled(FALSE);
+	BOOL bTargetSelClicked = FALSE;
+	if (m_pFenShiPic->IsVisible())
+		bTargetSelClicked = m_pFenShiPic->CheckTargetSelectIsClicked(point);
+	else if (m_pKlinePic->IsVisible())
+		bTargetSelClicked = m_pKlinePic->CheckTargetSelectIsClicked(point);
+	if (bTargetSelClicked)
+	{
+		SMenu menu;
+		menu.LoadMenuW(L"smenu:menu_target");
+		ClientToScreen(&point);
+		menu.TrackPopupMenu(0, point.x, point.y, m_hWnd);
 	}
 }
 BOOL CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
@@ -947,10 +1143,10 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnUpdateListData;
 	m_dataHandleMap[WW_Point] =
 		&CWorkWnd::OnUpdatePoint;
-	m_dataHandleMap[WW_TodayPoint] =
-		&CWorkWnd::OnUpdateTodayPoint;
-	m_dataHandleMap[WW_HisPoint] =
-		&CWorkWnd::OnUpdateHisPoint;
+	//m_dataHandleMap[WW_TodayPoint] =
+	//	&CWorkWnd::OnUpdateTodayPoint;
+	m_dataHandleMap[WW_HisRpsPoint] =
+		&CWorkWnd::OnUpdateHisRpsPoint;
 	m_dataHandleMap[WW_RTIndexMarket] =
 		&CWorkWnd::OnUpdateIndexMarket;
 	m_dataHandleMap[WW_RTStockMarket] =
@@ -979,6 +1175,8 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnChangeStockFilter;
 	m_dataHandleMap[WW_SaveStockFilter] =
 		&CWorkWnd::OnSaveStockFilter;
+	m_dataHandleMap[WW_HisSecPoint] =
+		&CWorkWnd::OnUpdateHisSecPoint;
 
 }
 void CWorkWnd::InitNameVec()
@@ -994,57 +1192,123 @@ void CWorkWnd::InitNameVec()
 	m_dataNameVec.emplace_back("Rank2060");
 
 
-	m_SubPicShowNameVec.resize(MAX_SUBPIC);
-	for (int i = 0; i < MAX_SUBPIC; ++i)
-		m_SubPicShowNameVec[i].reserve(SHOWDATACOUNT);
-	m_SubPicShowNameVec[0].emplace_back("Point520");
-	m_SubPicShowNameVec[0].emplace_back("Point2060");
-	m_SubPicShowNameVec[1].emplace_back("L1Point520");
-	m_SubPicShowNameVec[1].emplace_back("L1Point2060");
-	m_SubPicShowNameVec[2].emplace_back("L2Point520");
-	m_SubPicShowNameVec[2].emplace_back("L2Point2060");
+	m_PointDataCount[eRpsPoint] = 2;
+	m_PointDataCount[eSecPoint] = 1;
 
+	m_SubPicShowNameVec[eRpsPoint][""].emplace_back("Point520");
+	m_SubPicShowNameVec[eRpsPoint][""].emplace_back("Point2060");
+	m_SubPicShowNameVec[eRpsPoint]["L1"].emplace_back("Point520L1");
+	m_SubPicShowNameVec[eRpsPoint]["L1"].emplace_back("Point2060L1");
+	m_SubPicShowNameVec[eRpsPoint]["L2"].emplace_back("Point520L2");
+	m_SubPicShowNameVec[eRpsPoint]["L2"].emplace_back("Point2060L2");
+
+	m_SubPicShowNameVec[eSecPoint][""].emplace_back("Point");
+	m_SubPicShowNameVec[eSecPoint]["L1"].emplace_back("PointL1");
+	m_SubPicShowNameVec[eSecPoint]["L2"].emplace_back("PointL2");
 
 }
 void CWorkWnd::InitStockFilterFunc()
 {
 
-	//m_SFPeriodMap[SFP_FS] = Period_FenShi;
-	//m_SFPeriodMap[SFP_M1] = Period_1Min;
-	//m_SFPeriodMap[SFP_M5] = Period_5Min;
-	//m_SFPeriodMap[SFP_M15] = Period_15Min;
-	//m_SFPeriodMap[SFP_M30] = Period_30Min;
-	//m_SFPeriodMap[SFP_M60] = Period_60Min;
-	//m_SFPeriodMap[SFP_D1] = Period_1Day;
+	m_SFPeriodMap[SFP_FS] = Period_FenShi;
+	m_SFPeriodMap[SFP_M1] = Period_1Min;
+	m_SFPeriodMap[SFP_M5] = Period_5Min;
+	m_SFPeriodMap[SFP_M15] = Period_15Min;
+	m_SFPeriodMap[SFP_M30] = Period_30Min;
+	m_SFPeriodMap[SFP_M60] = Period_60Min;
+	m_SFPeriodMap[SFP_D1] = Period_1Day;
+	m_SFPeriodMap[SFP_Null] = Period_1Day;
 
 
 
-	//m_SFIndexMap[SFI_ChgPct] = "chgPct";
-	//m_SFIndexMap[SFI_Rps520] = "RPS520";
-	//m_SFIndexMap[SFI_Macd520] = "MACD520";
-	//m_SFIndexMap[SFI_Point520] = "Point520";
-	//m_SFIndexMap[SFI_Rank520] = "Rank520";
-	//m_SFIndexMap[SFI_Rps2060] = "RPS2060";
-	//m_SFIndexMap[SFI_Macd2060] = "MACD2060";
-	//m_SFIndexMap[SFI_Point2060] = "Point2060";
-	//m_SFIndexMap[SFI_Rank2060] = "Rank2060";
-	//m_SFIndexMap[SFI_Num] = "Num";
-	//m_SFIndexMap[SFI_ABSR] = "ABSR";
-	//m_SFIndexMap[SFI_A2PBSR] = "A2PBSR";
-	//m_SFIndexMap[SFI_AABSR] = "AABSR";
-	//m_SFIndexMap[SFI_POCR] = "POCR";
+	m_SFIndexMap[SFI_ChgPct] = "CHG";
+	m_SFIndexMap[SFI_CloseRps520] = "closeRPS520";
+	m_SFIndexMap[SFI_CloseMacd520] = "closeMACD520";
+	m_SFIndexMap[SFI_ClosePoint520] = "closePOINT520";
+	m_SFIndexMap[SFI_CloseRank520] = "closeRANK520";
+	m_SFIndexMap[SFI_CloseRps2060] = "closeRPS2060";
+	m_SFIndexMap[SFI_CloseMacd2060] = "closeMACD2060";
+	m_SFIndexMap[SFI_ClosePoint2060] = "closePOINT2060";
+	m_SFIndexMap[SFI_CloseRank2060] = "closeRANK2060";
+	m_SFIndexMap[SFI_Num] = "Num";
+	m_SFIndexMap[SFI_ABSR] = "ABSR";
+	m_SFIndexMap[SFI_A2PBSR] = "A2PBSR";
+	m_SFIndexMap[SFI_AABSR] = "AABSR";
+	m_SFIndexMap[SFI_POCR] = "POCR";
+	m_SFIndexMap[SFI_Vol] = "VOL";
+	m_SFIndexMap[SFI_Amount] = "AMOUNT";
+	m_SFIndexMap[SFI_AmountRps520] = "amountRPS520";
+	m_SFIndexMap[SFI_AmountMacd520] = "amountMACD520";
+	m_SFIndexMap[SFI_AmountPoint520] = "amountPOINT520";
+	m_SFIndexMap[SFI_AmountRank520] = "amountRANK520";
+	m_SFIndexMap[SFI_AmountRps2060] = "amountRPS2060";
+	m_SFIndexMap[SFI_AmountMacd2060] = "amountMACD2060";
+	m_SFIndexMap[SFI_AmountPoint2060] = "amountPOINT2060";
+	m_SFIndexMap[SFI_AmountRank2060] = "amountRANK2060";
+	m_SFIndexMap[SFI_AmountPoint] = "amountPOINT";
+	m_SFIndexMap[SFI_AmountRank] = "amountRANK";
+
+	m_SFIndexMap[SFI_CloseRps520L1] = "closeRPS520L1";
+	m_SFIndexMap[SFI_CloseMacd520L1] = "closeMACD520L1";
+	m_SFIndexMap[SFI_ClosePoint520L1] = "closePOINT520L1";
+	m_SFIndexMap[SFI_CloseRank520L1] = "closeRANK520L1";
+	m_SFIndexMap[SFI_CloseRps2060L1] = "closeRPS2060L1";
+	m_SFIndexMap[SFI_CloseMacd2060L1] = "closeMACD2060L1";
+	m_SFIndexMap[SFI_ClosePoint2060L1] = "closePOINT2060L1";
+	m_SFIndexMap[SFI_CloseRank2060L1] = "closeRANK2060L1";
+	m_SFIndexMap[SFI_AmountRps520L1] = "amountRPS520L1";
+	m_SFIndexMap[SFI_AmountMacd520L1] = "amountMACD520L1";
+	m_SFIndexMap[SFI_AmountPoint520L1] = "amountPOINT520L1";
+	m_SFIndexMap[SFI_AmountRank520L1] = "amountRANK520L1";
+	m_SFIndexMap[SFI_AmountRps2060L1] = "amountRPS2060L1";
+	m_SFIndexMap[SFI_AmountMacd2060L1] = "amountMACD2060L1";
+	m_SFIndexMap[SFI_AmountPoint2060L1] = "amountPOINT2060L1";
+	m_SFIndexMap[SFI_AmountRank2060L1] = "amountRANK2060L1";
+	m_SFIndexMap[SFI_AmountPointL1] = "amountPOINTL1";
+	m_SFIndexMap[SFI_AmountRankL1] = "amountRANKL1";
+
+	m_SFIndexMap[SFI_CloseRps520L2] = "closeRPS520L2";
+	m_SFIndexMap[SFI_CloseMacd520L2] = "closeMACD520L2";
+	m_SFIndexMap[SFI_ClosePoint520L2] = "closePOINT520L2";
+	m_SFIndexMap[SFI_CloseRank520L2] = "closeRANK520L2";
+	m_SFIndexMap[SFI_CloseRps2060L2] = "closeRPS2060L2";
+	m_SFIndexMap[SFI_CloseMacd2060L2] = "closeMACD2060L2";
+	m_SFIndexMap[SFI_ClosePoint2060L2] = "closePOINT2060L2";
+	m_SFIndexMap[SFI_CloseRank2060L2] = "closeRANK2060L2";
+	m_SFIndexMap[SFI_AmountRps520L2] = "amountRPS520L2";
+	m_SFIndexMap[SFI_AmountMacd520L2] = "amountMACD520L2";
+	m_SFIndexMap[SFI_AmountPoint520L2] = "amountPOINT520L2";
+	m_SFIndexMap[SFI_AmountRank520L2] = "amountRANK520L2";
+	m_SFIndexMap[SFI_AmountRps2060L2] = "amountRPS2060L2";
+	m_SFIndexMap[SFI_AmountMacd2060L2] = "amountMACD2060L2";
+	m_SFIndexMap[SFI_AmountPoint2060L2] = "amountPOINT2060L2";
+	m_SFIndexMap[SFI_AmountRank2060L2] = "amountRANK2060L2";
+	m_SFIndexMap[SFI_AmountPointL2] = "amountPOINTL2";
+	m_SFIndexMap[SFI_AmountRankL2] = "amountRANKL2";
+
+	m_SFIndexMap[SFI_ABV] = "ABV";
+	m_SFIndexMap[SFI_ASV] = "ASV";
+	m_SFIndexMap[SFI_ABO] = "ABO";
+	m_SFIndexMap[SFI_ASO] = "ASO";
+	m_SFIndexMap[SFI_PBO] = "PBO";
+	m_SFIndexMap[SFI_PSO] = "PSO";
 
 
-	//m_SFConditionMap[SFC_Greater] =
-	//	&CWorkWnd::GreaterThan;
-	//m_SFConditionMap[SFC_EqualOrGreater] =
-	//	&CWorkWnd::EqualOrGreaterThan;
-	//m_SFConditionMap[SFC_Equal] =
-	//	&CWorkWnd::Equal;
-	//m_SFConditionMap[SFC_EqualOrLess] =
-	//	&CWorkWnd::EqualOrLessThan;
-	//m_SFConditionMap[SFC_Less] =
-	//	&CWorkWnd::LessThan;
+	m_SFIndexMap[SFI_Open] = "OPEN";
+	m_SFIndexMap[SFI_High] = "HIGH";
+	m_SFIndexMap[SFI_Low] = "LOW";
+	m_SFIndexMap[SFI_Close] = "CLOSE";
+
+	m_SFConditionMap[SFC_Greater] =
+		&CWorkWnd::GreaterThan;
+	m_SFConditionMap[SFC_EqualOrGreater] =
+		&CWorkWnd::EqualOrGreaterThan;
+	m_SFConditionMap[SFC_Equal] =
+		&CWorkWnd::Equal;
+	m_SFConditionMap[SFC_EqualOrLess] =
+		&CWorkWnd::EqualOrLessThan;
+	m_SFConditionMap[SFC_Less] =
+		&CWorkWnd::LessThan;
 
 }
 
@@ -1065,7 +1329,10 @@ bool CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
 		(SColorListCtrlEx *)pHeader->GetParent();
 
 	pHeader->SetItemSort(m_SortPara.nShowCol, ST_NULL);
-
+	if (m_ListDataDecMap.count((SListHead)hditem.iOrder) == 0)
+		m_SortPara.nDec = 3;
+	else
+		m_SortPara.nDec = m_ListDataDecMap[(SListHead)hditem.iOrder];
 
 	if (hditem.iOrder == 1)
 	{
@@ -1204,147 +1471,62 @@ void CWorkWnd::UpdateList()
 		return;
 	}
 	auto ListData = m_pListDataMap->at(m_ListPeriod);
+	auto TfData = m_pTFMarketHash ?
+		m_pTFMarketHash->at(m_ListPeriod) : strHash<TickFlowMarket>();
+
 	for (auto &it : m_ListPosMap.hash)
 	{
 		SStringA StockID = it.first;
-		if (ListData.count(StockID))
+		if (ListData.hash.count(StockID))
 		{
 			::EnterCriticalSection(&m_csClose);
 			double fPreClose = m_preCloseMap.hash[StockID];
 			::LeaveCriticalSection(&m_csClose);
 
-			auto & dataVec = ListData[StockID];
-			if (!isnan(dataVec["close"].value)
-				&& dataVec["close"].value != 0)
+			auto & rtData = ListData.hash[StockID];
+			if (rtData.fPrice != 0)
 			{
-				double fClose = dataVec["close"].value;
 				COLORREF cl = RGBA(255, 255, 255, 255);
-				if (fClose > fPreClose)
+				if (rtData.fPrice > fPreClose)
 					cl = RGBA(255, 0, 0, 255);
-				else if (fClose < fPreClose && fClose != 0)
+				else if (rtData.fPrice < fPreClose)
 					cl = RGBA(0, 255, 0, 255);
-				tmp.Format(L"%.2f", fClose);
+				tmp.Format(L"%.2f", rtData.fPrice);
 				m_pList->SetSubItemText(it.second, SHead_LastPx, tmp, cl);
-				double chgPct = (fClose - fPreClose) / fPreClose * 100;
-				if (!isnan(chgPct) && !isinf(chgPct) && fClose != 0)
-					tmp.Format(L"%.2f", (fClose - fPreClose) / fPreClose * 100);
+				double chgPct = (rtData.fPrice - fPreClose) / fPreClose * 100;
+				if (!isnan(chgPct) && !isinf(chgPct))
+					tmp.Format(L"%.2f", (rtData.fPrice - fPreClose) / fPreClose * 100);
 				else
 					tmp = L"-";
 				m_pList->SetSubItemText(it.second, SHead_ChangePct, tmp, cl);
+				UpdateRpsData(it.second, rtData.rpsClose, SHead_CloseRPS520, SHead_CloseRank2060);
+				//if (isnan(rtData.rpsAmount.fMacd520) || isinf(rtData.rpsAmount.fMacd520))
+				UpdateRpsData(it.second, rtData.rpsAmount, SHead_AmountRPS520, SHead_AmountRank2060);
+				UpdateSecData(it.second, rtData.secAmount, SHead_AmountPoint, SHead_AmountRank);
+
+				if (m_Group == Group_Stock)
+				{
+					if (TfData.hash.count(StockID))
+						UpdateTFData(it.second, TfData.hash[StockID], fPreClose);
+				}
+
 			}
 			else
 			{
-				if (dataVec["close"].value == 0)
+				if (rtData.fPrice == 0)
 					m_pList->SetSubItemText(it.second, SHead_LastPx, L"0.00");
 				else
 					m_pList->SetSubItemText(it.second, SHead_LastPx, L"-");
 				for (int i = SHead_ChangePct; i < SHead_CommonItmeCount; ++i)
 					m_pList->SetSubItemText(it.second, i, L"-");
+				if (m_Group == Group_Stock)
+				{
+					for (int i = SHead_TickFlowStart; i < SHead_StockItemCount; ++i)
+						m_pList->SetSubItemText(it.second, i, L"-");
+
+				}
+
 				continue;
-			}
-			for (int i = 1; i < m_dataNameVec.size(); ++i)
-			{
-				if (dataVec.count(m_dataNameVec[i])
-					&& !isnan(dataVec[m_dataNameVec[i]].value))
-				{
-					COLORREF cl = RGBA(255, 255, 0, 255);
-					if (i + SHead_ChangePct == SHead_Point520
-						|| i + SHead_ChangePct == SHead_Point2060)
-					{
-						if (dataVec[m_dataNameVec[i]].value >= 80)
-							cl = RGBA(255, 0, 0, 255);
-						else if (dataVec[m_dataNameVec[i]].value < 60)
-							cl = RGBA(0, 255, 0, 255);
-						else
-							cl = RGBA(255, 255, 255, 255);
-					}
-					else if (i + SHead_ChangePct == SHead_RPS520
-						|| i + SHead_ChangePct == SHead_RPS2060
-						|| i + SHead_ChangePct == SHead_MACD520
-						|| i + SHead_ChangePct == SHead_MACD2060)
-					{
-						if (dataVec[m_dataNameVec[i]].value > 0)
-							cl = RGBA(255, 0, 0, 255);
-						else if (dataVec[m_dataNameVec[i]].value < 0)
-							cl = RGBA(0, 255, 0, 255);
-						else
-							cl = RGBA(255, 255, 255, 255);
-					}
-
-					if (i + SHead_ChangePct == SHead_Rank520 ||
-						i + SHead_ChangePct == SHead_Rank2060)
-						tmp.Format(L"%.0f", dataVec[m_dataNameVec[i]].value);
-					else
-						tmp.Format(L"%.03f", dataVec[m_dataNameVec[i]].value);
-					m_pList->SetSubItemText(it.second,
-						i + SHead_ChangePct, tmp, cl);
-				}
-				else
-					m_pList->SetSubItemText(it.second,
-						i + SHead_ChangePct, L"-");
-			}
-			if (m_Group == Group_Stock)
-			{
-				for (int i = 0; i < m_tfNameVec.size(); ++i)
-				{
-					COLORREF cl = RGBA(255, 255, 0, 255);
-					if (dataVec.count(m_tfNameVec[i])
-						&& !isnan(dataVec[m_tfNameVec[i]].value))
-					{
-						COLORREF cl = RGBA(255, 255, 0, 255);
-						if(i + SHead_TickFlowStart == SHead_ActSellVolume)
-							cl = RGBA(0, 255, 0, 255);
-						else if(i + SHead_TickFlowStart == SHead_ActBuyVolume)
-							cl = RGBA(255, 0, 0, 255);
-						else if(i + SHead_TickFlowStart == SHead_Open ||
-							i + SHead_TickFlowStart == SHead_High||
-							i + SHead_TickFlowStart == SHead_Low)
-						{
-							if (dataVec[m_tfNameVec[i]].value > fPreClose)
-								cl = RGBA(255, 0, 0, 255);
-							else if (dataVec[m_tfNameVec[i]].value < fPreClose)
-								cl = RGBA(0, 255, 0, 255);
-							else
-								cl = RGBA(255, 255, 255, 255);
-						}
-						if (i + SHead_TickFlowStart == SHead_ActBuyVolume ||
-							i + SHead_TickFlowStart == SHead_ActSellVolume ||
-							i + SHead_TickFlowStart == SHead_Volume)
-						{
-							m_pList->SetSubItemText(it.second,
-								i + SHead_TickFlowStart,
-								tmp.Format(L"%.0f", dataVec[m_tfNameVec[i]].value), cl);
-						}
-						else if (i + SHead_TickFlowStart == SHead_Amount)
-						{
-							double fAmount = dataVec[m_tfNameVec[i]].value;
-							if (fAmount > 1'000'000'000)
-								tmp.Format(L"%.01f亿", fAmount / 100'000'000);
-							else if (fAmount > 100'000'000)
-								tmp.Format(L"%.02f亿", fAmount / 100'000'000);
-							else if (fAmount > 1'000'000)
-								tmp.Format(L"%.0f万", fAmount / 10000);
-							else if (fAmount > 10'000)
-								tmp.Format(L"%.02f万", fAmount / 10000);
-							else
-								tmp.Format(L"%.0f", fAmount);
-							m_pList->SetSubItemText(it.second,
-								i + SHead_TickFlowStart,
-								tmp, cl);
-
-						}
-						else
-							m_pList->SetSubItemText(it.second,
-								i + SHead_TickFlowStart,
-								tmp.Format(L"%.02f", dataVec[m_tfNameVec[i]].value), cl);
-
-
-					}
-					else
-						m_pList->SetSubItemText(it.second,
-							i + SHead_TickFlowStart, L"-");
-
-				}
 			}
 		}
 		else
@@ -1356,6 +1538,185 @@ void CWorkWnd::UpdateList()
 
 	}
 	SortList(m_pList);
+
+}
+
+void CWorkWnd::UpdateRpsData(int nRow, sRps & rps, int nStart, int nEnd)
+{
+	vector<double> dataVec(SHead_CloseRank2060 - SHead_CloseRPS520 + 1);
+	dataVec[0] = rps.fRps520;
+	dataVec[1] = rps.fMacd520;
+	dataVec[2] = rps.fPoint520;
+	dataVec[3] = rps.nRank520;
+	dataVec[4] = rps.fRps2060;
+	dataVec[5] = rps.fMacd2060;
+	dataVec[6] = rps.fPoint2060;
+	dataVec[7] = rps.nRank2060;
+	SStringW tmp;
+	for (int i = nStart; i <= nEnd; ++i)
+	{
+		int nOffset = (i - SHead_CloseRPS520) %
+			(SHead_CloseRank2060 - SHead_CloseRPS520 + 1) + SHead_CloseRPS520;
+		COLORREF cl = RGBA(255, 255, 0, 255);
+
+		if (nOffset == SHead_ClosePoint520
+			|| nOffset == SHead_ClosePoint2060)
+		{
+			if (dataVec[i - nStart] >= 80)
+				cl = RGBA(255, 0, 0, 255);
+			else if (dataVec[i - nStart] < 60)
+				cl = RGBA(0, 255, 0, 255);
+			else
+				cl = RGBA(255, 255, 255, 255);
+		}
+		else if (nOffset == SHead_CloseRPS520
+			|| nOffset == SHead_CloseRPS2060
+			|| nOffset == SHead_CloseMACD520
+			|| nOffset == SHead_CloseMACD2060)
+		{
+			if (dataVec[i - nStart] > 0)
+				cl = RGBA(255, 0, 0, 255);
+			else if (dataVec[i - nStart] < 0)
+				cl = RGBA(0, 255, 0, 255);
+			else
+				cl = RGBA(255, 255, 255, 255);
+		}
+
+		if (nOffset == SHead_CloseRank520 ||
+			nOffset == SHead_CloseRank2060)
+			tmp.Format(L"%.0f", dataVec[i - nStart]);
+		else if(m_ListDataSortMap[(SListHead)i] == eSDT_BigDouble)
+		{
+			double fAbsData = abs(dataVec[i - nStart]);
+			if (fAbsData> 1'000'000'000)
+				tmp.Format(L"%.01f亿", dataVec[i - nStart] / 100'000'000);
+			else if (fAbsData > 100'000'000)
+				tmp.Format(L"%.02f亿", dataVec[i - nStart] / 100'000'000);
+			else if (fAbsData > 1'000'000)
+				tmp.Format(L"%.0f万", dataVec[i - nStart] / 10000);
+			else if (fAbsData > 10'000)
+				tmp.Format(L"%.02f万", dataVec[i - nStart] / 10000);
+			else
+				tmp.Format(L"%.0f", dataVec[i - nStart]);
+
+		}
+		else
+			tmp.Format(L"%.03f", dataVec[i - nStart]);
+		m_pList->SetSubItemText(nRow,
+			i, tmp, cl);
+	}
+
+}
+
+void SOUI::CWorkWnd::UpdateSecData(int nRow, sSection &sec, int nStart, int nEnd)
+{
+	vector<double> dataVec(SHead_AmountRank - SHead_AmountPoint + 1);
+	dataVec[0] = sec.point;
+	dataVec[1] = sec.rank;
+	SStringW tmp;
+	for (int i = nStart; i <= nEnd; ++i)
+	{
+		int nOffset = (i - SHead_AmountPoint) %
+			(SHead_AmountRank - SHead_AmountPoint + 1) + SHead_AmountPoint;
+		COLORREF cl = RGBA(255, 255, 0, 255);
+
+		if (nOffset == SHead_AmountPoint)
+		{
+			if (dataVec[i - nStart] >= 80)
+				cl = RGBA(255, 0, 0, 255);
+			else if (dataVec[i - nStart] < 60)
+				cl = RGBA(0, 255, 0, 255);
+			else
+				cl = RGBA(255, 255, 255, 255);
+		}
+
+		if (nOffset == SHead_AmountRank)
+			tmp.Format(L"%.0f", dataVec[i - nStart]);
+		else
+			tmp.Format(L"%.03f", dataVec[i - nStart]);
+		m_pList->SetSubItemText(nRow,
+			i, tmp, cl);
+	}
+
+}
+
+void CWorkWnd::UpdateTFData(int nRow, TickFlowMarket& tfData, double fPreClose)
+{
+	vector<double> dataVec(SHead_StockItemCount - SHead_TickFlowStart);
+	dataVec[0] = tfData.ABSR;
+	dataVec[1] = tfData.A2PBSR;
+	dataVec[2] = tfData.AABSR;
+	dataVec[3] = tfData.POCR;
+	dataVec[4] = tfData.nVolume;
+	dataVec[5] = tfData.ActSellVol;
+	dataVec[6] = tfData.ActBuyVol;
+	dataVec[7] = tfData.fOpen;
+	dataVec[8] = tfData.fHigh;
+	dataVec[9] = tfData.fLow;
+	dataVec[10] = tfData.fAmount;
+	SStringW tmp;
+	for (int i = 0; i < dataVec.size(); ++i)
+	{
+		COLORREF cl = RGBA(255, 255, 0, 255);
+		if (i + SHead_TickFlowStart == SHead_ActSellVolume)
+			cl = RGBA(0, 255, 0, 255);
+		else if (i + SHead_TickFlowStart == SHead_ActBuyVolume)
+			cl = RGBA(255, 0, 0, 255);
+		else if (i + SHead_TickFlowStart == SHead_Open ||
+			i + SHead_TickFlowStart == SHead_High ||
+			i + SHead_TickFlowStart == SHead_Low)
+		{
+			if (dataVec[i] > fPreClose)
+				cl = RGBA(255, 0, 0, 255);
+			else if (dataVec[i] < fPreClose)
+				cl = RGBA(0, 255, 0, 255);
+			else
+				cl = RGBA(255, 255, 255, 255);
+		}
+		if (i + SHead_TickFlowStart == SHead_ActBuyVolume ||
+			i + SHead_TickFlowStart == SHead_ActSellVolume ||
+			i + SHead_TickFlowStart == SHead_Volume)
+		{
+			m_pList->SetSubItemText(nRow,
+				i + SHead_TickFlowStart,
+				tmp.Format(L"%.0f", dataVec[i]), cl);
+		}
+		else if (i + SHead_TickFlowStart == SHead_Amount)
+		{
+			double fAmount = dataVec[i];
+			if (fAmount > 1'000'000'000)
+				tmp.Format(L"%.01f亿", fAmount / 100'000'000);
+			else if (fAmount > 100'000'000)
+				tmp.Format(L"%.02f亿", fAmount / 100'000'000);
+			else if (fAmount > 1'000'000)
+				tmp.Format(L"%.0f万", fAmount / 10000);
+			else if (fAmount > 10'000)
+				tmp.Format(L"%.02f万", fAmount / 10000);
+			else
+				tmp.Format(L"%.0f", fAmount);
+			m_pList->SetSubItemText(nRow,
+				i + SHead_TickFlowStart,
+				tmp, cl);
+
+		}
+		else
+		{
+			if (!isnan(dataVec[i]) && !isinf(dataVec[i]))
+			{
+				m_pList->SetSubItemText(nRow,
+					i + SHead_TickFlowStart,
+					tmp.Format(L"%.02f", dataVec[i]), cl);
+
+			}
+			else
+				m_pList->SetSubItemText(nRow,
+					i + SHead_TickFlowStart,
+					L"-", cl);
+
+		}
+
+
+	}
 
 }
 
@@ -1373,26 +1734,36 @@ void CWorkWnd::UpdateListFilterShowStock()
 			if (!CheckStockFitDomain(it))
 				continue;
 
-		bool bPassed = m_sfPlan.state == CS_And ? true : false;
-		for (auto &sf : m_sfPlan.condVec)
+		//2023.5.4 修改回退版本
+		//bool bPassed = m_sfPlan.state == CS_And ? true : false;
+		bool bPassed = true;
+		for (auto &sf : m_sfVec)
 		{
-			if (m_sfPlan.state == CS_And)
+			if (!CheckCmbStockDataPass(sf, it.SecurityID))
 			{
-				if (!CheckStockDataPass(sf, it.SecurityID))
-				{
-					bPassed = false;
-					break;
-				}
-			}
-			else
-			{
-				if (CheckStockDataPass(sf, it.SecurityID))
-				{
-					bPassed = true;
-					break;
-				}
+				bPassed = false;
+				break;
 			}
 		}
+		//for (auto &sf : m_sfPlan.condVec)
+		//{
+		//	if (m_sfPlan.state == CS_And)
+		//	{
+		//		if (!CheckStockDataPass(sf, it.SecurityID))
+		//		{
+		//			bPassed = false;
+		//			break;
+		//		}
+		//	}
+		//	else
+		//	{
+		//		if (CheckStockDataPass(sf, it.SecurityID))
+		//		{
+		//			bPassed = true;
+		//			break;
+		//		}
+		//	}
+		//}
 		if (bPassed)
 		{
 			if (nCount >= nNowItemCount)
@@ -1452,20 +1823,23 @@ void CWorkWnd::SortList(SColorListCtrlEx * pList, bool bSortCode)
 	}
 
 	int colCount = pList->GetColumnCount();
-	int SHead_Time = colCount - 1;
-	switch (m_SortPara.nCol)
+	//int SHead_Time = colCount - 1;
+	auto sortDataType = m_ListDataSortMap[(SListHead)m_SortPara.nCol];
+	switch (sortDataType)
 	{
-	case SHead_ID:
+	case eSDT_Double:
+		pList->SortItems(SortDouble, &m_SortPara);
+		break;
+	case eSDT_Int:
 		pList->SortItems(SortInt, &m_SortPara);
 		break;
-	case SHead_Name:
+	case eSDT_String:
 		pList->SortItems(SortStr, &m_SortPara);
 		break;
+	case eSDT_BigDouble:
+		pList->SortItems(SortBigDouble, &m_SortPara);
+		break;
 	default:
-		if (m_SortPara.nCol == SHead_LastPx || m_SortPara.nCol == SHead_ChangePct)
-			m_SortPara.nDec = 2;
-		else
-			m_SortPara.nDec = 3;
 		pList->SortItems(SortDouble, &m_SortPara);
 		break;
 	}
@@ -1542,8 +1916,34 @@ bool CWorkWnd::CheckStockDataPass(SFCondition& sf, SStringA StockID)
 		}
 
 	}
-	
+
 	return false;
+}
+
+bool SOUI::CWorkWnd::CheckCmbStockDataPass(StockFilter & sf, SStringA StockID)
+{
+	if (m_pFilterDataMap == nullptr)
+		return false;
+	int nPeriod1 = m_SFPeriodMap[sf.period1];
+	int nPeriod2 = m_SFPeriodMap[sf.period2];
+	if (m_pFilterDataMap->count(nPeriod1) == 0)
+		return false;
+	if (m_pFilterDataMap->count(nPeriod2) == 0)
+		return false;
+
+	if (m_pFilterDataMap->at(nPeriod1).hash.count(StockID) == 0)
+		return false;
+	if (m_pFilterDataMap->at(nPeriod2).hash.count(StockID) == 0)
+		return false;
+
+	double data1 = m_pFilterDataMap->at(nPeriod1).hash[StockID][m_SFIndexMap[sf.index1]];
+	double data2 = sf.index2 == SFI_Num ? sf.num :
+		m_pFilterDataMap->at(nPeriod2).hash[StockID][m_SFIndexMap[sf.index2]];
+	if (sf.index1 == SFI_Amount)
+		data1 /= 10000;
+	if (sf.index2 == SFI_Amount)
+		data2 /= 10000;
+	return (this->*m_SFConditionMap[sf.condition])(data1, data2);
 }
 
 bool CWorkWnd::GreaterThan(double a, double b)
@@ -1852,6 +2252,47 @@ int CWorkWnd::SortStr(void * para1, const void * para2,
 		return str2.Compare(str1);
 }
 
+int SOUI::CWorkWnd::SortBigDouble(void * para1, const void * para2, const void * para3)
+{
+	SortPara *pData = (SortPara*)para1;
+	const DXLVITEMEX* pPara1 = (const DXLVITEMEX*)para2;
+	const DXLVITEMEX* pPara2 = (const DXLVITEMEX*)para3;
+	const DXLVSUBITEMEX subItem1 = pPara1->arSubItems->GetAt(pData->nCol);
+	const DXLVSUBITEMEX subItem2 = pPara2->arSubItems->GetAt(pData->nCol);
+
+	SStringW str1 = subItem1.strText;
+	SStringW str2 = subItem2.strText;
+
+	int64_t n1;
+	if (str1.Right(1) == L"亿")
+		n1 = _wtof(str1) * 100'000'000;
+	else if (str1.Right(1) == L"万")
+		n1 = _wtof(str1) * 10'000;
+	else
+		n1 = _wtof(str1);
+	int64_t n2;
+	if (str2.Right(1) == L"亿")
+		n2 = _wtof(str2) * 100'000'000;
+	else if (str2.Right(1) == L"万")
+		n2 = _wtof(str2) * 10'000;
+	else
+		n2 = _wtof(str2);
+	int64_t diff = n1 - n2;
+	if (diff > 0)
+		return pData->nFlag == 0 ? 1 : -1;
+	else if (diff < 0)
+		return pData->nFlag == 0 ? -1 : 1;
+	else
+	{
+		const DXLVSUBITEMEX CodeItem1 = pPara1->arSubItems->GetAt(SHead_ID);
+		const DXLVSUBITEMEX CodeItem2 = pPara2->arSubItems->GetAt(SHead_ID);
+
+		SStringW Code1 = CodeItem1.strText;
+		SStringW Code2 = CodeItem2.strText;
+		return Code1.Compare(Code2);
+	}
+}
+
 
 void CWorkWnd::OnBtnMarketClicked()
 {
@@ -1906,7 +2347,7 @@ void CWorkWnd::OnBtnListConnect1Clicked()
 	if (m_bUseStockFilter)
 	{
 		m_bUseStockFilter = FALSE;
-		//m_pDlgStockFilter->StopFilter();
+		m_pDlgCmbStockFilter->StopFilter();
 		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 	}
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
@@ -1922,7 +2363,7 @@ void CWorkWnd::OnBtnListConnect2Clicked()
 	if (m_bUseStockFilter)
 	{
 		m_bUseStockFilter = FALSE;
-		//m_pDlgStockFilter->StopFilter();
+		m_pDlgCmbStockFilter->StopFilter();
 		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 	}
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
@@ -1931,13 +2372,14 @@ void CWorkWnd::OnBtnListConnect2Clicked()
 
 void CWorkWnd::OnBtnStockFilterClicked()
 {
-	if (m_pDlgStockFilter->IsWindowVisible())
-		m_pDlgStockFilter->ShowWindow(SW_HIDE);
+	//2023.5.4修改 将m_pDlgStockFilter替换为m_pDlgCmbStockFilter
+	if (m_pDlgCmbStockFilter->IsWindowVisible())
+		m_pDlgCmbStockFilter->ShowWindow(SW_HIDE);
 	else
 	{
-		m_pDlgStockFilter->CenterWindow(m_hParWnd);
-		m_pDlgStockFilter->InitFrmlCombox();
-		m_pDlgStockFilter->ShowWindow(SW_SHOW);
+		m_pDlgCmbStockFilter->CenterWindow(m_hParWnd);
+		//m_pDlgCmbStockFilter->InitFrmlCombox();
+		m_pDlgCmbStockFilter->ShowWindow(SW_SHOW);
 	}
 }
 
@@ -2059,83 +2501,89 @@ void CWorkWnd::SetListShowIndyStr(SStatic * pText)
 	}
 }
 
-void CWorkWnd::SetFenShiShowData()
+void CWorkWnd::SetFenShiShowData(vector<ShowPointInfo>&infoVec, int nStartWnd)
 {
 	SStringA stockID = m_strSubStock;
-	int nShowNum = m_pFenShiPic->GetShowSubPicNum();
-	vector<vector<vector<CoreData>*>> tmpDataArr(nShowNum);
-	vector<vector<BOOL>> rightVec(nShowNum);
-	if (Group_Stock == m_Group)
+	//int nShowNum = m_pFenShiPic->GetShowSubPicNum();
+	vector<SStringA> nameVec;
+	GetBelongingIndyName(nameVec);
+	m_pFenShiPic->SetBelongingIndy(nameVec, nStartWnd);
+	int nShowNum = infoVec.size();
+	if (nShowNum > 0)
 	{
-		vector<SStringA> nameVec;
-		GetBelongingIndyName(nameVec);
-		m_pFenShiPic->SetBelongingIndy(nameVec);
-	}
-	int *dataCount = new int[nShowNum];
-	for (int i = 0; i < nShowNum; ++i)
-	{
-		tmpDataArr[i].resize(SHOWDATACOUNT);
-		rightVec[i].resize(SHOWDATACOUNT);
-		dataCount[i] = SHOWDATACOUNT;
-		for (int j = 0; j < SHOWDATACOUNT; ++j)
+		vector<vector<vector<CoreData>*>> tmpDataArr(nShowNum);
+		vector<vector<BOOL>> rightVec(nShowNum);
+		vector<vector<SStringA>> dataNameVec(nShowNum);
+		int *dataCount = new int[nShowNum];
+		for (int i = 0; i < nShowNum; ++i)
 		{
-			tmpDataArr[i][j] = &m_PointData[Period_FenShi]
-				[m_SubPicShowNameVec[i][j]];
-			//tmpDataArr[i][j] = &m_dataVec[Period_FenShi]\
-			//	[stockID][m_SubPicShowNameVec[i][j]];
-
-			rightVec[i][j] = TRUE;
+			auto &info = infoVec[i];
+			dataCount[i] = m_PointDataCount[info.type];
+			tmpDataArr[i].resize(dataCount[i]);
+			rightVec[i].resize(dataCount[i]);
+			for (int j = 0; j < dataCount[i]; ++j)
+			{
+				SStringA dataName = info.srcDataName +
+					m_SubPicShowNameVec[info.type][info.range][j];
+				tmpDataArr[i][j] = &m_PointData[Period_FenShi][dataName];
+				dataNameVec[i].emplace_back(dataName);
+				rightVec[i][j] = TRUE;
+			}
 		}
+
+		m_pFenShiPic->SetSubPicShowData(dataCount,
+			tmpDataArr, rightVec, dataNameVec,
+			stockID, m_StockName.hash[stockID], nStartWnd);
+
+		delete[]dataCount;
+		dataCount = nullptr;
 	}
 
-
-	m_pFenShiPic->SetSubPicShowData(dataCount,
-		tmpDataArr, rightVec, m_SubPicShowNameVec,
-		stockID, m_StockName.hash[stockID]);
-
-	delete[]dataCount;
-	dataCount = nullptr;
 
 }
 
-void CWorkWnd::SetKlineShowData(int nPeriod, BOOL bNeedReCalc)
+
+void CWorkWnd::SetKlineShowData(vector<ShowPointInfo>&infoVec, int nPeriod, BOOL bNeedReCalc, int nStartWnd)
 {
 	SStringA stockID = m_strSubStock;
-	int nShowNum = m_pKlinePic->GetShowSubPicNum();
-	vector<vector<vector<CoreData>*>> tmpDataArr(nShowNum);
-	vector<vector<BOOL>> rightVec(nShowNum);
-	if (Group_Stock == m_Group)
+	vector<SStringA> nameVec;
+	GetBelongingIndyName(nameVec);
+	m_pKlinePic->SetBelongingIndy(nameVec, nStartWnd);
+	int nShowNum = infoVec.size();
+	if (nShowNum > 0)
 	{
-		vector<SStringA> nameVec;
-		GetBelongingIndyName(nameVec);
-		m_pKlinePic->SetBelongingIndy(nameVec);
-	}
-	int *dataCount = new int[nShowNum];
-	for (int i = 0; i < nShowNum; ++i)
-	{
-		tmpDataArr[i].resize(SHOWDATACOUNT);
-		rightVec[i].resize(SHOWDATACOUNT);
-		dataCount[i] = SHOWDATACOUNT;
-		for (int j = 0; j < SHOWDATACOUNT; ++j)
+		vector<vector<vector<CoreData>*>> tmpDataArr(nShowNum);
+		vector<vector<BOOL>> rightVec(nShowNum);
+		vector<vector<SStringA>> dataNameVec(nShowNum);
+		int *dataCount = new int[nShowNum];
+		for (int i = 0; i < nShowNum; ++i)
 		{
-			//tmpDataArr[i][j] = &m_dataVec[nPeriod]\
-			//	[stockID][m_SubPicShowNameVec[i][j]];
-			tmpDataArr[i][j] = &m_PointData[nPeriod]
-				[m_SubPicShowNameVec[i][j]];
-
-			rightVec[i][j] = TRUE;
+			auto &info = infoVec[i];
+			dataCount[i] = m_PointDataCount[info.type];
+			tmpDataArr[i].resize(dataCount[i]);
+			rightVec[i].resize(dataCount[i]);
+			for (int j = 0; j < dataCount[i]; ++j)
+			{
+				SStringA dataName = info.srcDataName +
+					m_SubPicShowNameVec[info.type][info.range][j];
+				tmpDataArr[i][j] = &m_PointData[nPeriod][dataName];
+				dataNameVec[i].emplace_back(dataName);
+				rightVec[i][j] = TRUE;
+			}
 		}
+
+		m_pKlinePic->SetSubPicShowData(dataCount,
+			tmpDataArr, rightVec, dataNameVec,
+			stockID, m_StockName.hash[stockID], nStartWnd);
+
+		delete[]dataCount;
+		dataCount = nullptr;
+
+
 	}
-
-
-	m_pKlinePic->SetSubPicShowData(dataCount,
-		tmpDataArr, rightVec, m_SubPicShowNameVec,
-		stockID, m_StockName.hash[stockID]);
-
-	delete[]dataCount;
-	dataCount = nullptr;
 
 	m_pKlinePic->ChangePeriod(nPeriod, bNeedReCalc);
+
 
 }
 
@@ -2194,22 +2642,25 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 		}
 		else
 			m_pKlinePic->SetHisKlineState(true);
+		vector<ShowPointInfo> infoVec;
+		m_pKlinePic->GetShowPointInfo(infoVec);
+		for (auto &info : infoVec)
+			GetPointData(info, StockID, nPeriod);
+		//if (m_PointGetMap.count(nPeriod) == 0)
+		//{
+		//	//m_pKlinePic->SetHisPointState(false);
+		//	DataGetInfo GetInfo;
+		//	GetInfo.hWnd = m_hParWnd;
+		//	strcpy_s(GetInfo.StockID, StockID);
+		//	GetInfo.Group = m_Group;
+		//	GetInfo.Period = nPeriod;
+		//	SendMsg(m_uParWndThreadID, WW_GetPoint,
+		//		(char*)&GetInfo, sizeof(GetInfo));
+		//}
+		//else
+		//	m_pKlinePic->SetHisPointState(true);
 
-		if (m_PointGetMap.count(nPeriod) == 0)
-		{
-			m_pKlinePic->SetHisPointState(false);
-			DataGetInfo GetInfo;
-			GetInfo.hWnd = m_hParWnd;
-			strcpy_s(GetInfo.StockID, StockID);
-			GetInfo.Group = m_Group;
-			GetInfo.Period = nPeriod;
-			SendMsg(m_uParWndThreadID, WW_GetPoint,
-				(char*)&GetInfo, sizeof(GetInfo));
-		}
-		else
-			m_pKlinePic->SetHisPointState(true);
-
-		SetKlineShowData(nPeriod, TRUE);
+		SetKlineShowData(infoVec, nPeriod, TRUE);
 	}
 	SwitchList2Pic(nPeriod);
 }
@@ -2244,9 +2695,13 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	GetInfo.Period = Period_FenShi;
 	SendMsg(m_uParWndThreadID, WW_GetMarket,
 		(char*)&GetInfo, sizeof(GetInfo));
-	SendMsg(m_uParWndThreadID, WW_GetPoint,
-		(char*)&GetInfo, sizeof(GetInfo));
-	SetFenShiShowData();
+	//SendMsg(m_uParWndThreadID, WW_GetPoint,
+	//	(char*)&GetInfo, sizeof(GetInfo));
+	vector<ShowPointInfo>infoVec;
+	m_pFenShiPic->GetShowPointInfo(infoVec);
+	for (auto &info : infoVec)
+		GetPointData(info, StockID, Period_FenShi);
+	SetFenShiShowData(infoVec);
 
 	//获取当前订阅数据
 	if (Period_FenShi != m_PicPeriod)
@@ -2254,9 +2709,14 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 		GetInfo.Period = m_PicPeriod;
 		SendMsg(m_uParWndThreadID, WW_GetKline,
 			(char*)&GetInfo, sizeof(GetInfo));
-		SendMsg(m_uParWndThreadID, WW_GetPoint,
-			(char*)&GetInfo, sizeof(GetInfo));
-		SetKlineShowData(m_PicPeriod, FALSE);
+		vector<ShowPointInfo>infoVec;
+		m_pKlinePic->GetShowPointInfo(infoVec);
+		for (auto &info : infoVec)
+			GetPointData(info, StockID, m_PicPeriod);
+
+		//SendMsg(m_uParWndThreadID, WW_GetPoint,
+		//	(char*)&GetInfo, sizeof(GetInfo));
+		SetKlineShowData(infoVec, m_PicPeriod, FALSE);
 	}
 	SwitchList2Pic(m_PicPeriod);
 }
@@ -2264,12 +2724,74 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 void CWorkWnd::SetDataFlagFalse()
 {
 	m_bMarketGet = false;
-	m_PointReadyMap.clear();
 	m_PointGetMap.clear();
+	//m_PointGetMap.clear();
 	m_KlineGetMap.clear();
 	m_pKlinePic->SetTodayMarketState(false);
 	m_pKlinePic->SetHisKlineState(false);
 	m_pKlinePic->SetHisPointState(false);
+}
+
+void CWorkWnd::GetPointData(ShowPointInfo & info, SStringA StockID, int nPeriod)
+{
+	if (eRpsPoint == info.type)
+	{
+		SStringA dataName520 = info.srcDataName + "Point520" + info.range;
+		SStringA dataName2060 = info.srcDataName + "Point2060" + info.range;
+		auto &dataGetMap = m_PointGetMap[nPeriod];
+		if (dataGetMap[dataName520] == 0 ||
+			dataGetMap[dataName2060] == 0)
+		{
+			ExDataGetInfo GetInfo;
+			GetInfo.Type = eRpsPoint;
+			GetInfo.hWnd = m_hParWnd;
+			strcpy_s(GetInfo.StockID, StockID);
+			GetInfo.Group = m_Group;
+			GetInfo.Period = nPeriod;
+			SStringA strExMsg;
+			strExMsg.Format("dataName:%s,dataRange:%s", info.srcDataName, info.range);
+			GetInfo.exMsg = new char[strExMsg.GetLength() + 1];
+			strcpy_s(GetInfo.exMsg, strExMsg.GetLength() + 1, strExMsg);
+			SendMsg(m_uParWndThreadID, WW_GetPoint,
+				(char*)&GetInfo, sizeof(GetInfo));
+		}
+	}
+	else if (eSecPoint == info.type)
+	{
+		SStringA dataName = info.srcDataName + "Point" + info.range;
+		auto &dataGetMap = m_PointGetMap[nPeriod];
+		if (dataGetMap[dataName] == 0)
+		{
+			ExDataGetInfo GetInfo;
+			GetInfo.Type = eSecPoint;
+			GetInfo.hWnd = m_hParWnd;
+			strcpy_s(GetInfo.StockID, StockID);
+			GetInfo.Group = m_Group;
+			GetInfo.Period = nPeriod;
+			SStringA strExMsg;
+			strExMsg.Format("dataName:%s,dataRange:%s", info.srcDataName, info.range);
+			GetInfo.exMsg = new char[strExMsg.GetLength() + 1];
+			strcpy_s(GetInfo.exMsg, strExMsg.GetLength() + 1, strExMsg);
+			SendMsg(m_uParWndThreadID, WW_GetPoint,
+				(char*)&GetInfo, sizeof(GetInfo));
+		}
+	}
+
+}
+
+void CWorkWnd::UpdateTmData(vector<CoreData>& comData, CoreData & data)
+{
+	if (comData.empty())
+		comData.emplace_back(data);
+	else if (comData.back().date < data.date)
+		comData.emplace_back(data);
+	else if (comData.back().date == data.date)
+	{
+		if (comData.back().time < data.time)
+			comData.emplace_back(data);
+		else if (comData.back().time == data.time)
+			comData.back() = data;
+	}
 }
 
 void CWorkWnd::OnUpdateListData(int nMsgLength, const char * info)
@@ -2279,14 +2801,14 @@ void CWorkWnd::OnUpdateListData(int nMsgLength, const char * info)
 
 void CWorkWnd::OnUpdatePoint(int nMsgLength, const char * info)
 {
-	int nDataCount = nMsgLength / sizeof(pair<int, pair<char[16], CoreData>>);
-	pair<int, pair<char[16], CoreData>> *dataArr =
-		(pair<int, pair<char[16], CoreData>> *)info;
+	int nDataCount = nMsgLength / sizeof(pair<int, pair<char[MAX_NAME_LENGTH], CoreData>>);
+	pair<int, pair<char[MAX_NAME_LENGTH], CoreData>> *dataArr =
+		(pair<int, pair<char[MAX_NAME_LENGTH], CoreData>> *)info;
 	for (int i = 0; i < nDataCount; ++i)
 	{
-		if (m_PointReadyMap[dataArr[i].first])
+		if (m_PointGetMap[dataArr[i].first][dataArr[i].second.first])
 		{
-			CDataProc::UpdateTmData(m_PointData[dataArr[i].first]\
+			UpdateTmData(m_PointData[dataArr[i].first]\
 				[dataArr[i].second.first],
 				dataArr[i].second.second);
 		}
@@ -2296,21 +2818,21 @@ void CWorkWnd::OnUpdatePoint(int nMsgLength, const char * info)
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void CWorkWnd::OnUpdateTodayPoint(int nMsgLength, const char * info)
-{
-	int nPeriod = *(int*)info;
-	map<SStringA, vector<CoreData>> *pDataMap =
-		*(map<SStringA, vector<CoreData>>**)(info + 4);
-	auto & pointMap = m_PointData[nPeriod];
-	for (auto &it : *pDataMap)
-	{
-		if (it.first.Find("Point") != -1)
-			pointMap[it.first] = it.second;
-	}
-	delete pDataMap;
-	pDataMap = nullptr;
-	m_PointReadyMap[nPeriod] = true;
-}
+//void CWorkWnd::OnUpdateTodayPoint(int nMsgLength, const char * info)
+//{
+//	int nPeriod = *(int*)info;
+//	map<SStringA, vector<CoreData>> *pDataMap =
+//		*(map<SStringA, vector<CoreData>>**)(info + 4);
+//	auto & pointMap = m_PointData[nPeriod];
+//	for (auto &it : *pDataMap)
+//	{
+//		if (it.first.Find("Point") != -1)
+//			pointMap[it.first] = it.second;
+//	}
+//	delete pDataMap;
+//	pDataMap = nullptr;
+//	m_PointReadyMap[nPeriod][] = true;
+//}
 
 void CWorkWnd::OnUpdateHisKline(int nMsgLength, const char * info)
 {
@@ -2330,36 +2852,36 @@ void CWorkWnd::OnUpdateHisKline(int nMsgLength, const char * info)
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
-void CWorkWnd::OnUpdateHisPoint(int nMsgLength, const char * info)
+void CWorkWnd::OnUpdateHisRpsPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	if (pRecvInfo->Group != Group_Stock)
-		ProcHisPointFromMsg(pRecvInfo, info + sizeof(*pRecvInfo),
-			"Point520", "Point2060");
-	else
-	{
-		int nOffset = sizeof(*pRecvInfo);
-		ReceivePointInfo *pRecvInfo1 =
-			(ReceivePointInfo *)(info + nOffset);
-		nOffset += sizeof(*pRecvInfo1);
-		ProcHisPointFromMsg(pRecvInfo1, info + nOffset,
-			"Point520", "Point2060");
-		nOffset += pRecvInfo1->TotalDataSize;
-		ReceivePointInfo *pRecvInfo2 =
-			(ReceivePointInfo *)(info + nOffset);
-		nOffset += sizeof(*pRecvInfo2);
-		ProcHisPointFromMsg(pRecvInfo2, info + nOffset,
-			"L1Point520", "L1Point2060");
-		nOffset += pRecvInfo2->TotalDataSize;
-		ReceivePointInfo *pRecvInfo3 =
-			(ReceivePointInfo *)(info + nOffset);
-		nOffset += sizeof(*pRecvInfo3);
-		ProcHisPointFromMsg(pRecvInfo3, info + nOffset,
-			"L2Point520", "L2Point2060");
-	}
-	m_pKlinePic->SetHisPointState(true);
-	if (m_pKlinePic->GetDataReadyState())
-		m_pKlinePic->DataProc();
+
+	int nOffset = sizeof(*pRecvInfo);
+	int nAttMsgSize = *(int*)(info + nOffset);
+	nOffset += sizeof(nAttMsgSize);
+	char *msg = new char[nAttMsgSize + 1];
+	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
+	pRecvInfo->TotalDataSize -= (nAttMsgSize + sizeof(nAttMsgSize));
+	//ReceivePointInfo *pRecvInfo1 =
+	//	(ReceivePointInfo *)(info + nOffset);
+	//nOffset += sizeof(*pRecvInfo1);
+	ProcHisRpsPointFromMsg(pRecvInfo, info + nOffset,
+		"Point520", "Point2060", msg, nAttMsgSize);
+	//nOffset += pRecvInfo1->TotalDataSize;
+	//if (pRecvInfo->Group == Group_Stock)
+	//{
+	//	ReceivePointInfo *pRecvInfo2 =
+	//		(ReceivePointInfo *)(info + nOffset);
+	//	nOffset += sizeof(*pRecvInfo2);
+	//	ProcHisRpsPointFromMsg(pRecvInfo2, info + nOffset,
+	//		"L1Point520", "L1Point2060");
+	//	nOffset += pRecvInfo2->TotalDataSize;
+	//	ReceivePointInfo *pRecvInfo3 =
+	//		(ReceivePointInfo *)(info + nOffset);
+	//	nOffset += sizeof(*pRecvInfo3);
+	//	ProcHisRpsPointFromMsg(pRecvInfo3, info + nOffset,
+	//		"L2Point520", "L2Point2060");
+	//}
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 
 }
@@ -2426,7 +2948,7 @@ void CWorkWnd::OnUpdateCloseInfo(int nMsgLength, const char * info)
 	for (int i = 0; i < dataCount; ++i)
 		preCloseMap.hash[dataArr[i].first] = dataArr[i].second;
 	::EnterCriticalSection(&m_csClose);
-	m_preCloseMap.hash= preCloseMap.hash;
+	m_preCloseMap.hash = preCloseMap.hash;
 	//for (int i = 0; i < dataCount; ++i)
 	//	m_preCloseMap.hash[dataArr[i].first] = dataArr[i].second;
 	::LeaveCriticalSection(&m_csClose);
@@ -2445,6 +2967,24 @@ void CWorkWnd::OnChangeShowIndy(int nMsgLength, const char * info)
 		m_ListShowInd = IndexID;
 	::PostMessage(m_hWnd, WM_WINDOW_MSG,
 		WDMsg_ChangeShowList, NULL);
+}
+
+void CWorkWnd::OnUpdateHisSecPoint(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+
+	int nOffset = sizeof(*pRecvInfo);
+	int nAttMsgSize = *(int*)(info + nOffset);
+	nOffset += sizeof(nAttMsgSize);
+	char *msg = new char[nAttMsgSize + 1];
+	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
+	pRecvInfo->TotalDataSize -= (nAttMsgSize + sizeof(nAttMsgSize));
+	//ReceivePointInfo *pRecvInfo1 =
+	//	(ReceivePointInfo *)(info + nOffset);
+	//nOffset += sizeof(*pRecvInfo1);
+	ProcHisSecPointFromMsg(pRecvInfo, info + nOffset,
+		"Point", msg, nAttMsgSize);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)
@@ -2491,8 +3031,28 @@ void CWorkWnd::OnSaveStockFilter(int nMsgLength, const char * info)
 }
 
 
-void CWorkWnd::ProcHisPointFromMsg(ReceivePointInfo * pRecvInfo,
-	const char * info, SStringA dataName1, SStringA dataName2)
+
+BOOL CWorkWnd::GetAttPara(char * msg, map<SStringA, SStringA>& paraMap)
+{
+	stringstream ss(msg);
+	string buffer = "";
+	while (getline(ss, buffer, ','))
+	{
+		size_t nPos = buffer.find(":");
+		if (nPos != string::npos)
+		{
+			SStringA strName = buffer.substr(0, nPos).c_str();
+			SStringA strData = buffer.substr(nPos + 1).c_str();
+			paraMap[strName] = strData;
+		}
+	}
+
+	return TRUE;
+}
+
+void CWorkWnd::ProcHisRpsPointFromMsg(ReceivePointInfo * pRecvInfo,
+	const char * info, SStringA dataName1, SStringA dataName2,
+	char* attchMsg, int attMsgSize)
 {
 	int nOffset = 0;
 	int nSize520 = pRecvInfo->FirstDataSize / sizeof(CoreData);
@@ -2500,25 +3060,58 @@ void CWorkWnd::ProcHisPointFromMsg(ReceivePointInfo * pRecvInfo,
 		sizeof(CoreData);
 	int nGroup = pRecvInfo->Group;
 	int nPeriod = pRecvInfo->Period;
-	m_PointGetMap[nPeriod] = TRUE;
 	//vector<CoreData> PointVec(nSize520);
 	//memcpy_s(&PointVec[0], pRecvInfo->FirstDataSize,
 	//	info + nOffset, pRecvInfo->FirstDataSize);
-	auto &Point520Vec = m_PointData[nPeriod][dataName1];
+	map<SStringA, SStringA>attPara;
+	GetAttPara(attchMsg, attPara);
+	SStringA strDataName = attPara["dataName"];
+	SStringA strRange = attPara["dataRange"];
+
+	nOffset += attMsgSize;
+	SStringA point520Name = strDataName + dataName1 + strRange;
+	auto &Point520Vec = m_PointData[nPeriod][point520Name];
 	Point520Vec.resize(nSize520);
 	memcpy_s(&Point520Vec[0], pRecvInfo->FirstDataSize,
 		info + nOffset, pRecvInfo->FirstDataSize);
+
 	//Point520Vec.insert(Point520Vec.begin(),
 	//	PointVec.begin(), PointVec.end());
 	//PointVec.resize(nSize2060);
 	//memcpy_s(&PointVec[0], pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize,
 	//	info + nOffset, pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize);
+	SStringA point2060Name = strDataName + dataName2 + strRange;
 	nOffset += pRecvInfo->FirstDataSize;
-	auto &Point2060Vec = m_PointData[nPeriod][dataName2];
+	auto &Point2060Vec = m_PointData[nPeriod][strDataName + dataName2 + strRange];
 	Point2060Vec.resize(nSize2060);
 	memcpy_s(&Point2060Vec[0], pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize,
 		info + nOffset, pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize);
+	m_PointGetMap[nPeriod][point520Name] = TRUE;
+	m_PointGetMap[nPeriod][point2060Name] = TRUE;
 
 	//Point2060Vec.insert(Point2060Vec.begin(),
 	//	PointVec.begin(), PointVec.end());
+}
+
+void CWorkWnd::ProcHisSecPointFromMsg(ReceivePointInfo * pRecvInfo,
+	const char * info, SStringA dataName, char * attchMsg, int attMsgSize)
+{
+	int nOffset = 0;
+	int nSize = pRecvInfo->FirstDataSize / sizeof(CoreData);
+	int nGroup = pRecvInfo->Group;
+	int nPeriod = pRecvInfo->Period;
+	map<SStringA, SStringA>attPara;
+	GetAttPara(attchMsg, attPara);
+	SStringA strDataName = attPara["dataName"];
+	SStringA strRange = attPara["dataRange"];
+	SStringA pointName = strDataName + dataName + strRange;
+
+	nOffset += attMsgSize;
+	auto &PointVec = m_PointData[nPeriod][pointName];
+	PointVec.resize(nSize);
+	memcpy_s(&PointVec[0], pRecvInfo->FirstDataSize,
+		info + nOffset, pRecvInfo->FirstDataSize);
+
+	m_PointGetMap[nPeriod][pointName] = TRUE;
+
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include<thread>
 #include"WorkWnd.h"
+
+class CIniFile;
 namespace SOUI
 {
 	class CDlgSub : public SHostWnd
@@ -22,13 +24,17 @@ namespace SOUI
 		void	OnTimer(UINT_PTR nIDEvent);
 		void	OnBtnClose();
 		void	SaveStockFilterPara(int nGroup);
+		void	SaveComboStockFilterPara(int nGroup);
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
 
 	public:
 		void InitWorkWnd();
 		void InitStockFilter();
+		void InitComboStockFilter();
+		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 		void InitConfig();
+		void SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 		void SavePicConfig();
 	public:
 		void ReInit();
@@ -43,8 +49,8 @@ namespace SOUI
 		void OnGetKline(int nMsgLength, const char* info);
 		void OnGetPoint(int nMsgLength, const char* info);
 		void OnUpdatePoint(int nMsgLength, const char* info);
-		void OnTodayPoint(int nMsgLength, const char* info);
-		void OnHisPoint(int nMsgLength, const char* info);
+		//void OnTodayPoint(int nMsgLength, const char* info);
+		void OnHisRpsPoint(int nMsgLength, const char* info);
 		void OnRTIndexMarket(int nMsgLength, const char* info);
 		void OnRTStockMarket(int nMsgLength, const char* info);
 		void OnHisIndexMarket(int nMsgLength, const char* info);
@@ -52,6 +58,7 @@ namespace SOUI
 		void OnHisKline(int nMsgLength, const char* info);
 		void OnCloseInfo(int nMsgLength, const char* info);
 		void OnChangeIndy(int nMsgLength, const char* info);
+		void OnHisSecPoint(int nMsgLength, const char* info);
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);

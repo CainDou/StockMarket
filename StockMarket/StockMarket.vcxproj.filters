@@ -47,9 +47,6 @@
     <ClCompile Include="IniFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DataProc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DlgKbElf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -140,6 +137,12 @@
     <ClCompile Include="DlgReadFrmlList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgSelTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgComboStockFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -166,9 +169,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IniFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DataProc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SColorListCtrlEx.h">
@@ -264,6 +264,12 @@
     <ClInclude Include="DlgReadFrmlList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DlgSelTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgComboStockFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\soui_res.rc2">
@@ -284,6 +290,12 @@
       <Filter>SoUI Resource</Filter>
     </Xml>
     <Xml Include="uires\xml\dlg_main.xml">
+      <Filter>SoUI Resource</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_new.xml">
+      <Filter>SoUI Resource</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_stockFilter.xml">
       <Filter>SoUI Resource</Filter>
     </Xml>
   </ItemGroup>
