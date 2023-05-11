@@ -59,9 +59,6 @@
     <ClCompile Include="SKlineTip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SSubPic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SFenShiPic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -143,6 +140,15 @@
     <ClCompile Include="DlgComboStockFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AdpterFixTitle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgHeaderSelect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DragWnd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -184,9 +190,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SKlineTip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SSubPic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SFenShiPic.h">
@@ -268,6 +271,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgComboStockFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AdpterFixTitle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgHeaderSelect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

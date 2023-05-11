@@ -532,33 +532,39 @@ bool SOUI::CDlgComboStockFilter::OnCbxIDChange(EventArgs * e)
 {
 	EventCBSelChange *pEvt = (EventCBSelChange*)e;
 	SComboBox *pCbx = (SComboBox *)pEvt->sender;
-	int nSel = pEvt->nCurSel;
-	StockFilter sf;
-	GetListItem(nSel, sf);
-	m_pCbxIndex1->SetCurSel(sf.index1);
-	m_pCbxIndex2->SetCurSel(sf.index2);
-	m_pCbxPeriod1->SetCurSel(sf.period1);
-	m_pCbxCondition->SetCurSel(sf.condition);
-	if (sf.index2 == SFI_Num)
+	int nSel = m_pCbxFunc->GetCurSel();
+	if (SFF_Change == nSel)
 	{
-		SStringW strNum = L"数值";
-		if (m_NumUint.count(sf.index1))
-			strNum += m_NumUint[sf.index1];
-		m_pTextNum->SetWindowTextW(strNum);
-		m_pTextNum->SetVisible(TRUE, TRUE);
-		m_pEditNum->SetVisible(TRUE, TRUE);
-		m_pTextPeriod2->SetVisible(FALSE, TRUE);
-		m_pCbxPeriod2->SetVisible(FALSE, TRUE);
-		m_pEditNum->SetWindowTextW(strNum.Format(L"%.02f", sf.num));
+		int nSel = pEvt->nCurSel;
+		StockFilter sf;
+		GetListItem(nSel, sf);
+		m_pCbxIndex1->SetCurSel(sf.index1);
+		m_pCbxIndex2->SetCurSel(sf.index2);
+		m_pCbxPeriod1->SetCurSel(sf.period1);
+		m_pCbxCondition->SetCurSel(sf.condition);
+		if (sf.index2 == SFI_Num)
+		{
+			SStringW strNum = L"数值";
+			if (m_NumUint.count(sf.index1))
+				strNum += m_NumUint[sf.index1];
+			m_pTextNum->SetWindowTextW(strNum);
+			m_pTextNum->SetVisible(TRUE, TRUE);
+			m_pEditNum->SetVisible(TRUE, TRUE);
+			m_pTextPeriod2->SetVisible(FALSE, TRUE);
+			m_pCbxPeriod2->SetVisible(FALSE, TRUE);
+			m_pEditNum->SetWindowTextW(strNum.Format(L"%.02f", sf.num));
+		}
+		else
+		{
+			m_pTextNum->SetVisible(FALSE, TRUE);
+			m_pEditNum->SetVisible(FALSE, TRUE);
+			m_pTextPeriod2->SetVisible(TRUE, TRUE);
+			m_pCbxPeriod2->SetVisible(TRUE, TRUE);
+			m_pCbxPeriod2->SetCurSel(sf.period2);
+		}
+
 	}
-	else
-	{
-		m_pTextNum->SetVisible(FALSE, TRUE);
-		m_pEditNum->SetVisible(FALSE, TRUE);
-		m_pTextPeriod2->SetVisible(TRUE, TRUE);
-		m_pCbxPeriod2->SetVisible(TRUE, TRUE);
-		m_pCbxPeriod2->SetCurSel(sf.period2);
-	}
+
 	return true;
 }
 

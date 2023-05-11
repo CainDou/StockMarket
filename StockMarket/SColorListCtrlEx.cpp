@@ -749,9 +749,9 @@ namespace SOUI
 		int nNoMoveCol = m_pHeader ? m_pHeader->GetNoMoveCol() : 0;
 		for (int nCol = 0; nCol < GetColumnCount(); nCol++)
 		{
-			if (m_pHeader)
-				if (!m_pHeader->isItemShowVisble(nCol))
-					continue;
+			//if (m_pHeader)
+			//	if (!m_pHeader->isItemShowVisble(nCol))
+			//		continue;
 
 
 			CRect rcVisiblePart;
@@ -759,14 +759,23 @@ namespace SOUI
 			SHDITEM hdi;
 			hdi.mask = SHDI_WIDTH | SHDI_ORDER;
 			m_pHeader->GetItem(nCol, &hdi);
-			rcCol.left = rcCol.right;
-			rcCol.right = rcCol.left + hdi.cx.toPixelSize(GetScale());
+			if (m_pHeader->isItemShowVisble(nCol))
+			{
+				rcCol.left = rcCol.right;
+				rcCol.right = rcCol.left + hdi.cx.toPixelSize(GetScale());
+			}
+			else
+			{
+				rcCol.left = rcCol.right;
+				//rcCol.right = rcCol.left + hdi.cx.toPixelSize(GetScale());
+
+			}
 			if (nNoMoveCol > 0)
 			{
-				rcNoMove.left = rcNoMove.right;
-				rcNoMove.right = rcNoMove.left + hdi.cx.toPixelSize(GetScale());
 				if (nCol < nNoMoveCol)
 				{
+					rcNoMove.left = rcNoMove.right;
+					rcNoMove.right = rcNoMove.left + hdi.cx.toPixelSize(GetScale());
 					CRect rcTmp(rcCol);
 					rcCol = rcNoMove;
 					rcNoMove = rcTmp;

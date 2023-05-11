@@ -34,8 +34,10 @@ namespace SOUI
 		void InitComboStockFilter();
 		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 		void InitConfig();
+		void InitListConfig();
 		void SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 		void SavePicConfig();
+		void SaveListConfig();
 	public:
 		void ReInit();
 		void ReInitList();

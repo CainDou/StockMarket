@@ -19,7 +19,7 @@ typedef char SecurityID[8];
 
 #define MAX_BAR_COUNT		10500
 #define MAX_DATA_COUNT		10500
-#define MAX_MA_COUNT		4
+#define MAX_MA_COUNT		6
 
 #define MAX_NAME_LENGTH		32
 
@@ -384,6 +384,8 @@ enum WDMSG
 	WDMsg_ChangeStockFilter,
 	WDMsg_SaveStockFilter,
 	WDMsg_ChangePointTarget,
+	WDMsg_ChangeShowTilte,
+	WDMsg_SaveListConfig,
 	WDMsg_Exit,
 
 };
@@ -625,6 +627,8 @@ typedef struct _FENSHI_ALLINFO
 typedef struct _AllKPIC_INFO {
 	KlineType		data[MAX_DATA_COUNT];	//data–≈œ¢
 	double			fMa[MAX_MA_COUNT][MAX_DATA_COUNT];
+	double			fVolMa[MAX_MA_COUNT][MAX_DATA_COUNT];
+	double			fAmoMa[MAX_MA_COUNT][MAX_DATA_COUNT];
 	double			fMax;
 	double			fMin;
 	double			fVolMax;
@@ -813,7 +817,10 @@ enum KlineMenu
 	KM_PointWnd6,
 	KM_PointWnd7,
 	KM_PointWnd8,
-
+	KM_VolOrAmo,
+	KM_Amount,
+	KM_VolMaPara,
+	KM_AmoMaPara,
 	KM_End,
 };
 
@@ -1181,6 +1188,7 @@ typedef struct InitPara
 	bool bShowTSCMACD;
 	bool bShowTSCVolume;
 	bool bShowKlineVolume;
+	bool bShowKlineAmount;
 	bool bShowKlineMACD;
 	bool bShowTSCRPS[3];
 	bool bShowKlineRPS[3];
@@ -1189,7 +1197,9 @@ typedef struct InitPara
 	bool bShowKlineDeal;
 	int  nEMAPara[2];
 	int  nMACDPara[3];
-	int	 nMAPara[4];
+	int	 nMAPara[MAX_MA_COUNT];
+	int	 nVolMaPara[MAX_MA_COUNT];
+	int  nAmoMaPara[MAX_MA_COUNT];
 	int	 nJiange;
 	BandPara_t  BandPara;
 	int Period;
@@ -1209,7 +1219,8 @@ typedef struct InitPara
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
-		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
+		bShowKlineVolume(false), bShowKlineAmount(false),
+		bShowTSCRPS{ false,false,false },
 		bShowKlineRPS{ false ,false,false }, nWidth(9),
 		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
 		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
@@ -1238,3 +1249,10 @@ typedef struct _StockFilterPara
 	int index2;
 	int period2;
 }StockFilter;
+
+enum eMaType
+{
+	eMa_Close=0,
+	eMa_Volume,
+	eMa_Amount,
+};

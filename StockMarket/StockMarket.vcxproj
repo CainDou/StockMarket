@@ -187,6 +187,7 @@
     <Text Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AdpterFixTitle.cpp" />
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
     <ClCompile Include="DlgAddNew.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="DlgFrmlFind.cpp" />
     <ClCompile Include="DlgFuncInsert.cpp" />
     <ClCompile Include="DlgFrmlManage.cpp" />
+    <ClCompile Include="DlgHeaderSelect.cpp" />
     <ClCompile Include="DlgKbElf.cpp" />
     <ClCompile Include="DlgLogin.cpp" />
     <ClCompile Include="DlgMacdPara.cpp" />
@@ -207,6 +209,9 @@
     <ClCompile Include="DlgStkFilterEditor.cpp" />
     <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
+    <ClCompile Include="DragWnd.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="FrmlCompiler.cpp" />
     <ClCompile Include="FrmlManager.cpp" />
     <ClCompile Include="IniFile.cpp" />
@@ -221,7 +226,6 @@
     <ClCompile Include="SFenShiPic.cpp" />
     <ClCompile Include="SKlinePic.cpp" />
     <ClCompile Include="SouiRealWndHandler.cpp" />
-    <ClCompile Include="SSubPic.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
     <ClCompile Include="SKlineTip.cpp" />
     <ClCompile Include="SSubTargetPic.cpp" />
@@ -239,6 +243,7 @@
     <ResourceCompile Include="StockMarket.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AdpterFixTitle.h" />
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="DlgAddNew.h" />
@@ -248,6 +253,7 @@
     <ClInclude Include="DlgFrmlFind.h" />
     <ClInclude Include="DlgFuncInsert.h" />
     <ClInclude Include="DlgFrmlManage.h" />
+    <ClInclude Include="DlgHeaderSelect.h" />
     <ClInclude Include="DlgKbElf.h" />
     <ClInclude Include="DlgLogin.h" />
     <ClInclude Include="DlgMacdPara.h" />
@@ -272,7 +278,6 @@
     <ClInclude Include="SFenShiPic.h" />
     <ClInclude Include="SKlinePic.h" />
     <ClInclude Include="SouiRealWndHandler.h" />
-    <ClInclude Include="SSubPic.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
     <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="SSubTargetPic.h" />

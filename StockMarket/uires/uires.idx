@@ -26,6 +26,7 @@
 		<file name="dlg_messagebox" path="xml\dlg_messagebox.xml" />
 		<file name="dlg_targetSelect" path="xml\dlg_targetSelect.xml" />
 		<file name="dlg_comboStockFilter" path="xml\dlg_comboStockFilter.xml" />
+		<file name="dlg_headerSelect" path="xml\dlg_headerSelect.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />

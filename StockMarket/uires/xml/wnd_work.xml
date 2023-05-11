@@ -14,6 +14,7 @@
 			<imgbtn pos="[0,2" size="25,20" tip="申万1级行情列表联动" animate="0" text="联1" name="btn_ListConnect1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,2" size="25,20" tip="申万2级行情列表联动" animate="0" text="联2" name="btn_ListConnect2" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,2" size="25,20" tip="选股器" animate="0" text="选股" name="btn_StockFilter" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+			<imgbtn pos="[5,2" size="60,20" tip="选择需要显示和隐藏的数据" animate="0" text="数据设置" name="btn_TitleSel" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<text pos="[5,3" colorText="#c0c0c0ff" name="text_ShowIndy">当前分类:全市场</text>
 			<check name="chk_ST" pos="[5,{0" checked="0">ST股</check>
 			<check name="chk_SBM" pos="[5,{0" checked="0">创业板</check>

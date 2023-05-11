@@ -20,6 +20,7 @@ namespace SOUI
 		//外部接口
 		void		SetGroup(RpsGroup Group, HWND hParWnd);
 		void		InitShowConfig(InitPara initPara);
+		void		InitListConfig(map<int, BOOL>& titleShowMap,map<int,int>&titleOrderMap);
 		InitPara	OutPutInitPara();
 		void		ClearData();
 		void		InitList();
@@ -31,6 +32,7 @@ namespace SOUI
 		//	vector<CoreData> &dataVec, bool bLast);
 		unsigned	GetThreadID() const;
 		RpsGroup	GetGroup() const;
+		map<int, BOOL> GetListShowTitle() const;
 		void		SetListInfo(vector<StockInfo>& infoVec,
 			strHash<SStringA>& StockNameMap);
 		void		SetPreClose(strHash<double> &preCloseMap);
@@ -41,7 +43,7 @@ namespace SOUI
 		void		InitStockFilterPara(SFPlan &sfPlan);
 		void		InitComboStockFilterPara(vector<StockFilter>& sfVec);
 		void		SetPointInfo(map<ePointDataType, ShowPointInfo> &infoMap);
-
+		map<int, int> GetListTitleOrder();
 		// 消息响应
 	protected:
 		void	OnInit(EventArgs *e);
@@ -71,6 +73,8 @@ namespace SOUI
 
 		//列表辅助函数
 	public:
+		void SetListDataIsShow();
+		void SetListDataOrder();
 		void UpdateListShowStock();
 		void UpdateList();
 		void UpdateRpsData(int nRow, sRps &rps, int nStart, int nEnd);
@@ -111,6 +115,7 @@ namespace SOUI
 		void OnBtnListConnect1Clicked();
 		void OnBtnListConnect2Clicked();
 		void OnBtnStockFilterClicked();
+		void OnBtnTitleSelectClicked();
 		void OnCheckST();
 		void OnCheckSBM();
 		void OnCheckSTARM();
@@ -181,6 +186,7 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.btn_ListConnect1, OnBtnListConnect1Clicked)
 			EVENT_ID_COMMAND(R.id.btn_ListConnect2, OnBtnListConnect2Clicked)
 			EVENT_ID_COMMAND(R.id.btn_StockFilter, OnBtnStockFilterClicked)
+			EVENT_ID_COMMAND(R.id.btn_TitleSel, OnBtnTitleSelectClicked)
 			EVENT_ID_COMMAND(R.id.chk_ST, OnCheckST)
 			EVENT_ID_COMMAND(R.id.chk_SBM, OnCheckSBM)
 			EVENT_ID_COMMAND(R.id.chk_STARM, OnCheckSTARM)
@@ -213,6 +219,7 @@ namespace SOUI
 		SImageButton* m_pBtnConn1;
 		SImageButton* m_pBtnConn2;
 		SImageButton* m_pBtnStockFilter;
+		SImageButton* m_pBtnTitleSel;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
 		SColorListCtrlEx* m_pList;
@@ -257,6 +264,8 @@ namespace SOUI
 		strHash<SStringA> m_StockName;
 		vector<SStringA> m_dataNameVec;
 		vector<SStringA> m_tfNameVec;
+		map<int, BOOL> m_TitleShowMap;
+		map<int, int> m_TitleOrderMap;
 		SFPlan m_sfPlan;
 		vector<StockFilter> m_sfVec;
 		vector<BOOL> m_frmlExistVec;
@@ -287,6 +296,7 @@ namespace SOUI
 		//map<SStringA,map<int, bool>>m_PointGetMap;
 		//set<ShowPointInfo> m_PointUseMap;
 		map<ePointType, int> m_PointDataCount;
+		eMaType m_MaParaSet;
 	protected:
 		unordered_map<int, PDATAHANDLEFUNC>m_dataHandleMap;
 		vector<StockInfo> m_InfoVec;
@@ -307,6 +317,11 @@ inline unsigned CWorkWnd::GetThreadID() const
 inline RpsGroup CWorkWnd::GetGroup() const
 {
 	return m_Group;
+}
+
+inline map<int, BOOL> SOUI::CWorkWnd::GetListShowTitle() const
+{
+	return m_TitleShowMap;
 }
 
 

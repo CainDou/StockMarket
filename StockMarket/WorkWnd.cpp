@@ -15,6 +15,7 @@
 #include <sstream>
 #include "DlgSelTarget.h"
 #include "DlgComboStockFilter.h"
+#include "DlgHeaderSelect.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
@@ -154,6 +155,14 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 
 	SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 
+}
+
+void SOUI::CWorkWnd::InitListConfig(map<int, BOOL>& titleShowMap, map<int, int>&titleOrderMap)
+{
+	m_TitleShowMap = titleShowMap;
+	m_TitleOrderMap = titleOrderMap;
+	SetListDataIsShow();
+	SetListDataOrder();
 }
 
 InitPara CWorkWnd::OutPutInitPara()
@@ -362,6 +371,11 @@ void CWorkWnd::SetPointInfo(map<ePointDataType, ShowPointInfo>& infoMap)
 	}
 }
 
+map<int, int> SOUI::CWorkWnd::GetListTitleOrder()
+{
+	return m_TitleOrderMap;
+}
+
 
 void CWorkWnd::OnInit(EventArgs * e)
 {
@@ -397,6 +411,7 @@ void CWorkWnd::OnInit(EventArgs * e)
 	m_pBtnConn1 = FindChildByID2<SImageButton>(R.id.btn_ListConnect1);
 	m_pBtnConn2 = FindChildByID2<SImageButton>(R.id.btn_ListConnect2);
 	m_pBtnStockFilter = FindChildByID2<SImageButton>(R.id.btn_StockFilter);
+	m_pBtnTitleSel = FindChildByID2<SImageButton>(R.id.btn_TitleSel);
 
 	InitProcFucMap();
 	InitNameVec();
@@ -476,7 +491,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			SStringA dataName = info.srcDataName +
 				m_SubPicShowNameVec[info.type][info.range][i];
 			tmpDataArr[i] = &m_PointData[m_PicPeriod][dataName];
-			dataNameVec.emplace_back(dataName);
+			dataNameVec.emplace_back(m_SubPicShowNameVec[info.type][info.range][i]);
 			rightVec[i] = TRUE;
 		}
 		SStringA strTitle = "";
@@ -510,6 +525,11 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 
 	}
 	break;
+	case WDMsg_ChangeShowTilte:
+		m_TitleShowMap = *(map<int, BOOL>*)lp;
+		SetListDataIsShow();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveListConfig, 0);
+		break;
 	default:
 		break;
 	}
@@ -547,7 +567,7 @@ LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 	case KLINEMSG_UPDATE:
 		break;
 	case KLINEMSG_MA:
-		m_pKlinePic->SetMaPara((int*)wp);
+		m_pKlinePic->SetMaPara((int*)wp,m_MaParaSet);
 		::SendMsg(m_uThreadID, WW_KlineMa, NULL, 0);
 		break;
 	case KLINEMSG_MACD:
@@ -707,7 +727,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 	case KM_Volume:
 		m_pKlinePic->SetVolumeState();
 		m_pKlinePic->Invalidate();
-		bState = m_pKlinePic->GetVolumeState();
+		//bState = m_pKlinePic->GetVolumeState();
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -747,12 +767,14 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 	break;
 	case KM_MaPara:
 	{
-		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd);
+		m_MaParaSet = eMa_Close;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
 		pDlg->Create(NULL);
 		pDlg->CenterWindow(m_hWnd);
-		pDlg->SetEditText(m_pKlinePic->GetMaPara());
-		pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
 	}
 	break;
 	//case KM_L1RPS:
@@ -799,7 +821,37 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 			WDMsg_SaveConfig, NULL);
 		break;
 	}
-
+	case KM_Amount:
+		m_pKlinePic->SetAmountState();
+		m_pKlinePic->Invalidate();
+		//bState = m_pKlinePic->GetVolumeState();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case KM_VolMaPara:
+	{
+		m_MaParaSet = eMa_Volume;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
+	case KM_AmoMaPara:
+	{
+		m_MaParaSet = eMa_Amount;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
 	default:
 		break;
 	}
@@ -821,7 +873,7 @@ void CWorkWnd::OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		CDlgSelTarget *pDlg = new CDlgSelTarget(m_hWnd, m_pointInfoMap);
 		pDlg->Create(NULL);
 		pDlg->CenterWindow(m_hWnd);
-		pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 		pDlg->ShowWindow(SW_SHOWDEFAULT);
 		::EnableWindow(m_hWnd, FALSE);
 	}
@@ -992,7 +1044,23 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 		if (m_pKlinePic->GetDealState())
 			menu.CheckMenuItem(KM_Deal, MF_CHECKED);
 		if (m_pKlinePic->GetVolumeState())
+		{
+			menu.CheckMenuItem(KM_VolOrAmo, MF_CHECKED);
 			menu.CheckMenuItem(KM_Volume, MF_CHECKED);
+			menu.CheckMenuItem(KM_Amount, MF_UNCHECKED);
+		}
+		else if (m_pKlinePic->GetAmountState())
+		{
+			menu.CheckMenuItem(KM_VolOrAmo, MF_CHECKED);
+			menu.CheckMenuItem(KM_Volume, MF_UNCHECKED);
+			menu.CheckMenuItem(KM_Amount, MF_CHECKED);
+		}
+		else
+		{
+			menu.CheckMenuItem(KM_VolOrAmo, MF_UNCHECKED);
+			menu.CheckMenuItem(KM_Volume, MF_UNCHECKED);
+			menu.CheckMenuItem(KM_Amount, MF_UNCHECKED);
+		}
 		if (m_pKlinePic->GetMacdState())
 			menu.CheckMenuItem(KM_MACD, MF_CHECKED);
 		int nWndNum = m_pKlinePic->GetShowSubPicNum();
@@ -1073,6 +1141,8 @@ void CWorkWnd::SwitchPic2List()
 	m_pKlinePic->SetVisible(FALSE, TRUE);
 	m_pKlinePic->ClearTip();
 	m_pList->SetVisible(TRUE, TRUE);
+	m_pTextIndy->SetVisible(TRUE, TRUE);
+	m_pBtnTitleSel->SetVisible(TRUE, TRUE);
 	UpdateList();
 	m_pList->SetFocus();
 	m_pList->RequestRelayout();
@@ -1093,6 +1163,9 @@ void CWorkWnd::SwitchList2Pic(int nPeriod)
 	m_pList->SetVisible(FALSE, TRUE);
 	m_pFenShiPic->SetVisible(FALSE, FALSE);
 	m_pKlinePic->SetVisible(FALSE, FALSE);
+	m_pTextIndy->SetVisible(FALSE, TRUE);
+	m_pBtnTitleSel->SetVisible(FALSE, TRUE);
+
 	if (nPeriod == Period_FenShi)
 	{
 		m_pFenShiPic->SetVisible(TRUE, TRUE);
@@ -1321,7 +1394,6 @@ bool CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
 	hditem.mask = SHDI_ORDER;
 	pHeader->GetItem(pEvt->iItem, &hditem);
 	int nShowOrder = pHeader->GetOriItemIndex(hditem.iOrder);
-
 	if (hditem.iOrder == 0)
 		return false;
 
@@ -1366,16 +1438,32 @@ bool CWorkWnd::OnListHeaderSwap(EventArgs * pEvtBase)
 	EventHeaderItemSwap *pEvt = (EventHeaderItemSwap*)pEvtBase;
 	SHeaderCtrlEx* pHead = (SHeaderCtrlEx*)pEvt->sender;
 	int nColCount = pHead->GetItemCount();
-	std::vector<int> Order(nColCount);
-	SColorListCtrlEx * pList =
-		(SColorListCtrlEx *)pHead->GetParent();
+	//SColorListCtrlEx * pList =
+	//	(SColorListCtrlEx *)pHead->GetParent();
 
 	for (int i = 0; i < nColCount; ++i)
 	{
-		Order[i] = pHead->GetOriItemIndex(i);
+		m_TitleOrderMap[i] = pHead->GetOriItemIndex(i);
+		if (m_TitleOrderMap[i] == -1)
+		{
+			OutputDebugStringFormat("第%d个顺序为-1,排序数据为%d\n", i, m_SortPara.nCol);
+		}
 		if (m_SortPara.nCol == i)
-			m_SortPara.nShowCol = Order[i];
+		{
+			if (m_SortPara.nShowCol != m_TitleOrderMap[i])
+			{
+				pHead->SetItemSort(m_SortPara.nShowCol, ST_NULL);
+				m_SortPara.nShowCol = m_TitleOrderMap[i];
+				if (m_SortPara.nFlag == 0)
+					pHead->SetItemSort(m_SortPara.nShowCol, ST_UP);
+				else
+					pHead->SetItemSort(m_SortPara.nShowCol, ST_DOWN);
+
+			}
+
+		}
 	}
+	::SendMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveListConfig, 0);
 	return true;
 }
 bool CWorkWnd::OnListDbClick(EventArgs * pEvtBase)
@@ -1416,6 +1504,25 @@ bool CWorkWnd::OnListLClick(EventArgs * pEvtBase)
 	memcpy_s(msg + 4, 12, strID, strID.GetLength() + 1);
 	SendMsg(m_uParWndThreadID, WW_ChangeIndy, msg, 12);
 	return true;
+}
+void SOUI::CWorkWnd::SetListDataIsShow()
+{
+	SHeaderCtrlEx *pHead = (SHeaderCtrlEx *)m_pList->GetWindow(GSW_FIRSTCHILD);
+	for (auto &it : m_TitleShowMap)
+		pHead->SetItemShowVisible(m_TitleOrderMap[it.first], it.second);
+	m_pList->UpdateScrollBar();
+	m_pList->RequestRelayout();
+	m_pList->Invalidate();
+}
+void SOUI::CWorkWnd::SetListDataOrder()
+{
+	SHeaderCtrlEx *pHead = (SHeaderCtrlEx *)m_pList->GetWindow(GSW_FIRSTCHILD);
+	for (auto &it : m_TitleOrderMap)
+		pHead->SetOriItemIndex(it.first, it.second);
+	m_pList->UpdateScrollBar();
+	m_pList->RequestRelayout();
+	m_pList->Invalidate();
+
 }
 void CWorkWnd::UpdateListShowStock()
 {
@@ -2383,6 +2490,16 @@ void CWorkWnd::OnBtnStockFilterClicked()
 	}
 }
 
+void SOUI::CWorkWnd::OnBtnTitleSelectClicked()
+{
+	CDlgHeaderSelect *pDlg = new CDlgHeaderSelect(m_hWnd, m_TitleShowMap);
+	pDlg->Create(NULL);
+	pDlg->CenterWindow(m_hWnd);
+	pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	pDlg->ShowWindow(SW_SHOWDEFAULT);
+	//::EnableWindow(m_hWnd, FALSE);
+}
+
 void CWorkWnd::OnCheckST()
 {
 	m_bListShowST = m_pCheckST->IsChecked();
@@ -2526,7 +2643,7 @@ void CWorkWnd::SetFenShiShowData(vector<ShowPointInfo>&infoVec, int nStartWnd)
 				SStringA dataName = info.srcDataName +
 					m_SubPicShowNameVec[info.type][info.range][j];
 				tmpDataArr[i][j] = &m_PointData[Period_FenShi][dataName];
-				dataNameVec[i].emplace_back(dataName);
+				dataNameVec[i].emplace_back(m_SubPicShowNameVec[info.type][info.range][j]);
 				rightVec[i][j] = TRUE;
 			}
 		}
@@ -2567,7 +2684,7 @@ void CWorkWnd::SetKlineShowData(vector<ShowPointInfo>&infoVec, int nPeriod, BOOL
 				SStringA dataName = info.srcDataName +
 					m_SubPicShowNameVec[info.type][info.range][j];
 				tmpDataArr[i][j] = &m_PointData[nPeriod][dataName];
-				dataNameVec[i].emplace_back(dataName);
+				dataNameVec[i].emplace_back(m_SubPicShowNameVec[info.type][info.range][j]);
 				rightVec[i][j] = TRUE;
 			}
 		}
@@ -3001,7 +3118,7 @@ void CWorkWnd::OnFenShiMacd(int nMsgLength, const char * info)
 
 void CWorkWnd::OnKlineMa(int nMsgLength, const char * info)
 {
-	m_pKlinePic->ReProcMAData();
+	m_pKlinePic->ReProcMAData(m_MaParaSet);
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 

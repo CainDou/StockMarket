@@ -25,6 +25,9 @@ using std::map;
 #define RC_FSMAX		5
 #define RC_FSMIN		5
 
+#define RC_KLLEFT		0
+#define RC_KLRIGHT		48
+
 typedef struct InStockData
 {
 	double close;

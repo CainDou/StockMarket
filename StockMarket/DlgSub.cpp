@@ -94,6 +94,9 @@ LRESULT CDlgSub::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	case WDMsg_SaveStockFilter:
 		SaveComboStockFilterPara(int(lp));
 		break;
+	case WDMsg_SaveListConfig:
+		SaveListConfig();
+		break;
 	case WDMsg_Exit:
 		exit(0);
 		break;
@@ -108,6 +111,7 @@ void CDlgSub::OnDestroy()
 
 	SetMsgHandled(FALSE);
 	SavePicConfig();
+	SaveListConfig();
 	WINDOWPLACEMENT wp = { sizeof(wp) };
 	::GetWindowPlacement(m_hWnd, &wp);
 	std::ofstream ofile;
@@ -161,6 +165,7 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetPreClose(preCloseMap);
 		m_WndMap[i]->InitList();
 	}
+	InitListConfig();
 
 }
 
@@ -228,7 +233,7 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 				spi.type = eRpsPoint;
 				spi.srcDataName = "close";
 				spi.range = strRangeVec[i];
-				spi.showName = strShowNameVec[i] + "收盘价相对强度";
+				spi.showName = strShowNameVec[i] + "CRPS";
 				initPara.TSCPonitWndInfo.emplace_back(spi);
 			}
 		}
@@ -244,6 +249,13 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 			spi.srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
 			spi.range = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
 			spi.showName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dShowName", i), "");
+			if (spi.showName.Find("收盘价") != -1)
+				spi.showName.Replace("收盘价", "C");
+			if (spi.showName.Find("成交额") != -1)
+				spi.showName.Replace("成交额", "AMO");
+			if (spi.showName.Find("相对强度") != -1)
+				spi.showName.Replace("相对强度", "RPS");
+
 			initPara.TSCPonitWndInfo.emplace_back(spi);
 		}
 	}
@@ -276,6 +288,13 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 			spi.srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
 			spi.range = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
 			spi.showName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dShowName", i), "");
+			if (spi.showName.Find("收盘价") != -1)
+				spi.showName.Replace("收盘价", "C");
+			if (spi.showName.Find("成交额") != -1)
+				spi.showName.Replace("成交额", "AMO");
+			if (spi.showName.Find("相对强度") != -1)
+				spi.showName.Replace("相对强度", "RPS");
+
 			initPara.KlinePonitWndInfo.emplace_back(spi);
 		}
 	}
@@ -288,10 +307,14 @@ void CDlgSub::InitConfig()
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\%s.ini", m_strWindowName);
 	CIniFile ini(strPosFile);
+	int CloseMAPara[] = { 5,10,20,60,0,0 };
+	int VolAmoMAPara[] = { 5,10,0,0,0,0 };
+
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		InitPara initPara;
 		SStringA strSection;
+		SStringA strKey;
 		strSection.Format("Group%d", i);
 		initPara.bShowMA =
 			ini.GetIntA(strSection, "ShowMA", 1) == 0 ? false : true;
@@ -307,6 +330,8 @@ void CDlgSub::InitConfig()
 			ini.GetIntA(strSection, "ShowTSCVolume", 1) == 0 ? false : true;
 		initPara.bShowKlineVolume =
 			ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
+		initPara.bShowKlineAmount =
+			ini.GetIntA(strSection, "ShowKlineAmount", 1) == 0 ? false : true;
 		initPara.bShowKlineMACD =
 			ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[0] =
@@ -337,14 +362,15 @@ void CDlgSub::InitConfig()
 			ini.GetIntA(strSection, "MACDPara2", 26);
 		initPara.nMACDPara[2] =
 			ini.GetIntA(strSection, "MACDPara3", 9);
-		initPara.nMAPara[0] =
-			ini.GetIntA(strSection, "MAPara1", 5);
-		initPara.nMAPara[1] =
-			ini.GetIntA(strSection, "MAPara2", 10);
-		initPara.nMAPara[2] =
-			ini.GetIntA(strSection, "MAPara3", 20);
-		initPara.nMAPara[3] =
-			ini.GetIntA(strSection, "MAPara4", 60);
+		for(int i=0;i<MAX_MA_COUNT;++i)
+			initPara.nMAPara[i] = ini.GetIntA(strSection,
+				strKey.Format("MAPara%d",i+1), CloseMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			initPara.nVolMaPara[i] = ini.GetIntA(strSection,
+				strKey.Format("VolMAPara%d", i + 1), VolAmoMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			initPara.nAmoMaPara[i] = ini.GetIntA(strSection,
+				strKey.Format("AmoMAPara%d", i + 1), VolAmoMAPara[i]);
 		initPara.nJiange =
 			ini.GetIntA(strSection, "Jiange", 2);
 		initPara.BandPara.N1 =
@@ -385,6 +411,52 @@ void CDlgSub::InitConfig()
 
 }
 
+void SOUI::CDlgSub::InitListConfig()
+{
+	SStringA strFile;
+	strFile.Format(".\\config\\ListConfig_%s.ini", m_strWindowName);
+	CIniFile ini(strFile);
+
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		map<int, BOOL>showTitleMap;
+		map<int, int>titleOrderMap;
+		SStringA strSection;
+		strSection.Format("Group%d", i);
+		int nShowItemCount = ini.GetIntA(strSection, "ShowItemCount", 0);
+		if (nShowItemCount == 0)
+		{
+			if (i != Group_Stock)
+			{
+				for (int j = SHead_CloseRPS520; j < SHead_CommonItmeCount; ++j)
+					showTitleMap[j] = TRUE;
+				for (int j = SHead_ID; j < SHead_CommonItmeCount; ++j)
+					titleOrderMap[j] = j;
+
+			}
+			else
+			{
+				for (int j = SHead_CloseRPS520; j < SHead_StockItemCount; ++j)
+					showTitleMap[j] = TRUE;
+				for (int j = SHead_ID; j < SHead_StockItemCount; ++j)
+					titleOrderMap[j] = j;
+			}
+		}
+		else
+		{
+			SStringA strKey;
+			for (int j = 0; j<nShowItemCount; ++j)
+				showTitleMap[j + SHead_CloseRPS520] =
+				ini.GetIntA(strSection, strKey.Format("Show%d", j + SHead_CloseRPS520), TRUE);
+			for (int j = 0; j<nShowItemCount + SHead_CloseRPS520; ++j)
+				titleOrderMap[j] = ini.GetIntA(strSection, strKey.Format("Order%d", j), j);
+		}
+
+		m_WndMap[i]->InitListConfig(showTitleMap, titleOrderMap);
+	}
+
+}
+
 void SOUI::CDlgSub::SavePointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection)
 {
 	ini.WriteIntA(strSection, "TSCPointWndNum", initPara.nTSCPointWndNum);
@@ -421,6 +493,7 @@ void CDlgSub::SavePicConfig()
 	{
 		auto initPara = m_WndMap[i]->OutPutInitPara();
 		SStringA strSection;
+		SStringA strKey;
 		strSection.Format("Group%d", i);
 		ini.WriteIntA(strSection, "ShowMA", initPara.bShowMA);
 		ini.WriteIntA(strSection, "ShowBand", initPara.bShowBandTarget);
@@ -429,6 +502,7 @@ void CDlgSub::SavePicConfig()
 		ini.WriteIntA(strSection, "ShowTSCMACD", initPara.bShowTSCMACD);
 		ini.WriteIntA(strSection, "ShowTSCVolume", initPara.bShowTSCVolume);
 		ini.WriteIntA(strSection, "ShowKlineVolume", initPara.bShowKlineVolume);
+		ini.WriteIntA(strSection, "ShowKlineAmount", initPara.bShowKlineAmount);
 		ini.WriteIntA(strSection, "ShowKlineMACD", initPara.bShowKlineMACD);
 		ini.WriteIntA(strSection, "ShowTSCRPS", initPara.bShowTSCRPS[0]);
 		ini.WriteIntA(strSection, "ShowTSCL1RPS", initPara.bShowTSCRPS[0]);
@@ -444,10 +518,12 @@ void CDlgSub::SavePicConfig()
 		ini.WriteIntA(strSection, "MACDPara1", initPara.nMACDPara[0]);
 		ini.WriteIntA(strSection, "MACDPara2", initPara.nMACDPara[1]);
 		ini.WriteIntA(strSection, "MACDPara3", initPara.nMACDPara[2]);
-		ini.WriteIntA(strSection, "MAPara1", initPara.nMAPara[0]);
-		ini.WriteIntA(strSection, "MAPara2", initPara.nMAPara[1]);
-		ini.WriteIntA(strSection, "MAPara3", initPara.nMAPara[2]);
-		ini.WriteIntA(strSection, "MAPara4", initPara.nMAPara[3]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("MAPara%d", i + 1), initPara.nMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("VolMAPara%d", i + 1), initPara.nVolMaPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("AmoMAPara%d", i + 1), initPara.nAmoMaPara[i]);
 		ini.WriteIntA(strSection, "Jiange", initPara.nJiange);
 		ini.WriteIntA(strSection, "BandN1", initPara.BandPara.N1);
 		ini.WriteIntA(strSection, "BandN2", initPara.BandPara.N2);
@@ -461,6 +537,29 @@ void CDlgSub::SavePicConfig()
 		ini.WriteStringA(strSection, "ShowIndustry", initPara.ShowIndy);
 		ini.WriteIntA(strSection, "StockFilter", initPara.UseStockFilter);
 		SavePointWndInfo(ini, initPara, strSection);
+	}
+
+}
+
+void SOUI::CDlgSub::SaveListConfig()
+{
+	SStringA strFile;
+	strFile.Format(".\\config\\ListConfig_%s.ini", m_strWindowName);
+	CIniFile ini(strFile);
+
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		map<int, BOOL>showTitleMap = m_WndMap[i]->GetListShowTitle();
+		map<int, int>titleOrderMap = m_WndMap[i]->GetListTitleOrder();
+		SStringA strSection;
+		strSection.Format("Group%d", i);
+		ini.WriteIntA(strSection, "ShowItemCount", showTitleMap.size());
+		SStringA strKey;
+		for (auto &it : showTitleMap)
+			ini.WriteIntA(strSection, strKey.Format("Show%d", it.first), it.second);
+		for (auto &it : titleOrderMap)
+			ini.WriteIntA(strSection, strKey.Format("Order%d", it.first), it.second);
+
 	}
 
 }

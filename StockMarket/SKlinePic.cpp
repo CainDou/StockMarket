@@ -13,7 +13,7 @@ using std::vector;
 #define MOVE_ONESTEP		10		//每次平移的数据量
 #define K_WIDTH_TOTAL		16		//k线占用总宽度(在x轴上)
 //一些基本的界面框架信息
-#define RC_LEFT				48
+#define RC_LEFT				0 //48
 #define RC_RIGHT			48
 #define RC_TOP				25
 #define RC_BOTTOM			40
@@ -70,12 +70,21 @@ SKlinePic::SKlinePic()
 	m_bTodayMarketReady = false;
 	m_bHisKlineReady = false;
 	m_bHisPointReady = false;
+	ZeroMemory(m_nMAPara, sizeof(m_nMAPara));
 	m_nMAPara[0] = 5;
 	m_nMAPara[1] = 10;
 	m_nMAPara[2] = 20;
 	m_nMAPara[3] = 60;
 	m_pTip = nullptr;
 	m_nZoomRatio = 1;
+	m_bShowAmount = false;
+	ZeroMemory(m_nVolMaPara, sizeof(m_nVolMaPara));
+	m_nVolMaPara[0] = 5;
+	m_nVolMaPara[1] = 10;
+	ZeroMemory(m_nAmoMaPara, sizeof(m_nAmoMaPara));
+	m_nAmoMaPara[0] = 5;
+	m_nAmoMaPara[1] = 10;
+
 	//m_pTip = new SKlineTip(m_hParWnd);
 
 }
@@ -192,6 +201,7 @@ void SKlinePic::InitShowPara(InitPara_t para)
 
 	m_bShowBandTarget = para.bShowBandTarget;
 	m_bShowVolume = para.bShowKlineVolume;
+	m_bShowAmount = para.bShowKlineAmount;
 	m_bShowMA = para.bShowMA;
 	m_nKWidth = para.nWidth;
 	m_bShowDeal = para.bShowKlineDeal;
@@ -205,10 +215,12 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_nMACDPara[1] = para.nMACDPara[1];
 	m_nMACDPara[2] = para.nMACDPara[2];
 	m_BandPara = para.BandPara;
-	m_nMAPara[0] = para.nMAPara[0];
-	m_nMAPara[1] = para.nMAPara[1];
-	m_nMAPara[2] = para.nMAPara[2];
-	m_nMAPara[3] = para.nMAPara[3];
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		m_nMAPara[i] = para.nMAPara[i];
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		m_nVolMaPara[i] = para.nVolMaPara[i];
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		m_nAmoMaPara[i] = para.nAmoMaPara[i];
 
 	m_nJiange = para.nJiange;
 }
@@ -217,6 +229,7 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 {
 	para.bShowBandTarget = m_bShowBandTarget;
 	para.bShowKlineVolume = m_bShowVolume;
+	para.bShowKlineAmount = m_bShowAmount;
 	para.bShowMA = m_bShowMA;
 	para.nWidth = m_nKWidth;
 	para.bShowKlineDeal = m_bShowDeal;
@@ -234,10 +247,12 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.nMACDPara[1] = m_nMACDPara[1];
 	para.nMACDPara[2] = m_nMACDPara[2];
 	para.BandPara = m_BandPara;
-	para.nMAPara[0] = m_nMAPara[0];
-	para.nMAPara[1] = m_nMAPara[1];
-	para.nMAPara[2] = m_nMAPara[2];
-	para.nMAPara[3] = m_nMAPara[3];
+	for(int i=0;i<MAX_MA_COUNT;++i)
+		para.nMAPara[i] = m_nMAPara[i];
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		para.nVolMaPara[i] = m_nVolMaPara[i];
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		para.nAmoMaPara[i] = m_nAmoMaPara[i];
 	para.nJiange = m_nJiange;
 }
 
@@ -478,21 +493,21 @@ void SKlinePic::DrawMainUpperMarket(IRenderTarget * pRT, KlineType & data)
 	else
 		strVol.Format(L"%.0f", data.vol);
 
-	SStringW strAmt;
+	SStringW strAmo;
 	if (data.amount > 1'000'000'000)
-		strAmt.Format(L"%.01f亿", data.amount / 100'000'000);
+		strAmo.Format(L"%.01f亿", data.amount / 100'000'000);
 	else if (data.amount > 100'000'000)
-		strAmt.Format(L"%.02f亿", data.amount / 100'000'000);
+		strAmo.Format(L"%.02f亿", data.amount / 100'000'000);
 	else if (data.amount > 1'000'000)
-		strAmt.Format(L"%.0f万", data.amount / 10000);
+		strAmo.Format(L"%.0f万", data.amount / 10000);
 	else if (data.amount > 10'000)
-		strAmt.Format(L"%.02f万", data.amount / 10000);
+		strAmo.Format(L"%.02f万", data.amount / 10000);
 	else
-		strAmt.Format(L"%.0f", data.amount);
+		strAmo.Format(L"%.0f", data.amount);
 
-	strMarket.Format(L"%s 量:%s 金额:%s", strMarket, strVol, strAmt);
+	strMarket.Format(L"%s 量:%s 金额:%s", strMarket, strVol, strAmo);
 
-	DrawTextonPic(pRT, CRect(m_rcImage.left, m_rcImage.top - 20, m_rcImage.right, m_rcImage.top), strMarket);
+	DrawTextonPic(pRT, CRect(m_rcImage.left + 5, m_rcImage.top - 20, m_rcImage.right, m_rcImage.top), strMarket);
 }
 
 void SKlinePic::DrawMainUpperMA(IRenderTarget * pRT, int nPos)
@@ -500,39 +515,85 @@ void SKlinePic::DrawMainUpperMA(IRenderTarget * pRT, int nPos)
 	HDC hdc = pRT->GetDC();
 	CSize size;
 	size.cx = 0; size.cy = 0;
-	int left = 0;
+	int left = 5;
 	SStringW strMarket;
 	auto &arrMA = m_pAll->fMa;
-	if (nPos >= m_nMAPara[0] - 1)
-		strMarket.Format(L"MA%d:%.2f", m_nMAPara[0], arrMA[0][nPos]);
-	else
-		strMarket.Format(L"MA%d:-", m_nMAPara[0]);
-	DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket);
-
-	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
-	left += size.cx;
-	if (nPos >= m_nMAPara[1] - 1)
-		strMarket.Format(L"MA%d:%.2f", m_nMAPara[1], arrMA[1][nPos]);
-	else
-		strMarket.Format(L"MA%d:-", m_nMAPara[1]);
-	DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket, RGBA(255, 255, 0, 255));
-
-	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
-	left += size.cx;
-	if (nPos >= m_nMAPara[2] - 1)
-		strMarket.Format(L"MA%d:%.2f", m_nMAPara[2], arrMA[2][nPos]);
-	else
-		strMarket.Format(L"MA%d:-", m_nMAPara[2]);
-	DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket, RGBA(255, 0, 255, 255));
-
-	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
-	left += size.cx;
-	if (nPos >= m_nMAPara[3] - 1)
-		strMarket.Format(L"MA%d:%.2f", m_nMAPara[3], arrMA[3][nPos]);
-	else
-		strMarket.Format(L"MA%d:-", m_nMAPara[3]);
-	DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket, RGBA(0, 255, 0, 255));
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		if (m_nMAPara[i] <= 0)
+			continue;
+		if (nPos >= m_nMAPara[i] - 1)
+			strMarket.Format(L"MA%d:%.2f", m_nMAPara[i], arrMA[i][nPos]);
+		else
+			strMarket.Format(L"MA%d:-", m_nMAPara[i]);
+		DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket,
+			m_MaColorVec[i]);
+		GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
+		left += size.cx;
+	}
 	pRT->ReleaseDC(hdc);
+}
+
+void SOUI::SKlinePic::DrawVolAmoUpperMA(IRenderTarget * pRT, int nPos)
+{
+	HDC hdc = pRT->GetDC();
+	CSize size;
+	size.cx = 0; size.cy = 0;
+	int left = 5;
+	SStringW strMarket;
+	auto arrMA = m_bShowVolume ? m_pAll->fVolMa : m_pAll->fAmoMa;
+	auto maPara = m_bShowVolume ? m_nVolMaPara : m_nAmoMaPara;
+	strMarket = m_bShowVolume ? L"Vol:" : L"Amo:";
+	double fData = m_bShowVolume ? m_pAll->data[nPos].vol : m_pAll->data[nPos].amount;
+	if (fData > 1'000'000'000)
+		strMarket.Format(L"%.01f亿", fData / 100'000'000);
+	else if (fData > 100'000'000)
+		strMarket.Format(L"%.02f亿", fData / 100'000'000);
+	else if (fData > 1'000'000)
+		strMarket.Format(L"%.0f万", fData / 10000);
+	else if (fData > 10'000)
+		strMarket.Format(L"%.02f万", fData / 10000);
+	else
+		strMarket.Format(L"%.0f", fData);
+	strMarket = (m_bShowVolume ? L"Vol:" : L"Amo:") + strMarket;
+	DrawTextonPic(pRT,
+		CRect(m_rcVolume.left + left, m_rcVolume.top + 5,
+			m_rcVolume.right - 1, m_rcVolume.top + 19),
+		strMarket);
+	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
+	left += size.cx;
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		if (maPara[i] <= 0)
+			continue;
+		if (nPos >= maPara[i] - 1)
+		{
+			double fData = arrMA[i][nPos];
+			if (fData > 1'000'000'000)
+				strMarket.Format(L"MA%d:%.01f亿", maPara[i], fData / 100'000'000);
+			else if (fData > 100'000'000)
+				strMarket.Format(L"MA%d:%.02f亿", maPara[i], fData / 100'000'000);
+			else if (fData > 1'000'000)
+				strMarket.Format(L"MA%d:%.0f万", maPara[i], fData / 10000);
+			else if (fData > 10'000)
+				strMarket.Format(L"MA%d:%.02f万", maPara[i], fData / 10000);
+			else
+				strMarket.Format(L"MA%d:%.0f", maPara[i], fData);
+
+		}
+		else
+			strMarket.Format(L"MA%d:-", maPara[i]);
+		DrawTextonPic(pRT,
+			CRect(m_rcVolume.left + left, m_rcVolume.top + 5,
+				m_rcVolume.right - 1, m_rcVolume.top + 19),
+			strMarket, m_MaColorVec[i]);
+		GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
+		left += size.cx;
+	}
+
+
+	pRT->ReleaseDC(hdc);
+
 }
 
 void SKlinePic::DrawMacdUpperMarket(IRenderTarget * pRT, int nPos)
@@ -556,7 +617,7 @@ void SKlinePic::DrawMainUpperBand(IRenderTarget * pRT, int nPos)
 	HDC hdc = pRT->GetDC();
 	CSize size;
 	size.cx = 0; size.cy = 0;
-	int nLeft = 0;
+	int nLeft = 5;
 	if (m_pBandData->DataValid[nPos])
 	{
 		strMarket.Format(L" 波段优化(%d,%d,%d,%d,%d,%d)", m_BandPara.N1, m_BandPara.N2, m_BandPara.K, m_BandPara.M1, m_BandPara.M2, m_BandPara.P);
@@ -679,7 +740,7 @@ void SKlinePic::SetWindowRect()
 	}
 
 	vector<CRect*>pSubRect;
-	if (m_bShowVolume)
+	if (m_bShowVolume || m_bShowAmount)
 		pSubRect.emplace_back(&m_rcVolume);
 	else m_rcVolume.SetRectEmpty();
 
@@ -994,8 +1055,25 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 
 		pRT->CreatePen(PS_SOLID, RGBA(255, 0, 255, 255), 1, &m_penPurple);
 		pRT->CreatePen(PS_SOLID, RGBA(100, 100, 100, 255), 1, &m_penGray);
+		pRT->CreatePen(PS_SOLID, RGBA(100, 0, 255, 255), 1, &m_penBule);
 
 		m_bPaintInit = true;
+		m_MAPenVec.resize(MAX_MA_COUNT);
+		m_MAPenVec[0] = m_penWhite;
+		m_MAPenVec[1] = m_penYellow;
+		m_MAPenVec[2] = m_penPurple;
+		m_MAPenVec[3] = m_penMAGreen;
+		m_MAPenVec[4] = m_penGray;
+		m_MAPenVec[5] = m_penBule;
+
+		m_MaColorVec.resize(MAX_MA_COUNT);
+		m_MaColorVec[0] = RGBA(255, 255, 255, 255);
+		m_MaColorVec[1] = RGBA(255, 255, 000, 255);
+		m_MaColorVec[2] = RGBA(255, 0, 255, 255);
+		m_MaColorVec[3] = RGBA(0, 255, 0, 255);
+		m_MaColorVec[4] = RGBA(100, 100, 100, 255);
+		m_MaColorVec[5] = RGBA(100, 0, 255, 255);
+
 
 	}
 	::EnterCriticalSection(&m_csSub);
@@ -1044,7 +1122,7 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 
 		GetMaxDiff();
 
-		if (m_bShowVolume)
+		if (m_bShowVolume || m_bShowAmount)
 			GetFuTuMaxDiff();
 
 		if (m_bShowMacd)
@@ -1101,18 +1179,18 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 	//画k线区
 	int nLen = m_rcMain.bottom - m_rcMain.top;
 	int nYoNum = 9;		//y轴标示数量 9 代表画8根线
-	CPoint pts[5];
+	CPoint pts[4];
 	{
 		CAutoRefPtr<IPen> pen, oldPen;
 		pRT->CreatePen(PS_SOLID, RGBA(255, 0, 0, 0xFF), 2, &pen);
 		pRT->SelectObject(m_penRed, (IRenderObj**)&oldPen);
 		//y轴	//x轴
 		pts[0].SetPoint(m_rcMain.left, m_rcMain.top);
-		pts[1].SetPoint(m_rcMain.left, m_rcMain.bottom);
+		pts[1].SetPoint(m_rcMain.right, m_rcMain.top);
 		pts[2].SetPoint(m_rcMain.right, m_rcMain.bottom);
-		pts[3].SetPoint(m_rcMain.right, m_rcMain.top);
-		pts[4] = pts[0];
-		pRT->DrawLines(pts, 5);
+		pts[3].SetPoint(m_rcMain.left, m_rcMain.bottom);
+		//pts[4] = pts[0];
+		pRT->DrawLines(pts, 4);
 		pRT->SelectObject(oldPen);
 	}
 	pRT->SetTextColor(RGBA(255, 0, 0, 255));
@@ -1153,7 +1231,7 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			SStringW s1 = GetYPrice(nY);
 			double fPrice = _wtof(s1);
 			if (fPrice<15000 && fPrice>-15000)
-				DrawTextonPic(pRT, CRect(m_rcMain.right - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 16), s1, RGBA(255, 0, 0, 255), DT_CENTER);
+				DrawTextonPic(pRT, CRect(m_rcMain.right + 2, nY - 9, m_rcMain.right + RC_RIGHT, nY + 16), s1, RGBA(255, 0, 0, 255), DT_CENTER);
 			//		pRT->TextOut(m_rcUpper.left - RC_LEFT + 8, nY - 6, s1, -1);
 		}
 	}
@@ -1169,7 +1247,7 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 	}*/
 
 	//画指标区
-	if (m_bShowVolume)
+	if (m_bShowVolume || m_bShowAmount)
 	{
 		{
 			CAutoRefPtr<IPen> oldPen;
@@ -1177,22 +1255,35 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			pRT->SelectObject(m_penRed, (IRenderObj**)&oldPen);
 			//y轴	//x轴
 			pts[0].SetPoint(m_rcVolume.left, m_rcVolume.top);
-			pts[1].SetPoint(m_rcVolume.left, m_rcVolume.bottom);
+			pts[1].SetPoint(m_rcVolume.right, m_rcVolume.top);
 			pts[2].SetPoint(m_rcVolume.right, m_rcVolume.bottom);
-			pts[3].SetPoint(m_rcVolume.right, m_rcVolume.top);
-			pts[4] = pts[0];
-			pRT->DrawLines(pts, 4);
+			pts[3].SetPoint(m_rcVolume.left, m_rcVolume.bottom);
+			//pts[4] = pts[0];
+			pRT->DrawLines(pts + 1, 3);
 			pRT->SelectObject(oldPen);
-			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, m_rcVolume.top, m_rcImage.left, m_rcVolume.top + 18), L"成交量", RGBA(255, 0, 0, 255), DT_CENTER);
-			DrawTextonPic(pRT, CRect(m_rcMain.right, m_rcVolume.top, m_rcImage.right + RC_RIGHT - 2, m_rcVolume.top + 18), L"金额", RGBA(255, 0, 0, 255), DT_CENTER);
+			//DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, m_rcVolume.top, m_rcImage.left, m_rcVolume.top + 18), L"成交量", RGBA(255, 0, 0, 255), DT_CENTER);
+			//DrawTextonPic(pRT, CRect(m_rcMain.right, m_rcVolume.top, m_rcImage.right + RC_RIGHT - 2, m_rcVolume.top + 18), L"金额", RGBA(255, 0, 0, 255), DT_CENTER);
 
 		}
 
 		//副图区横向虚线
 		pdc = pRT->GetDC();
-		for (int i = 1; i < 2; i++)
+
+		int nY = m_rcVolume.top + 20;
+		CAutoRefPtr<IPen> pen, oldPen;
+		pRT->CreatePen(PS_SOLID, RGBA(200, 0, 0, 0xFF), 2, &pen);
+		pRT->SelectObject(pen, (IRenderObj**)&oldPen);
+		//y轴	//x轴
+		pts[0].SetPoint(m_rcVolume.left, nY);
+		pts[1].SetPoint(m_rcVolume.right, nY);
+		pRT->DrawLines(pts, 2);
+		pRT->SelectObject(oldPen);
+
+		for (int i = 1; i <= 2; i++)
 		{
-			int nY = m_rcVolume.bottom - ((m_rcVolume.bottom - m_rcVolume.top - 5) / 2 * i);
+			int nY = m_rcVolume.bottom - ((m_rcVolume.bottom - m_rcVolume.top - 25) / 2 * i);
+			if (i == 2)
+				nY -= 5;
 			for (int j = m_rcVolume.left + 1; j < m_rcVolume.right; j += 3)
 				::SetPixelV(pdc, j, nY, clRed);		//	划虚线
 
@@ -1200,9 +1291,14 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 
 			if (m_bDataInited)
 			{
-				SStringW sl = GetFuTuYPrice(nY);
-				DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 9), sl, RGBA(255, 0, 0, 255), DT_CENTER);
-				SStringW sr = GetFuTuYPrice(nY, true);
+				SStringW sr;
+				if (m_bShowVolume)
+					sr = GetFuTuYPrice(nY);
+				else
+					sr = GetFuTuYPrice(nY, true);
+
+				//DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 9), sl, RGBA(255, 0, 0, 255), DT_CENTER);
+				//SStringW sr = GetFuTuYPrice(nY, true);
 				DrawTextonPic(pRT, CRect(m_rcMain.right, nY - 9, m_rcImage.right + RC_RIGHT - 2, nY + 9), sr, RGBA(255, 255, 0, 255), DT_CENTER);
 
 			}
@@ -1219,11 +1315,11 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			pRT->SelectObject(m_penRed, (IRenderObj**)&oldPen);
 			//y轴	//x轴
 			pts[0].SetPoint(m_rcMACD.left, m_rcMACD.top);
-			pts[1].SetPoint(m_rcMACD.left, m_rcMACD.bottom);
+			pts[1].SetPoint(m_rcMACD.right, m_rcMACD.top);
 			pts[2].SetPoint(m_rcMACD.right, m_rcMACD.bottom);
-			pts[3].SetPoint(m_rcMACD.right, m_rcMACD.top);
-			pts[4] = pts[0];
-			pRT->DrawLines(pts, 4);
+			pts[3].SetPoint(m_rcMACD.left, m_rcMACD.bottom);
+			//pts[4] = pts[0];
+			pRT->DrawLines(pts + 1, 3);
 			pRT->SelectObject(oldPen);
 		}
 
@@ -1248,6 +1344,14 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 				pRT->DrawLines(pts, 2);
 				pRT->SelectObject(oldPen);
 			}
+
+			//k线区y轴加轴标
+			if (m_bDataInited)
+			{
+				SStringW s1 = GetMACDYPrice(nY);
+				DrawTextonPic(pRT, CRect(m_rcMACD.right + 2, nY - 9, m_rcMACD.right + RC_RIGHT, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
+			}
+
 		}
 		pRT->ReleaseDC(pdc);
 
@@ -1338,20 +1442,15 @@ void SKlinePic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 
 	if (m_bShowMA)
 	{
-		for (int nt = 0; nt < MAX_MA_COUNT; nt++)
+		for (int i = 0; i < MAX_MA_COUNT; i++)
 		{
-			//			if (!m_pAll->m_bShowZtLine[nt])
-			//				continue;
-			auto& maData = m_pAll->fMa[nt];
-			int j;
-			if (m_nFirst > 0)
-				j = m_nFirst - 1;
-			else
-				j = m_nFirst;
+			if (m_nMAPara[i] <= 0)
+				continue;
+			auto& maData = m_pAll->fMa[i];
+			int j = m_nFirst > 0 ? m_nFirst - 1 : m_nFirst;
 			for (j; j < m_nEnd; j++)
 			{
-				if ((nt == 0 && j >= 5) || (nt == 1 && j >= 10)
-					|| (nt == 2 && j >= 20 || (nt == 3 && j >= 60)))
+				if (j >= m_nMAPara[i])
 				{
 					if (maData[j] < fMin)
 						fMin = maData[j];
@@ -1393,23 +1492,59 @@ void SKlinePic::GetFuTuMaxDiff()		//判断副图坐标最大最小值和k线条数
 	//判断最大最小值
 	double fVolMax = -100000000000000;
 	double fVolMin = 0;
-	double fAmtMax = -100000000000000;
-	double fAmtMin = 0;
+	double fAmoMax = -100000000000000;
+	double fAmoMin = 0;
 
 	auto &data = m_pAll->data;
 	for (int j = m_nFirst; j < m_nEnd; j++)
 	{
 		if (data[j].vol > fVolMax)
 			fVolMax = data[j].vol;
-		if (data[j].amount > fAmtMax)
-			fAmtMax = data[j].amount;
+		if (data[j].amount > fAmoMax)
+			fAmoMax = data[j].amount;
+	}
+
+	//volMA
+	for (int i = 0; i < MAX_MA_COUNT; i++)
+	{
+		if (m_nVolMaPara[i] <= 0)
+			continue;
+		auto& maData = m_pAll->fVolMa[i];
+		int j = m_nFirst > 0 ? m_nFirst - 1 : m_nFirst;
+		for (j; j < m_nEnd; j++)
+		{
+
+			if (j >= m_nVolMaPara[i])
+			{
+				if (maData[j] > fVolMax)
+					fVolMax = maData[j];
+			}
+		}
+	}
+
+	//amoMA
+	for (int i = 0; i < MAX_MA_COUNT; i++)
+	{
+		if (m_nAmoMaPara[i] <= 0)
+			continue;
+		auto& maData = m_pAll->fAmoMa[i];
+		int j = m_nFirst > 0 ? m_nFirst - 1 : m_nFirst;
+		for (j; j < m_nEnd; j++)
+		{
+
+			if (j >= m_nAmoMaPara[i])
+			{
+				if (maData[j] > fAmoMax)
+					fAmoMax = maData[j];
+			}
+		}
 	}
 
 
 	m_pAll->fVolMax = fVolMax;
 	m_pAll->fVolMin = fVolMin;
-	m_pAll->fAmountMax = fAmtMax;
-	m_pAll->fAmountMin = fAmtMin;
+	m_pAll->fAmountMax = fAmoMax;
+	m_pAll->fAmountMin = fAmoMin;
 
 	if (m_pAll->fVolMax == m_pAll->fVolMin)
 		m_pAll->fVolMax = m_pAll->fVolMax * 1.1;
@@ -1446,25 +1581,25 @@ BOOL SKlinePic::IsInRect(int x, int y, int nMode)	//是否在坐标中,0为全部,1为上方
 	return FALSE;
 }
 
-int SKlinePic::GetFuTuYPos(double fDiff, bool bAmt)	//获得附图y位置
+int SKlinePic::GetFuTuYPos(double fDiff, bool bAmo)	//获得附图y位置
 {
 	double fPos = 0;
-	if (!bAmt)
-		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fVolMax))  * (m_rcVolume.Height() - 5) + RC_MAX;
+	if (!bAmo)
+		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fVolMax))  * (m_rcVolume.Height() - 25) + RC_MAX + 20;
 	else
-		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fAmountMax))  * (m_rcVolume.Height() - 5) + RC_MAX;
+		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fAmountMax))  * (m_rcVolume.Height() - 25) + RC_MAX + 20;
 	int nPos = (int)fPos;
 	return nPos;
 }
 
-SStringW SKlinePic::GetFuTuYPrice(int nY, bool bAmt)
+SStringW SKlinePic::GetFuTuYPrice(int nY, bool bAmo)
 {
 	SStringW strRet; strRet.Empty();
-	if (!bAmt)
+	if (!bAmo)
 	{
 		if (nY > m_rcVolume.bottom || nY < m_rcVolume.top)
 			return strRet;
-		double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 5)  * m_pAll->fVolMax;
+		double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 25)  * m_pAll->fVolMax;
 		if (fDiff > 1'000'000'000)
 			strRet.Format(L"%.01f亿", fDiff / 100'000'000);
 		else if (fDiff > 100'000'000)
@@ -1480,7 +1615,7 @@ SStringW SKlinePic::GetFuTuYPrice(int nY, bool bAmt)
 	{
 		if (nY > m_rcVolume.bottom || nY < m_rcVolume.top)
 			return strRet;
-		double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 5)  * m_pAll->fAmountMax;
+		double fDiff = ((double)m_rcVolume.bottom - nY) / (m_rcVolume.Height() - 25)  * m_pAll->fAmountMax;
 		if (fDiff > 1'000'000'000)
 			strRet.Format(L"%.01f亿", fDiff / 100'000'000);
 		else if (fDiff > 100'000'000)
@@ -1930,18 +2065,18 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 	//	::EnterCriticalSection(&m_cs);
 
-	if (m_bShowMacd)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			int nY = m_rcMACD.top + 20 + (m_rcMACD.Height() - 20) / 4 * i;
+	//if (m_bShowMacd)
+	//{
+	//	for (int i = 0; i < 4; i++)
+	//	{
+	//		int nY = m_rcMACD.top + 20 + (m_rcMACD.Height() - 20) / 4 * i;
 
-			//k线区y轴加轴标
-			SStringW s1 = GetMACDYPrice(nY);
+	//		//k线区y轴加轴标
+	//		SStringW s1 = GetMACDYPrice(nY);
 
-			DrawTextonPic(pRT, CRect(m_rcMACD.left - RC_LEFT + 5, nY - 9, m_rcMACD.left, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
-		}
-	}
+	//		DrawTextonPic(pRT, CRect(m_rcMACD.left - RC_LEFT + 5, nY - 9, m_rcMACD.left, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
+	//	}
+	//}
 
 
 	CPoint pts[5];
@@ -1966,9 +2101,10 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	CPoint *BuyShortLine = new CPoint[m_nEnd - m_nFirst];
 	CPoint *DIFLine = new CPoint[m_nEnd - m_nFirst];
 	CPoint *DEALine = new CPoint[m_nEnd - m_nFirst];
-	CPoint **MaLine = new CPoint*[4];
-	vector<CPoint> AmtLine(m_nEnd - m_nFirst);
-	for (int i = 0; i < 4; ++i)
+	CPoint **MaLine = new CPoint*[MAX_MA_COUNT];
+	vector<vector<CPoint>> VolAmtMALine(MAX_MA_COUNT, vector<CPoint>(m_nEnd - m_nFirst));
+
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		MaLine[i] = new CPoint[m_nEnd - m_nFirst];
 
 	for (int i = 0; i < m_nEnd - m_nFirst; i++)
@@ -2011,6 +2147,8 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 						DrawMainUpperMarket(pRT, data);
 						if (m_bShowMA)
 							DrawMainUpperMA(pRT, nOffset);
+						if (m_bShowAmount || m_bShowVolume)
+							DrawVolAmoUpperMA(pRT, nOffset);
 						if (m_bShowMacd)
 							DrawMacdUpperMarket(pRT, nOffset);
 					}
@@ -2062,9 +2200,12 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			if (m_bShowMA)
 			{
 				auto & arrMA = m_pAll->fMa;
-				for (int j = 0; j < 4; ++j)
-					if (i + m_nFirst >= m_nMAPara[j] - 1)
-						MaLine[j][i].SetPoint(x + ZOOMWIDTH / 2, GetYPos(arrMA[j][nOffset]));
+				for (int j = 0; j < MAX_MA_COUNT; ++j)
+				{
+					if (m_nMAPara[j] > 0)
+						if (i + m_nFirst >= m_nMAPara[j] - 1)
+							MaLine[j][i].SetPoint(x + ZOOMWIDTH / 2, GetYPos(arrMA[j][nOffset]));
+				}
 			}
 
 		}
@@ -2099,7 +2240,6 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 		if (m_bShowVolume)
 		{
-			AmtLine[i].SetPoint(x + ZOOMWIDTH / 2, GetFuTuYPos(fAmount,true));
 			if (nVolume != 0)
 			{
 
@@ -2123,6 +2263,46 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 				else
 					pRT->FillSolidRect(CRect(x, GetFuTuYPos(nVolume),
 						x + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
+			}
+			for (int j = 0; j < MAX_MA_COUNT; ++j)
+			{
+				if (m_nVolMaPara[j] > 0)
+					if (i + m_nFirst >= m_nVolMaPara[j] - 1)
+						VolAmtMALine[j][i].SetPoint(x + ZOOMWIDTH / 2, GetFuTuYPos(m_pAll->fVolMa[j][nOffset]));
+			}
+		}
+
+		if (m_bShowAmount)
+		{
+			if (fAmount != 0)
+			{
+
+				pRT->SelectObject(m_bBrushGreen);
+
+
+				pRT->SelectObject(m_penRed);
+
+				if (data.close > data.open)
+					pRT->DrawRectangle(CRect(x, GetFuTuYPos(fAmount, true),
+						x + ZOOMWIDTH, m_rcVolume.bottom));
+				else if (data.close == data.open&&m_nFirst + i > 0)
+				{
+					if (data.close >= p[i - 1].close)
+						pRT->DrawRectangle(CRect(x, GetFuTuYPos(fAmount, true),
+							x + ZOOMWIDTH, m_rcVolume.bottom));
+					else
+						pRT->FillSolidRect(CRect(x, GetFuTuYPos(fAmount, true),
+							x + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
+				}
+				else
+					pRT->FillSolidRect(CRect(x, GetFuTuYPos(fAmount, true),
+						x + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
+			}
+			for (int j = 0; j < MAX_MA_COUNT; ++j)
+			{
+				if (m_nAmoMaPara[j] > 0)
+					if (i + m_nFirst >= m_nAmoMaPara[j] - 1)
+						VolAmtMALine[j][i].SetPoint(x + ZOOMWIDTH / 2, GetFuTuYPos(m_pAll->fAmoMa[j][nOffset], true));
 			}
 		}
 
@@ -2158,24 +2338,63 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 	if (m_bShowMA)
 	{
-		vector<CAutoRefPtr<IPen>> m_penVec(4);
-		m_penVec[0] = m_penWhite;
-		m_penVec[1] = m_penYellow;
-		m_penVec[2] = m_penPurple;
-		m_penVec[3] = m_penMAGreen;
-
-		for (int i = 0; i < 4; ++i)
+		for (int i = 0; i < MAX_MA_COUNT; ++i)
 		{
-			if (m_nFirst >= m_nMAPara[i] - 1)
+			if (m_nMAPara[i] > 0)
 			{
-				pRT->SelectObject(m_penVec[i]);
-				pRT->DrawLines(MaLine[i], m_nEnd - m_nFirst);
-			}
-			else if (m_nEnd > m_nMAPara[i] - 1)
-			{
-				pRT->SelectObject(m_penVec[i]);
-				pRT->DrawLines(MaLine[i] - m_nFirst + m_nMAPara[i] - 1, m_nEnd - m_nMAPara[i] + 1);
+				if (m_nFirst >= m_nMAPara[i] - 1)
+				{
+					pRT->SelectObject(m_MAPenVec[i]);
+					pRT->DrawLines(MaLine[i], m_nEnd - m_nFirst);
+				}
+				else if (m_nEnd > m_nMAPara[i] - 1)
+				{
+					pRT->SelectObject(m_MAPenVec[i]);
+					pRT->DrawLines(MaLine[i] - m_nFirst + m_nMAPara[i] - 1, m_nEnd - m_nMAPara[i] + 1);
 
+				}
+			}
+		}
+	}
+
+	if (m_bShowVolume)
+	{
+		for (int i = 0; i < MAX_MA_COUNT; ++i)
+		{
+			if (m_nVolMaPara[i] > 0)
+			{
+				if (m_nFirst >= m_nVolMaPara[i] - 1)
+				{
+					pRT->SelectObject(m_MAPenVec[i]);
+					pRT->DrawLines(&VolAmtMALine[i][0], m_nEnd - m_nFirst);
+				}
+				else if (m_nEnd > m_nVolMaPara[i] - 1)
+				{
+					pRT->SelectObject(m_MAPenVec[i]);
+					pRT->DrawLines(&VolAmtMALine[i][0] - m_nFirst + m_nVolMaPara[i] - 1, m_nEnd - m_nVolMaPara[i] + 1);
+
+				}
+			}
+		}
+	}
+
+	if (m_bShowAmount)
+	{
+		for (int i = 0; i < MAX_MA_COUNT; ++i)
+		{
+			if (m_nAmoMaPara[i] > 0)
+			{
+				if (m_nFirst >= m_nAmoMaPara[i] - 1)
+				{
+					pRT->SelectObject(m_MAPenVec[i]);
+					pRT->DrawLines(&VolAmtMALine[i][0], m_nEnd - m_nFirst);
+				}
+				else if (m_nEnd > m_nAmoMaPara[i] - 1)
+				{
+					pRT->SelectObject(m_MAPenVec[i]);
+					pRT->DrawLines(&VolAmtMALine[i][0] - m_nFirst + m_nAmoMaPara[i] - 1, m_nEnd - m_nAmoMaPara[i] + 1);
+
+				}
 			}
 		}
 	}
@@ -2222,6 +2441,8 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 				{
 					DrawMainUpperMarket(pRT, data);
 					DrawMainUpperBand(pRT, nOffset);
+					if (m_bShowAmount || m_bShowVolume)
+						DrawVolAmoUpperMA(pRT, nOffset);
 					if (m_bShowMacd)
 						DrawMacdUpperMarket(pRT, nOffset);
 				}
@@ -2232,11 +2453,6 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	}
 
 
-	if (m_bShowVolume)
-	{
-		pRT->SelectObject(m_penWhite);
-		pRT->DrawLines(&AmtLine[0], m_nEnd - m_nFirst);
-	}
 	if (m_bShowMacd)
 	{
 		pRT->SelectObject(m_penWhite);
@@ -2408,11 +2624,18 @@ void SKlinePic::DataProc()
 }
 
 
-void SKlinePic::ReProcMAData()
+void SKlinePic::ReProcMAData(eMaType maType)
 {
 	m_bDataInited = false;
-	for (int i = 0; i < m_pAll->nTotal; i++)
-		KlineMAProc(i);
+	if (maType == eMa_Close)
+		for (int i = 1; i <= m_pAll->nTotal; i++)
+			KlineMAProc(i);
+	else if (maType == eMa_Volume)
+		for (int i = 1; i <= m_pAll->nTotal; i++)
+			VolMAProc(i);
+	else if (maType == eMa_Amount)
+		for (int i = 1; i <= m_pAll->nTotal; i++)
+			AmoMAProc(i);
 	m_bDataInited = true;
 }
 
@@ -2850,15 +3073,18 @@ void SKlinePic::DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, boo
 
 void SKlinePic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
 {
-	pRT->SelectObject(m_bBrushBlack);
-	if (bNew)
-		pRT->FillRectangle(CRect(m_rcMain.right + 1, m_rcMain.top, m_rcMain.right + RC_RIGHT, m_rcMain.bottom /*+ RC_BOTTOM - 10*/));
+	//pRT->SelectObject(m_bBrushBlack);
+	//if (bNew)
+	//	pRT->FillRectangle(CRect(m_rcMain.right + 1, m_rcMain.top, m_rcMain.right + RC_RIGHT, m_rcMain.bottom /*+ RC_BOTTOM - 10*/));
 
 	if (y >= m_rcVolume.top && y <= m_rcVolume.bottom)
 	{
-		SStringW sl = GetFuTuYPrice(y);
-		DrawTextonPic(pRT, CRect(m_rcMain.left -RC_LEFT, y + -6, m_rcMain.left, y + 15), sl);
-		SStringW sr = GetFuTuYPrice(y,true);
+		SStringW sr = GetFuTuYPrice(y);
+
+		if (m_bShowVolume)
+			sr = GetFuTuYPrice(y);
+		else
+			sr = GetFuTuYPrice(y, true);
 		DrawTextonPic(pRT, CRect(m_rcMain.right + 2, y + -6, m_rcMain.right + RC_RIGHT, y + 15), sr);
 
 	}
@@ -2885,11 +3111,18 @@ void SKlinePic::DrawBarInfo(IRenderTarget * pRT, int nDataPos)
 	if (m_bShowBandTarget)
 		DrawMainUpperBand(pRT, nDataPos);
 
+	if (m_bShowVolume || m_bShowAmount)
+	{
+		pRT->FillRectangle(CRect(m_rcVolume.left + 1, m_rcVolume.top + 4, m_rcVolume.right, m_rcVolume.top + 19));
+		DrawVolAmoUpperMA(pRT, nDataPos);
+	}
+
 	if (m_bShowMacd)
 	{
 		pRT->FillRectangle(CRect(m_rcMACD.left + 1, m_rcMACD.top + 4, m_rcMACD.right, m_rcMACD.top + 19));
 		DrawMacdUpperMarket(pRT, nDataPos);
 	}
+
 }
 
 double SKlinePic::GetHighPrice(int n, int nPeriod, int nOffset)
@@ -3025,6 +3258,8 @@ void SKlinePic::SingleDataWithHis()
 	{
 		m_pAll->data[count++] = data;
 		KlineMAProc(count);
+		VolMAProc(count);
+		AmoMAProc(count);
 	}
 	m_pAll->nTotal = count;
 
@@ -3137,6 +3372,8 @@ void SKlinePic::StockMarket1MinUpdate()
 			kline.open = kline.high = kline.low = kline.close;
 		}
 		KlineMAProc(m_pAll->nTotal);
+		VolMAProc(m_pAll->nTotal);
+		AmoMAProc(m_pAll->nTotal);
 	}
 }
 
@@ -3161,6 +3398,9 @@ void SKlinePic::StockMarketMultMinUpdate(int nPeriod)
 			m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date) //最后一条K线并不完整
 			StockTickToKline(m_pAll->nTotal - 1, TickVec[i]);
 		KlineMAProc(m_pAll->nTotal);
+		VolMAProc(m_pAll->nTotal);
+		AmoMAProc(m_pAll->nTotal);
+
 	}
 
 }
@@ -3182,6 +3422,8 @@ void SKlinePic::StockMarketDayUpdate()
 	else
 		StockTickToDayKline(nDataCount - 1, tick);
 	KlineMAProc(m_pAll->nTotal);
+	VolMAProc(m_pAll->nTotal);
+	AmoMAProc(m_pAll->nTotal);
 }
 
 void SKlinePic::StockTickToKline(int nCount, CommonStockMarket & tick, bool bNewLine, int time)
@@ -3249,6 +3491,8 @@ void SKlinePic::IndexMarket1MinUpdate()
 		else if (ntime == m_pAll->data[m_pAll->nTotal - 1].time && m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date)
 			IndexTickToKline(m_pAll->nTotal - 1, TickVec[i]);
 		KlineMAProc(m_pAll->nTotal);
+		VolMAProc(m_pAll->nTotal);
+		AmoMAProc(m_pAll->nTotal);
 	}
 }
 
@@ -3277,6 +3521,9 @@ void SKlinePic::IndexMarketMultMinUpdate(int nPeriod)
 			m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date) //最后一条K线并不完整
 			IndexTickToKline(m_pAll->nTotal - 1, TickVec[i]);
 		KlineMAProc(m_pAll->nTotal);
+		VolMAProc(m_pAll->nTotal);
+		AmoMAProc(m_pAll->nTotal);
+
 	}
 
 }
@@ -3301,6 +3548,9 @@ void SKlinePic::IndexMarketDayUpdate()
 	else
 		IndexTickToDayKline(nDataCount - 1, tick);
 	KlineMAProc(m_pAll->nTotal);
+	VolMAProc(m_pAll->nTotal);
+	AmoMAProc(m_pAll->nTotal);
+
 }
 
 void SKlinePic::IndexTickToKline(int nCount, CommonIndexMarket & tick, bool bNewLine, int time)
@@ -3398,38 +3648,48 @@ bool SKlinePic::ProcKlineTime(int & time)
 
 void SKlinePic::KlineMAProc(int nCount)
 {
-	if (nCount >= m_nMAPara[0])
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 	{
-		double Ma1Sum = 0;
-		for (int j = nCount - 1; j > nCount - m_nMAPara[0] - 1; j--)
-			Ma1Sum += m_pAll->data[j].close;
-		m_pAll->fMa[0][nCount - 1] = Ma1Sum / (double)m_nMAPara[0];
-	}
-
-	if (nCount >= m_nMAPara[1])
-	{
-		double Ma2Sum = 0;
-		for (int j = nCount - 1; j > nCount - m_nMAPara[1] - 1; j--)
-			Ma2Sum += m_pAll->data[j].close;
-		m_pAll->fMa[1][nCount - 1] = Ma2Sum / (double)m_nMAPara[1];
-	}
-
-	if (nCount >= m_nMAPara[2])
-	{
-		double Ma3Sum = 0;
-		for (int j = nCount - 1; j > nCount - m_nMAPara[2] - 1; j--)
-			Ma3Sum += m_pAll->data[j].close;
-		m_pAll->fMa[2][nCount - 1] = Ma3Sum / (double)m_nMAPara[2];
-	}
-
-	if (nCount >= m_nMAPara[3])
-	{
-		double Ma4Sum = 0;
-		for (int j = nCount - 1; j > nCount - m_nMAPara[3] - 1; j--)
+		if (m_nMAPara[i] > 0 && nCount >= m_nMAPara[i])
 		{
-			Ma4Sum += m_pAll->data[j].close;
+			double MaSum = 0;
+			for (int j = nCount - 1; j > nCount - m_nMAPara[i] - 1; j--)
+				MaSum += m_pAll->data[j].close;
+			m_pAll->fMa[i][nCount - 1] = MaSum / (double)m_nMAPara[i];
 		}
-		m_pAll->fMa[3][nCount - 1] = Ma4Sum / (double)m_nMAPara[3];
+
+	}
+
+}
+
+void SOUI::SKlinePic::VolMAProc(int nCount)
+{
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		if (m_nVolMaPara[i] > 0 && nCount >= m_nVolMaPara[i])
+		{
+			double MaSum = 0;
+			for (int j = nCount - 1; j > nCount - m_nVolMaPara[i] - 1; j--)
+				MaSum += m_pAll->data[j].vol;
+			m_pAll->fVolMa[i][nCount - 1] = MaSum / (double)m_nVolMaPara[i];
+		}
+
+	}
+
+}
+
+void SOUI::SKlinePic::AmoMAProc(int nCount)
+{
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		if (m_nAmoMaPara[i] > 0 && nCount >= m_nAmoMaPara[i])
+		{
+			double MaSum = 0;
+			for (int j = nCount - 1; j > nCount - m_nAmoMaPara[i] - 1; j--)
+				MaSum += m_pAll->data[j].amount;
+			m_pAll->fAmoMa[i][nCount - 1] = MaSum / (double)m_nAmoMaPara[i];
+		}
+
 	}
 
 }

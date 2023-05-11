@@ -19,12 +19,19 @@ public:
 	void SetItemShowVisible(int iItem, bool visible);
 	int GetTotalWidth();
 	int GetItemWidth(int iItem, bool bFroced);
-
+	
 protected:
+	void InitText();
 	virtual void OnPaint(IRenderTarget * pRT);
+	void OnLButtonUp(UINT nFlags, CPoint pt);
+	void OnMouseMove(UINT nFlags, CPoint pt);
+	void OnActivateApp(BOOL bActive, DWORD dwThreadID);
 
 	SOUI_MSG_MAP_BEGIN()
 		MSG_WM_PAINT_EX(OnPaint)
+		MSG_WM_LBUTTONUP(OnLButtonUp)
+		MSG_WM_MOUSEMOVE(OnMouseMove)
+		MSG_WM_ACTIVATEAPP(OnActivateApp)
 		SOUI_MSG_MAP_END()
 
 protected:

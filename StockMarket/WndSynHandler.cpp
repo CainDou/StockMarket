@@ -151,35 +151,35 @@ void CWndSynHandler::InitPointInfo()
 	spi.type = eRpsPoint;
 	spi.range = "";
 	spi.srcDataName = "close";
-	spi.showName = "收盘价相对强度";
+	spi.showName = "CRPS";
 	m_pointInfoMap[eRpsPoint_Close] = spi;
 	spi.range = "L1";
-	spi.showName = "一级行业收盘价相对强度";
+	spi.showName = "一级行业CRPS";
 	m_pointInfoMap[eRpsPoint_L1_Close] = spi;
 	spi.range = "L2";
-	spi.showName = "二级行业收盘价相对强度";
+	spi.showName = "二级行业CRPS";
 	m_pointInfoMap[eRpsPoint_L2_Close] = spi;
 
 	spi.srcDataName = "amount";
 	spi.range = "";
-	spi.showName = "成交额相对强度";
+	spi.showName = "AMORPS";
 	m_pointInfoMap[eRpsPoint_Amount] = spi;
 	spi.range = "L1";
-	spi.showName = "一级行业成交额相对强度";
+	spi.showName = "一级行业AMORPS";
 	m_pointInfoMap[eRpsPoint_L1_Amount] = spi;
 	spi.range = "L2";
-	spi.showName = "二级行业成交额相对强度";
+	spi.showName = "二级行业AMORPS";
 	m_pointInfoMap[eRpsPoint_L2_Amount] = spi;
 
 	spi.type = eSecPoint;
 	spi.range = "";
-	spi.showName = "成交额截面分数";
+	spi.showName = "AMO截面分数";
 	m_pointInfoMap[eSecPoint_Amount] = spi;
 	spi.range = "L1";
-	spi.showName = "一级行业成交额截面分数";
+	spi.showName = "一级行业AMO截面分数";
 	m_pointInfoMap[eSecPoint_L1_Amount] = spi;
 	spi.range = "L2";
-	spi.showName = "二级行业成交额截面分数";
+	spi.showName = "二级行业AMO截面分数";
 	m_pointInfoMap[eSecPoint_L2_Amount] = spi;
 
 }

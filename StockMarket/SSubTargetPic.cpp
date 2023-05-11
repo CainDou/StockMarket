@@ -172,11 +172,14 @@ void SSubTargetPic::DrawArrow(IRenderTarget * pRT)
 		pRT->SelectObject(pen, (IRenderObj**)&oldPen);
 		//y轴	//x轴
 		pts[0].SetPoint(m_rcImage.left, m_rcImage.top);
-		pts[1].SetPoint(m_rcImage.left, m_rcImage.bottom);
+		pts[1].SetPoint(m_rcImage.right, m_rcImage.top);
 		pts[2].SetPoint(m_rcImage.right, m_rcImage.bottom);
-		pts[3].SetPoint(m_rcImage.right, m_rcImage.top);
+		pts[3].SetPoint(m_rcImage.left, m_rcImage.bottom);
 		pts[4] = pts[0];
-		pRT->DrawLines(pts, 5);
+		if(m_bUseWidth)
+			pRT->DrawLines(pts, 4);
+		else
+			pRT->DrawLines(pts, 5);
 		pRT->SelectObject(oldPen);
 	}
 	pRT->SetTextColor(RGBA(255, 0, 0, 255));
@@ -655,13 +658,24 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 		//k线区y轴加轴标
 		SStringW s1 = GetYPrice(nY, FALSE);
 		if (!s1.IsEmpty())
-			DrawTextonPic(pRT,
-				CRect(m_rcImage.left - RC_FSLEFT,
-					nY - 9,
-					m_rcImage.left,
-					nY + 9), s1,
-				RGBA(255, 0, 0, 255),
-				DT_CENTER);
+		{
+			if (m_bUseWidth)
+				DrawTextonPic(pRT,
+					CRect(m_rcImage.right +2 ,
+						nY - 9,
+						m_rcImage.right + RC_KLRIGHT,
+						nY + 9), s1,
+					RGBA(255, 0, 0, 255),
+					DT_CENTER);
+			else
+				DrawTextonPic(pRT,
+					CRect(m_rcImage.left - RC_FSLEFT,
+						nY - 9,
+						m_rcImage.left,
+						nY + 9), s1,
+					RGBA(255, 0, 0, 255),
+					DT_CENTER);
+		}
 		//s1 = GetYPrice(nY, TRUE);
 		//if (!s1.IsEmpty())
 		//	DrawTextonPic(pRT,
