@@ -94,9 +94,15 @@ namespace SOUI
 		void		DrawVirtualTimeLine(IRenderTarget * pRT);
 		void		DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP &data);
 		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str,
-					COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
+					COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE,
+					DWORD rop = SRCINVERT);
+		CRect		GetTextDrawRect(IRenderTarget * pRT, SStringW str, CRect rc);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		DrawKeyDownMouseLine(IRenderTarget * pRT, UINT nChar);
+		void		DrawPrice(IRenderTarget * pRT);
+		void		DrawMovePrice(IRenderTarget * pRT, int y, bool bNew);
+		void		DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew);
+		void		DrawMouseLine(IRenderTarget * pRT, CPoint po);
 
 		//图形相关数据初始化和计算获取
 	protected:
@@ -146,8 +152,6 @@ namespace SOUI
 		void		MACDHandle(FENSHI_GROUP &f1, int nOffset = 0);
 		void		HandleNoDataTime(FENSHI_GROUP f1);
 		void		HandleMissData(FENSHI_GROUP f1, int time);//补全遗漏的数据
-
-
 		//显示开关和设置
 	protected:
 		BOOL		m_bPaintInit;

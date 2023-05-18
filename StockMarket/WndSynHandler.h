@@ -89,6 +89,7 @@ protected:
 	void OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgRtRps(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgHisSecPoint(SOCKET netSocket, ReceiveInfo &recvInfo);
+	void OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnNoDefineMsg(SOCKET netSocket, ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -114,6 +115,7 @@ protected:
 	void OnCloseInfo(int nMsgLength, const char* info);
 	void OnReinit(int nMsgLength, const char* info);	
 	void OnHisSecPoint(int nMsgLength, const char* info);
+	void OnRehabInfo(int nMsgLength, const char* info);
 
 public:
 	vector<SStringA> m_dataNameVec;

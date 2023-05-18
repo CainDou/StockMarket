@@ -27,6 +27,7 @@
 		<file name="dlg_targetSelect" path="xml\dlg_targetSelect.xml" />
 		<file name="dlg_comboStockFilter" path="xml\dlg_comboStockFilter.xml" />
 		<file name="dlg_headerSelect" path="xml\dlg_headerSelect.xml" />
+		<file name="dlg_rehabFixedTime" path="xml\dlg_rehabFixedTime.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -46,5 +47,6 @@
 		<file name="menu_kline" path="smenu\menu_kline.xml" />
 		<file name="menu_new" path="smenu\menu_new.xml" />
 		<file name="menu_target" path="smenu\menu_target.xml" />
+		<file name="menu_rehab" path="smenu\menu_rehab.xml" />
 	</smenu>
 </resource>

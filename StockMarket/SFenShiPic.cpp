@@ -15,7 +15,6 @@ extern HWND g_MainWnd;
 
 
 #define sDimical L"%.02f"
-//RpsGroup SFenShiPic::m_rgClickGroup = Group_Count;
 #define MAX_SUBWINDOW 5
 
 SFenShiPic::SFenShiPic()
@@ -38,7 +37,6 @@ SFenShiPic::SFenShiPic()
 	m_bKeyDown = false;
 	m_bIsFirstKey = true;
 	m_bShowDeal = true;
-	//m_pbShowSubPic = nullptr;
 	m_bShowAvg = true;
 	m_bPaintInit = FALSE;
 
@@ -55,7 +53,6 @@ SFenShiPic::SFenShiPic()
 
 	m_nEMAPara[0] = 12;
 	m_nEMAPara[1] = 26;
-	//m_pRTBuffer = nullptr;
 	::InitializeCriticalSection(&m_csSub);
 }
 
@@ -75,8 +72,6 @@ SFenShiPic::~SFenShiPic()
 			delete m_ppSubPic[i];
 		delete[]m_ppSubPic;
 	}
-	//if (m_pbShowSubPic)
-	//	delete[]m_pbShowSubPic;
 
 }
 
@@ -86,9 +81,7 @@ void SFenShiPic::InitSubPic(int nNum)
 	m_ppSubPic = new SSubTargetPic*[nNum];
 	for (int i = 0; i < nNum; ++i)
 		m_ppSubPic[i] = new SSubTargetPic;
-	//if (m_pbShowSubPic)
-	//	delete[]m_pbShowSubPic;
-	//m_pbShowSubPic = new BOOL[nNum];
+
 
 }
 
@@ -171,9 +164,6 @@ void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName,
 	m_strStockName = StockName;
 	m_pPriceList->SetShowData(subIns, m_strStockName, pIdxMarketVec);
 	m_pDealList->SetShowData(subIns, pIdxMarketVec);
-	//DataInit();
-	//if(m_pData->fPreClose == 0)
-	//	m_pData->fPreClose = fPreClose;
 }
 
 void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName,
@@ -211,20 +201,17 @@ void SFenShiPic::SetSubPicShowData(int nDataCount[],
 	::EnterCriticalSection(&m_csSub);
 	for (int i = nStartWnd; i < m_nSubPicNum; ++i)
 	{
-		//if (m_pbShowSubPic[i])
-		//{
 		int nTargetCount = i - nStartWnd;
 		m_ppSubPic[i]->SetShowData(
 			nDataCount[nTargetCount], &data[nTargetCount][0],
 			bRightVec[nTargetCount], dataNameVec[nTargetCount],
 			StockID, StockName);
-		//}
 	}
 	::LeaveCriticalSection(&m_csSub);
 
 }
 
-void SOUI::SFenShiPic::SetSubPicShowData(int nDataCount, vector<vector<CoreData>*>& data, vector<BOOL> bRightVec,
+void SFenShiPic::SetSubPicShowData(int nDataCount, vector<vector<CoreData>*>& data, vector<BOOL> bRightVec,
 	vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName)
 {
 	m_ppSubPic[m_nChangeNum]->SetShowData(
@@ -303,7 +290,7 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 
 	pRT->SetAttribute(L"antiAlias", L"0", FALSE);
 
-	m_rcAll.DeflateRect(RC_FSLEFT + 5, RC_FSTOP, RC_FSRIGHT + 10, RC_FSBOTTOM);
+	m_rcAll.DeflateRect(RC_FSLEFT + 5, RC_FSTOP, RC_FSRIGHT, RC_FSBOTTOM);
 
 	SetWindowRect();
 
@@ -335,7 +322,7 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 
 
 	DrawArrow(pRT);
-
+	DrawPrice(pRT);
 
 	if (m_bDataInited)
 	{
@@ -343,8 +330,6 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 		DrawData(pRT);
 	}
 
-	//if (m_pbShowSubPic)
-	//	m_ppSubPic->OnPaint(pRT);
 
 	if (m_bShowDeal)
 	{
@@ -365,7 +350,6 @@ void SFenShiPic::OnPaint(IRenderTarget * pRT)
 		DrawKeyDownMouseLine(pRT, 0);
 	else
 		DrawMouse(pRT, po, TRUE);
-	//	LOG_W(L"鼠标绘制时间:%I64d,总时间:%I64d\0", llTmp3 - llTmp2, llTmp3 - llTmp);
 	AfterPaint(pRT, pa);
 }
 
@@ -396,7 +380,6 @@ void SFenShiPic::DrawArrow(IRenderTarget * pRT)
 
 	COLORREF clRed = RGB(139, 0, 0);
 	HDC pdc = pRT->GetDC();
-	//	SetBkColor(pdc, RGBA(255, 0, 0, 0xff));
 	int width = m_nHeight / 8;
 	for (size_t i = 0; i < nYoNum; i++)
 	{
@@ -426,14 +409,6 @@ void SFenShiPic::DrawArrow(IRenderTarget * pRT)
 
 
 
-	/*
-	//k线区横轴位置所在y坐标
-	int nlo = m_rcUpper.bottom / nYoNum * (nYoNum - 1) - 5 - m_rcUpper.bottom;
-	if (nlo > 15 || nlo < -15)
-	{
-	SStringW strf1 = GetYPrice(m_rcUpper.bottom);
-	pRT->TextOut(m_rcUpper.left -RC_FSLEFT + 8 , m_rcUpper.bottom - 5, strf1, -1);
-	}*/
 	if (m_bShowVolume)
 	{
 		//画辅图区
@@ -470,10 +445,6 @@ void SFenShiPic::DrawArrow(IRenderTarget * pRT)
 
 		pRT->ReleaseDC(pdc);
 	}
-	//	SStringW s1 = GetFuTuYPrice(nY);
-	//	pRT->TextOut(m_rcLower.left - RC_FSLEFT + 8, nY - 6, s1, -1);
-
-	//	pRT->ReleaseDC(pdc);
 
 	//画	MACD区
 	if (m_bShowMacd)
@@ -789,9 +760,9 @@ void SFenShiPic::DrawVirtualTimeLine(IRenderTarget * pRT)
 			pRT->DrawLines(pt, 2);
 		}
 		if (it.second == L"15:00" || it.second == L"15:15")
-			DrawTextonPic(pRT, CRect(x - 35, m_rcImage.bottom + 15, x, m_rcImage.bottom + 35), it.second, RGBA(255, 255, 255, 255), DT_SINGLELINE);
+			DrawTextonPic(pRT, CRect(x - 35, m_rcImage.bottom + 5, x, m_rcImage.bottom + 20), it.second, RGBA(255, 255, 255, 255), DT_SINGLELINE);
 		else
-			DrawTextonPic(pRT, CRect(x, m_rcImage.bottom + 15, x + 40, m_rcImage.bottom + 35), it.second, RGBA(255, 255, 255, 255), DT_SINGLELINE);
+			DrawTextonPic(pRT, CRect(x, m_rcImage.bottom + 5, x + 40, m_rcImage.bottom + 20), it.second, RGBA(255, 255, 255, 255), DT_SINGLELINE);
 
 	}
 	pRT->SelectObject(oldPen);
@@ -803,6 +774,11 @@ void SFenShiPic::DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP & data)
 	HDC hdc = pRT->GetDC();
 	CSize size;
 	size.cx = 0; size.cy = 0;
+	CAutoRefPtr<IBrush> bBrushDarkBlue;
+	pRT->CreateSolidColorBrush(RGBA(0, 0, 0, 255), &bBrushDarkBlue);
+	pRT->SelectObject(bBrushDarkBlue);
+
+	pRT->FillRectangle(CRect(m_rcImage.left + 1, m_rcImage.top + 4, m_rcImage.right-1, m_rcImage.top + 19));
 
 	strMarket.Format(L"%d-%02d-%02d %02d:%02d", data.date / 10000, data.date % 10000 / 100, data.date % 100, data.time / 100,
 		data.time % 100 / 1);
@@ -871,6 +847,7 @@ void SFenShiPic::DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP & data)
 	DrawTextonPic(pRT, CRect(m_rcMain.left + left, m_rcMain.top + 5, m_rcMain.right, m_rcImage.top + 20), strMarket, RGBA(0, 255, 0, 255));
 	if (m_bShowMacd)
 	{
+		pRT->FillRectangle(CRect(m_rcMACD.left + 1, m_rcMACD.top + 4, m_rcMACD.right, m_rcMACD.top + 19));
 		left = 5;
 		strMarket.Format(L"MACD(%d,%d,%d)", m_nMACDPara[0], m_nMACDPara[1], m_nMACDPara[2]);
 		DrawTextonPic(pRT, CRect(m_rcMACD.left + left, m_rcMACD.top + 5, m_rcMACD.left + 160, m_rcMACD.top + 20),
@@ -911,7 +888,7 @@ int SFenShiPic::GetXData(int nx) {	//获取鼠标下的数据id
 	return n;
 }
 
-void SFenShiPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color, UINT uFormat)
+void SFenShiPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color, UINT uFormat, DWORD rop)
 {
 	CAutoRefPtr<IRenderTarget> pMemRT;
 	GETRENDERFACTORY->CreateRenderTarget(&pMemRT, rc.right - rc.left, rc.bottom - rc.top);
@@ -927,8 +904,24 @@ void SFenShiPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLO
 	pMemRT->DrawTextW(str, wcslen(str),
 		CRect(0, 0, rc.right - rc.left, rc.bottom - rc.top),
 		uFormat);
-	pRT->BitBlt(rc, pMemRT, 0, 0, SRCINVERT);
+	pRT->BitBlt(rc, pMemRT, 0, 0, rop);
 
+}
+
+CRect SFenShiPic::GetTextDrawRect(IRenderTarget * pRT, SStringW str, CRect rc)
+{
+	CAutoRefPtr<IRenderTarget> pMemRT;
+	GETRENDERFACTORY->CreateRenderTarget(&pMemRT, rc.right - rc.left, rc.bottom - rc.top);
+	LOGFONT lf;
+	ZeroMemory(&lf, sizeof(LOGFONT));
+	lf.lfHeight = 12;// 字体大小
+	_stprintf(lf.lfFaceName, L"%s", L"微软雅黑"); // 字体名称
+	CAutoRefPtr<IFont> pFont;
+	GETRENDERFACTORY->CreateFont(&pFont, lf);
+	pMemRT->SelectObject(pFont);
+	CRect dstRc(0, 0, rc.right - rc.left, rc.bottom - rc.top);
+	pMemRT->DrawTextW(str, wcslen(str), dstRc, DT_CALCRECT);
+	return dstRc;
 }
 
 void SFenShiPic::DrawEarserLine(IRenderTarget * pRT, CPoint pt, bool bVertical)
@@ -960,10 +953,6 @@ void SFenShiPic::DrawEarserLine(IRenderTarget * pRT, CPoint pt, bool bVertical)
 		pts[1].SetPoint(m_rcImage.right, pt.y);
 		pMemRT->DrawLines(pts, 2);
 		pRT->BitBlt(m_rcImage, pMemRT, 0, 0, SRCINVERT);
-
-		//	pMemRT->DrawTextW(L"Test", wcslen(L"Test"), CRect(m_rcImage.left, pt.y - 5, m_rcImage.right, pt.y + 5), DT_SINGLELINE);
-
-		//	pRT->BitBlt(CRect(m_rcImage.left, pt.y-5, m_rcImage.right, pt.y+5), pMemRT, 0, 0, SRCINVERT);
 
 
 	}
@@ -1020,8 +1009,6 @@ void SFenShiPic::DataProc()
 	GetMaxDiff();
 	GetFuTuMaxDiff();
 	GetMACDMaxDiff();
-	//Invalidate();
-	//SetTimer(1, 1000);
 }
 
 
@@ -1268,8 +1255,6 @@ void SFenShiPic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)
 	::EnterCriticalSection(&m_csSub);
 	for (int i = nStartWnd; i < m_nSubPicNum; ++i)
 	{
-		//if (m_pbShowSubPic[i])
-		//{
 		auto info = m_ppSubPic[i]->GetSubPicInfo();
 		SStringA str;
 		if ("L1" == info.range)
@@ -1278,7 +1263,6 @@ void SFenShiPic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)
 			str.Format("行业:%s", strNameVec[1]);
 		str.Format("%s %s", info.showName, str);
 		m_ppSubPic[i]->SetSubTitleInfo(str);
-		//}
 	}
 	::LeaveCriticalSection(&m_csSub);
 
@@ -1314,7 +1298,7 @@ BOOL SFenShiPic::CheckTargetSelectIsClicked(CPoint pt)
 	return FALSE;
 }
 
-void SOUI::SFenShiPic::CloseSinglePointWnd()
+void SFenShiPic::CloseSinglePointWnd()
 {
 	::EnterCriticalSection(&m_csSub);
 	SSubTargetPic** ppTmpSubPicArr = new SSubTargetPic*[m_nSubPicNum -1];
@@ -1330,7 +1314,7 @@ void SOUI::SFenShiPic::CloseSinglePointWnd()
 	Invalidate();
 }
 
-void SOUI::SFenShiPic::SetSelPointWndInfo(ShowPointInfo & info, SStringA strTitle)
+void SFenShiPic::SetSelPointWndInfo(ShowPointInfo & info, SStringA strTitle)
 {
 	m_ppSubPic[m_nChangeNum]->SetSubPicInfo(info);
 	m_ppSubPic[m_nChangeNum]->SetSubTitleInfo(strTitle);
@@ -1416,8 +1400,6 @@ void SFenShiPic::UpdateData()
 	GetMaxDiff();
 	GetFuTuMaxDiff();
 	GetMACDMaxDiff();
-	//	SSendMessage(WM_PAINT);
-	//	Invalidate();
 }
 
 void SFenShiPic::SetWindowRect()
@@ -1637,6 +1619,31 @@ void SFenShiPic::HandleMissData(FENSHI_GROUP f1, int time)//补全遗漏的数据
 
 }
 
+void SFenShiPic::DrawMouseLine(IRenderTarget * pRT, CPoint po)
+{
+	HDC hdc = pRT->GetDC();
+	int  nMode = SetROP2(hdc, R2_NOTXORPEN);
+	MoveToEx(hdc, m_nMouseX, m_rcMain.top + 20, NULL);	LineTo(hdc, m_nMouseX, m_rcMain.bottom);	//竖线
+	MoveToEx(hdc, po.x, m_rcMain.top + 20, NULL);			LineTo(hdc, po.x, m_rcMain.bottom);
+	if (m_bShowVolume)
+	{
+		MoveToEx(hdc, m_nMouseX, m_rcVolume.top, NULL);	LineTo(hdc, m_nMouseX, m_rcVolume.bottom);
+		MoveToEx(hdc, po.x, m_rcVolume.top, NULL);			LineTo(hdc, po.x, m_rcVolume.bottom);
+	}
+	if (m_bShowMacd)
+	{
+		MoveToEx(hdc, m_nMouseX, m_rcMACD.top + 20, NULL);	LineTo(hdc, m_nMouseX, m_rcMACD.bottom);
+		MoveToEx(hdc, po.x, m_rcMACD.top + 20, NULL);			LineTo(hdc, po.x, m_rcMACD.bottom);
+
+	}
+	MoveToEx(hdc, m_rcMain.left, m_nMouseY, NULL);	LineTo(hdc, m_rcMain.right, m_nMouseY);	//横线
+	MoveToEx(hdc, m_rcMain.left, po.y, NULL);			LineTo(hdc, m_rcMain.right, po.y);
+
+	SetROP2(hdc, nMode);
+
+	pRT->ReleaseDC(hdc);
+}
+
 
 COLORREF SFenShiPic::GetColor(double dPrice)
 {
@@ -1648,23 +1655,6 @@ COLORREF SFenShiPic::GetColor(double dPrice)
 		return RGBA(255, 255, 255, 255);
 }
 
-//BOOL SFenShiPic::CreateChildren(pugi::xml_node xmlNode)
-//{
-//	if (!__super::CreateChildren(xmlNode))
-//		return FALSE;
-//	m_ppSubPic = nullptr;
-//
-//	SWindow *pChild = GetWindow(GSW_FIRSTCHILD);
-//	while (pChild)
-//	{
-//		if (pChild->IsClass(SSubPic::GetClassName()))
-//		{
-//			m_ppSubPic = (SSubPic*)pChild;
-//			break;
-//		}
-//		pChild = pChild->GetWindow(GSW_NEXTSIBLING);
-//	}
-//}
 
 
 void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
@@ -1686,30 +1676,7 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 
 
 	if (m_bShowMouseLine)
-	{
-
-		HDC hdc = pRT->GetDC();
-		int  nMode = SetROP2(hdc, R2_NOTXORPEN);
-		MoveToEx(hdc, m_nMouseX, m_rcMain.top + 20, NULL);	LineTo(hdc, m_nMouseX, m_rcMain.bottom);	//竖线
-		MoveToEx(hdc, po.x, m_rcMain.top + 20, NULL);			LineTo(hdc, po.x, m_rcMain.bottom);
-		if (m_bShowVolume)
-		{
-			MoveToEx(hdc, m_nMouseX, m_rcVolume.top, NULL);	LineTo(hdc, m_nMouseX, m_rcVolume.bottom);
-			MoveToEx(hdc, po.x, m_rcVolume.top, NULL);			LineTo(hdc, po.x, m_rcVolume.bottom);
-		}
-		if (m_bShowMacd)
-		{
-			MoveToEx(hdc, m_nMouseX, m_rcMACD.top + 20, NULL);	LineTo(hdc, m_nMouseX, m_rcMACD.bottom);
-			MoveToEx(hdc, po.x, m_rcMACD.top + 20, NULL);			LineTo(hdc, po.x, m_rcMACD.bottom);
-
-		}
-		MoveToEx(hdc, m_rcMain.left, m_nMouseY, NULL);	LineTo(hdc, m_rcMain.right, m_nMouseY);	//横线
-		MoveToEx(hdc, m_rcMain.left, po.y, NULL);			LineTo(hdc, m_rcMain.right, po.y);
-
-		SetROP2(hdc, nMode);
-
-		pRT->ReleaseDC(hdc);
-	}
+		DrawMouseLine(pRT, po);
 	//显示横坐标所在数值
 	CAutoRefPtr<IBrush> bBrushDarkBlue;
 	pRT->CreateSolidColorBrush(RGBA(0, 0, 0, 255), &bBrushDarkBlue);
@@ -1717,75 +1684,24 @@ void SFenShiPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 
 	if (m_bDataInited)
 	{
-		SStringW sl, sr;
-		sr.Empty(); sl.Empty();
-		if (m_nMouseY >= m_rcMain.top && m_nMouseY <= m_rcMain.bottom)	//十字在k线上
-		{
-			sl = GetYPrice(m_nMouseY, FALSE);
-			sr = GetYPrice(m_nMouseY, TRUE);
-
-		}
-		else if (m_nMouseY >= m_rcVolume.top && m_nMouseY <= m_rcVolume.bottom)	//十字在附图上
-			sr = GetFuTuYPrice(m_nMouseY);
-		else if (m_nMouseY >= m_rcMACD.top && m_nMouseY <= m_rcMACD.bottom)
-			sr = GetMACDYPrice(m_nMouseY);
-		if (!sr.IsEmpty())
-		{
-			DrawTextonPic(pRT, CRect(m_rcMain.right + 1, m_nMouseY - 10, m_rcMain.right + RC_FSLEFT - 2, m_nMouseY + 10), sr);
-			//				pRT->FillRectangle(CRect(m_rcUpper.right + 1, m_nMouseY + 2, m_rcUpper.right + RC_FSLEFT+1, m_nMouseY + 22));
-		}
-		if (!sl.IsEmpty())
-		{
-			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT + 2, m_nMouseY - 10, m_rcMain.left - 1, m_nMouseY + 10), sl);
-			//				pRT->FillRectangle(CRect(m_rcUpper.left - RC_FSLEFT+1, m_nMouseY + 2, m_rcUpper.left, m_nMouseY + 22));
-		}
-
-
-
-
-		sr.Empty(); sl.Empty();
-		if (po.y >= m_rcMain.top && po.y <= m_rcMain.bottom)	//十字在k线上
-		{
-			sl = GetYPrice(po.y, FALSE);
-			sr = GetYPrice(po.y, TRUE);
-		}
-		else if (po.y >= m_rcVolume.top && po.y <= m_rcVolume.bottom)	//十字在附图上
-			sr = GetFuTuYPrice(po.y);
-		else if (po.y >= m_rcMACD.top && po.y <= m_rcMACD.bottom)
-			sr = GetMACDYPrice(po.y);
-
-		if (!sr.IsEmpty())
-			DrawTextonPic(pRT, CRect(m_rcMain.right + 1, po.y - 10, m_rcMain.right + RC_FSLEFT - 2, po.y + 10), sr);
-		if (!sl.IsEmpty())
-			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT + 2, po.y - 10, m_rcMain.left - 1, po.y + 10), sl);
+	
+		DrawPrice(pRT);
+		DrawMovePrice(pRT, m_nMouseY, false);
+		DrawPrice(pRT);
+		DrawMovePrice(pRT, po.y, true);
 
 		//显示纵坐标数值
+		DrawVirtualTimeLine(pRT);
 
 		if (IsInRect(m_nMouseX, m_nMouseY, 0))
-		{
-			int nx = GetXData(m_nMouseX);
-
-			if (nx >= 0 && m_pData->d[nx].date > 0)
-			{
-				FENSHI_GROUP *p = &(m_pData->d[nx]);
-				sl.Format(L"%02d-%02d  %02d:%02d", p->date % 10000 / 100, p->date % 100, p->time / 100,
-					p->time % 100);
-				DrawTextonPic(pRT, CRect(m_nMouseX, m_rcImage.bottom, m_nMouseX + 80, m_rcImage.bottom + 20), sl, RGBA(255, 255, 255, 255), 0);
-			}
-
-		}
+			DrawMoveTime(pRT, m_nMouseX, 0, 0, false);
+		DrawVirtualTimeLine(pRT);
 		if (IsInRect(po.x, po.y, 0))
 		{
 			int nx = GetXData(po.x);
-
+			FENSHI_GROUP *p = &(m_pData->d[nx]);
 			if (nx >= 0 && m_pData->d[nx].date > 0)
-			{
-				FENSHI_GROUP *p = &(m_pData->d[nx]);
-				sl.Format(L"%02d-%02d  %02d:%02d", p->date % 10000 / 100, p->date % 100, p->time / 100,
-					p->time % 100);
-				DrawTextonPic(pRT, CRect(po.x, m_rcImage.bottom, po.x + 80, m_rcImage.bottom + 20), sl, RGBA(255, 255, 255, 255), 0);
-			}
-
+				DrawMoveTime(pRT, po.x, p->date, p->time, true);
 		}
 		//在左上角添加此时刻具体行情
 
@@ -1846,7 +1762,6 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 	int width = int(m_rcMain.Width() / m_nAllLineNum / 2 + 0.5);
 
 
-	int nYoNum = 9;		//y轴标示数量 3 代表画两根线
 
 	pRT->CreatePen(PS_SOLID, RGBA(255, 255, 50, 255), 1, &penYellow);
 	pRT->CreatePen(PS_SOLID, RGBA(255, 255, 255, 255), 1, &penWhite);
@@ -1860,47 +1775,6 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 	pRT->SelectObject(bBrush, (IRenderObj**)&bOldBrush);
 
 
-	//k线区加坐标
-	int nWidth = m_nHeight / 8;
-	for (size_t i = 0; i < nYoNum; i++)
-	{
-		int nY = m_rcMain.top + 20 + nWidth * i;
-
-		//k线区y轴加轴标
-		SStringW s1 = GetYPrice(nY, 0);
-		if (i == 4)		//中间刻度线
-			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 255, 255, 255), DT_CENTER);
-		else if (i < 4)
-			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
-		else
-		{
-			if (nY != m_rcMain.bottom)
-				DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(0, 255, 0, 255), DT_CENTER);
-		}
-	}
-
-	//副图区加坐标
-	if (m_bShowVolume)
-	{
-		int nY = m_rcVolume.bottom - ((m_rcVolume.bottom - m_rcVolume.top) / 2);
-		SStringW s1;
-		s1 = GetFuTuYPrice(nY);
-
-		DrawTextonPic(pRT, CRect(m_rcVolume.left - RC_FSLEFT + 2, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 255, 255, 255), DT_CENTER);
-	}
-	//MACD区加坐标
-	if (m_bShowMacd)
-	{
-		for (size_t i = 0; i < 4; i++)
-		{
-			int nY = m_rcMACD.top + 20 + (m_rcMACD.Height() - 20) / 4 * i;
-
-			//k线区y轴加轴标
-			SStringW s1 = GetMACDYPrice(nY);
-
-			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT + 5, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 255, 255, 255), DT_CENTER);
-		}
-	}
 
 
 	int nDataNum = m_pData->d.size();
@@ -1953,7 +1827,6 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 				strTemp, RGBA(255, 255, 0, 255));
 			CPoint pt;
 			GetCursorPos(&pt);
-			//			if (!m_bShowMouseLine||(pt.x>m_rcImage.right||pt.x<m_rcImage.left||pt.y>m_rcImage.bottom||pt.y<m_rcImage.top))
 			if (!m_bShowMouseLine)
 				DrawUpperMarket(pRT, m_pData->d[i]);
 
@@ -1967,7 +1840,6 @@ void SFenShiPic::DrawData(IRenderTarget * pRT)
 		if (m_bShowVolume)
 		{
 			pRT->SelectObject(penYellow);
-			//		pRT->DrawRectangle(CRect(x + width, GetFuTuYPos(m_pData->d[i].vol), x + width, m_rcLower.bottom - 1));
 
 			int vol = m_bIsIndex ?
 				m_pData->d[i].vol : m_pData->d[i].vol / 100;
@@ -2087,7 +1959,12 @@ void SFenShiPic::OnDbClickedFenshi(UINT nFlags, CPoint point)
 {
 	SetMsgHandled(FALSE);
 	m_bShowMouseLine = !m_bShowMouseLine;
-	m_bKeyDown = FALSE;
+	if (m_bKeyDown)
+	{
+		m_bKeyDown = false;
+		m_nMouseX = m_nKeyX;
+		m_nMouseY = m_nKeyY;
+	}
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 		m_ppSubPic[i]->SetMouseLineState(m_bShowMouseLine);
@@ -2104,34 +1981,42 @@ void SFenShiPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	switch (nChar)
 	{
 	case VK_LEFT:
-	{
-		m_bShowMouseLine = true;
-		m_bKeyDown = true;
-
-		CRect rc = GetClientRect();
-		CAutoRefPtr<IRenderTarget> pRT = GetRenderTarget(rc, 3, 0);
-		SPainter pa;
-		SWindow::BeforePaint(pRT, pa);
-		DrawKeyDownMouseLine(pRT, VK_LEFT);
-		AfterPaint(pRT, pa);
-		ReleaseRenderTarget(pRT);
-	}
-	break;
 	case VK_RIGHT:
 	{
-		m_bShowMouseLine = true;
-		m_bKeyDown = true;
-
+		if (!m_bKeyDown)
+		{
+			m_bKeyDown = true;
+			m_nKeyX = m_nMouseX;
+			m_nKeyY = m_nMouseY;
+			//if (m_bShowMouseLine)
+			//{
+				int nx = GetXData(m_nMouseX);
+				if (nx >= m_pData->d.size())
+					nx = m_pData->d.size() - 1;
+				m_nNowPosition = max(nx, 0);
+			m_bShowMouseLine = true;
+			Invalidate();
+			break;
+		}
+		else
+		{
+			if (nChar == VK_LEFT)
+				m_nNowPosition--;
+			else if (nChar == VK_RIGHT)
+				m_nNowPosition++;
+			if (m_nNowPosition < 0)
+				m_nNowPosition = m_pData->d.size() - 1;
+			else if (m_nNowPosition >= m_pData->d.size())
+				m_nNowPosition = 0;
+		}
 		CRect rc = GetClientRect();
 		CAutoRefPtr<IRenderTarget> pRT = GetRenderTarget(rc, 3, 0);
 		SPainter pa;
 		SWindow::BeforePaint(pRT, pa);
-		//		DrawKeyDownMouseLine(pRT);
-
-
-		DrawKeyDownMouseLine(pRT, VK_RIGHT);
+		DrawKeyDownMouseLine(pRT, true);
 		AfterPaint(pRT, pa);
 		ReleaseRenderTarget(pRT);
+
 	}
 	break;
 	default:
@@ -2228,125 +2113,178 @@ void SFenShiPic::DrawKeyDownMouseLine(IRenderTarget * pRT, UINT nChar)
 {
 	if (m_pData->d.empty())
 		return;
-
-	if (m_bIsFirstKey)
-	{
-		m_nNowPosition = GetXData(m_nMouseX);
-		if (m_nNowPosition > m_pData->d.size() - 1)
-			m_nNowPosition = m_pData->d.size() - 1;
-		else if (m_nNowPosition < 0)
-			m_nNowPosition = 0;
-		m_bIsFirstKey = false;
-		Invalidate();
-		return;
-	}
-
 	int width = int(m_rcMain.Width() / m_nAllLineNum / 2 + 0.5);
 
+
 	//画鼠标线
+	
 	CPoint po;
 	po.x = GetXPos(m_nNowPosition) + width;
 	po.y = GetYPos(m_pData->d[m_nNowPosition].close);
-	HDC hdc = pRT->GetDC();
-	//	HPEN pen, oldPen;
-	//	pen = CreatePen(PS_SOLID, 1, RGBA(255, 255, 255, 0xFF));
-	//	oldPen = (HPEN)SelectObject(hdc, pen);
-	CRect rcClient;
-	GetClientRect(rcClient);
-	int  nMode = SetROP2(hdc, R2_NOT);
-	//	MoveToEx(hdc, po.x + width, m_rcImage.top + 20, NULL);			LineTo(hdc, po.x + width, m_rcImage.bottom);
-	//	MoveToEx(hdc, m_rcImage.left, po.y, NULL);		LineTo(hdc, m_rcUpper.right, po.y);
-
-	if (!m_bShowMacd)
-	{
-		MoveToEx(hdc, po.x, m_rcImage.top + 20, NULL);			LineTo(hdc, po.x, m_rcImage.bottom);
-		MoveToEx(hdc, m_rcImage.left, po.y, NULL);			LineTo(hdc, m_rcImage.right, po.y);
-
-	}
-	else
-	{
-		MoveToEx(hdc, po.x, m_rcImage.top + 20, NULL);			LineTo(hdc, po.x, m_rcMACD.top);
-		MoveToEx(hdc, po.x, m_rcMACD.top + 20, NULL);			LineTo(hdc, po.x, m_rcMACD.bottom);
-		MoveToEx(hdc, m_rcImage.left, po.y, NULL);			LineTo(hdc, m_rcImage.right, po.y);
-
-	}
-
-
-	//	SelectObject(hdc, oldPen);
-	SetROP2(hdc, nMode);
-	pRT->ReleaseDC(hdc);
+	DrawMouseLine(pRT, po);
 
 	//显示横坐标轴数值
-
 	FENSHI_GROUP p = m_pData->d[m_nNowPosition];
-
-
-	SStringW sl, sr;
-
-	CAutoRefPtr<IBrush> bBrushDarkBlue;
-	pRT->CreateSolidColorBrush(RGBA(0, 0, 0, 255), &bBrushDarkBlue);
-	pRT->SelectObject(bBrushDarkBlue);
-	sr.Empty(); sl.Empty();
-	sl.Format(L"%.2f", p.close);
-	sr.Format(L"%.2f%%", 100 * (p.close - m_pData->fPreClose) / m_pData->fPreClose);
-	if (!sr.IsEmpty())
-	{
-		//		pRT->FillRectangle(CRect(m_rcUpper.right + 1, po.y + 2, m_rcUpper.right + 40, po.y + 22));
-		DrawTextonPic(pRT, CRect(m_rcMain.right + 1, po.y + 2, m_rcMain.right + 40, po.y + 22), sr);
-		//		InvalidateRect(CRect(m_rcUpper.right + 1, po.y + 2, m_rcUpper.right + 40, po.y + 22));
-
-	}
-	if (!sl.IsEmpty())
-	{
-		//		pRT->FillRectangle(CRect(m_rcImage.left - RC_FSLEFT+1, m_rcImage.top, m_rcImage.left, m_rcImage.bottom));
-		DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT + 1, po.y + 2, m_rcMain.left - 1, po.y + 22), sl);
-		//		InvalidateRect(CRect(m_rcImage.left - RC_FSLEFT+1, m_rcImage.top, m_rcImage.left, m_rcImage.bottom));
-	}
-
-	//显示纵坐标轴数值
-	sl.Format(L"%02d-%02d  %02d:%02d", p.date % 10000 / 100, p.date % 100, p.time / 100,
-		p.time % 100);
-	DrawTextonPic(pRT, CRect(po.x, m_rcImage.bottom, po.x + 80, m_rcImage.bottom + 20), sl, RGBA(255, 255, 255, 255), 0);
-
-
-	//左上角显示行情
 	DrawUpperMarket(pRT, p);
+
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 	{
 		m_ppSubPic[i]->SetNowKeyDownLinePos(m_nNowPosition);
-		m_ppSubPic[i]->DrawKeyDownMouseLine(pRT);
+		m_ppSubPic[i]->DrawKeyDownMouseLine(pRT,TRUE);
 	}
 	::LeaveCriticalSection(&m_csSub);
 
-	if (nChar == VK_LEFT)
-	{
-		if (-1 == m_nNowPosition)
-			m_nNowPosition = m_pData->d.size() - 1;
-		else if (0 == m_nNowPosition)
-			m_nNowPosition = m_pData->d.size() - 1;
-		else
-			m_nNowPosition--;
-		DrawKeyDownMouseLine(pRT, 0);
-		//m_ppSubPic->SetNowKeyDownLinePos(m_nNowPosition);
-		//m_ppSubPic->DrawKeyDownMouseLine(pRT);
+	//DrawVirtualTimeLine(pRT);
+	DrawPrice(pRT);
+	DrawMovePrice(pRT, m_nMouseY, false);
+	DrawPrice(pRT);
+	DrawMovePrice(pRT, po.y, true);
 
-	}
-	else if (nChar == VK_RIGHT)
-	{
-		if (-1 == m_nNowPosition)
-			m_nNowPosition = 0;
-		else if (m_pData->d.size() - 1 == m_nNowPosition)
-			m_nNowPosition = 0;
-		else
-			m_nNowPosition++;
-		DrawKeyDownMouseLine(pRT, 0);
-		//m_ppSubPic->SetNowKeyDownLinePos(m_nNowPosition);
-		//m_ppSubPic->DrawKeyDownMouseLine(pRT);
+	DrawVirtualTimeLine(pRT);
+	DrawMoveTime(pRT, m_nMouseX, 0,0, false);
+	DrawVirtualTimeLine(pRT);
+	DrawMoveTime(pRT, po.x, p.date, p.time, true);
 
-	}
+	//左上角显示行情
+	m_nMouseX = po.x;
+	m_nMouseY = po.y;
+
 
 	//Invalidate();
+}
+
+void SFenShiPic::DrawPrice(IRenderTarget * pRT)
+{
+	if (!m_bDataInited)
+		return;
+	//k线区加坐标
+	int nYoNum = 9;		//y轴标示数量 3 代表画两根线
+
+	int nWidth = m_nHeight / 8;
+	for (size_t i = 0; i < nYoNum; i++)
+	{
+		int nY = m_rcMain.top + 20 + nWidth * i;
+
+		//k线区y轴加轴标
+		SStringW s1 = GetYPrice(nY, 0);
+		if (i == 4)		//中间刻度线
+			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 255, 255, 255), DT_CENTER);
+		else if (i < 4)
+			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
+		else
+		{
+			if (nY != m_rcMain.bottom)
+				DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(0, 255, 0, 255), DT_CENTER);
+		}
+	}
+
+	//副图区加坐标
+	if (m_bShowVolume)
+	{
+		int nY = m_rcVolume.bottom - ((m_rcVolume.bottom - m_rcVolume.top) / 2);
+		SStringW s1;
+		s1 = GetFuTuYPrice(nY);
+
+		DrawTextonPic(pRT, CRect(m_rcVolume.left - RC_FSLEFT + 2, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 255, 255, 255), DT_CENTER);
+	}
+	//MACD区加坐标
+	if (m_bShowMacd)
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			int nY = m_rcMACD.top + 20 + (m_rcMACD.Height() - 20) / 4 * i;
+
+			//k线区y轴加轴标
+			SStringW s1 = GetMACDYPrice(nY);
+
+			DrawTextonPic(pRT, CRect(m_rcMain.left - RC_FSLEFT + 5, nY - 9, m_rcMain.left, nY + 9), s1, RGBA(255, 255, 255, 255), DT_CENTER);
+		}
+	}
+
+}
+
+void SFenShiPic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
+{
+	CRect rcLeft(m_rcMain.left - RC_FSLEFT + 1, y - 15, m_rcMain.left - 1, y);
+	CRect rcRight(m_rcMain.right + 1, y - 15, m_rcMain.right + RC_FSRIGHT - 1, y);
+	bool bUseLeft = y >= m_rcMain.top + 20 && y < m_rcMain.bottom;
+	if(bNew)
+	{
+		SStringW sl, sr;
+		if (y >= m_rcMain.top + 20 && y < m_rcMain.bottom)
+		{
+			sl = GetYPrice(y, FALSE);
+			sr = GetYPrice(y, TRUE);
+		}
+		else if (y >= m_rcVolume.top + 20 && y <= m_rcVolume.bottom)
+			sr = GetFuTuYPrice(y);
+		else if(y >= m_rcMACD.top + 20 && y <= m_rcMACD.bottom)
+			sr = GetMACDYPrice(y);
+		if (sr != L"")
+		{
+			CAutoRefPtr<IBrush>bBrushDarkBlue, oldBrush;
+			pRT->CreateSolidColorBrush(RGBA(50, 100, 150, 255), &bBrushDarkBlue);
+			pRT->SelectObject(bBrushDarkBlue, (IRenderObj**)&oldBrush);
+			pRT->FillRectangle(rcRight);
+			pRT->SelectObject(oldBrush);
+			rcRight.left += 1;
+			rcRight.right -= 1;
+			DrawTextonPic(pRT, rcRight, sr,
+				RGBA(255, 255, 255, 255), DT_SINGLELINE | DT_CENTER, MERGECOPY);
+		}
+		if (sl != L"")
+		{
+			CAutoRefPtr<IBrush>bBrushDarkBlue, oldBrush;
+			pRT->CreateSolidColorBrush(RGBA(50, 100, 150, 255), &bBrushDarkBlue);
+			pRT->SelectObject(bBrushDarkBlue, (IRenderObj**)&oldBrush);
+			pRT->FillRectangle(rcLeft);
+			pRT->SelectObject(oldBrush);
+			rcLeft.left += 1;
+			rcLeft.right -= 1;
+			DrawTextonPic(pRT, rcLeft, sl,
+				RGBA(255, 255, 255, 255), DT_SINGLELINE | DT_CENTER, MERGECOPY);
+
+		}
+	}
+	else
+	{	if(bUseLeft)
+			pRT->FillRectangle(rcLeft);
+		pRT->FillRectangle(rcRight);
+
+	}
+}
+
+void SFenShiPic::DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew)
+{
+
+	CRect rc(x + 2, m_rcImage.bottom + 2, x + 50, m_rcImage.bottom + 20);
+	if (bNew)
+	{
+		if (date == 0)
+			return;
+		SStringW str;
+			str.Format(L"%02d:%02d",
+				time / 100,
+				time % 100);
+		CRect drawRc = GetTextDrawRect(pRT, str, rc);
+		drawRc.SetRect(x, m_rcImage.bottom + 2, x + drawRc.right + 4, m_rcImage.bottom + 20);
+		CAutoRefPtr<IBrush>bBrushDarkBlue, oldBrush;
+		pRT->CreateSolidColorBrush(RGBA(50, 100, 150, 255), &bBrushDarkBlue);
+		pRT->SelectObject(bBrushDarkBlue, (IRenderObj**)&oldBrush);
+		pRT->FillRectangle(drawRc);
+		pRT->SelectObject(oldBrush);
+		drawRc.left += 2;
+		DrawTextonPic(pRT, drawRc,
+			str, RGBA(255, 255, 255, 255), DT_SINGLELINE | DT_VCENTER, MERGECOPY);
+
+	}
+	else
+	{
+		rc.left -= 2;
+		rc.right = min(rc.right, m_rcImage.right + RC_FSRIGHT - 1);
+		pRT->FillRectangle(rc);
+	}
 }
 
 

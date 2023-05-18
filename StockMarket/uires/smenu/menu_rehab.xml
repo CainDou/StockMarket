@@ -1,0 +1,11 @@
+﻿<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+  <item id="501">前复权(现金分红)</item>
+  <item id="502">后复权(现金分红)</item>
+  <item id="503">定点复权(现金分红)</item>
+  <sep/>
+  <item id="504">前复权(分红再投)</item>
+  <item id="505">后复权(分红再投)</item>
+  <item id="506">定点复权(分红再投)</item>
+  <sep/>
+  <item id="500" >除权</item>
+</menu>

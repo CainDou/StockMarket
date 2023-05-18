@@ -176,7 +176,7 @@ void SSubTargetPic::DrawArrow(IRenderTarget * pRT)
 		pts[2].SetPoint(m_rcImage.right, m_rcImage.bottom);
 		pts[3].SetPoint(m_rcImage.left, m_rcImage.bottom);
 		pts[4] = pts[0];
-		if(m_bUseWidth)
+		if (m_bUseWidth)
 			pRT->DrawLines(pts, 4);
 		else
 			pRT->DrawLines(pts, 5);
@@ -189,7 +189,7 @@ void SSubTargetPic::DrawArrow(IRenderTarget * pRT)
 	COLORREF clRed = RGB(139, 0, 0);
 	HDC pdc = pRT->GetDC();
 	//	SetBkColor(pdc, RGBA(255, 0, 0, 0xff));
-	double width = m_nHeight*1.0 / (nYoNum - 1) ;
+	double width = m_nHeight*1.0 / (nYoNum - 1);
 	for (int i = 0; i < nYoNum; i++)
 	{
 		double fY = m_rcImage.top + 20 + width * i;
@@ -211,15 +211,39 @@ void SSubTargetPic::DrawArrow(IRenderTarget * pRT)
 			pRT->DrawLines(pts, 2);
 			pRT->SelectObject(oldPen);
 		}
+		if (i < nYoNum - 1)
+		{
+			SStringW s1 = GetYPrice(nY, FALSE);
+			if (!s1.IsEmpty())
+			{
+				if (m_bUseWidth)
+					DrawTextonPic(pRT,
+						CRect(m_rcImage.right + 2,
+							nY - 9,
+							m_rcImage.right + RC_KLRIGHT,
+							nY + 9), s1,
+						RGBA(255, 0, 0, 255),
+						DT_CENTER);
+				else
+					DrawTextonPic(pRT,
+						CRect(m_rcImage.left - RC_FSLEFT,
+							nY - 9,
+							m_rcImage.left,
+							nY + 9), s1,
+						RGBA(255, 0, 0, 255),
+						DT_CENTER);
+			}
+
+		}
 
 	}
 
 	//画出选择箭头
 	m_rcTargetSel.left = m_rcImage.left + 5;
-	m_rcTargetSel.top = m_rcImage.top-5;
+	m_rcTargetSel.top = m_rcImage.top - 5;
 	m_rcTargetSel.bottom = m_rcImage.top + MARGIN;
-	m_rcTargetSel.right = m_rcImage.left +25;
-	DrawTextonPic(pRT, m_rcTargetSel, L"●", RGBA(80,80,80,255),DT_CENTER|DT_VCENTER,20);
+	m_rcTargetSel.right = m_rcImage.left + 25;
+	DrawTextonPic(pRT, m_rcTargetSel, L"●", RGBA(80, 80, 80, 255), DT_CENTER | DT_VCENTER, 20);
 
 	pRT->ReleaseDC(pdc);
 
@@ -233,30 +257,15 @@ void SSubTargetPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 													//判断最大最小值
 	m_nFirst = 0;
 	m_nEnd = m_pData[0]->size();
-	for (int i = 1; i < m_nShowDataCount;++i)
+	for (int i = 1; i < m_nShowDataCount; ++i)
 	{
 		m_nEnd = min(m_nEnd, m_pData[0]->size());
 	}
-	//m_nEnd = min(m_pData[0]->size(), m_pData[1]->size());
 	if (m_nEnd > m_nAllLineNum)
 		m_nFirst = m_nEnd - m_nAllLineNum;
 
 	if (m_nOffset > 0)
 	{
-		//if (m_nFirst <= 0 && m_nEnd == m_pData[0]->size())
-		//	m_nOffset = 0;
-		//if (m_pData[0]->size() < m_nOffset)
-		//	m_nOffset = m_pData[0]->size();
-		//if (m_nFirst > m_nOffset)
-		//{
-		//	m_nFirst -= m_nOffset;
-		//	m_nEnd = m_pData[0]->size() - m_nOffset;
-		//}
-		//else
-		//{
-		//	m_nEnd -= m_nFirst;
-		//	m_nFirst = 0;
-		//}
 		m_nFirst -= m_nOffset;
 		m_nEnd = m_pData[0]->size() - m_nOffset;
 
@@ -267,7 +276,7 @@ void SSubTargetPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 	{
 		if (m_bRightArr[i])
 		{
-			for (int j = max(0,m_nFirst); j < m_nEnd; ++j)
+			for (int j = max(0, m_nFirst); j < m_nEnd; ++j)
 			{
 				m_fMaxR = max(m_fMaxR, m_pData[i]->at(j).value);
 				m_fMinR = min(m_fMinR, m_pData[i]->at(j).value);
@@ -381,7 +390,7 @@ int SSubTargetPic::GetXData(int nx) {	//获取鼠标下的数据id
 	}
 }
 
-void SSubTargetPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color, UINT uFormat,int nSize)
+void SSubTargetPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color, UINT uFormat, int nSize, DWORD rop)
 {
 	CAutoRefPtr<IRenderTarget> pMemRT;
 	GETRENDERFACTORY->CreateRenderTarget(&pMemRT, rc.right - rc.left, rc.bottom - rc.top);
@@ -395,7 +404,7 @@ void SSubTargetPic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, C
 
 	pMemRT->SetTextColor(color);				//字为白色
 	pMemRT->DrawTextW(str, wcslen(str), CRect(0, 0, rc.right - rc.left, rc.bottom - rc.top), uFormat);
-	pRT->BitBlt(rc, pMemRT, 0, 0, SRCINVERT);
+	pRT->BitBlt(rc, pMemRT, 0, 0, rop);
 
 }
 
@@ -437,17 +446,12 @@ void SSubTargetPic::DrawEarserLine(IRenderTarget * pRT, CPoint pt, bool bVertica
 
 
 
-void SSubTargetPic::HandleMissData(InStockData f1, int time)//补全遗漏的数据
-{
-}
-
-
 
 void SSubTargetPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 {
 	pRT->FillRectangle(CRect(m_rcImage.left,
 		m_rcImage.top,
-		m_rcImage.right,
+		m_rcImage.right - 1,
 		m_rcImage.top + 19));
 
 	SStringW sl;
@@ -466,9 +470,6 @@ void SSubTargetPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 		else if (xPos == -1 && !m_pData[i]->empty())
 			pData[i] = m_pData[i]->at(m_pData[i]->size() - 1);
 	}
-	//sl.Format(L"%4d-%02d-%02d %02d:%02d", pData[0].date / 10000,
-	//	pData[0].date % 10000 / 100, pData[0].date % 100,
-	//	pData[0].time / 100, pData[0].time % 100);
 	DrawTextonPic(pRT, m_rcTargetSel, L"●", RGBA(80, 80, 80, 255), DT_CENTER | DT_VCENTER, 20);
 
 	DrawTextonPic(pRT, CRect(left, top, right, bottom), m_strTitle, m_colorVec[0]);
@@ -506,10 +507,6 @@ void SSubTargetPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 		if (m_nMouseX != -1 || m_nMouseY != -1)
 		{
 			m_nMouseX = m_nMouseY = -1;
-			//if (!bFromOnPaint)
-			//{
-			//	Invalidate();
-			//}
 		}
 		return;
 	}
@@ -521,13 +518,9 @@ void SSubTargetPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 		int  nMode = SetROP2(hdc, R2_NOTXORPEN);
 		MoveToEx(hdc, m_nMouseX, m_rcImage.top + 20, NULL);
 		LineTo(hdc, m_nMouseX, m_rcImage.bottom);
-		//MoveToEx(hdc, m_rcImage.left, m_nMouseY, NULL);	
-		//LineTo(hdc, m_rcImage.right, m_nMouseY);
 
 		MoveToEx(hdc, po.x, m_rcImage.top + 20, NULL);
 		LineTo(hdc, po.x, m_rcImage.bottom);
-		//MoveToEx(hdc, m_rcImage.left, po.y, NULL);			
-		//LineTo(hdc, m_rcImage.right, po.y);
 		SetROP2(hdc, nMode);
 
 		pRT->ReleaseDC(hdc);
@@ -539,44 +532,14 @@ void SSubTargetPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 
 	if (m_bDataInited)
 	{
-		SStringW sl, sr;
-		sr.Empty(); sl.Empty();
-		if (m_nMouseY >= m_rcImage.top && m_nMouseY <= m_rcImage.bottom)	//十字在k线上
-		{
-			//sl = GetYPrice(m_nMouseY, FALSE);
-			sr = GetYPrice(m_nMouseY, TRUE);
-		}
-		if (!sr.IsEmpty())
-			DrawTextonPic(pRT,
-				CRect(m_rcImage.right + 1,
-					m_nMouseY - 10,
-					m_rcImage.right + RC_FSLEFT - 2,
-					m_nMouseY + 10),
-				sr);
-		if (!sl.IsEmpty())
-			DrawTextonPic(pRT,
-				CRect(m_rcImage.left - RC_FSLEFT + 2,
-					m_nMouseY - 10,
-					m_rcImage.left - 1,
-					m_nMouseY + 10),
-				sl);
+		DrawPrice(pRT);
+		if (m_nMouseY >= m_rcImage.top + 20 && m_nMouseY <= m_rcImage.bottom)
+			DrawMovePrice(pRT, m_nMouseY, false);
+		DrawPrice(pRT);
+		if (po.y >= m_rcImage.top + 20 && po.y <= m_rcImage.bottom)
+			DrawMovePrice(pRT, po.y, true);
 
-
-
-
-		sr.Empty(); sl.Empty();
-		if (po.y >= m_rcImage.top && po.y <= m_rcImage.bottom)	//十字在k线上
-		{
-			//sl = GetYPrice(po.y, FALSE);
-			sr = GetYPrice(po.y, TRUE);
-		}
-
-		if (!sr.IsEmpty())
-			DrawTextonPic(pRT, CRect(m_rcImage.right + 1, po.y - 10, m_rcImage.right + RC_FSLEFT - 2, po.y + 10), sr);
-		if (!sl.IsEmpty())
-			DrawTextonPic(pRT, CRect(m_rcImage.left - RC_FSLEFT + 2, po.y - 10, m_rcImage.left - 1, po.y + 10), sl);
-
-		//显示纵坐标数值
+		//在左上角添加此时刻具体行情
 		int left = max(0, m_pData[0]->size() - m_nAllLineNum);
 		int dataPosMouse = -1;
 		if (IsInRect(m_nMouseX, m_nMouseY) && m_nMouseX <= m_rcImage.right)
@@ -598,8 +561,6 @@ void SSubTargetPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 				dataPosPoint = nx >= 0 ? nx : -1;
 
 		}
-		//在左上角添加此时刻具体行情
-
 
 		if (IsInRect(m_nMouseX, m_nMouseY) && m_bShowMouseLine)
 		{
@@ -621,6 +582,74 @@ void SSubTargetPic::DrawMouse(IRenderTarget * pRT, CPoint po, BOOL bFromOnPaint)
 
 }
 
+void SSubTargetPic::DrawPrice(IRenderTarget * pRT)
+{
+	m_nHeight = m_rcImage.bottom - m_rcImage.top - 20;
+
+	int nYoNum = m_nHeight / 20;
+	if (nYoNum % 2 == 0)
+		nYoNum--;
+	if (nYoNum > 9)
+		nYoNum = 9;
+	if (nYoNum == 1)
+		nYoNum = 3;
+
+	double nWidth = m_nHeight * 1.0 / (nYoNum - 1);
+	for (int i = 0; i < nYoNum - 1; i++)
+	{
+		double fY = m_rcImage.top + 20 + nWidth * i;
+		int nY = round(fY);
+		//k线区y轴加轴标
+		SStringW s1 = GetYPrice(nY, FALSE);
+		if (!s1.IsEmpty())
+		{
+			if (m_bUseWidth)
+				DrawTextonPic(pRT,
+					CRect(m_rcImage.right + 2,
+						nY - 9,
+						m_rcImage.right + RC_KLRIGHT,
+						nY + 9), s1,
+					RGBA(255, 0, 0, 255),
+					DT_CENTER);
+			else
+				DrawTextonPic(pRT,
+					CRect(m_rcImage.left - RC_FSLEFT,
+						nY - 9,
+						m_rcImage.left,
+						nY + 9), s1,
+					RGBA(255, 0, 0, 255),
+					DT_CENTER);
+		}
+	}
+
+}
+
+void SSubTargetPic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
+{
+	CRect rc(m_rcImage.right + 1, y - 15, m_rcImage.right + RC_KLRIGHT - 1, y);
+	if (!m_bUseWidth)
+		rc.right = m_rcImage.right + RC_FSRIGHT - 1;
+	if (bNew)
+	{
+		SStringW sr = GetYPrice(y, TRUE);
+		if (!sr.IsEmpty())
+		{
+			CAutoRefPtr<IBrush> brush, oldBrush;
+			pRT->CreateSolidColorBrush(RGBA(50, 100, 150, 255), &brush);
+			pRT->SelectObject(brush, (IRenderObj**)&oldBrush);
+			pRT->FillRectangle(rc);
+			pRT->SelectObject(oldBrush);
+			rc.left += 1;
+			rc.right -= 1;
+			DrawTextonPic(pRT, rc, sr,
+				RGBA(255, 255, 255, 255), DT_SINGLELINE | DT_CENTER, 12, MERGECOPY);
+		}
+	}
+	else
+		pRT->FillRectangle(rc);
+
+}
+
 
 void SSubTargetPic::DrawData(IRenderTarget * pRT)
 {
@@ -637,57 +666,10 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 	int width = int(m_rcImage.Width() / m_nAllLineNum / 2 + 0.5);
 
 
-	m_nHeight = m_rcImage.bottom - m_rcImage.top - 20;
-
-	int nYoNum = m_nHeight / 20;
-	if (nYoNum % 2 == 0)
-		nYoNum--;
-	if (nYoNum > 9)
-		nYoNum = 9;
-	if (nYoNum == 1)
-		nYoNum = 3;
 
 	pRT->CreatePen(PS_SOLID, RGBA(255, 255, 255, 255), 1, &penWhite);
 	pRT->SelectObject(penWhite, (IRenderObj**)&oldPen);
 
-	double nWidth = m_nHeight * 1.0 / (nYoNum - 1);
-	for (int i = 0; i < nYoNum; i++)
-	{
-		double fY = m_rcImage.top + 20 + nWidth * i;
-		int nY = round(fY);
-		//k线区y轴加轴标
-		SStringW s1 = GetYPrice(nY, FALSE);
-		if (!s1.IsEmpty())
-		{
-			if (m_bUseWidth)
-				DrawTextonPic(pRT,
-					CRect(m_rcImage.right +2 ,
-						nY - 9,
-						m_rcImage.right + RC_KLRIGHT,
-						nY + 9), s1,
-					RGBA(255, 0, 0, 255),
-					DT_CENTER);
-			else
-				DrawTextonPic(pRT,
-					CRect(m_rcImage.left - RC_FSLEFT,
-						nY - 9,
-						m_rcImage.left,
-						nY + 9), s1,
-					RGBA(255, 0, 0, 255),
-					DT_CENTER);
-		}
-		//s1 = GetYPrice(nY, TRUE);
-		//if (!s1.IsEmpty())
-		//	DrawTextonPic(pRT,
-		//		CRect(m_rcImage.right + 3,
-		//			nY - 9, 
-		//			m_rcImage.right
-		//			+ RC_FSRIGHT, 
-		//			nY + 9),
-		//		s1, 
-		//		RGBA(255, 0, 0, 255),
-		//		DT_CENTER);
-	}
 	int nDataNum = m_bUseWidth ? m_nAllLineNum : m_nEnd - m_nFirst;
 	vector<vector<CPoint>> LineVec(m_nShowDataCount, vector<CPoint>(nDataNum));
 	int nLineStartPos = 0;
@@ -711,8 +693,7 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 			m_nEnd = min(m_nEnd, m_pData[0]->size());
 		}
 
-		m_nEnd  -=  m_nOffset;
-		//OutputDebugStringFormat("最后一个数据为:%d offset=%d\n", m_nEnd, m_nOffset);
+		m_nEnd -= m_nOffset;
 		if (m_nEnd <= 0)
 			return;
 		m_nFirst = m_nEnd - m_nAllLineNum;
@@ -751,92 +732,7 @@ void SSubTargetPic::OnDbClicked(UINT nFlags, CPoint point)
 	m_bShowMouseLine = !m_bShowMouseLine;
 }
 
-//void SSubTargetPic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
-//{
-//	if (!m_bDataInited)
-//		return;
-//	switch (nChar)
-//	{
-//	case VK_LEFT:
-//	{
-//		m_bKeyDown = true;
-//
-//		if (m_bIsFirstKey)
-//		{
-//			if (m_bShowMouseLine)
-//				m_nNowPosition = GetXData(m_nMouseX);
-//			else
-//				m_nNowPosition = min(m_pData[0]->size() - 1, m_nAllLineNum - 1);
-//			m_bIsFirstKey = false;
-//			m_bShowMouseLine = true;
-//			return;
-//		}
-//
-//		if (0 == m_nNowPosition)
-//		{
-//			int size = m_pData[0]->size();
-//			if (size - m_nOffset > m_nAllLineNum)
-//				++m_nOffset;
-//		}
-//		else
-//			m_nNowPosition--;
-//	}
-//	break;
-//	case VK_UP:
-//		if (m_nAllLineNum > MIN_LINE_NUM)
-//		{
-//			m_nAllLineNum /= ZOOMRATIO;
-//			m_nAllLineNum = max(m_nAllLineNum, MIN_LINE_NUM);
-//			if (m_bKeyDown)
-//			{
-//				m_nNowPosition /= ZOOMRATIO;
-//				m_nNowPosition = min(m_nNowPosition, m_nAllLineNum - 1);
-//			}
-//		}
-//		break;
-//	case VK_RIGHT:
-//	{
-//		m_bKeyDown = true;
-//
-//		if (m_bIsFirstKey)
-//		{
-//			if (m_bShowMouseLine)
-//				m_nNowPosition = GetXData(m_nMouseX);
-//			else
-//				m_nNowPosition = min(m_pData[0]->size() - 1, m_nAllLineNum - 1);
-//			m_bIsFirstKey = false;
-//			m_bShowMouseLine = true;
-//			return;
-//		}
-//
-//		int size = min(m_pData[0]->size(), m_nAllLineNum);
-//		if (size == m_nNowPosition + 1)
-//		{
-//			--m_nOffset;
-//			m_nOffset = max(0, m_nOffset);
-//		}
-//		else
-//			++m_nNowPosition;
-//	}
-//	break;
-//	case VK_DOWN:
-//		if (m_nAllLineNum < MAX_LINE_NUM)
-//		{
-//			m_nAllLineNum *= ZOOMRATIO;
-//			m_nAllLineNum = min(m_nAllLineNum, MAX_LINE_NUM);
-//			if (m_bKeyDown)
-//			{
-//				m_nNowPosition *= ZOOMRATIO;
-//				if (m_nNowPosition >= m_nAllLineNum)
-//					m_nNowPosition = m_nAllLineNum - 1;
-//			}
-//
-//		}
-//		break;
-//	default:
-//		break;
-//	}
-//}
+
 
 void SSubTargetPic::ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec)
 {
@@ -863,14 +759,13 @@ void SSubTargetPic::DrawKeyDownMouseLine(IRenderTarget * pRT, BOOL bDoubleFlash)
 	m_bKeyDown = true;
 	m_bShowMouseLine = true;
 	int left = m_pData[0]->size() - m_nAllLineNum;
-	if(!m_bUseWidth)
+	if (!m_bUseWidth)
 		left = max(left, 0);
 	int dataPos = m_nNowPosition + left - m_nOffset;
 	//画鼠标线
 
 	CPoint nowPoint;
 	nowPoint.x = GetXPos(m_nNowPosition);
-	//nowPoint.y = GetYPos(data.value, m_bRightArr[0]);
 	SStringA strInfo;
 	HDC hdc = pRT->GetDC();
 

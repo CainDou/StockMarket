@@ -18,8 +18,8 @@ using std::vector;
 #define RC_TOP				25
 #define RC_BOTTOM			40
 
-#define RC_MAX				5
-#define RC_MIN				5
+#define RC_MAX				20
+#define RC_MIN				20
 #define RC_RIGHT_BACK		50		//¿òÄÚ×îºóÒ»¸ùkÏßºÍ¿òµÃ¾àÀë
 
 #define DATA_ERROR			-1234567
@@ -84,7 +84,8 @@ SKlinePic::SKlinePic()
 	ZeroMemory(m_nAmoMaPara, sizeof(m_nAmoMaPara));
 	m_nAmoMaPara[0] = 5;
 	m_nAmoMaPara[1] = 10;
-
+	m_rehabType = eRT_NoRehab;
+	m_calcRehabType = eRT_NoRehab;
 	//m_pTip = new SKlineTip(m_hParWnd);
 
 }
@@ -105,8 +106,6 @@ SKlinePic::~SKlinePic()
 			delete m_ppSubPic[i];
 		delete[]m_ppSubPic;
 	}
-	//if (m_pbShowSubPic)
-	//	delete[]m_pbShowSubPic;
 }
 
 void SKlinePic::InitSubPic(int nNum)
@@ -117,10 +116,9 @@ void SKlinePic::InitSubPic(int nNum)
 	for (int i = 0; i < nNum; ++i)
 	{
 		m_ppSubPic[i] = new SSubTargetPic;
-		//m_ppSubPic[i]->SetSubPicName(picNameVec[i]);
 	}
-	//m_pbShowSubPic = new BOOL[nNum];
 }
+
 
 void SKlinePic::ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec)
 {
@@ -158,7 +156,7 @@ void SKlinePic::ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec)
 
 }
 
-vector<ShowPointInfo> SOUI::SKlinePic::GetSubPicDataToGet(int nNum, map<ePointDataType, ShowPointInfo>& infoMap)
+vector<ShowPointInfo> SKlinePic::GetSubPicDataToGet(int nNum, map<ePointDataType, ShowPointInfo>& infoMap)
 {
 	::EnterCriticalSection(&m_csSub);
 	vector<ShowPointInfo> infoVec;
@@ -206,6 +204,10 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_nKWidth = para.nWidth;
 	m_bShowDeal = para.bShowKlineDeal;
 	m_bShowMacd = para.bShowKlineMACD;
+	m_rehabType = (eRehabType)para.nKlineRehabType;
+	m_calcRehabType = (eRehabType)para.nKlineCalcRehabType;
+	m_nFTRehabTime = para.nKlineFTRehabDate;
+
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 		m_ppSubPic[i]->SetSubPicInfo(para.KlinePonitWndInfo[i]);
@@ -215,11 +217,11 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_nMACDPara[1] = para.nMACDPara[1];
 	m_nMACDPara[2] = para.nMACDPara[2];
 	m_BandPara = para.BandPara;
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		m_nMAPara[i] = para.nMAPara[i];
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		m_nVolMaPara[i] = para.nVolMaPara[i];
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		m_nAmoMaPara[i] = para.nAmoMaPara[i];
 
 	m_nJiange = para.nJiange;
@@ -234,6 +236,10 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.nWidth = m_nKWidth;
 	para.bShowKlineDeal = m_bShowDeal;
 	para.bShowKlineMACD = m_bShowMacd;
+	para.nKlineRehabType = m_rehabType;
+	para.nKlineCalcRehabType = m_calcRehabType;
+	para.nKlineFTRehabDate = m_nFTRehabTime;
+
 	::EnterCriticalSection(&m_csSub);
 	para.nKlinePointWndNum = m_nSubPicNum;
 	for (int i = 0; i < m_nSubPicNum; ++i)
@@ -247,11 +253,11 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.nMACDPara[1] = m_nMACDPara[1];
 	para.nMACDPara[2] = m_nMACDPara[2];
 	para.BandPara = m_BandPara;
-	for(int i=0;i<MAX_MA_COUNT;++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nMAPara[i] = m_nMAPara[i];
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nVolMaPara[i] = m_nVolMaPara[i];
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nAmoMaPara[i] = m_nAmoMaPara[i];
 	para.nJiange = m_nJiange;
 }
@@ -329,7 +335,7 @@ void SKlinePic::SetSubPicShowData(int nDataCount[],
 
 }
 
-void SOUI::SKlinePic::SetSubPicShowData(int nDataCount, vector<vector<CoreData>*>& data, vector<BOOL> bRightVec,
+void SKlinePic::SetSubPicShowData(int nDataCount, vector<vector<CoreData>*>& data, vector<BOOL> bRightVec,
 	vector<SStringA> dataNameVec, SStringA StockID, SStringA StockName)
 {
 	m_ppSubPic[m_nChangeNum]->SetShowData(
@@ -390,7 +396,7 @@ void SKlinePic::SetHisPointState(bool bReady)
 	}
 }
 
-bool SOUI::SKlinePic::GetDataReadyState()
+bool SKlinePic::GetDataReadyState()
 {
 	return m_bTodayMarketReady&m_bHisKlineReady;
 }
@@ -400,43 +406,6 @@ void SKlinePic::ClearTip()
 	m_pTip->ClearTip();
 }
 
-//LRESULT SKlinePic::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp)
-//{
-//	USHORT nGroup = LOWORD(lp);
-//	if ((RpsGroup)nGroup != m_rgGroup)
-//	{
-//		SetMsgHandled(FALSE);
-//		return -1;
-//	}
-//	KLINEMSG msg = (KLINEMSG)HIWORD(lp);
-//	switch (msg)
-//	{
-//	case KLINEMSG_PROCDATA:
-//		DataProc();
-//		break;
-//	case KLINEMSG_UPDATE:
-//		break;
-//	case KLINEMSG_MA:
-//		ReProcMAData();
-//		Invalidate();
-//		break;
-//	case KLINEMSG_MACD:
-//		m_nMacdCount = 0;
-//		UpdateData();
-//		Invalidate();
-//		break;
-//	case KLINEMSG_BAND:
-//		if (m_pBandData)
-//			ZeroMemory(m_pBandData, sizeof(*m_pBandData));
-//		m_nBandCount = 0;
-//		BandDataUpdate();
-//		Invalidate();
-//		break;
-//	default:
-//		break;
-//	}
-//	return 0;
-//}
 
 void SKlinePic::BandDataUpdate()
 {
@@ -534,7 +503,7 @@ void SKlinePic::DrawMainUpperMA(IRenderTarget * pRT, int nPos)
 	pRT->ReleaseDC(hdc);
 }
 
-void SOUI::SKlinePic::DrawVolAmoUpperMA(IRenderTarget * pRT, int nPos)
+void SKlinePic::DrawVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 {
 	HDC hdc = pRT->GetDC();
 	CSize size;
@@ -1001,30 +970,12 @@ int SKlinePic::ProcMACDData(int nPos, MACDData_t * pMacdData)
 	return nPos;
 }
 
-//BOOL SKlinePic::CreateChildren(pugi::xml_node xmlNode)
-//{
-//	if (!__super::CreateChildren(xmlNode))
-//		return FALSE;
-//	m_ppSubPic = nullptr;
-//
-//	SWindow *pChild = GetWindow(GSW_FIRSTCHILD);
-//	while (pChild)
-//	{
-//		if (pChild->IsClass(SSubPic::GetClassName()))
-//		{
-//			m_ppSubPic = (SSubPic*)pChild;
-//			break;
-//		}
-//		pChild = pChild->GetWindow(GSW_NEXTSIBLING);
-//	}
-//}
 
 void SKlinePic::OnPaint(IRenderTarget * pRT)
 {
 	LONGLONG llTmp = GetTickCount64();
 	SPainter pa;
 	SWindow::BeforePaint(pRT, pa);
-
 
 
 	if (!m_bPaintInit)
@@ -1041,7 +992,7 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 		pRT->CreatePen(PS_SOLID, cl, 1, &m_penGrey);
 		pRT->CreateSolidColorBrush(cl, &m_bBrushGrey);
 		pRT->CreateSolidColorBrush(RGBA(0, 0, 0, 255), &m_bBrushBlack);
-		pRT->CreateSolidColorBrush(RGBA(100, 100, 255, 255), &m_bBrushDarkBlue);
+		pRT->CreateSolidColorBrush(RGBA(50, 100, 150, 255), &m_bBrushDarkBlue);
 		pRT->CreatePen(PS_SOLID, RGBA(255, 0, 0, 255), 1, &m_penRed);
 		pRT->CreatePen(PS_SOLID, RGBA(0, 255, 255, 255), 1, &m_penGreen);
 		pRT->CreatePen(PS_SOLID, RGBA(0, 255, 0, 255), 1, &m_penMAGreen);
@@ -1136,7 +1087,7 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 
 		DrawArrow(pRT);
 
-
+		//DrawPrice(pRT);
 		DrawData(pRT);
 
 		CPoint po(m_nMouseX, m_nMouseY);
@@ -1152,14 +1103,6 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 		else
 			DrawMouse(pRT, po, TRUE);
 
-		//if (m_bShowMouseLine)
-		//{
-		//	if (m_bKeyDown)
-		//		DrawKeyDownLine(pRT);
-		//	else
-		//		DrawMouseLine(pRT, po);
-		//}
-		//DrawMouse(pRT, po, TRUE);
 
 	}
 	else
@@ -1170,7 +1113,6 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 		m_pDealList->Paint(pRT);
 	}
 
-	//	LOG_W(L"Êó±ê»æÖÆÊ±¼ä:%I64d,×ÜÊ±¼ä:%I64d\n", llTmp3 - llTmp2, llTmp3 - llTmp);
 	AfterPaint(pRT, pa);
 }
 
@@ -1194,13 +1136,10 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 		pRT->SelectObject(oldPen);
 	}
 	pRT->SetTextColor(RGBA(255, 0, 0, 255));
-	//	pRT->DrawText(L"ÄãºÃdfsdfsdf", -1, m_rcFit, DT_SINGLELINE | DT_LEFT);
-	//	pRT->TextOut(m_rcFit.left + 10, m_rcFit.top + 10, L"ÄãºÃ", 4);
 
 	//kÏßÇøºáÏòÐéÏß
 	COLORREF clRed = RGB(255, 0, 0);
 	HDC pdc = pRT->GetDC();
-	//	SetBkColor(pdc, RGBA(255, 0, 0, 0xff));
 	for (int i = 0; i < nYoNum - 1; i++)
 	{
 		int nY = m_rcMain.top + ((m_rcMain.bottom - m_rcMain.top - 20) / (nYoNum - 1) * i) + 20;
@@ -1237,14 +1176,6 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 	}
 	pRT->ReleaseDC(pdc);
 
-	/*
-	//kÏßÇøºáÖáÎ»ÖÃËùÔÚy×ø±ê
-	int nlo = m_rcUpper.bottom / nYoNum * (nYoNum - 1) - 5 - m_rcUpper.bottom;
-	if (nlo > 15 || nlo < -15)
-	{
-	SStringW strf1 = GetYPrice(m_rcUpper.bottom);
-	pRT->TextOut(m_rcUpper.left -RC_LEFT + 8 , m_rcUpper.bottom - 5, strf1, -1);
-	}*/
 
 	//»­Ö¸±êÇø
 	if (m_bShowVolume || m_bShowAmount)
@@ -1261,8 +1192,6 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			//pts[4] = pts[0];
 			pRT->DrawLines(pts + 1, 3);
 			pRT->SelectObject(oldPen);
-			//DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, m_rcVolume.top, m_rcImage.left, m_rcVolume.top + 18), L"³É½»Á¿", RGBA(255, 0, 0, 255), DT_CENTER);
-			//DrawTextonPic(pRT, CRect(m_rcMain.right, m_rcVolume.top, m_rcImage.right + RC_RIGHT - 2, m_rcVolume.top + 18), L"½ð¶î", RGBA(255, 0, 0, 255), DT_CENTER);
 
 		}
 
@@ -1284,10 +1213,11 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 			int nY = m_rcVolume.bottom - ((m_rcVolume.bottom - m_rcVolume.top - 25) / 2 * i);
 			if (i == 2)
 				nY -= 5;
-			for (int j = m_rcVolume.left + 1; j < m_rcVolume.right; j += 3)
-				::SetPixelV(pdc, j, nY, clRed);		//	»®ÐéÏß
+			if (i == 1)
+				for (int j = m_rcVolume.left + 1; j < m_rcVolume.right; j += 3)
+					::SetPixelV(pdc, j, nY, clRed);		//	»®ÐéÏß
 
-													//±ê×¢
+														//±ê×¢
 
 			if (m_bDataInited)
 			{
@@ -1297,8 +1227,6 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 				else
 					sr = GetFuTuYPrice(nY, true);
 
-				//DrawTextonPic(pRT, CRect(m_rcMain.left - RC_LEFT + 2, nY - 9, m_rcImage.left, nY + 9), sl, RGBA(255, 0, 0, 255), DT_CENTER);
-				//SStringW sr = GetFuTuYPrice(nY, true);
 				DrawTextonPic(pRT, CRect(m_rcMain.right, nY - 9, m_rcImage.right + RC_RIGHT - 2, nY + 9), sr, RGBA(255, 255, 0, 255), DT_CENTER);
 
 			}
@@ -1366,14 +1294,75 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 
 }
 
+void SKlinePic::DrawPrice(IRenderTarget * pRT)
+{
+	int nLen = m_rcMain.bottom - m_rcMain.top;
+	int nYoNum = 9;		//yÖá±êÊ¾ÊýÁ¿ 9 ´ú±í»­8¸ùÏß
+	for (int i = 0; i < nYoNum - 1; i++)
+	{
+		int nY = m_rcMain.top + ((m_rcMain.bottom - m_rcMain.top - 20) / (nYoNum - 1) * i) + 20;
+		//kÏßÇøyÖá¼ÓÖá±ê
+		if (m_bDataInited)
+		{
+
+			SStringW s1 = GetYPrice(nY);
+			double fPrice = _wtof(s1);
+			DrawTextonPic(pRT, CRect(m_rcMain.right + 2, nY - 9, m_rcMain.right + RC_RIGHT, nY + 16),
+				s1, RGBA(255, 0, 0, 255), DT_CENTER);
+		}
+	}
+	if (m_bShowVolume || m_bShowAmount)
+	{
+		for (int i = 1; i < 3; i++)
+		{
+
+			int nY = m_rcVolume.top + 20;
+
+			{
+				int nY = m_rcVolume.bottom - ((m_rcVolume.bottom - m_rcVolume.top - 25) / 2 * i);
+				if (i == 2)
+					nY -= 5;													//±ê×¢
+
+				if (m_bDataInited)
+				{
+					SStringW sr;
+					if (m_bShowVolume)
+						sr = GetFuTuYPrice(nY);
+					else
+						sr = GetFuTuYPrice(nY, true);
+
+					DrawTextonPic(pRT, CRect(m_rcMain.right, nY - 9, m_rcImage.right + RC_RIGHT - 2, nY + 9),
+						sr, RGBA(255, 255, 0, 255), DT_CENTER);
+
+				}
+			}
+		}
+	}
+
+	if (m_bShowMacd)
+	{
+		int nWidthMacd = (m_rcMACD.Height() - 20) / 4;
+
+		for (int i = 0; i < 4; i++)
+		{
+			int nY = m_rcMACD.top + 20 + nWidthMacd*i;
+			if (m_bDataInited)
+			{
+				SStringW s1 = GetMACDYPrice(nY);
+				DrawTextonPic(pRT, CRect(m_rcMACD.right + 2, nY - 9, m_rcMACD.right + RC_RIGHT, nY + 9),
+					s1, RGBA(255, 0, 0, 255), DT_CENTER);
+			}
+
+		}
+	}
+
+}
+
 
 
 void SKlinePic::GetMaxDiff()		//ÅÐ¶Ï×ø±ê×î´ó×îÐ¡ÖµºÍkÏßÌõÊý
 {
 	int nLen = m_rcMain.right - m_rcMain.left - RC_RIGHT_BACK;	//ÅÐ¶ÏÊÇ·ñ³¬³ö·¶Î§
-	//int  nJiange = 2;
-	//if (m_nJiange)
-	//	nJiange = 0;
 	m_nMaxKNum = nLen / TOTALZOOMWIDTH;
 	m_nFirst = 0;
 	m_nEnd = m_pAll->nTotal;
@@ -1436,9 +1425,6 @@ void SKlinePic::GetMaxDiff()		//ÅÐ¶Ï×ø±ê×î´ó×îÐ¡ÖµºÍkÏßÌõÊý
 		if (data[j].high > fMax)
 			fMax = data[j].high;
 	}
-	//¿´Ö¸±êÖÐµÄÊýÖµ´óÐ¡
-	//	if (dk == 0)
-	//	{
 
 	if (m_bShowMA)
 	{
@@ -1572,9 +1558,19 @@ BOOL SKlinePic::IsInRect(int x, int y, int nMode)	//ÊÇ·ñÔÚ×ø±êÖÐ,0ÎªÈ«²¿,1ÎªÉÏ·½
 	case 2:
 		prc = &m_rcVolume;
 		break;
+	case 3:
+	{
+		CRect rc = m_rcMain;
+		if (!m_rcMACD.IsRectNull())
+			rc.bottom = m_rcMACD.bottom;
+		else if (!m_rcVolume.IsRectNull())
+			rc.bottom = m_rcVolume.bottom;
+		prc = &rc;
+	}
 	default:
 		return FALSE;
 	}
+
 	if (x >= prc->left && x <= prc->right &&
 		y >= prc->top  && y <= prc->bottom)
 		return TRUE;
@@ -1585,9 +1581,9 @@ int SKlinePic::GetFuTuYPos(double fDiff, bool bAmo)	//»ñµÃ¸½Í¼yÎ»ÖÃ
 {
 	double fPos = 0;
 	if (!bAmo)
-		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fVolMax))  * (m_rcVolume.Height() - 25) + RC_MAX + 20;
+		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fVolMax))  * (m_rcVolume.Height() - 25) + 25;
 	else
-		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fAmountMax))  * (m_rcVolume.Height() - 25) + RC_MAX + 20;
+		fPos = m_rcVolume.top + (1 - (fDiff / m_pAll->fAmountMax))  * (m_rcVolume.Height() - 25) + 25;
 	int nPos = (int)fPos;
 	return nPos;
 }
@@ -1721,16 +1717,20 @@ SStringW SKlinePic::GetYPrice(int nY)
 	double fPriceDiff = m_pAll->fMax - m_pAll->fMin;
 	double fDiff = m_pAll->fMin + (double)(m_rcMain.bottom - nY - RC_MIN)
 		/ nHeight*fPriceDiff;
-	strRet.Format(SDECIMAL, fDiff);
+	if (fDiff < 1000)
+		strRet.Format(SDECIMAL, fDiff);
+	else
+		strRet.Format(L"%.0f", fDiff);
+
 	return strRet;
 
 }
 
 SStringW SKlinePic::GetAllYPrice(int nY)
 {
-	if (nY >= m_rcMain.top && nY <= m_rcMain.bottom)
+	if (nY >= m_rcMain.top + 20 && nY <= m_rcMain.bottom)
 		return  GetYPrice(nY);
-	if (nY >= m_rcMACD.top && nY <= m_rcMACD.bottom)
+	if (nY >= m_rcMACD.top + 20 && nY <= m_rcMACD.bottom)
 		return  GetMACDYPrice(nY);
 	return SStringW(L"");
 }
@@ -1770,7 +1770,6 @@ void SKlinePic::OnMouseMove(UINT nFlags, CPoint point)
 	AfterPaint(pRT, pa);
 	ReleaseRenderTarget(pRT);
 
-	//	LOG_W(L"on---ms:%d\n", GetTickCount() - nTick);
 }
 
 void SKlinePic::OnLButtonDown(UINT nFlags, CPoint point)
@@ -1791,7 +1790,6 @@ void SKlinePic::OnTimer(char cTimerID)
 
 int SKlinePic::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	//	SWindow::SetTimer(1, 1000);
 	return 0;
 }
 
@@ -1807,9 +1805,6 @@ void SKlinePic::OnMouseLeave()
 
 int SKlinePic::GetXData(int nx) {	//»ñÈ¡Êó±êÏÂµÄÊý¾Ýid
 
-	//int nJiange = 2;
-	//if (m_nJiange)
-	//	nJiange = 0;
 	float fn = (float)(nx - m_rcMain.left) /
 		(float)TOTALZOOMWIDTH;
 	int n = (int)fn;
@@ -1822,9 +1817,6 @@ int SKlinePic::GetXData(int nx) {	//»ñÈ¡Êó±êÏÂµÄÊý¾Ýid
 
 int SKlinePic::GetXPos(int nx)
 {
-	//int nJiange = 2;
-	//if (m_nJiange)
-	//	nJiange = 0;
 
 	int nPos = nx * TOTALZOOMWIDTH
 		+ 1 + m_rcMain.left;
@@ -1833,7 +1825,8 @@ int SKlinePic::GetXPos(int nx)
 }
 
 
-void SKlinePic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color, UINT uFormat)
+void SKlinePic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str,
+	COLORREF color, UINT uFormat, DWORD rop)
 {
 	CAutoRefPtr<IRenderTarget> pMemRT;
 	GETRENDERFACTORY->CreateRenderTarget(&pMemRT, rc.right - rc.left, rc.bottom - rc.top);
@@ -1841,9 +1834,22 @@ void SKlinePic::DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLOR
 	pMemRT->SelectObject(m_pFont12, (IRenderObj**)&oldFont);
 
 	pMemRT->SetTextColor(color);				//×ÖÎª°×É«
-	pMemRT->DrawTextW(str, wcslen(str), CRect(0, 0, rc.right - rc.left, rc.bottom - rc.top), uFormat);
-	pRT->BitBlt(rc, pMemRT, 0, 0, SRCINVERT);
+	CRect newRc(0, 0, rc.right - rc.left, rc.bottom - rc.top);
+	pMemRT->DrawTextW(str, wcslen(str), newRc, uFormat);
+	pRT->BitBlt(rc, pMemRT, 0, 0, rop);
 
+}
+
+CRect SKlinePic::GetTextDrawRect(IRenderTarget * pRT, SStringW str, CRect rc)
+{
+	CAutoRefPtr<IRenderTarget> pMemRT;
+	GETRENDERFACTORY->CreateRenderTarget(&pMemRT, rc.right - rc.left, rc.bottom - rc.top);
+	CAutoRefPtr<IFont> oldFont;
+	pMemRT->SelectObject(m_pFont12, (IRenderObj**)&oldFont);
+	CRect dstRc(0, 0, rc.right - rc.left, rc.bottom - rc.top);
+
+	pMemRT->DrawTextW(str, wcslen(str), dstRc, DT_CALCRECT);
+	return dstRc;
 }
 
 void SKlinePic::DrawKeyDownLine(IRenderTarget * pRT, bool bClearTip)
@@ -1854,9 +1860,6 @@ void SKlinePic::DrawKeyDownLine(IRenderTarget * pRT, bool bClearTip)
 	//»­Êó±êÏß
 	if (m_pAll->nTotal <= 0)
 		return;
-	//int  nJianGe = 2;
-	//if (m_nJiange)
-	//	nJianGe = 0;
 
 	int nx = m_nMouseLinePos - m_nFirst;
 	int x = nx * TOTALZOOMWIDTH
@@ -1888,8 +1891,9 @@ void SKlinePic::DrawKeyDownLine(IRenderTarget * pRT, bool bClearTip)
 			DrawMouseKlineInfo(pRT, data, po);
 		m_bClearTip = false;
 	}
-
+	DrawPrice(pRT);
 	DrawMovePrice(pRT, m_nMouseY, false);
+	DrawPrice(pRT);
 	DrawMovePrice(pRT, po.y, true);
 
 	DrawTime(pRT);
@@ -1952,7 +1956,9 @@ void SKlinePic::DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint)
 	}
 
 	//ÏÔÊ¾ºá×ø±êËùÔÚÊýÖµ
+	DrawPrice(pRT);
 	DrawMovePrice(pRT, m_nMouseY, false);
+	DrawPrice(pRT);
 	DrawMovePrice(pRT, p.y, true);
 
 
@@ -1985,9 +1991,6 @@ void SKlinePic::DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint)
 
 void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ±¼äºÍ±êÊ¾Êý×Ö
 {
-	//int nJiange = 2;
-	//if (m_nJiange)
-	//	nJiange = 0;
 
 	int nXpre = 0;  //µÚÒ»¸ùÊúÏßµÄxÖáÎ»ÖÃ
 	int nMaX = (m_nEnd - m_nFirst - 1)*TOTALZOOMWIDTH
@@ -2015,25 +2018,30 @@ void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ
 		int preX = (nPosMx[nPosCount - 1]) * TOTALZOOMWIDTH +
 			1 + m_rcMain.left + (ZOOMWIDTH / 2);
 		//¼ÓÊ±¼ä
-		if ((x - nXpre - RC_LEFT >= 10 && x < nMaX - 200) || (i == 0 && m_nEnd - m_nFirst > 9) || i == m_nEnd - m_nFirst - 1)
+		if ((x - nXpre - RC_LEFT >= 40 && x < nMaX - 200) || (i == 0 && m_nEnd - m_nFirst > 9) || i == m_nEnd - m_nFirst - 1)
 		{
 			//¼ÓÊ±¼ä
-			SStringW strTime, strDate;
-			strTime.Format(L"%02d:%02d", m_pAll->data[i + m_nFirst].time / 100,
-				m_pAll->data[i + m_nFirst].time % 100);
-			//¼ÓÈÕÆÚ
-			strDate.Format(L"%04d-%02d-%02d", m_pAll->data[i + m_nFirst].date / 10000,
-				m_pAll->data[i + m_nFirst].date % 10000 / 100,
-				m_pAll->data[i + m_nFirst].date % 100);
+			SStringW strDate;
+			if (m_nPeriod != Period_1Day)
+			{
+				strDate.Format(L"%02d/%02d/%02d %02d:%02d",
+					m_pAll->data[i + m_nFirst].date / 10000 % 100,
+					m_pAll->data[i + m_nFirst].date % 10000 / 100,
+					m_pAll->data[i + m_nFirst].date % 100,
+					m_pAll->data[i + m_nFirst].time / 100,
+					m_pAll->data[i + m_nFirst].time % 100);
+				DrawTextonPic(pRT, CRect(x, m_rcImage.bottom + 5, x + 120, m_rcImage.bottom + 20), strDate);
+			}
+			else
+			{
+				strDate.Format(L"%02d/%02d/%02d", m_pAll->data[i + m_nFirst].date / 10000 % 100,
+					m_pAll->data[i + m_nFirst].date % 10000 / 100,
+					m_pAll->data[i + m_nFirst].date % 100);
 
-			//			pRT->TextOut(x - 25, m_rcImage.bottom + 5, strTemp, -1);
-			DrawTextonPic(pRT, CRect(x - 25, m_rcImage.bottom + 5, x + 35, m_rcImage.bottom + 20), strTime);
-			//			pRT->TextOut(x - 25, m_rcImage.bottom + 5 + 10, strTemp, -1);
-			DrawTextonPic(pRT, CRect(x - 35, m_rcImage.bottom + 5 + 15, x + 45, m_rcImage.bottom + 35), strDate);
+				DrawTextonPic(pRT, CRect(x, m_rcImage.bottom + 5, x + 80, m_rcImage.bottom + 20), strDate);
 
-			//¼ÓÊúÏß
-			//		CPen pen2(PS_SOLID,1,RGB(112,128,144));	//»­±Êµ÷ÕûÎª°×É«
-			//			pRT->SelectObject(m_penDotRed);
+			}
+
 
 			if (bFromOnPaint)
 			{
@@ -2041,9 +2049,6 @@ void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ
 				{
 					pts[0].SetPoint(x, m_rcImage.top + 20);
 					pts[1].SetPoint(x, m_rcImage.bottom);
-					//					pRT->DrawLines(pts, 2);
-					//					for (int j = m_rcImage.top + 19; j < m_rcImage.bottom; j += 3)
-					//						::SetPixelV(pdc, x, j, RGB(255, 0, 0));		//	»®ÐéÏß
 				}
 
 			}
@@ -2057,26 +2062,8 @@ void SKlinePic::DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint) //»­ÊúÏßÊ±¼äÖáÊ
 
 void SKlinePic::DrawData(IRenderTarget * pRT)
 {
-	//int  nJianGe = 2;
-	//if (m_nJiange)
-	//	nJianGe = 0;
 	if (m_pAll->nTotal <= 0)
 		return;
-
-	//	::EnterCriticalSection(&m_cs);
-
-	//if (m_bShowMacd)
-	//{
-	//	for (int i = 0; i < 4; i++)
-	//	{
-	//		int nY = m_rcMACD.top + 20 + (m_rcMACD.Height() - 20) / 4 * i;
-
-	//		//kÏßÇøyÖá¼ÓÖá±ê
-	//		SStringW s1 = GetMACDYPrice(nY);
-
-	//		DrawTextonPic(pRT, CRect(m_rcMACD.left - RC_LEFT + 5, nY - 9, m_rcMACD.left, nY + 9), s1, RGBA(255, 0, 0, 255), DT_CENTER);
-	//	}
-	//}
 
 
 	CPoint pts[5];
@@ -2114,11 +2101,6 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 		auto data = m_pAll->data[nOffset];
 		int nVolume = m_pAll->data[nOffset].vol;
 		double fAmount = m_pAll->data[nOffset].amount;
-		//if (!(m_rgGroup != Group_Stock && m_strSubIns[0] == '0'))
-		//	nVolume = ceil(nVolume / 100);
-		//int nVolume1;
-		//if (m_nFirst + i > 0)
-		//	nVolume1 = m_pAll->data[nOffset - 1].vol;
 
 
 		if (!m_bShowBandTarget)
@@ -2189,8 +2171,6 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 					pRT->DrawRectangle(CRect(x, yclose, x + ZOOMWIDTH,
 						yopen == yclose ? yopen + 1 : yopen));
 				else
-					//pRT->FillSolidRect(CRect(x, yclose, x + m_nKWidth, 
-					//	yopen == yclose ? (yopen - 1) : yopen), RGBA(0, 255, 255, 255));
 					pRT->FillSolidRect(CRect(x, yopen == yclose ? yopen - 1 : yopen
 						, x + ZOOMWIDTH, yclose)
 						, RGBA(0, 255, 255, 255));
@@ -2614,13 +2594,13 @@ void SKlinePic::DrawMouseKlineInfo(IRenderTarget * pRT, const KlineType  &KlData
 void SKlinePic::DataProc()
 {
 	//m_bWaitData = false;
-	SingleDataProc();
+	DataInit();
+	KlineDataWithHis();
+	KlineDataUpdate();
 	m_nBandCount = 0;
 	m_nMacdCount = 0;
 	m_bDataInited = true;
 	UpdateData();
-	//Invalidate();
-	//SetTimer(1, 1000);
 }
 
 
@@ -2711,7 +2691,7 @@ BOOL SKlinePic::CheckTargetSelectIsClicked(CPoint pt)
 	return FALSE;
 }
 
-void SOUI::SKlinePic::CloseSinglePointWnd()
+void SKlinePic::CloseSinglePointWnd()
 {
 	::EnterCriticalSection(&m_csSub);
 	SSubTargetPic** ppTmpSubPicArr = new SSubTargetPic*[m_nSubPicNum - 1];
@@ -2728,7 +2708,7 @@ void SOUI::SKlinePic::CloseSinglePointWnd()
 	Invalidate();
 }
 
-void SOUI::SKlinePic::SetSelPointWndInfo(ShowPointInfo & info, SStringA strTitle)
+void SKlinePic::SetSelPointWndInfo(ShowPointInfo & info, SStringA strTitle)
 {
 	m_ppSubPic[m_nChangeNum]->SetSubPicInfo(info);
 	m_ppSubPic[m_nChangeNum]->SetSubTitleInfo(strTitle);
@@ -2740,9 +2720,6 @@ void SKlinePic::DrawTickMainData(IRenderTarget * pRT)	//»­Ö÷Í¼tick
 	LONGLONG llTmp1 = GetTickCount64();
 	if (m_pAll == nullptr || m_pAll->nTotal <= 0)
 		return;
-	//int  nJianGe = 1;
-	//if (m_nKWidth > 4)
-	//	nJianGe = 2;
 
 	CPoint pts[10000];
 	int nPNum = 0;
@@ -2793,12 +2770,8 @@ void SKlinePic::DrawTickMainData(IRenderTarget * pRT)	//»­Ö÷Í¼tick
 
 void SKlinePic::DrawVolData(IRenderTarget * pRT)
 {
-	//	LONGLONG llTmp1 = GetTickCount64();
 	if (m_pAll == nullptr || m_pAll->nTotal <= 0)
 		return;
-	//int  nJianGe = 1;
-	//if (m_nKWidth > 4)
-	//	nJianGe = 2;
 
 	CPoint pts[10000];
 	int nPNum = 0, x = 0;
@@ -2830,8 +2803,6 @@ void SKlinePic::DrawVolData(IRenderTarget * pRT)
 
 	}
 	pRT->DrawLines(pts, nPNum);
-	//	}
-	//²¹ºìÏß
 	pRT->SelectObject(m_penRed);
 	pts[0].SetPoint(m_rcVolume.left, m_rcVolume.bottom);
 	pts[1].SetPoint(m_rcVolume.right, m_rcVolume.bottom);
@@ -2914,9 +2885,6 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 		if (m_nKWidth == 1)
 		{
-			//if (m_nJiange )
-			//{
-				//m_nJiange = true;
 			if (m_nJiange > 0)
 				--m_nJiange;
 			else
@@ -2927,7 +2895,6 @@ void SKlinePic::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			::LeaveCriticalSection(&m_csSub);
 
 			Invalidate();
-			//}
 			break;
 		}
 		m_nKWidth -= 2;
@@ -3030,7 +2997,7 @@ void SKlinePic::DrawMouseLine(IRenderTarget * pRT, CPoint p)
 	int  nMode = SetROP2(hdc, R2_NOTXORPEN);
 	MoveToEx(hdc, m_nMouseX, m_rcMain.top + 20, NULL);	LineTo(hdc, m_nMouseX, m_rcMain.bottom);	//ÊúÏß
 	MoveToEx(hdc, p.x, m_rcMain.top + 20, NULL);			LineTo(hdc, p.x, m_rcMain.bottom);
-	if (m_bShowVolume)
+	if (m_bShowVolume || m_bShowAmount)
 	{
 		MoveToEx(hdc, m_nMouseX, m_rcVolume.top, NULL);	LineTo(hdc, m_nMouseX, m_rcVolume.bottom);
 		MoveToEx(hdc, p.x, m_rcVolume.top, NULL);			LineTo(hdc, p.x, m_rcVolume.bottom);
@@ -3049,52 +3016,86 @@ void SKlinePic::DrawMouseLine(IRenderTarget * pRT, CPoint p)
 	pRT->ReleaseDC(hdc);
 
 
-	//m_nMouseX = p.x;
-	//m_nMouseY = p.y;
-
 }
 
 void SKlinePic::DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew)
 {
-	pRT->FillRectangle(CRect(x - 40, m_rcImage.bottom + 2, x + 40, m_rcImage.bottom + 34));
 
+	CRect rc(x + 2, m_rcImage.bottom + 2, x + 120, m_rcImage.bottom + 20);
 	if (bNew)
 	{
+		if (date == 0)
+			return;
 		SStringW str;
-		str.Format(L"%04d-%02d-%02d  %02d:%02d", date / 10000,
-			date % 10000 / 100,
-			date % 100,
-			time / 100,
-			time % 100);
-		DrawTextonPic(pRT, CRect(x - 35, m_rcImage.bottom + 2, x + 35, m_rcImage.bottom + 35), str, RGBA(255, 255, 255, 255), 0);
-	}
+		if (m_nPeriod != Period_1Day)
+		{
+			str.Format(L"%02d/%02d/%02d  %02d:%02d", date / 10000 % 100,
+				date % 10000 / 100,
+				date % 100,
+				time / 100,
+				time % 100);
 
-}
-
-void SKlinePic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
-{
-	//pRT->SelectObject(m_bBrushBlack);
-	//if (bNew)
-	//	pRT->FillRectangle(CRect(m_rcMain.right + 1, m_rcMain.top, m_rcMain.right + RC_RIGHT, m_rcMain.bottom /*+ RC_BOTTOM - 10*/));
-
-	if (y >= m_rcVolume.top && y <= m_rcVolume.bottom)
-	{
-		SStringW sr = GetFuTuYPrice(y);
-
-		if (m_bShowVolume)
-			sr = GetFuTuYPrice(y);
+		}
 		else
-			sr = GetFuTuYPrice(y, true);
-		DrawTextonPic(pRT, CRect(m_rcMain.right + 2, y + -6, m_rcMain.right + RC_RIGHT, y + 15), sr);
+		{
+			str.Format(L"%02d/%02d/%02d", date / 10000 % 100,
+				date % 10000 / 100,
+				date % 100,
+				time / 100,
+				time % 100);
+		}
+		CRect drawRc = GetTextDrawRect(pRT, str, rc);
+		drawRc.SetRect(x, m_rcImage.bottom + 2, x + drawRc.right + 4, m_rcImage.bottom + 20);
+		CAutoRefPtr<IBrush> oldBrush;
+		pRT->SelectObject(m_bBrushDarkBlue, (IRenderObj**)&oldBrush);
+		pRT->FillRectangle(drawRc);
+		pRT->SelectObject(oldBrush);
+		drawRc.left += 2;
+		DrawTextonPic(pRT, drawRc,
+			str, RGBA(255, 255, 255, 255), DT_SINGLELINE | DT_VCENTER, MERGECOPY);
 
 	}
 	else
 	{
-		SStringW str = GetAllYPrice(y);
-		if (str != L"")
-			DrawTextonPic(pRT, CRect(m_rcMain.right + 2, y + -6, m_rcMain.right + RC_RIGHT, y + 15), str);
-
+		rc.left -= 2;
+		rc.right = min(rc.right, m_rcImage.right + RC_RIGHT - 1);
+		pRT->FillRectangle(rc);
 	}
+}
+
+void SKlinePic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
+{
+	CRect rc(m_rcMain.right + 1, y - 15, m_rcMain.right + RC_RIGHT - 1, y);
+	if (bNew)
+	{
+		SStringW sr;
+		if (y >= m_rcVolume.top + 20 && y <= m_rcVolume.bottom)
+		{
+			sr = GetFuTuYPrice(y);
+
+			if (m_bShowVolume)
+				sr = GetFuTuYPrice(y);
+			else
+				sr = GetFuTuYPrice(y, true);
+
+		}
+		else
+			sr = GetAllYPrice(y);
+
+		if (sr != L"")
+		{
+			CAutoRefPtr<IBrush> oldBrush;
+			pRT->SelectObject(m_bBrushDarkBlue, (IRenderObj**)&oldBrush);
+			pRT->FillRectangle(rc);
+			pRT->SelectObject(oldBrush);
+			rc.left += 1;
+			rc.right -= 1;
+			DrawTextonPic(pRT, rc, sr,
+				RGBA(255, 255, 255, 255), DT_SINGLELINE | DT_CENTER, MERGECOPY);
+		}
+	}
+	else
+		pRT->FillRectangle(rc);
 
 }
 
@@ -3237,15 +3238,8 @@ void SKlinePic::DataInit()
 }
 
 
-void SKlinePic::SingleDataProc()
-{
-	DataInit();
-	SingleDataWithHis();
-	SingleDataUpdate();
 
-}
-
-void SKlinePic::SingleDataWithHis()
+void SKlinePic::KlineDataWithHis()
 {
 
 	SYSTEMTIME st;
@@ -3256,71 +3250,32 @@ void SKlinePic::SingleDataWithHis()
 
 	for (auto &data : dataVec)
 	{
-		m_pAll->data[count++] = data;
+		m_pAll->srcData[count] = data;
+		if (!m_bIsStockIndex)
+		{
+			if (eRT_NoRehab == m_calcRehabType)
+				m_pAll->data[count] = m_pAll->srcData[count];
+			else if (eRT_FrontRehab_Cash == m_calcRehabType)
+				m_pAll->data[count] = FrontRehabCash(m_pAll->srcData[count], m_nFTRehabTime);
+			else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+				m_pAll->data[count] = FrontRehabReInv(m_pAll->srcData[count], m_nFTRehabTime);
+			else if (eRT_BackRehab_Cash == m_calcRehabType)
+				m_pAll->data[count] = BackRehabCash(m_pAll->srcData[count], m_nFTRehabTime);
+			else if (eRT_BackRehab_ReInv == m_calcRehabType)
+				m_pAll->data[count] = BackRehabReInv(m_pAll->srcData[count], m_nFTRehabTime);
+		}
+		++count;
 		KlineMAProc(count);
 		VolMAProc(count);
 		AmoMAProc(count);
 	}
 	m_pAll->nTotal = count;
 
-	//bool bStart = false;
-	//std::vector<KlineType> recVec;
-	//if (m_nPeriod != 1440)
-	//{
-	//	if (GetFileKlineData(m_strSubIns, recVec))
-	//	{
-	//		int VecSize = recVec.size();
-	//		int count = 0;
-	//		for (auto iter = recVec.begin(); iter != recVec.end(); iter++)
-	//		{
-	//			if (m_nPeriod == 1)
-	//			{
-	//				if (recVec.end() - iter < 4700)		//1·ÖÖÓKÏß
-	//				{
-	//					m_pAll->data[count++] = *iter;
-	//					KlineMAProc(count);
-	//				}
-
-	//			}
-	//			else
-	//			{
-
-	//				if (recVec.end() - iter < 4700 * m_nPeriod)		//5·ÖÖÓKÏß
-	//				{
-	//					if (GenerateMultiMinFromOne(count, *iter, m_nPeriod))
-	//						KlineMAProc(++count);
-	//				}
-
-	//			}
-	//		}
-	//		m_pAll->nTotal = count;
-	//		if (!recVec.empty())
-	//			m_pAll->nLast1MinTime = recVec.back().time;
-	//	}
-	//}
-	//else
-	//{
-	//	//´¦ÀíÈÕKÏß
-	//	if (GetFileKlineData(m_strSubIns, recVec, true) && !recVec.empty())
-	//	{
-	//		int VecSize = recVec.size();
-	//		int count = 0;
-	//		for (auto iter = recVec.cbegin(); iter != recVec.cend(); iter++)
-	//		{
-	//			if (recVec.cend() - iter < 4700)		//1·ÖÖÓKÏß
-	//			{
-	//				m_pAll->data[count++] = *iter;
-	//				KlineMAProc(count);
-	//			}
-	//		}
-	//		m_pAll->nTotal = count;
-	//	}
-	//}
-
+	
 
 }
 
-void SKlinePic::SingleDataUpdate()
+void SKlinePic::KlineDataUpdate()
 {
 	if (!m_bIsStockIndex)
 	{
@@ -3371,6 +3326,17 @@ void SKlinePic::StockMarket1MinUpdate()
 			auto &kline = m_pAll->data[m_pAll->nTotal - 1];
 			kline.open = kline.high = kline.low = kline.close;
 		}
+		if (eRT_NoRehab == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = m_pAll->srcData[m_pAll->nTotal - 1];
+		else if (eRT_FrontRehab_Cash == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = FrontRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = FrontRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_BackRehab_Cash == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = BackRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_BackRehab_ReInv == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = BackRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+
 		KlineMAProc(m_pAll->nTotal);
 		VolMAProc(m_pAll->nTotal);
 		AmoMAProc(m_pAll->nTotal);
@@ -3397,6 +3363,17 @@ void SKlinePic::StockMarketMultMinUpdate(int nPeriod)
 		else if (ntime >= m_pAll->data[m_pAll->nTotal - 1].time &&
 			m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date) //×îºóÒ»ÌõKÏß²¢²»ÍêÕû
 			StockTickToKline(m_pAll->nTotal - 1, TickVec[i]);
+		if (eRT_NoRehab == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = m_pAll->srcData[m_pAll->nTotal - 1];
+		else if (eRT_FrontRehab_Cash == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = FrontRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = FrontRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_BackRehab_Cash == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = BackRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_BackRehab_ReInv == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = BackRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+
 		KlineMAProc(m_pAll->nTotal);
 		VolMAProc(m_pAll->nTotal);
 		AmoMAProc(m_pAll->nTotal);
@@ -3421,6 +3398,17 @@ void SKlinePic::StockMarketDayUpdate()
 	}
 	else
 		StockTickToDayKline(nDataCount - 1, tick);
+	if (eRT_NoRehab == m_calcRehabType)
+		m_pAll->data[m_pAll->nTotal - 1] = m_pAll->srcData[m_pAll->nTotal - 1];
+	else if (eRT_FrontRehab_Cash == m_calcRehabType)
+		m_pAll->data[m_pAll->nTotal - 1] = FrontRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+	else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+		m_pAll->data[m_pAll->nTotal - 1] = FrontRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+	else if (eRT_BackRehab_Cash == m_calcRehabType)
+		m_pAll->data[m_pAll->nTotal - 1] = BackRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+	else if (eRT_BackRehab_ReInv == m_calcRehabType)
+		m_pAll->data[m_pAll->nTotal - 1] = BackRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+
 	KlineMAProc(m_pAll->nTotal);
 	VolMAProc(m_pAll->nTotal);
 	AmoMAProc(m_pAll->nTotal);
@@ -3428,7 +3416,7 @@ void SKlinePic::StockMarketDayUpdate()
 
 void SKlinePic::StockTickToKline(int nCount, CommonStockMarket & tick, bool bNewLine, int time)
 {
-	auto &kline = m_pAll->data[nCount];
+	auto &kline = m_pAll->srcData[nCount];
 	if (bNewLine)
 	{
 		kline.close = tick.LastPrice;
@@ -3455,7 +3443,7 @@ void SKlinePic::StockTickToKline(int nCount, CommonStockMarket & tick, bool bNew
 
 void SKlinePic::StockTickToDayKline(int nCount, CommonStockMarket & tick)
 {
-	auto &kline = m_pAll->data[nCount];
+	auto &kline = m_pAll->srcData[nCount];
 	kline.close = tick.LastPrice;
 	kline.open = tick.OpenPrice;
 	kline.high = tick.HighPrice;
@@ -3512,8 +3500,6 @@ void SKlinePic::IndexMarketMultMinUpdate(int nPeriod)
 		if (m_pAll->nTotal == 0 || ntime > m_pAll->data[m_pAll->nTotal - 1].time ||
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
-			//int nLeft = ntime % 100 % nPeriod;
-			//ntime -= nLeft;
 			IndexTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
 			m_pAll->nTotal++;
 		}
@@ -3662,7 +3648,7 @@ void SKlinePic::KlineMAProc(int nCount)
 
 }
 
-void SOUI::SKlinePic::VolMAProc(int nCount)
+void SKlinePic::VolMAProc(int nCount)
 {
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 	{
@@ -3678,7 +3664,7 @@ void SOUI::SKlinePic::VolMAProc(int nCount)
 
 }
 
-void SOUI::SKlinePic::AmoMAProc(int nCount)
+void SKlinePic::AmoMAProc(int nCount)
 {
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 	{
@@ -3694,17 +3680,130 @@ void SOUI::SKlinePic::AmoMAProc(int nCount)
 
 }
 
-void SKlinePic::ReProcKlineData(bool bSingleNeedProc)
+KlineType SKlinePic::FrontRehabCash(KlineType & srcKline, int nDate)
 {
-	if (!bSingleNeedProc)
-		return;
-	m_bDataInited = false;
-	m_pAll->clear();
-	m_nUsedTickCount = 0;
-	SingleDataWithHis();
-	SingleDataUpdate();
+	if (srcKline.date < nDate)
+		return srcKline;
+	KlineType dstKline(srcKline);
+	for (int i = 0; i < m_RehabInfo.size(); ++i)
+	{
+		if (m_RehabInfo[i].exDivDate < nDate)
+			break;
+		if (dstKline.date >= m_RehabInfo[i].exDivDate)
+			break;
+		if (m_RehabInfo[i].allotmentRatio == 0)
+		{
+			if (m_RehabInfo[i].perCashDiv != 0)
+			{
+				dstKline.open -= m_RehabInfo[i].perCashDiv;
+				dstKline.high -= m_RehabInfo[i].perCashDiv;
+				dstKline.low -= m_RehabInfo[i].perCashDiv;
+				dstKline.close -= m_RehabInfo[i].perCashDiv;
+			}
 
-	m_bDataInited = true;
+			double fRatio = m_RehabInfo[i].perShareDivRatio + m_RehabInfo[i].perShareTransRatio;
+			if (fRatio != 0)
+			{
+				fRatio += 1;
+				dstKline.open /= fRatio;
+				dstKline.high /= fRatio;
+				dstKline.low /= fRatio;
+				dstKline.close /= fRatio;
+			}
+		}
+		else
+		{
+			dstKline.open /= m_RehabInfo[i].adjFactor;
+			dstKline.high /= m_RehabInfo[i].adjFactor;
+			dstKline.low /= m_RehabInfo[i].adjFactor;
+			dstKline.close /= m_RehabInfo[i].adjFactor;
+		}
+
+
+	}
+	return dstKline;
+}
+
+KlineType SKlinePic::FrontRehabReInv(KlineType & srcKline, int nDate)
+{
+	if (srcKline.date < nDate)
+		return srcKline;
+	KlineType dstKline(srcKline);
+	for (int i = 0; i < m_RehabInfo.size(); ++i)
+	{
+		if (m_RehabInfo[i].exDivDate < nDate)
+			break;
+		if (dstKline.date >= m_RehabInfo[i].exDivDate)
+			break;
+		dstKline.open /= m_RehabInfo[i].adjFactor;
+		dstKline.high /= m_RehabInfo[i].adjFactor;
+		dstKline.low /= m_RehabInfo[i].adjFactor;
+		dstKline.close /= m_RehabInfo[i].adjFactor;
+	}
+	return dstKline;
+}
+
+KlineType SKlinePic::BackRehabCash(KlineType & srcKline, int nDate)
+{
+	if (srcKline.date < nDate)
+		return srcKline;
+	KlineType dstKline(srcKline);
+	for (int i = 0; i < m_RehabInfo.size(); ++i)
+	{
+		if (m_RehabInfo[i].exDivDate < nDate)
+			break;
+		if (dstKline.date < m_RehabInfo[i].exDivDate)
+			continue;
+		if (m_RehabInfo[i].allotmentRatio == 0)
+		{
+			double fRatio = m_RehabInfo[i].perShareDivRatio + m_RehabInfo[i].perShareTransRatio;
+			if (fRatio != 0)
+			{
+				fRatio += 1;
+				dstKline.open *= fRatio;
+				dstKline.high *= fRatio;
+				dstKline.low *= fRatio;
+				dstKline.close *= fRatio;
+			}
+
+			if (m_RehabInfo[i].perCashDiv != 0)
+			{
+				dstKline.open += m_RehabInfo[i].perCashDiv;
+				dstKline.high += m_RehabInfo[i].perCashDiv;
+				dstKline.low += m_RehabInfo[i].perCashDiv;
+				dstKline.close += m_RehabInfo[i].perCashDiv;
+			}
+
+		}
+		else
+		{
+			dstKline.open *= m_RehabInfo[i].adjFactor;
+			dstKline.high *= m_RehabInfo[i].adjFactor;
+			dstKline.low *= m_RehabInfo[i].adjFactor;
+			dstKline.close *= m_RehabInfo[i].adjFactor;
+		}
+
+	}
+	return dstKline;
+}
+
+KlineType SKlinePic::BackRehabReInv(KlineType & srcKline, int nDate)
+{
+	if (srcKline.date < nDate)
+		return srcKline;
+	KlineType dstKline(srcKline);
+	for (int i = m_RehabInfo.size() - 1; i >= 0; --i)
+	{
+		if (m_RehabInfo[i].exDivDate < nDate)
+			continue;
+		if (dstKline.date < m_RehabInfo[i].exDivDate)
+			break;
+		dstKline.open *= m_RehabInfo[i].adjFactor;
+		dstKline.high *= m_RehabInfo[i].adjFactor;
+		dstKline.low *= m_RehabInfo[i].adjFactor;
+		dstKline.close *= m_RehabInfo[i].adjFactor;
+	}
+	return dstKline;
 }
 
 void SKlinePic::UpdateData()
@@ -3713,7 +3812,60 @@ void SKlinePic::UpdateData()
 		return;
 	if (!m_bDataInited)
 		return;
-	SingleDataUpdate();
+	KlineDataUpdate();
+}
+
+void SKlinePic::ReProcKlineRehabData(eRehabType rehabType)
+{
+	m_bDataInited = false;
+	m_rehabType = rehabType;
+	m_calcRehabType = m_rehabType;
+	m_nFTRehabTime = 0;
+	for (int i = 0; i < m_pAll->nTotal; ++i)
+	{
+		if (eRT_NoRehab == m_calcRehabType)
+			m_pAll->data[i] = m_pAll->srcData[i];
+		else if (eRT_FrontRehab_Cash == m_calcRehabType)
+			m_pAll->data[i] = FrontRehabCash(m_pAll->srcData[i]);
+		else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+			m_pAll->data[i] = FrontRehabReInv(m_pAll->srcData[i]);
+		else if (eRT_BackRehab_Cash == m_calcRehabType)
+			m_pAll->data[i] = BackRehabCash(m_pAll->srcData[i]);
+		else if (eRT_BackRehab_ReInv == m_calcRehabType)
+			m_pAll->data[i] = BackRehabReInv(m_pAll->srcData[i]);
+		KlineMAProc(i + 1);
+	}
+	m_nMacdCount = 0;
+	m_bDataInited = true;
+	KlineDataUpdate();
+}
+
+void SKlinePic::ReProcKlineRehabData(FixedTimeRehab & frt)
+{
+	m_bDataInited = false;
+	m_rehabType = frt.Type;
+	m_nFTRehabTime = frt.nDate;
+	if (eRT_Rehab_Cash_FixedTime == m_rehabType)
+		m_calcRehabType = frt.bFrontRehab ? eRT_FrontRehab_Cash : eRT_BackRehab_Cash;
+	else
+		m_calcRehabType = frt.bFrontRehab ? eRT_FrontRehab_ReInv : eRT_BackRehab_ReInv;
+
+	for (int i = 0; i < m_pAll->nTotal; ++i)
+	{
+		if (eRT_FrontRehab_Cash == m_calcRehabType)
+			m_pAll->data[i] = FrontRehabCash(m_pAll->srcData[i], m_nFTRehabTime);
+		else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+			m_pAll->data[i] = FrontRehabReInv(m_pAll->srcData[i], m_nFTRehabTime);
+		else if (eRT_BackRehab_Cash == m_calcRehabType)
+			m_pAll->data[i] = BackRehabCash(m_pAll->srcData[i], m_nFTRehabTime);
+		else if (eRT_BackRehab_ReInv == m_calcRehabType)
+			m_pAll->data[i] = BackRehabReInv(m_pAll->srcData[i], m_nFTRehabTime);
+		KlineMAProc(i + 1);
+	}
+	m_nMacdCount = 0;
+	m_bDataInited = true;
+	KlineDataUpdate();
+
 }
 
 void SKlinePic::OnSize(UINT nType, CSize size)
@@ -3728,10 +3880,6 @@ void SKlinePic::OnSize(UINT nType, CSize size)
 
 BOOL SKlinePic::ptIsInKlineRect(CPoint pt, int nDataCount, KlineType &data)
 {
-	//int	nJianGe = 2;
-	//if (m_nJiange)
-	//	nJianGe = 0;
-
 	int nTop = GetYPos(data.high);
 	int nBottom = GetYPos(data.low);
 	int nLeft = nDataCount * TOTALZOOMWIDTH

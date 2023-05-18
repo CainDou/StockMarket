@@ -16,6 +16,7 @@
 #include "DlgSelTarget.h"
 #include "DlgComboStockFilter.h"
 #include "DlgHeaderSelect.h"
+#include "DlgRehabFixedTime.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
@@ -155,9 +156,11 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 
 	SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 
+	if (m_InitPara.nKlineRehabType != eRT_NoRehab)
+		m_pBtnRehab->SetAttribute(L"colorText", L"#00ffffff");
 }
 
-void SOUI::CWorkWnd::InitListConfig(map<int, BOOL>& titleShowMap, map<int, int>&titleOrderMap)
+void CWorkWnd::InitListConfig(map<int, BOOL>& titleShowMap, map<int, int>&titleOrderMap)
 {
 	m_TitleShowMap = titleShowMap;
 	m_TitleOrderMap = titleOrderMap;
@@ -216,7 +219,7 @@ void CWorkWnd::InitList()
 		m_pList->InsertColumn(SHead_Low, L"最低", 80);
 		m_pList->InsertColumn(SHead_Amount, L"成交额", 80);
 	}
-	
+
 	m_ListDataSortMap[SHead_ID] = eSDT_Int;
 	m_ListDataSortMap[SHead_Name] = eSDT_String;
 	m_ListDataSortMap[SHead_CloseRank520] = eSDT_Int;
@@ -338,7 +341,7 @@ void CWorkWnd::OutputStockFilterPara(SFPlan &sfPlan)
 	m_pDlgStockFilter->OutPutCondition(sfPlan);
 }
 
-void SOUI::CWorkWnd::OutputComboStockFilterPara(vector<StockFilter>& sfVec)
+void CWorkWnd::OutputComboStockFilterPara(vector<StockFilter>& sfVec)
 {
 	m_pDlgCmbStockFilter->OutPutCondition(sfVec);
 }
@@ -354,7 +357,7 @@ void CWorkWnd::InitStockFilterPara(SFPlan &sfPlan)
 	m_pDlgStockFilter->InitList(m_bUseStockFilter, sfPlan);
 }
 
-void SOUI::CWorkWnd::InitComboStockFilterPara(vector<StockFilter>& sfVec)
+void CWorkWnd::InitComboStockFilterPara(vector<StockFilter>& sfVec)
 {
 	m_sfVec = sfVec;
 	m_pDlgCmbStockFilter->InitList(m_bUseStockFilter, sfVec);
@@ -371,7 +374,7 @@ void CWorkWnd::SetPointInfo(map<ePointDataType, ShowPointInfo>& infoMap)
 	}
 }
 
-map<int, int> SOUI::CWorkWnd::GetListTitleOrder()
+map<int, int> CWorkWnd::GetListTitleOrder()
 {
 	return m_TitleOrderMap;
 }
@@ -393,7 +396,8 @@ void CWorkWnd::OnInit(EventArgs * e)
 	m_pCheckSBM = FindChildByID2<SCheckBox>(R.id.chk_SBM);
 	m_pCheckSTARM = FindChildByID2<SCheckBox>(R.id.chk_STARM);
 	m_pCheckNewStock = FindChildByID2<SCheckBox>(R.id.chk_NewStock);
-
+	m_pBtnRehab = FindChildByID2<SImageButton>(R.id.btn_Rehab);
+	m_pBtnRehab->SetVisible(FALSE, FALSE);
 	m_pPeriodBtnMap[Period_FenShi] =
 		FindChildByID2<SImageButton>(R.id.btn_FS);
 	m_pPeriodBtnMap[Period_1Min] =
@@ -567,7 +571,7 @@ LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 	case KLINEMSG_UPDATE:
 		break;
 	case KLINEMSG_MA:
-		m_pKlinePic->SetMaPara((int*)wp,m_MaParaSet);
+		m_pKlinePic->SetMaPara((int*)wp, m_MaParaSet);
 		::SendMsg(m_uThreadID, WW_KlineMa, NULL, 0);
 		break;
 	case KLINEMSG_MACD:
@@ -577,6 +581,10 @@ LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 	case KLINEMSG_BAND:
 		m_pKlinePic->SetBandPara(*(BandPara_t*)wp);
 		::SendMsg(m_uThreadID, WW_KlineBand, NULL, 0);
+		break;
+	case KLINEMSG_REHAB:
+		m_pBtnRehab->SetAttribute(L"colorText", L"#00ffffff");
+		::SendMsg(m_uThreadID, WW_FixedTimeRehab, (char*)wp, sizeof(FixedTimeRehab));
 		break;
 	default:
 		break;
@@ -835,7 +843,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		pDlg->Create(NULL);
 		pDlg->CenterWindow(m_hWnd);
 		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
-		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 		pDlg->ShowWindow(SW_SHOWDEFAULT);
 		::EnableWindow(m_hWnd, FALSE);
 	}
@@ -880,6 +888,29 @@ void CWorkWnd::OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 	break;
 	}
 }
+
+void CWorkWnd::OnRehabMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
+{
+	int rehabType = nID - RM_NoRehab;
+	if (rehabType != eRT_Rehab_Cash_FixedTime &&
+		rehabType != eRT_Rehab_ReInv_FixedTime)
+	{
+		::SendMsg(m_uThreadID, WW_ChangeRehab, (char*)&rehabType, sizeof(rehabType));
+		if (rehabType == eRT_NoRehab)
+			m_pBtnRehab->SetAttribute(L"colorText", L"#c0c0c0ff");
+		else
+			m_pBtnRehab->SetAttribute(L"colorText", L"#00ffffff");
+	}
+	else
+	{
+		CDlgRehabFixedTime *pDlg = new CDlgRehabFixedTime(m_hWnd,(eRehabType)rehabType);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+	}
+}
+
 void CWorkWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	SetMsgHandled(FALSE);
@@ -1139,6 +1170,7 @@ void CWorkWnd::SwitchPic2List()
 {
 	m_pFenShiPic->SetVisible(FALSE, TRUE);
 	m_pKlinePic->SetVisible(FALSE, TRUE);
+	m_pBtnRehab->SetVisible(FALSE, TRUE);
 	m_pKlinePic->ClearTip();
 	m_pList->SetVisible(TRUE, TRUE);
 	m_pTextIndy->SetVisible(TRUE, TRUE);
@@ -1168,6 +1200,7 @@ void CWorkWnd::SwitchList2Pic(int nPeriod)
 
 	if (nPeriod == Period_FenShi)
 	{
+		m_pBtnRehab->SetVisible(FALSE, TRUE);
 		m_pFenShiPic->SetVisible(TRUE, TRUE);
 		m_pFenShiPic->SetFocus();
 		m_pFenShiPic->RequestRelayout();
@@ -1176,6 +1209,7 @@ void CWorkWnd::SwitchList2Pic(int nPeriod)
 	else
 	{
 		m_pKlinePic->SetVisible(TRUE, TRUE);
+		m_pBtnRehab->SetVisible(TRUE, TRUE);
 		m_pKlinePic->SetFocus();
 		m_pKlinePic->RequestRelayout();
 	}
@@ -1250,6 +1284,12 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnSaveStockFilter;
 	m_dataHandleMap[WW_HisSecPoint] =
 		&CWorkWnd::OnUpdateHisSecPoint;
+	m_dataHandleMap[WW_RehabInfo] =
+		&CWorkWnd::OnUpdateRehabInfo;
+	m_dataHandleMap[WW_ChangeRehab] =
+		&CWorkWnd::OnChangeKlineRehab;
+	m_dataHandleMap[WW_FixedTimeRehab] =
+		&CWorkWnd::OnFixedTimeRehab;
 
 }
 void CWorkWnd::InitNameVec()
@@ -1505,7 +1545,7 @@ bool CWorkWnd::OnListLClick(EventArgs * pEvtBase)
 	SendMsg(m_uParWndThreadID, WW_ChangeIndy, msg, 12);
 	return true;
 }
-void SOUI::CWorkWnd::SetListDataIsShow()
+void CWorkWnd::SetListDataIsShow()
 {
 	SHeaderCtrlEx *pHead = (SHeaderCtrlEx *)m_pList->GetWindow(GSW_FIRSTCHILD);
 	for (auto &it : m_TitleShowMap)
@@ -1514,7 +1554,7 @@ void SOUI::CWorkWnd::SetListDataIsShow()
 	m_pList->RequestRelayout();
 	m_pList->Invalidate();
 }
-void SOUI::CWorkWnd::SetListDataOrder()
+void CWorkWnd::SetListDataOrder()
 {
 	SHeaderCtrlEx *pHead = (SHeaderCtrlEx *)m_pList->GetWindow(GSW_FIRSTCHILD);
 	for (auto &it : m_TitleOrderMap)
@@ -1692,10 +1732,10 @@ void CWorkWnd::UpdateRpsData(int nRow, sRps & rps, int nStart, int nEnd)
 		if (nOffset == SHead_CloseRank520 ||
 			nOffset == SHead_CloseRank2060)
 			tmp.Format(L"%.0f", dataVec[i - nStart]);
-		else if(m_ListDataSortMap[(SListHead)i] == eSDT_BigDouble)
+		else if (m_ListDataSortMap[(SListHead)i] == eSDT_BigDouble)
 		{
 			double fAbsData = abs(dataVec[i - nStart]);
-			if (fAbsData> 1'000'000'000)
+			if (fAbsData > 1'000'000'000)
 				tmp.Format(L"%.01f亿", dataVec[i - nStart] / 100'000'000);
 			else if (fAbsData > 100'000'000)
 				tmp.Format(L"%.02f亿", dataVec[i - nStart] / 100'000'000);
@@ -1715,7 +1755,7 @@ void CWorkWnd::UpdateRpsData(int nRow, sRps & rps, int nStart, int nEnd)
 
 }
 
-void SOUI::CWorkWnd::UpdateSecData(int nRow, sSection &sec, int nStart, int nEnd)
+void CWorkWnd::UpdateSecData(int nRow, sSection &sec, int nStart, int nEnd)
 {
 	vector<double> dataVec(SHead_AmountRank - SHead_AmountPoint + 1);
 	dataVec[0] = sec.point;
@@ -2027,7 +2067,7 @@ bool CWorkWnd::CheckStockDataPass(SFCondition& sf, SStringA StockID)
 	return false;
 }
 
-bool SOUI::CWorkWnd::CheckCmbStockDataPass(StockFilter & sf, SStringA StockID)
+bool CWorkWnd::CheckCmbStockDataPass(StockFilter & sf, SStringA StockID)
 {
 	if (m_pFilterDataMap == nullptr)
 		return false;
@@ -2359,7 +2399,7 @@ int CWorkWnd::SortStr(void * para1, const void * para2,
 		return str2.Compare(str1);
 }
 
-int SOUI::CWorkWnd::SortBigDouble(void * para1, const void * para2, const void * para3)
+int CWorkWnd::SortBigDouble(void * para1, const void * para2, const void * para3)
 {
 	SortPara *pData = (SortPara*)para1;
 	const DXLVITEMEX* pPara1 = (const DXLVITEMEX*)para2;
@@ -2490,7 +2530,7 @@ void CWorkWnd::OnBtnStockFilterClicked()
 	}
 }
 
-void SOUI::CWorkWnd::OnBtnTitleSelectClicked()
+void CWorkWnd::OnBtnTitleSelectClicked()
 {
 	CDlgHeaderSelect *pDlg = new CDlgHeaderSelect(m_hWnd, m_TitleShowMap);
 	pDlg->Create(NULL);
@@ -2523,6 +2563,19 @@ void CWorkWnd::OnCheckNewStock()
 {
 	m_bListShowNewStock = m_pCheckNewStock->IsChecked();
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeShowList, 0);
+}
+
+void CWorkWnd::OnBtnRehab()
+{
+	SMenu menu;
+	menu.LoadMenuW(L"smenu:menu_rehab");
+	eRehabType rehabType = m_pKlinePic->GetRehabType();
+	for (int i = RM_NoRehab; i < RM_End; ++i)
+		menu.CheckMenuItem(i, i - RM_NoRehab == rehabType ? MF_CHECKED : MF_UNCHECKED);
+	CRect rc = m_pBtnRehab->GetWindowRect();
+	ClientToScreen(&rc);
+	menu.TrackPopupMenu(0, rc.right, rc.bottom, m_hWnd);
+
 }
 
 void CWorkWnd::SetBtnState(SImageButton * nowBtn, SImageButton ** preBtn)
@@ -3104,6 +3157,19 @@ void CWorkWnd::OnUpdateHisSecPoint(int nMsgLength, const char * info)
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
+void CWorkWnd::OnUpdateRehabInfo(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int dataCount = pRecvInfo->DataSize / sizeof(RehabInfo);
+	RehabInfo * dataArr = (RehabInfo *)(info + nOffset);
+	vector<RehabInfo> rehabInfoVec;
+	rehabInfoVec.resize(dataCount);
+	memcpy_s(&rehabInfoVec[0], pRecvInfo->DataSize, dataArr, pRecvInfo->DataSize);
+	m_pKlinePic->SetRehabInfo(rehabInfoVec);
+
+}
+
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)
 {
 	m_pFenShiPic->ReProcEMA();
@@ -3145,6 +3211,21 @@ void CWorkWnd::OnChangeStockFilter(int nMsgLength, const char * info)
 void CWorkWnd::OnSaveStockFilter(int nMsgLength, const char * info)
 {
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveStockFilter, m_Group);
+}
+
+void CWorkWnd::OnChangeKlineRehab(int nMsgLength, const char * info)
+{
+	int rehabType = *(int*)info;
+	m_pKlinePic->ReProcKlineRehabData((eRehabType)rehabType);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::OnFixedTimeRehab(int nMsgLength, const char * info)
+{
+	FixedTimeRehab &frt = *(FixedTimeRehab*)info;
+	m_pKlinePic->ReProcKlineRehabData(frt);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+
 }
 
 
@@ -3230,5 +3311,4 @@ void CWorkWnd::ProcHisSecPointFromMsg(ReceivePointInfo * pRecvInfo,
 		info + nOffset, pRecvInfo->FirstDataSize);
 
 	m_PointGetMap[nPeriod][pointName] = TRUE;
-
 }

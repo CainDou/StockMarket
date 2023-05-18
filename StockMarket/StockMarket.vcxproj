@@ -204,6 +204,7 @@
     <ClCompile Include="DlgMaPara.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
+    <ClCompile Include="DlgRehabFixedTime.cpp" />
     <ClCompile Include="DlgSaveFrmlList.cpp" />
     <ClCompile Include="DlgSelTarget.cpp" />
     <ClCompile Include="DlgStkFilterEditor.cpp" />
@@ -260,6 +261,7 @@
     <ClInclude Include="DlgMaPara.h" />
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
+    <ClInclude Include="DlgRehabFixedTime.h" />
     <ClInclude Include="DlgSaveFrmlList.h" />
     <ClInclude Include="DlgSelTarget.h" />
     <ClInclude Include="DlgStkFilterEditor.h" />

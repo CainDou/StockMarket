@@ -388,6 +388,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgRtRps;
 	m_netHandleMap[RecvMsg_HisSecPoint]
 		= &CWndSynHandler::OnMsgHisSecPoint;
+	m_netHandleMap[RecvMsg_RehabInfo]
+		= &CWndSynHandler::OnMsgRehabInfo;
 
 }
 
@@ -423,6 +425,8 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnReinit;
 	m_synHandleMap[Syn_HisSecPoint]
 		= &CWndSynHandler::OnHisSecPoint;
+	m_synHandleMap[Syn_RehabInfo]
+		= &CWndSynHandler::OnRehabInfo;
 
 }
 
@@ -958,6 +962,19 @@ void CWndSynHandler::OnMsgHisSecPoint(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
+void CWndSynHandler::OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+		SendMsg(m_uMsgThreadID, Syn_RehabInfo, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnNoDefineMsg(SOCKET netSocket, ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -1128,10 +1145,10 @@ void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 						strcpy_s(data.second.first, "closePoint2060L1");
 						subDataVec.emplace_back(data);
 						data.second.second.value = rpsData.rpsClose.fL2Point520;
-						strcpy_s(data.second.first, "closePoint520L1");
+						strcpy_s(data.second.first, "closePoint520L2");
 						subDataVec.emplace_back(data);
 						data.second.second.value = rpsData.rpsClose.fL2Point2060;
-						strcpy_s(data.second.first, "closePoint2060L1");
+						strcpy_s(data.second.first, "closePoint2060L2");
 						subDataVec.emplace_back(data);
 
 					}
@@ -1151,10 +1168,10 @@ void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 						strcpy_s(data.second.first, "amountPoint2060L1");
 						subDataVec.emplace_back(data);
 						data.second.second.value = rpsData.rpsAmount.fL2Point520;
-						strcpy_s(data.second.first, "amountPoint520L1");
+						strcpy_s(data.second.first, "amountPoint520L2");
 						subDataVec.emplace_back(data);
 						data.second.second.value = rpsData.rpsAmount.fL2Point2060;
-						strcpy_s(data.second.first, "amountPoint2060L1");
+						strcpy_s(data.second.first, "amountPoint2060L2");
 						subDataVec.emplace_back(data);
 
 					}
@@ -1321,6 +1338,21 @@ void CWndSynHandler::OnHisSecPoint(int nMsgLength, const char * info)
 			SendMsg(m_hWndMap[hWnd], Syn_HisSecPoint,
 				info, nMsgLength);
 	}
+}
+
+void CWndSynHandler::OnRehabInfo(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		if (it.second.count(Group_Stock)
+			&& it.second[Group_Stock] == strStock)
+			SendMsg(m_hWndMap[hWnd], Syn_RehabInfo,
+				info, nMsgLength);
+	}
+
 }
 
 

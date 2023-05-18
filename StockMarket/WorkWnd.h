@@ -53,6 +53,7 @@ namespace SOUI
 		void	OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
+		void	OnRehabMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnRButtonUp(UINT nFlags, CPoint point);
@@ -120,6 +121,7 @@ namespace SOUI
 		void OnCheckSBM();
 		void OnCheckSTARM();
 		void OnCheckNewStock();
+		void OnBtnRehab();
 
 		//按钮辅助操作
 		void SetBtnState(SImageButton* nowBtn, SImageButton** preBtn);
@@ -154,6 +156,7 @@ namespace SOUI
 		void OnUpdateCloseInfo(int nMsgLength, const char* info);
 		void OnChangeShowIndy(int nMsgLength, const char* info);
 		void OnUpdateHisSecPoint(int nMsgLength, const char* info);
+		void OnUpdateRehabInfo(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -163,6 +166,8 @@ namespace SOUI
 		void OnKlineBand(int nMsgLength, const char* info);
 		void OnChangeStockFilter(int nMsgLength, const char* info);
 		void OnSaveStockFilter(int nMsgLength, const char* info);
+		void OnChangeKlineRehab(int nMsgLength, const char* info);
+		void OnFixedTimeRehab(int nMsgLength, const char* info);
 
 		//辅助函数
 		BOOL GetAttPara(char * msg, map<SStringA, SStringA>& paraMap);
@@ -191,6 +196,7 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.chk_SBM, OnCheckSBM)
 			EVENT_ID_COMMAND(R.id.chk_STARM, OnCheckSTARM)
 			EVENT_ID_COMMAND(R.id.chk_NewStock, OnCheckNewStock)
+			EVENT_ID_COMMAND(R.id.btn_Rehab, OnBtnRehab)
 
 			EVENT_MAP_END()
 
@@ -201,6 +207,7 @@ namespace SOUI
 			COMMAND_RANGE_HANDLER_EX(FM_Return, FM_End, OnFSMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(KM_Return, KM_End, OnKlineMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(TSM_Close, TSM_End, OnTarSelMenuCmd)
+			COMMAND_RANGE_HANDLER_EX(RM_NoRehab, RM_End, OnRehabMenuCmd)
 
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_MOUSEWHEEL(OnMouseWheel)
@@ -233,6 +240,7 @@ namespace SOUI
 		SCheckBox*	  m_pCheckSBM;
 		SCheckBox*	  m_pCheckSTARM;
 		SCheckBox*	  m_pCheckNewStock;
+		SImageButton* m_pBtnRehab;
 
 		//子类
 	protected:

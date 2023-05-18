@@ -106,7 +106,7 @@ enum RecvMsgType
 	RecvMsg_RTTFMarket,
 	RecvMsg_RTRps,
 	RecvMsg_HisSecPoint,
-
+	RecvMsg_RehabInfo,
 };
 
 enum SendMsgType
@@ -326,7 +326,7 @@ enum SynMsg
 	Syn_FilterData,
 	Syn_GetSecPoint,
 	Syn_HisSecPoint,
-
+	Syn_RehabInfo,
 };
 
 enum WorkWndMsg
@@ -356,6 +356,9 @@ enum WorkWndMsg
 	WW_ChangeStockFilter,
 	WW_SaveStockFilter,
 	WW_HisSecPoint,
+	WW_RehabInfo,
+	WW_ChangeRehab,
+	WW_FixedTimeRehab,
 
 };
 
@@ -625,7 +628,8 @@ typedef struct _FENSHI_ALLINFO
 }FENSHI_INFO;
 
 typedef struct _AllKPIC_INFO {
-	KlineType		data[MAX_DATA_COUNT];	//data信息
+	KlineType		srcData[MAX_DATA_COUNT]; //原始未复权数据
+	KlineType		data[MAX_DATA_COUNT];	//复权后的K线
 	double			fMa[MAX_MA_COUNT][MAX_DATA_COUNT];
 	double			fVolMa[MAX_MA_COUNT][MAX_DATA_COUNT];
 	double			fAmoMa[MAX_MA_COUNT][MAX_DATA_COUNT];
@@ -765,6 +769,7 @@ enum KLINEMSG
 	KLINEMSG_MA,
 	KLINEMSG_MACD,
 	KLINEMSG_BAND,
+	KLINEMSG_REHAB,
 };
 
 enum FSMenu
@@ -1213,9 +1218,12 @@ typedef struct InitPara
 	bool ListShowNewStock;
 	int nTSCPointWndNum;
 	int nKlinePointWndNum;
+	int nKlineRehabType;		//用于显示的复权类型
+	int nKlineCalcRehabType;	//用于内部计算的复权类型
+	int nKlineFTRehabDate;
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
-
+	
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
@@ -1227,7 +1235,8 @@ typedef struct InitPara
 		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
 		Connect1(false), Connect2(false), ShowIndy(""), UseStockFilter(false),
 		ListShowST(true), ListShowSBM(true),
-		ListShowSTARM(true), ListShowNewStock(true)
+		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
+		nKlineCalcRehabType(0), nKlineFTRehabDate(0)
 	{}
 }InitPara_t;
 
@@ -1256,3 +1265,47 @@ enum eMaType
 	eMa_Volume,
 	eMa_Amount,
 };
+
+typedef struct _sReHab
+{
+	int exDivDate;
+	double perCashDiv;			//每股现金分红
+	double perShareDivRatio;	//每股送股
+	double perShareTransRatio;	//每股转增股
+	double allotmentRatio;		//每股配股比例
+	double allotmentPrice;		//配股价
+	double adjFactor;			//后复权因子
+	double accumAdjFactor;		//累计后复权因子
+}RehabInfo;
+
+enum eRehabType
+{
+	eRT_NoRehab=0,
+	eRT_FrontRehab_Cash,
+	eRT_BackRehab_Cash,
+	eRT_Rehab_Cash_FixedTime,
+	eRT_FrontRehab_ReInv,
+	eRT_BackRehab_ReInv,
+	eRT_Rehab_ReInv_FixedTime,
+
+};
+
+enum RehabMenu
+{
+	RM_NoRehab = 500,
+	RM_FrontRehab_Cash,
+	RM_BackRehab_Cash,
+	RM_Rehab_Cash_FixedTime,
+	RM_FrontRehab_ReInv,
+	RM_BackRehab_ReInv,
+	RM_Rehab_ReInv_FixedTime,
+	RM_End,
+
+};
+
+typedef struct _sFixedTimeRehab
+{
+	int nDate;
+	BOOL bFrontRehab;
+	eRehabType Type;
+}FixedTimeRehab;

@@ -18,7 +18,7 @@ using std::map;
 #define K_WIDTH_TOTAL		16		//k线占用总宽度(在x轴上)
 //一些基本的界面框架信息
 #define RC_FSLEFT		50
-#define RC_FSRIGHT		40
+#define RC_FSRIGHT		50
 #define RC_FSTOP		25
 #define RC_FSBOTTOM		40
 
@@ -70,6 +70,8 @@ namespace SOUI
 		void		Paint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
+		void		DrawPrice(IRenderTarget * pRT);
+		void		DrawMovePrice(IRenderTarget * pRT, int y, bool bNew);
 		void		InitColorAndPen(IRenderTarget *pRT);
 		void		DrawData(IRenderTarget * pRT);
 		void		SetMouseLineState(bool bShow);
@@ -91,11 +93,11 @@ namespace SOUI
 		void		OnTimer(char cTimerID);
 		int			OnCreate(LPCREATESTRUCT lpCreateStruct);
 		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), 
-			UINT uFormat = DT_SINGLELINE,int nSize=12);
+			UINT uFormat = DT_SINGLELINE,int nSize=12, DWORD rop = SRCINVERT);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		HandleMissData(InStockData f1, int time);
 		void		DrawMouseData(IRenderTarget * pRT, int xPos);
-
+		
 	protected:
 		int			m_nOffset;
 		int			m_nFirst;

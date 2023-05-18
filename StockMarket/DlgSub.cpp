@@ -403,6 +403,10 @@ void CDlgSub::InitConfig()
 			== 0 ? false : true;
 		initPara.ListShowNewStock = ini.GetIntA(strSection, "ListShowNewSotck", 1)
 			== 0 ? false : true;
+		initPara.nKlineRehabType = ini.GetIntA(strSection, "KlineRehabType", 0);
+		initPara.nKlineCalcRehabType = ini.GetIntA(strSection, "KlineCalcRehabType", 0);
+		initPara.nKlineFTRehabDate = ini.GetIntA(strSection, "KlineFTRehabDate", 0);
+
 		InitPointWndInfo(ini, initPara, strSection);
 
 		m_WndMap[i]->InitShowConfig(initPara);
@@ -536,6 +540,10 @@ void CDlgSub::SavePicConfig()
 		ini.WriteIntA(strSection, "ListConnent2", initPara.Connect2);
 		ini.WriteStringA(strSection, "ShowIndustry", initPara.ShowIndy);
 		ini.WriteIntA(strSection, "StockFilter", initPara.UseStockFilter);
+		ini.WriteIntA(strSection, "KlineRehabType", initPara.nKlineRehabType);
+		ini.WriteIntA(strSection, "KlineCalcRehabType", initPara.nKlineCalcRehabType);
+		ini.WriteIntA(strSection, "KlineFTRehabDate", initPara.nKlineFTRehabDate);
+
 		SavePointWndInfo(ini, initPara, strSection);
 	}
 

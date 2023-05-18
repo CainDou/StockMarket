@@ -51,8 +51,11 @@ namespace SOUI
 		void        ClearTip();
 		//LRESULT		OnMsg(UINT uMsg, WPARAM wp, LPARAM lp);
 		void		SetRpsGroup(RpsGroup rg);
+		void		SetRehabInfo(vector<RehabInfo>& rehabVec);
 		void		DataProc();
-		void		UpdateData();
+		void		UpdateData();		
+		void		ReProcKlineRehabData(eRehabType rehabType);
+		void		ReProcKlineRehabData(FixedTimeRehab & frt);
 		void		ReProcMAData(eMaType maType);
 		void		ReProcMacdData();
 		void		ReProcBandData();
@@ -80,17 +83,18 @@ namespace SOUI
 		BandPara_t	GetBandPara();
 		void		SetPicUnHandled();
 		int			GetShowSubPicNum() const;
+		eRehabType	GetRehabType();
 		void		SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd = 0);
 		void		GetShowPointInfo(vector<ShowPointInfo> &infoVec);
 		BOOL		CheckTargetSelectIsClicked(CPoint pt);
 		void		CloseSinglePointWnd();
 		void		SetSelPointWndInfo(ShowPointInfo& info, SStringA strTitle);
-
 		// 图形处理绘制
 	protected:
 		//virtual BOOL CreateChildren(pugi::xml_node xmlNode);
 		void		OnPaint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
+		void		DrawPrice(IRenderTarget * pRT);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
 		void		DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint = FALSE);	//画时间纵轴
 		void		DrawData(IRenderTarget * pRT);
@@ -103,7 +107,10 @@ namespace SOUI
 		void		DrawMainUpperBand(IRenderTarget *pRT, int nPos);
 		void		DrawBandData(IRenderTarget * pRT, int nDataPos, KlineType &Data, int x, int nJiange);
 		void		DrawMouseKlineInfo(IRenderTarget * pRT, const KlineType &KlData, CPoint pt, const int &num = 0, const double &fPrePrice = 0);
-		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
+		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, 
+					COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE,
+					DWORD rop = SRCINVERT);
+		CRect		GetTextDrawRect(IRenderTarget * pRT, SStringW str,CRect rc);
 		void		DrawKeyDownLine(IRenderTarget* pRT, bool ClearTip = false);
 		void		DrawMouseLine(IRenderTarget * pRT, CPoint p);
 		void		DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew);
@@ -148,9 +155,8 @@ namespace SOUI
 		// 数据处理
 	protected:
 		void DataInit();
-		void SingleDataProc();
-		void SingleDataWithHis();
-		void SingleDataUpdate();
+		void KlineDataWithHis();
+		void KlineDataUpdate();
 
 		void StockMarket1MinUpdate();
 		void StockMarketMultMinUpdate(int nPeriod);
@@ -173,7 +179,12 @@ namespace SOUI
 		void MACDDataUpdate();
 		int  ProcBandTargetData(int nPos, Band_t *BandData);
 		int	 ProcMACDData(int nPos, MACDData_t  *MacdData);
-		void ReProcKlineData(bool bSingleNeedProc = false);
+
+		//复权处理
+		KlineType FrontRehabCash(KlineType& srcKline, int nDate=0);
+		KlineType FrontRehabReInv(KlineType& srcKline, int nDate = 0);
+		KlineType BackRehabCash(KlineType& srcKline, int nDate = 0);
+		KlineType BackRehabReInv(KlineType& srcKline, int nDate = 0);
 
 		//波段优化辅助处理函数
 	protected:
@@ -198,7 +209,10 @@ namespace SOUI
 		SStringA	m_strL1Indy;
 		SStringA	m_strL2Indy;
 		bool		m_bAddDay;	//添加日线
-
+		vector<RehabInfo> m_RehabInfo;	
+		eRehabType m_rehabType;		//用于显示的复权类型
+		eRehabType m_calcRehabType;	//用于计算的复权类型
+		int	 m_nFTRehabTime;
 		//调用类
 	protected:
 		CPriceList* m_pPriceList;
@@ -287,6 +301,12 @@ namespace SOUI
 	{
 		m_rgGroup = rg;
 	}
+
+	inline void SKlinePic::SetRehabInfo(vector<RehabInfo>& rehabVec)
+	{
+		m_RehabInfo = rehabVec;
+	}
+
 	inline bool SKlinePic::GetDealState() const
 	{
 		return m_bShowDeal;
@@ -396,6 +416,11 @@ namespace SOUI
 	inline int SKlinePic::GetShowSubPicNum() const
 	{
 		return m_nSubPicNum;
+	}
+
+	inline eRehabType SKlinePic::GetRehabType()
+	{
+		return m_rehabType;
 	}
 
 }
