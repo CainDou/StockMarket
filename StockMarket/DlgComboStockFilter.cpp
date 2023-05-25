@@ -18,7 +18,9 @@ BOOL SOUI::CDlgComboStockFilter::OnInitDialog(EventArgs * e)
 {
 	m_pCheckUse = FindChildByID2<SCheckBox>(R.id.chk_use);
 
-	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.ls_filter);
+	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.ls_filter); 
+	SHeaderCtrlEx * pHead = (SHeaderCtrlEx *)m_pList->GetChild(GSW_FIRSTCHILD);
+	pHead->SetNoMoveCol(1);
 	m_pCbxFunc = FindChildByID2<SComboBox>(R.id.cbx_func);
 	m_pTextID = FindChildByID2<SStatic>(R.id.text_ID);
 	m_pCbxID = FindChildByID2<SComboBox>(R.id.cbx_ID);
@@ -83,10 +85,63 @@ void SOUI::CDlgComboStockFilter::InitComboBox()
 	}
 	m_pCbxPeriod1->SetCurSel(0);
 	m_pCbxPeriod2->SetCurSel(0);
-	for (int i = SFI_ChgPct; i < SFI_Count; ++i)
-		m_pCbxIndex1->InsertItem(i, m_IndexMap[i], NULL, 0);
+	int nCount = 0;
+	for (int i = SFI_Start; i < SFI_Count; ++i)
+	{
+		if (m_IndexMap.count(i))
+		{
+			m_pCbxIndex1->InsertItem(nCount, m_IndexMap[i], NULL, 0);
+			m_Index1PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	for (int i = SFI_L1IndyStart; i < SFI_L1IndyCount; ++i)
+	{
+		if (m_IndexMap.count(i))
+		{
+			m_pCbxIndex1->InsertItem(nCount, m_IndexMap[i], NULL, 0);
+			m_Index1PosMap[nCount] = i;
+			++nCount;
+		}
+	}	
+	for (int i = SFI_L2IndyStart; i < SFI_L2IndyCount; ++i)
+	{
+		if (m_IndexMap.count(i))
+		{
+			m_pCbxIndex1->InsertItem(nCount, m_IndexMap[i], NULL, 0);
+			m_Index1PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+
+	nCount = 0;
 	for (int i = SFI_CloseRps520; i < SFI_Count; ++i)
-		m_pCbxIndex2->InsertItem(i - 1, m_IndexMap[i], NULL, 0);
+	{
+		if (m_IndexMap.count(i))
+		{
+			m_pCbxIndex2->InsertItem(nCount, m_IndexMap[i], NULL, 0);
+			m_Index2PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	for (int i = SFI_L1IndyStart; i < SFI_L1IndyCount; ++i)
+	{
+		if (m_IndexMap.count(i))
+		{
+			m_pCbxIndex2->InsertItem(nCount, m_IndexMap[i], NULL, 0);
+			m_Index2PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	for (int i = SFI_L2IndyStart; i < SFI_L2IndyCount; ++i)
+	{
+		if (m_IndexMap.count(i))
+		{
+			m_pCbxIndex2->InsertItem(nCount, m_IndexMap[i], NULL, 0);
+			m_Index2PosMap[nCount] = i;
+			++nCount;
+		}
+	}
 	m_pCbxIndex1->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
 		Subscriber(&CDlgComboStockFilter::OnCbxIndex1Change, this));
 	m_pCbxIndex1->SetCurSel(SFI_ChgPct);
@@ -186,43 +241,27 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_IndexMap[SFI_AmountPoint] = L"成交额截面分数";
 	m_IndexMap[SFI_AmountRank] = L"成交额截面排名";
 
-	m_IndexMap[SFI_CloseRps520L1] = L"一级行业收盘价RPS520";
-	m_IndexMap[SFI_CloseMacd520L1] = L"一级行业收盘价Macd520";
-	m_IndexMap[SFI_ClosePoint520L1] = L"一级行业收盘价520分数";
-	m_IndexMap[SFI_CloseRank520L1] = L"一级行业收盘价520排名";
-	m_IndexMap[SFI_CloseRps2060L1] = L"一级行业收盘价RPS2060";
-	m_IndexMap[SFI_CloseMacd2060L1] = L"一级行业收盘价Macd2060";
-	m_IndexMap[SFI_ClosePoint2060L1] = L"一级行业收盘价2060分数";
-	m_IndexMap[SFI_CloseRank2060L1] = L"一级行业收盘价2060排名";
-	m_IndexMap[SFI_AmountRps520L1] = L"一级行业成交额RPS520";
-	m_IndexMap[SFI_AmountMacd520L1] = L"一级行业成交额Macd520";
-	m_IndexMap[SFI_AmountPoint520L1] = L"一级行业成交额520分数";
-	m_IndexMap[SFI_AmountRank520L1] = L"一级行业成交额520排名";
-	m_IndexMap[SFI_AmountRps2060L1] = L"一级行业成交额RPS2060";
-	m_IndexMap[SFI_AmountMacd2060L1] = L"一级行业成交额Macd2060";
-	m_IndexMap[SFI_AmountPoint2060L1] = L"一级行业成交额2060分数";
-	m_IndexMap[SFI_AmountRank2060L1] = L"一级行业成交额2060排名";
-	m_IndexMap[SFI_AmountPointL1] = L"一级行业成交额截面分数";
-	m_IndexMap[SFI_AmountRankL1] = L"一级行业成交额截面排名";
+	m_IndexMap[SFI_ClosePoint520L1] = L"收盘价520分数(一级行业中)";
+	m_IndexMap[SFI_CloseRank520L1] = L"收盘价520排名(一级行业中)";
+	m_IndexMap[SFI_ClosePoint2060L1] = L"收盘价2060分数(一级行业中)";
+	m_IndexMap[SFI_CloseRank2060L1] = L"收盘价2060排名(一级行业中)";
+	m_IndexMap[SFI_AmountPoint520L1] = L"成交额520分数(一级行业中)";
+	m_IndexMap[SFI_AmountRank520L1] = L"成交额520排名(一级行业中)";
+	m_IndexMap[SFI_AmountPoint2060L1] = L"成交额2060分数(一级行业中)";
+	m_IndexMap[SFI_AmountRank2060L1] = L"成交额2060排名(一级行业中)";
+	m_IndexMap[SFI_AmountPointL1] = L"成交额截面分数(一级行业中)";
+	m_IndexMap[SFI_AmountRankL1] = L"成交额截面排名(一级行业中)";
 
-	m_IndexMap[SFI_CloseRps520L2] = L"二级行业收盘价RPS520";
-	m_IndexMap[SFI_CloseMacd520L2] = L"二级行业收盘价Macd520";
-	m_IndexMap[SFI_ClosePoint520L2] = L"二级行业收盘价520分数";
-	m_IndexMap[SFI_CloseRank520L2] = L"二级行业收盘价520排名";
-	m_IndexMap[SFI_CloseRps2060L2] = L"二级行业收盘价RPS2060";
-	m_IndexMap[SFI_CloseMacd2060L2] = L"二级行业收盘价Macd2060";
-	m_IndexMap[SFI_ClosePoint2060L2] = L"二级行业收盘价2060分数";
-	m_IndexMap[SFI_CloseRank2060L2] = L"二级行业收盘价2060排名";
-	m_IndexMap[SFI_AmountRps520L2] = L"二级行业成交额RPS520";
-	m_IndexMap[SFI_AmountMacd520L2] = L"二级行业成交额Macd520";
-	m_IndexMap[SFI_AmountPoint520L2] = L"二级行业成交额520分数";
-	m_IndexMap[SFI_AmountRank520L2] = L"二级行业成交额520排名";
-	m_IndexMap[SFI_AmountRps2060L2] = L"二级行业成交额RPS2060";
-	m_IndexMap[SFI_AmountMacd2060L2] = L"二级行业成交额Macd2060";
-	m_IndexMap[SFI_AmountPoint2060L2] = L"二级行业成交额2060分数";
-	m_IndexMap[SFI_AmountRank2060L2] = L"二级行业成交额2060排名";
-	m_IndexMap[SFI_AmountPointL2] = L"二级行业成交额截面分数";
-	m_IndexMap[SFI_AmountRankL2] = L"二级行业成交额截面排名";
+	m_IndexMap[SFI_ClosePoint520L2] = L"收盘价520分数(二级行业中)";
+	m_IndexMap[SFI_CloseRank520L2] = L"收盘价520排名(二级行业中)";
+	m_IndexMap[SFI_ClosePoint2060L2] = L"收盘价2060分数(二级行业中)";
+	m_IndexMap[SFI_CloseRank2060L2] = L"收盘价2060排名(二级行业中)";
+	m_IndexMap[SFI_AmountPoint520L2] = L"成交额520分数(二级行业中)";
+	m_IndexMap[SFI_AmountRank520L2] = L"成交额520排名(二级行业中)";
+	m_IndexMap[SFI_AmountPoint2060L2] = L"成交额2060分数(二级行业中)";
+	m_IndexMap[SFI_AmountRank2060L2] = L"成交额2060排名(二级行业中)";
+	m_IndexMap[SFI_AmountPointL2] = L"成交额截面分数(二级行业中)";
+	m_IndexMap[SFI_AmountRankL2] = L"成交额截面排名(二级行业中)";
 
 	m_IndexMap[SFI_ABV] = L"主动买入量";
 	m_IndexMap[SFI_ASV] = L"主动卖出量";
@@ -235,6 +274,62 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_IndexMap[SFI_High] = L"最高价";
 	m_IndexMap[SFI_Low] = L"最低价";
 	m_IndexMap[SFI_Close] = L"收盘价";
+
+
+	m_IndexMap[SFI_CAVol] = L"集合竞价成交量";
+	m_IndexMap[SFI_CAVolPoint] = L"集合竞价成交量分数";
+	m_IndexMap[SFI_CAVolRank] = L"集合竞价成交量排名";
+	m_IndexMap[SFI_CAVolPointL1] = L"集合竞价成交量分数(一级行业中)";
+	m_IndexMap[SFI_CAVolRankL1] = L"集合竞价成交量排名(一级行业中)";
+	m_IndexMap[SFI_CAVolPointL2] = L"集合竞价成交量分数(二级行业中)";
+	m_IndexMap[SFI_CAVolRankL2] = L"集合竞价成交量排名(二级行业中)";
+
+	m_IndexMap[SFI_CAAmo] = L"集合竞价成交额";
+	m_IndexMap[SFI_CAAmoPoint] = L"集合竞价成交额分数";
+	m_IndexMap[SFI_CAAmoRank] = L"集合竞价成交额排名";
+	m_IndexMap[SFI_CAAmoPointL1] = L"集合竞价成交额分数(一级行业中)";
+	m_IndexMap[SFI_CAAmoRankL1] = L"集合竞价成交额排名(一级行业中)";
+	m_IndexMap[SFI_CAAmoPointL2] = L"集合竞价成交额分数(二级行业中)";
+	m_IndexMap[SFI_CAAmoRankL2] = L"集合竞价成交额排名(二级行业中)";
+
+
+	m_IndexMap[SFI_L1IndyCloseRps520] = L"所在一级行业的收盘价RPS520";
+	m_IndexMap[SFI_L1IndyCloseMacd520] = L"所在一级行业的收盘价Macd520";
+	m_IndexMap[SFI_L1IndyClosePoint520] = L"所在一级行业的收盘价520分数";
+	m_IndexMap[SFI_L1IndyCloseRank520] = L"所在一级行业的收盘价520排名";
+	m_IndexMap[SFI_L1IndyCloseRps2060] = L"所在一级行业的收盘价RPS2060";
+	m_IndexMap[SFI_L1IndyCloseMacd2060] = L"所在一级行业的收盘价Macd2060";
+	m_IndexMap[SFI_L1IndyClosePoint2060] = L"所在一级行业的收盘价2060分数";
+	m_IndexMap[SFI_L1IndyCloseRank2060] = L"所在一级行业的收盘价2060排名";
+	m_IndexMap[SFI_L1IndyAmountRps520] = L"所在一级行业的成交额RPS520";
+	m_IndexMap[SFI_L1IndyAmountMacd520] = L"所在一级行业的成交额Macd520";
+	m_IndexMap[SFI_L1IndyAmountPoint520] = L"所在一级行业的成交额520分数";
+	m_IndexMap[SFI_L1IndyAmountRank520] = L"所在一级行业的成交额520排名";
+	m_IndexMap[SFI_L1IndyAmountRps2060] = L"所在一级行业的成交额RPS2060";
+	m_IndexMap[SFI_L1IndyAmountMacd2060] = L"所在一级行业的成交额Macd2060";
+	m_IndexMap[SFI_L1IndyAmountPoint2060] = L"所在一级行业的成交额2060分数";
+	m_IndexMap[SFI_L1IndyAmountRank2060] = L"所在一级行业的成交额2060排名";
+	m_IndexMap[SFI_L1IndyAmountPoint] = L"所在一级行业的成交额截面分数";
+	m_IndexMap[SFI_L1IndyAmountRank] = L"所在一级行业的成交额截面排名";
+
+	m_IndexMap[SFI_L2IndyCloseRps520] = L"所在二级行业的收盘价RPS520";
+	m_IndexMap[SFI_L2IndyCloseMacd520] = L"所在二级行业的收盘价Macd520";
+	m_IndexMap[SFI_L2IndyClosePoint520] = L"所在二级行业的收盘价520分数";
+	m_IndexMap[SFI_L2IndyCloseRank520] = L"所在二级行业的收盘价520排名";
+	m_IndexMap[SFI_L2IndyCloseRps2060] = L"所在二级行业的收盘价RPS2060";
+	m_IndexMap[SFI_L2IndyCloseMacd2060] = L"所在二级行业的收盘价Macd2060";
+	m_IndexMap[SFI_L2IndyClosePoint2060] = L"所在二级行业的收盘价2060分数";
+	m_IndexMap[SFI_L2IndyCloseRank2060] = L"所在二级行业的收盘价2060排名";
+	m_IndexMap[SFI_L2IndyAmountRps520] = L"所在二级行业的成交额RPS520";
+	m_IndexMap[SFI_L2IndyAmountMacd520] = L"所在二级行业的成交额Macd520";
+	m_IndexMap[SFI_L2IndyAmountPoint520] = L"所在二级行业的成交额520分数";
+	m_IndexMap[SFI_L2IndyAmountRank520] = L"所在二级行业的成交额520排名";
+	m_IndexMap[SFI_L2IndyAmountRps2060] = L"所在二级行业的成交额RPS2060";
+	m_IndexMap[SFI_L2IndyAmountMacd2060] = L"所在二级行业的成交额Macd2060";
+	m_IndexMap[SFI_L2IndyAmountPoint2060] = L"所在二级行业的成交额2060分数";
+	m_IndexMap[SFI_L2IndyAmountRank2060] = L"所在二级行业的成交额2060排名";
+	m_IndexMap[SFI_L2IndyAmountPoint] = L"所在二级行业的成交额截面分数";
+	m_IndexMap[SFI_L2IndyAmountRank] = L"所在二级行业的成交额截面排名";
 
 	m_ReverseIndexMap[L"涨跌幅"] = SFI_ChgPct;
 	m_ReverseIndexMap[L"收盘价RPS520"] = SFI_CloseRps520;
@@ -265,43 +360,43 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_ReverseIndexMap[L"成交额截面分数"] = SFI_AmountPoint;
 	m_ReverseIndexMap[L"成交额截面排名"] = SFI_AmountRank;
 
-	m_ReverseIndexMap[L"一级行业收盘价RPS520"] = SFI_CloseRps520L1;
-	m_ReverseIndexMap[L"一级行业收盘价Macd520"] = SFI_CloseMacd520L1;
-	m_ReverseIndexMap[L"一级行业收盘价520分数"] = SFI_ClosePoint520L1;
-	m_ReverseIndexMap[L"一级行业收盘价520排名"] = SFI_CloseRank520L1;
-	m_ReverseIndexMap[L"一级行业收盘价RPS2060"] = SFI_CloseRps2060L1;
-	m_ReverseIndexMap[L"一级行业收盘价Macd2060"] = SFI_CloseMacd2060L1;
-	m_ReverseIndexMap[L"一级行业收盘价2060分数"] = SFI_ClosePoint2060L1;
-	m_ReverseIndexMap[L"一级行业收盘价2060排名"] = SFI_CloseRank2060L1;
-	m_ReverseIndexMap[L"一级行业成交额RPS520"] = SFI_AmountRps520L1;
-	m_ReverseIndexMap[L"一级行业成交额Macd520"] = SFI_AmountMacd520L1;
-	m_ReverseIndexMap[L"一级行业成交额520分数"] = SFI_AmountPoint520L1;
-	m_ReverseIndexMap[L"一级行业成交额520排名"] = SFI_AmountRank520L1;
-	m_ReverseIndexMap[L"一级行业成交额RPS2060"] = SFI_AmountRps2060L1;
-	m_ReverseIndexMap[L"一级行业成交额Macd2060"] = SFI_AmountMacd2060L1;
-	m_ReverseIndexMap[L"一级行业成交额2060分数"] = SFI_AmountPoint2060L1;
-	m_ReverseIndexMap[L"一级行业成交额2060排名"] = SFI_AmountRank2060L1;
-	m_ReverseIndexMap[L"一级行业成交额截面分数"] = SFI_AmountPointL1;
-	m_ReverseIndexMap[L"一级行业成交额截面排名"] = SFI_AmountRankL1;
+	m_ReverseIndexMap[L"收盘价RPS520(一级行业中)"] = SFI_CloseRps520L1;
+	m_ReverseIndexMap[L"收盘价Macd520(一级行业中)"] = SFI_CloseMacd520L1;
+	m_ReverseIndexMap[L"收盘价520分数(一级行业中)"] = SFI_ClosePoint520L1;
+	m_ReverseIndexMap[L"收盘价520排名(一级行业中)"] = SFI_CloseRank520L1;
+	m_ReverseIndexMap[L"收盘价RPS2060(一级行业中)"] = SFI_CloseRps2060L1;
+	m_ReverseIndexMap[L"收盘价Macd2060(一级行业中)"] = SFI_CloseMacd2060L1;
+	m_ReverseIndexMap[L"收盘价2060分数(一级行业中)"] = SFI_ClosePoint2060L1;
+	m_ReverseIndexMap[L"收盘价2060排名(一级行业中)"] = SFI_CloseRank2060L1;
+	m_ReverseIndexMap[L"成交额RPS520(一级行业中)"] = SFI_AmountRps520L1;
+	m_ReverseIndexMap[L"成交额Macd520(一级行业中)"] = SFI_AmountMacd520L1;
+	m_ReverseIndexMap[L"成交额520分数(一级行业中)"] = SFI_AmountPoint520L1;
+	m_ReverseIndexMap[L"成交额520排名(一级行业中)"] = SFI_AmountRank520L1;
+	m_ReverseIndexMap[L"成交额RPS2060(一级行业中)"] = SFI_AmountRps2060L1;
+	m_ReverseIndexMap[L"成交额Macd2060(一级行业中)"] = SFI_AmountMacd2060L1;
+	m_ReverseIndexMap[L"成交额2060分数(一级行业中)"] = SFI_AmountPoint2060L1;
+	m_ReverseIndexMap[L"成交额2060排名(一级行业中)"] = SFI_AmountRank2060L1;
+	m_ReverseIndexMap[L"成交额截面分数(一级行业中)"] = SFI_AmountPointL1;
+	m_ReverseIndexMap[L"成交额截面排名(一级行业中)"] = SFI_AmountRankL1;
 
-	m_ReverseIndexMap[L"二级行业收盘价RPS520"] = SFI_CloseRps520L2;
-	m_ReverseIndexMap[L"二级行业收盘价Macd520"] = SFI_CloseMacd520L2;
-	m_ReverseIndexMap[L"二级行业收盘价520分数"] = SFI_ClosePoint520L2;
-	m_ReverseIndexMap[L"二级行业收盘价520排名"] = SFI_CloseRank520L2;
-	m_ReverseIndexMap[L"二级行业收盘价RPS2060"] = SFI_CloseRps2060L2;
-	m_ReverseIndexMap[L"二级行业收盘价Macd2060"] = SFI_CloseMacd2060L2;
-	m_ReverseIndexMap[L"二级行业收盘价2060分数"] = SFI_ClosePoint2060L2;
-	m_ReverseIndexMap[L"二级行业收盘价2060排名"] = SFI_CloseRank2060L2;
-	m_ReverseIndexMap[L"二级行业成交额RPS520"] = SFI_AmountRps520L2;
-	m_ReverseIndexMap[L"二级行业成交额Macd520"] = SFI_AmountMacd520L2;
-	m_ReverseIndexMap[L"二级行业成交额520分数"] = SFI_AmountPoint520L2;
-	m_ReverseIndexMap[L"二级行业成交额520排名"] = SFI_AmountRank520L2;
-	m_ReverseIndexMap[L"二级行业成交额RPS2060"] = SFI_AmountRps2060L2;
-	m_ReverseIndexMap[L"二级行业成交额Macd2060"] = SFI_AmountMacd2060L2;
-	m_ReverseIndexMap[L"二级行业成交额2060分数"] = SFI_AmountPoint2060L2;
-	m_ReverseIndexMap[L"二级行业成交额2060排名"] = SFI_AmountRank2060L2;
-	m_ReverseIndexMap[L"二级行业成交额截面分数"] = SFI_AmountPointL2;
-	m_ReverseIndexMap[L"二级行业成交额截面排名"] = SFI_AmountRankL2;
+	m_ReverseIndexMap[L"收盘价RPS520(二级行业中)"] = SFI_CloseRps520L2;
+	m_ReverseIndexMap[L"收盘价Macd520(二级行业中)"] = SFI_CloseMacd520L2;
+	m_ReverseIndexMap[L"收盘价520分数(二级行业中)"] = SFI_ClosePoint520L2;
+	m_ReverseIndexMap[L"收盘价520排名(二级行业中)"] = SFI_CloseRank520L2;
+	m_ReverseIndexMap[L"收盘价RPS2060(二级行业中)"] = SFI_CloseRps2060L2;
+	m_ReverseIndexMap[L"收盘价Macd2060(二级行业中)"] = SFI_CloseMacd2060L2;
+	m_ReverseIndexMap[L"收盘价2060分数(二级行业中)"] = SFI_ClosePoint2060L2;
+	m_ReverseIndexMap[L"收盘价2060排名(二级行业中)"] = SFI_CloseRank2060L2;
+	m_ReverseIndexMap[L"成交额RPS520(二级行业中)"] = SFI_AmountRps520L2;
+	m_ReverseIndexMap[L"成交额Macd520(二级行业中)"] = SFI_AmountMacd520L2;
+	m_ReverseIndexMap[L"成交额520分数(二级行业中)"] = SFI_AmountPoint520L2;
+	m_ReverseIndexMap[L"成交额520排名(二级行业中)"] = SFI_AmountRank520L2;
+	m_ReverseIndexMap[L"成交额RPS2060(二级行业中)"] = SFI_AmountRps2060L2;
+	m_ReverseIndexMap[L"成交额Macd2060(二级行业中)"] = SFI_AmountMacd2060L2;
+	m_ReverseIndexMap[L"成交额2060分数(二级行业中)"] = SFI_AmountPoint2060L2;
+	m_ReverseIndexMap[L"成交额2060排名(二级行业中)"] = SFI_AmountRank2060L2;
+	m_ReverseIndexMap[L"成交额截面分数(二级行业中)"] = SFI_AmountPointL2;
+	m_ReverseIndexMap[L"成交额截面排名(二级行业中)"] = SFI_AmountRankL2;
 
 	m_ReverseIndexMap[L"主动买入量"] = SFI_ABV;
 	m_ReverseIndexMap[L"主动卖出量"] = SFI_ASV;
@@ -315,6 +410,62 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_ReverseIndexMap[L"最低价"] =SFI_Low;
 	m_ReverseIndexMap[L"收盘价"] = SFI_Close;
 
+	m_ReverseIndexMap[L"集合竞价成交量"] = SFI_CAVol;
+	m_ReverseIndexMap[L"集合竞价成交量分数"] = SFI_CAVolPoint;
+	m_ReverseIndexMap[L"集合竞价成交量排名"] = SFI_CAVolRank;
+	m_ReverseIndexMap[L"集合竞价成交量分数(一级行业中)"] = SFI_CAVolPointL1;
+	m_ReverseIndexMap[L"集合竞价成交量排名(一级行业中)"] = SFI_CAVolRankL1;
+	m_ReverseIndexMap[L"集合竞价成交量分数(二级行业中)"] = SFI_CAVolPointL2;
+	m_ReverseIndexMap[L"集合竞价成交量排名(二级行业中)"] = SFI_CAVolRankL2;
+
+
+	m_ReverseIndexMap[L"集合竞价成交额"] = SFI_CAAmo;
+	m_ReverseIndexMap[L"集合竞价成交额分数"] = SFI_CAAmoPoint;
+	m_ReverseIndexMap[L"集合竞价成交额排名"] = SFI_CAAmoRank;
+	m_ReverseIndexMap[L"集合竞价成交额分数(一级行业中)"] = SFI_CAAmoPointL1;
+	m_ReverseIndexMap[L"集合竞价成交额排名(一级行业中)"] = SFI_CAAmoRankL1;
+	m_ReverseIndexMap[L"集合竞价成交额分数(二级行业中)"] = SFI_CAAmoPointL2;
+	m_ReverseIndexMap[L"集合竞价成交额排名(二级行业中)"] = SFI_CAAmoRankL2;
+
+
+
+	m_ReverseIndexMap[L"所在一级行业的收盘价RPS520"] = SFI_L1IndyCloseRps520;
+	m_ReverseIndexMap[L"所在一级行业的收盘价Macd520"] = SFI_L1IndyCloseMacd520;
+	m_ReverseIndexMap[L"所在一级行业的收盘价520分数"] = SFI_L1IndyClosePoint520;
+	m_ReverseIndexMap[L"所在一级行业的收盘价520排名"] = SFI_L1IndyCloseRank520;
+	m_ReverseIndexMap[L"所在一级行业的收盘价RPS2060"] = SFI_L1IndyCloseRps2060;
+	m_ReverseIndexMap[L"所在一级行业的收盘价Macd2060"] = SFI_L1IndyCloseMacd2060;
+	m_ReverseIndexMap[L"所在一级行业的收盘价2060分数"] = SFI_L1IndyClosePoint2060;
+	m_ReverseIndexMap[L"所在一级行业的收盘价2060排名"] = SFI_L1IndyCloseRank2060;
+	m_ReverseIndexMap[L"所在一级行业的成交额RPS520"] = SFI_L1IndyAmountRps520;
+	m_ReverseIndexMap[L"所在一级行业的成交额Macd520"] = SFI_L1IndyAmountMacd520;
+	m_ReverseIndexMap[L"所在一级行业的成交额520分数"] = SFI_L1IndyAmountPoint520;
+	m_ReverseIndexMap[L"所在一级行业的成交额520排名"] = SFI_L1IndyAmountRank520;
+	m_ReverseIndexMap[L"所在一级行业的成交额RPS2060"] = SFI_L1IndyAmountRps2060;
+	m_ReverseIndexMap[L"所在一级行业的成交额Macd2060"] = SFI_L1IndyAmountMacd2060;
+	m_ReverseIndexMap[L"所在一级行业的成交额2060分数"] = SFI_L1IndyAmountPoint2060;
+	m_ReverseIndexMap[L"所在一级行业的成交额2060排名"] = SFI_L1IndyAmountRank2060;
+	m_ReverseIndexMap[L"所在一级行业的成交额截面分数"] = SFI_L1IndyAmountPoint;
+	m_ReverseIndexMap[L"所在一级行业的成交额截面排名"] = SFI_L1IndyAmountRank;
+
+	m_ReverseIndexMap[L"所在二级行业的收盘价RPS520"] = SFI_L2IndyCloseRps520;
+	m_ReverseIndexMap[L"所在二级行业的收盘价Macd520"] = SFI_L2IndyCloseMacd520;
+	m_ReverseIndexMap[L"所在二级行业的收盘价520分数"] = SFI_L2IndyClosePoint520;
+	m_ReverseIndexMap[L"所在二级行业的收盘价520排名"] = SFI_L2IndyCloseRank520;
+	m_ReverseIndexMap[L"所在二级行业的收盘价RPS2060"] = SFI_L2IndyCloseRps2060;
+	m_ReverseIndexMap[L"所在二级行业的收盘价Macd2060"] = SFI_L2IndyCloseMacd2060;
+	m_ReverseIndexMap[L"所在二级行业的收盘价2060分数"] = SFI_L2IndyClosePoint2060;
+	m_ReverseIndexMap[L"所在二级行业的收盘价2060排名"] = SFI_L2IndyCloseRank2060;
+	m_ReverseIndexMap[L"所在二级行业的成交额RPS520"] = SFI_L2IndyAmountRps520;
+	m_ReverseIndexMap[L"所在二级行业的成交额Macd520"] = SFI_L2IndyAmountMacd520;
+	m_ReverseIndexMap[L"所在二级行业的成交额520分数"] = SFI_L2IndyAmountPoint520;
+	m_ReverseIndexMap[L"所在二级行业的成交额520排名"] = SFI_L2IndyAmountRank520;
+	m_ReverseIndexMap[L"所在二级行业的成交额RPS2060"] = SFI_L2IndyAmountRps2060;
+	m_ReverseIndexMap[L"所在二级行业的成交额Macd2060"] = SFI_L2IndyAmountMacd2060;
+	m_ReverseIndexMap[L"所在二级行业的成交额2060分数"] = SFI_L2IndyAmountPoint2060;
+	m_ReverseIndexMap[L"所在二级行业的成交额2060排名"] = SFI_L2IndyAmountRank2060;
+	m_ReverseIndexMap[L"所在二级行业的成交额截面分数"] = SFI_L2IndyAmountPoint;
+	m_ReverseIndexMap[L"所在二级行业的成交额截面排名"] = SFI_L2IndyAmountRank;
 
 	m_ConditionMap[SFC_Greater] = L"大于";
 	m_ConditionMap[SFC_EqualOrGreater] = L"大于等于";
@@ -327,6 +478,8 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_ReverseConditionMap[L"等于"] = SFC_Equal;
 	m_ReverseConditionMap[L"小于等于"] = SFC_EqualOrLess;
 	m_ReverseConditionMap[L"小于"] = SFC_Less;
+
+
 
 	m_NumUint[SFI_ChgPct] = L"(-100 ~ 100)";
 	m_NumUint[SFI_ClosePoint520] = L"(0 ~ 100)";
@@ -366,6 +519,45 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_NumUint[SFI_Vol] = L"(单位:手)";
 	m_NumUint[SFI_Amount] = L"(单位:万元)";
 
+	m_NumUint[SFI_CAVol] = L"(单位:手)";
+	m_NumUint[SFI_CAVolPoint] = L"(0 ~ 100)";
+	m_NumUint[SFI_CAVolRank] = L"(> 0)";
+	m_NumUint[SFI_CAVolPointL1] = L"(0 ~ 100)";
+	m_NumUint[SFI_CAVolRankL1] = L"(> 0)";
+	m_NumUint[SFI_CAVolPointL2] = L"(0 ~ 100)";
+	m_NumUint[SFI_CAVolRankL2] = L"(> 0)";
+
+	m_NumUint[SFI_CAAmo] = L"(单位:万元)";
+	m_NumUint[SFI_CAAmoPoint] = L"(0 ~ 100)";
+	m_NumUint[SFI_CAAmoRank] = L"(> 0)";
+	m_NumUint[SFI_CAAmoPointL1] = L"(0 ~ 100)";
+	m_NumUint[SFI_CAAmoRankL1] = L"(> 0)";
+	m_NumUint[SFI_CAAmoPointL2] = L"(0 ~ 100)";
+	m_NumUint[SFI_CAAmoRankL2] = L"(> 0)";
+
+
+
+
+	m_NumUint[SFI_L1IndyClosePoint520] = L"(0 ~ 100)";
+	m_NumUint[SFI_L1IndyClosePoint2060] = L"(0 ~ 100)";
+	m_NumUint[SFI_L1IndyAmountPoint520] = L"(0 ~ 100)";
+	m_NumUint[SFI_L1IndyAmountPoint2060] = L"(0 ~ 100)";
+	m_NumUint[SFI_L1IndyAmountPoint] = L"(0 ~ 100)";
+	m_NumUint[SFI_L2IndyClosePoint520] = L"(0 ~ 100)";
+	m_NumUint[SFI_L2IndyClosePoint2060] = L"(0 ~ 100)";
+	m_NumUint[SFI_L2IndyAmountPoint520] = L"(0 ~ 100)";
+	m_NumUint[SFI_L2IndyAmountPoint2060] = L"(0 ~ 100)";
+	m_NumUint[SFI_L2IndyAmountPoint] = L"(0 ~ 100)";
+	m_NumUint[SFI_L1IndyCloseRank520] = L"(> 0)";
+	m_NumUint[SFI_L1IndyCloseRank2060] = L"(> 0)";
+	m_NumUint[SFI_L1IndyAmountRank520] = L"(> 0)";
+	m_NumUint[SFI_L1IndyAmountRank2060] = L"(> 0)";
+	m_NumUint[SFI_L1IndyAmountRank] = L"(> 0)";
+	m_NumUint[SFI_L2IndyCloseRank520] = L"(> 0)";
+	m_NumUint[SFI_L2IndyCloseRank2060] = L"(> 0)";
+	m_NumUint[SFI_L2IndyAmountRank520] = L"(> 0)";
+	m_NumUint[SFI_L2IndyAmountRank2060] = L"(> 0)";
+	m_NumUint[SFI_L2IndyAmountRank] = L"(> 0)";
 }
 
 void SOUI::CDlgComboStockFilter::OutPutCondition(vector<StockFilter>& sfVec)
@@ -478,7 +670,16 @@ bool SOUI::CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
 		m_pTextPeriod2->SetVisible(FALSE, TRUE);
 		m_pCbxPeriod2->SetVisible(FALSE, TRUE);
-		m_pCbxIndex2->SetCurSel(SFI_Num - 1);
+		int nNumPos = SFI_Num;
+		for (auto &it : m_Index2PosMap)
+		{
+			if (it.second == SFI_Num)
+			{
+				nNumPos = it.first;
+				break;
+			}
+		}
+		m_pCbxIndex2->SetCurSel(nNumPos);
 		m_pCbxIndex2->EnableWindow(FALSE, TRUE);
 	}
 	else
@@ -490,11 +691,11 @@ bool SOUI::CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 		m_pCbxIndex2->EnableWindow(TRUE, TRUE);
 	}
 	int nIndex2Sel = m_pCbxIndex2->GetCurSel();
-	if (nIndex2Sel == SFI_Num - 1)
+	if (m_Index2PosMap[nIndex2Sel] == SFI_Num)
 	{
 		SStringW strNum = L"数值";
-		if (m_NumUint.count(nSel))
-			strNum += m_NumUint[nSel];
+		if (m_NumUint.count(m_Index1PosMap[nSel]))
+			strNum += m_NumUint[m_Index1PosMap[nSel]];
 		m_pTextNum->SetWindowTextW(strNum);
 	}
 	return true;
@@ -507,7 +708,7 @@ bool SOUI::CDlgComboStockFilter::OnCbxIndex2Change(EventArgs * e)
 	SComboBox *pCbx = (SComboBox *)pEvt->sender;
 	int nSel = pEvt->nCurSel;
 	int nIndex1Sel = m_pCbxIndex1->GetCurSel();
-	if (SFI_Num == nSel + 1)
+	if (SFI_Num == m_Index2PosMap[nSel])
 	{
 		SStringW strNum = L"数值";
 		if (m_NumUint.count(nIndex1Sel))
@@ -647,13 +848,13 @@ void SOUI::CDlgComboStockFilter::OnCbxFuncDelete()
 void SOUI::CDlgComboStockFilter::AddConditon()
 {
 	StockFilter sf = { 0 };
-	sf.index1 = m_pCbxIndex1->GetCurSel();
+	sf.index1 = m_Index1PosMap[m_pCbxIndex1->GetCurSel()];
 	if (SFI_ChgPct == sf.index1)
 		sf.period1 = SFP_Null;
 	else
 		sf.period1 = m_pCbxPeriod1->GetCurSel();
 	sf.condition = m_pCbxCondition->GetCurSel();
-	sf.index2 = m_pCbxIndex2->GetCurSel() + 1;
+	sf.index2 = m_Index2PosMap[m_pCbxIndex2->GetCurSel()];
 	if (sf.index2 != SFI_Num)
 		sf.period2 = m_pCbxPeriod2->GetCurSel();
 	else
@@ -682,13 +883,13 @@ void SOUI::CDlgComboStockFilter::ChangeCondition()
 {
 
 	StockFilter sf = { 0 };
-	sf.index1 = m_pCbxIndex1->GetCurSel();
+	sf.index1 = m_Index1PosMap[m_pCbxIndex1->GetCurSel()];
 	if (SFI_ChgPct == sf.index1)
 		sf.period1 = SFP_Null;
 	else
 		sf.period1 = m_pCbxPeriod1->GetCurSel();
 	sf.condition = m_pCbxCondition->GetCurSel();
-	sf.index2 = m_pCbxIndex2->GetCurSel() + 1;
+	sf.index2 = m_Index2PosMap[m_pCbxIndex2->GetCurSel()];
 	if (sf.index2 != SFI_Num)
 		sf.period2 = m_pCbxPeriod2->GetCurSel();
 	else

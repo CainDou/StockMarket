@@ -23,6 +23,7 @@ typedef char SecurityID[8];
 
 #define MAX_NAME_LENGTH		32
 
+
 struct hash_SStringA
 {
 	size_t operator()(const SStringA& str) const
@@ -107,6 +108,8 @@ enum RecvMsgType
 	RecvMsg_RTRps,
 	RecvMsg_HisSecPoint,
 	RecvMsg_RehabInfo,
+	RecvMsg_CallAction,
+
 };
 
 enum SendMsgType
@@ -252,6 +255,12 @@ enum SListHead
 	SHead_AmountRank2060,
 	SHead_AmountPoint,
 	SHead_AmountRank,
+	SHead_CAVol,
+	SHead_CAVolPoint,
+	SHead_CAVolRank,
+	SHead_CAAmo,
+	SHead_CAAmoPoint,
+	SHead_CAAmoRank,
 	SHead_CommonItmeCount,
 	SHead_TickFlowStart = SHead_CommonItmeCount,
 	SHead_ActBuySellRatio = SHead_TickFlowStart,
@@ -267,6 +276,10 @@ enum SListHead
 	SHead_Amount,
 	SHead_StockItemCount,
 };
+
+const int g_nListNewItemStart = SHead_CAVol;
+const int g_nListNewItemEnd = SHead_CAAmoRank;
+
 
 typedef struct SendInfo
 {
@@ -301,6 +314,7 @@ enum DataProcType
 	ClearOldData,
 	UpdateTFMarket,
 	UpdateRtRps,
+	UpdateCallAction,
 	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };
@@ -881,6 +895,9 @@ enum
 	DT_StockMarket,
 	DT_Kline,
 	DT_Point,
+	DT_L1IndyFilterData,
+	DT_L2IndyFilterData,
+	DT_CallAction,
 };
 
 
@@ -907,7 +924,8 @@ enum SF_PERIOD
 
 enum SF_INDEX
 {
-	SFI_ChgPct = 0,
+	SFI_Start = 0,
+	SFI_ChgPct = SFI_Start,
 	SFI_CloseRps520,
 	SFI_CloseMacd520,
 	SFI_ClosePoint520,
@@ -933,6 +951,7 @@ enum SF_INDEX
 	SFI_AmountRank2060,
 	SFI_AmountPoint,
 	SFI_AmountRank,
+	//在一级行业和二级行业中的计算数据
 	SFI_CloseRps520L1,
 	SFI_CloseMacd520L1,
 	SFI_ClosePoint520L1,
@@ -981,8 +1000,74 @@ enum SF_INDEX
 	SFI_Low,
 	SFI_Close,
 
+	SFI_CAVol,
+	SFI_CAVolPoint,
+	SFI_CAVolRank,
+	SFI_CAVolPointL1,
+	SFI_CAVolRankL1,
+	SFI_CAVolPointL2,
+	SFI_CAVolRankL2,
+
+	SFI_CAAmo,
+	SFI_CAAmoPoint,
+	SFI_CAAmoRank,
+	SFI_CAAmoPointL1,
+	SFI_CAAmoRankL1,
+	SFI_CAAmoPointL2,
+	SFI_CAAmoRankL2,
+
+	//对应一级行业和二级行业的数据
+
 	SFI_Count,
 
+};
+enum SF_L1INDYINDEX
+{
+	SFI_L1IndyStart = 1000,
+	SFI_L1IndyCloseRps520 = SFI_L1IndyStart,
+	SFI_L1IndyCloseMacd520,
+	SFI_L1IndyClosePoint520,
+	SFI_L1IndyCloseRank520,
+	SFI_L1IndyCloseRps2060,
+	SFI_L1IndyCloseMacd2060,
+	SFI_L1IndyClosePoint2060,
+	SFI_L1IndyCloseRank2060,
+	SFI_L1IndyAmountRps520,
+	SFI_L1IndyAmountMacd520,
+	SFI_L1IndyAmountPoint520,
+	SFI_L1IndyAmountRank520,
+	SFI_L1IndyAmountRps2060,
+	SFI_L1IndyAmountMacd2060,
+	SFI_L1IndyAmountPoint2060,
+	SFI_L1IndyAmountRank2060,
+	SFI_L1IndyAmountPoint,
+	SFI_L1IndyAmountRank,
+	SFI_L1IndyCount,
+
+};
+
+enum SF_L2INDYINDEX
+{
+	SFI_L2IndyStart = 2000,
+	SFI_L2IndyCloseRps520 = SFI_L2IndyStart,
+	SFI_L2IndyCloseMacd520,
+	SFI_L2IndyClosePoint520,
+	SFI_L2IndyCloseRank520,
+	SFI_L2IndyCloseRps2060,
+	SFI_L2IndyCloseMacd2060,
+	SFI_L2IndyClosePoint2060,
+	SFI_L2IndyCloseRank2060,
+	SFI_L2IndyAmountRps520,
+	SFI_L2IndyAmountMacd520,
+	SFI_L2IndyAmountPoint520,
+	SFI_L2IndyAmountRank520,
+	SFI_L2IndyAmountRps2060,
+	SFI_L2IndyAmountMacd2060,
+	SFI_L2IndyAmountPoint2060,
+	SFI_L2IndyAmountRank2060,
+	SFI_L2IndyAmountPoint,
+	SFI_L2IndyAmountRank,
+	SFI_L2IndyCount,
 };
 
 enum SF_CONDITION
@@ -1149,9 +1234,11 @@ enum ePointType
 
 typedef struct _UsedPointInfo
 {
+	int overallType;
 	ePointType type;
 	SStringA srcDataName;
-	SStringA range;
+	SStringA dataInRange;		//打分数据所在的范围
+	SStringA IndyRange;			//行业范围
 	SStringA showName;
 	bool operator <(const _UsedPointInfo& other) const;
 	bool operator ==(const _UsedPointInfo& other) const;
@@ -1177,8 +1264,28 @@ enum ePointDataType
 	eIndyMarketPointEnd,
 };
 
+enum eL1IndyPointDataType
+{
+	eL1IndyPointStart = 100,
+	eL1Indy_RpsPoint_Close = eL1IndyPointStart,
+	eL1Indy_RpsPoint_Amount,
+	eL1Indy_SecPoint_Amount,
+	eL1IndyPointEnd,
+};
+
+enum eL2IndyPointDataType
+{
+	eL2IndyPointStart = 200,
+	eL2Indy_RpsPoint_Close = eL2IndyPointStart,
+	eL2Indy_RpsPoint_Amount,
+	eL2Indy_SecPoint_Amount,
+	eL2IndyPointEnd,
+};
+
+
 typedef struct _ExDataDetInfo :public DataGetInfo
 {
+	int nAskGroup;	//请求的窗口周期
 	ePointType Type;
 	char* exMsg;
 }ExDataGetInfo;
@@ -1309,3 +1416,33 @@ typedef struct _sFixedTimeRehab
 	BOOL bFrontRehab;
 	eRehabType Type;
 }FixedTimeRehab;
+
+
+typedef struct _RtPointData
+{
+	char dataName[MAX_NAME_LENGTH];
+	CoreData data;
+	char stockID[8];
+	int period;
+}RtPointData;
+
+typedef struct _CAInfo
+{
+	SecurityID SecurityID;
+	int date;
+	int group;
+	double Volume;
+	double VolPoint;
+	double VolPointL1;
+	double VolPointL2;
+	double Amount;
+	double AmoPoint;
+	double AmoPointL1;
+	double AmoPointL2;
+	int VolRank;
+	int VolRankL1;
+	int VolRankL2;
+	int AmoRank;
+	int AmoRankL1;
+	int AmoRankL2;
+}CAInfo;

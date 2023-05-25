@@ -148,39 +148,85 @@ void CWndSynHandler::InitNetConfig()
 void CWndSynHandler::InitPointInfo()
 {
 	ShowPointInfo spi;
+	spi.IndyRange = "";
 	spi.type = eRpsPoint;
-	spi.range = "";
+	spi.dataInRange = "";
 	spi.srcDataName = "close";
 	spi.showName = "CRPS";
+	spi.overallType = eRpsPoint_Close;
 	m_pointInfoMap[eRpsPoint_Close] = spi;
-	spi.range = "L1";
-	spi.showName = "一级行业CRPS";
+	spi.dataInRange = "L1";
+	spi.showName = "CRPS(一级行业中)";
+	spi.overallType = eRpsPoint_L1_Close;
 	m_pointInfoMap[eRpsPoint_L1_Close] = spi;
-	spi.range = "L2";
-	spi.showName = "二级行业CRPS";
+	spi.dataInRange = "L2";
+	spi.showName = "CRPS(二级行业中)";
+	spi.overallType = eRpsPoint_L2_Close;
 	m_pointInfoMap[eRpsPoint_L2_Close] = spi;
 
 	spi.srcDataName = "amount";
-	spi.range = "";
+	spi.dataInRange = "";
+	spi.IndyRange = "";
 	spi.showName = "AMORPS";
+	spi.overallType = eRpsPoint_Amount;
 	m_pointInfoMap[eRpsPoint_Amount] = spi;
-	spi.range = "L1";
-	spi.showName = "一级行业AMORPS";
+	spi.dataInRange = "L1";
+	spi.showName = "AMORPS(一级行业中)";
+	spi.overallType = eRpsPoint_L1_Amount;
 	m_pointInfoMap[eRpsPoint_L1_Amount] = spi;
-	spi.range = "L2";
-	spi.showName = "二级行业AMORPS";
+	spi.dataInRange = "L2";
+	spi.showName = "AMORPS(二级行业中)";
+	spi.overallType = eRpsPoint_L2_Amount;
 	m_pointInfoMap[eRpsPoint_L2_Amount] = spi;
 
 	spi.type = eSecPoint;
-	spi.range = "";
+	spi.dataInRange = "";
+	spi.IndyRange = "";
 	spi.showName = "AMO截面分数";
+	spi.overallType = eSecPoint_Amount;
 	m_pointInfoMap[eSecPoint_Amount] = spi;
-	spi.range = "L1";
-	spi.showName = "一级行业AMO截面分数";
+	spi.dataInRange = "L1";
+	spi.overallType = eSecPoint_L1_Amount;
+	spi.showName = "AMO截面分数(一级行业中)";
 	m_pointInfoMap[eSecPoint_L1_Amount] = spi;
-	spi.range = "L2";
-	spi.showName = "二级行业AMO截面分数";
+	spi.dataInRange = "L2";
+	spi.overallType = eSecPoint_L2_Amount;
+	spi.showName = "AMO截面分数(二级行业中)";
 	m_pointInfoMap[eSecPoint_L2_Amount] = spi;
+
+	//对应1级行业指标
+	spi.type = eRpsPoint;
+	spi.dataInRange = "";
+	spi.IndyRange = "L1";
+	spi.srcDataName = "close";
+	spi.showName = "所属一级行业CRPS";
+	spi.overallType = eL1Indy_RpsPoint_Close;
+	m_pointInfoMap[eL1Indy_RpsPoint_Close] = spi;
+	spi.srcDataName = "amount";
+	spi.showName = "所属一级行业AMORPS";
+	spi.overallType = eL1Indy_RpsPoint_Amount;
+	m_pointInfoMap[eL1Indy_RpsPoint_Amount] = spi;
+	spi.type = eSecPoint;
+	spi.showName = "所属一级行业AMO截面分数";
+	spi.overallType = eL1Indy_SecPoint_Amount;
+	m_pointInfoMap[eL1Indy_SecPoint_Amount] = spi;
+
+
+	spi.type = eRpsPoint;
+	spi.dataInRange = "";
+	spi.IndyRange = "L2";
+	spi.srcDataName = "close";
+	spi.showName = "所属二级行业CRPS";
+	spi.overallType = eL2Indy_RpsPoint_Close;
+	m_pointInfoMap[eL2Indy_RpsPoint_Close] = spi;
+	spi.srcDataName = "amount";
+	spi.showName = "所属二级行业AMORPS";
+	spi.overallType = eL2Indy_RpsPoint_Amount;
+	m_pointInfoMap[eL2Indy_RpsPoint_Amount] = spi;
+	spi.type = eSecPoint;
+	spi.showName = "所属二级行业AMO截面分数";
+	spi.overallType = eL2Indy_SecPoint_Amount;
+	m_pointInfoMap[eL2Indy_SecPoint_Amount] = spi;
 
 }
 
@@ -349,6 +395,8 @@ void CWndSynHandler::InitDataHandleMap()
 		&CWndSynHandler::OnUpdateTFMarket;
 	m_dataHandleMap[UpdateRtRps] =
 		&CWndSynHandler::OnUpdateRtRps;
+	m_dataHandleMap[UpdateCallAction] =
+		&CWndSynHandler::OnUpdateCallAction;
 
 }
 
@@ -390,6 +438,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgHisSecPoint;
 	m_netHandleMap[RecvMsg_RehabInfo]
 		= &CWndSynHandler::OnMsgRehabInfo;
+	m_netHandleMap[RecvMsg_CallAction]
+		= &CWndSynHandler::OnMsgCallAction;
 
 }
 
@@ -597,6 +647,52 @@ bool CWndSynHandler::HandleSecData(SStringA strDataName, sSection & data, map<st
 	filterDataMap[strName + "POINTL2"] = data.pointL2;
 
 	return true;
+}
+
+void CWndSynHandler::UpdateRtRpsPointData(vector<RtPointData>& subDataVec,
+	RtPointData & dstData, sRps & rpsData, SStringA strDataName, int nGroup)
+{
+	dstData.data.value = rpsData.fPoint520;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point520");
+	subDataVec.emplace_back(dstData);
+	dstData.data.value = rpsData.fPoint2060;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point2060");
+	subDataVec.emplace_back(dstData);
+	if (nGroup == Group_Stock)
+	{
+		dstData.data.value = rpsData.fL1Point520;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point520L1");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = rpsData.fL1Point2060;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point2060L1");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = rpsData.fL2Point520;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point520L2");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = rpsData.fL2Point2060;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point2060L2");
+		subDataVec.emplace_back(dstData);
+
+	}
+
+}
+
+void CWndSynHandler::UpdateRtSecPointData(vector<RtPointData>& subDataVec, 
+	RtPointData & dstData, sSection & secData, SStringA strDataName, int nGroup)
+{
+	dstData.data.value = secData.point;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point");
+	subDataVec.emplace_back(dstData);
+	if (nGroup == Group_Stock)
+	{
+		dstData.data.value = secData.pointL1;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "PointL1");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = secData.pointL2;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "PointL2");
+		subDataVec.emplace_back(dstData);
+	}
+
 }
 
 bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
@@ -975,6 +1071,27 @@ void CWndSynHandler::OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
+void CWndSynHandler::OnMsgCallAction(SOCKET netSocket, ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	TimeLineData stkInfo = { 0 };
+	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_RpsProcThreadID, UpdateCallAction,
+			(char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnNoDefineMsg(SOCKET netSocket, ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -1069,6 +1186,43 @@ void CWndSynHandler::OnClearData(int nMsgLength, const char * info)
 	SetEvent(g_hLoginEvent);
 }
 
+void CWndSynHandler::OnUpdateCallAction(int nMsgLength, const char * info)
+{
+	int dataCount = nMsgLength / sizeof(CAInfo);
+	CAInfo* dataArr = (CAInfo*)info;
+	int nCount = 0;
+	int nErrName = 0;
+	for (int i = 0; i < dataCount; ++i)
+		m_CallActionHash[dataArr[i].group].hash[dataArr[i].SecurityID] = dataArr[i];
+
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		for (auto& data : m_CallActionHash[i].hash)
+		{
+			//if(data.second.nTime)
+			auto &caInfo = data.second;
+			//更新选股器数据
+			auto &filterMap = m_FilterDataMap[i][Period_1Day].hash[data.first];
+			filterMap["CAVOL"] = caInfo.Volume;
+			filterMap["CAVOLPOINT"] = caInfo.VolPoint;
+			filterMap["CAVOLRANK"] = caInfo.VolRank;
+			filterMap["CAVOLPOINTL1"] = caInfo.VolPointL1;
+			filterMap["CAVOLRANKL1"] = caInfo.VolRankL1;
+			filterMap["CAVOLPOINTL2"] = caInfo.VolPointL2;
+			filterMap["CAVOLRANKL2"] = caInfo.VolRankL2;
+			filterMap["CAAMO"] = caInfo.Amount;
+			filterMap["CAAMOPOINT"] = caInfo.AmoPoint;
+			filterMap["CAAMORANK"] = caInfo.AmoRank;
+			filterMap["CAAMOPOINTL1"] = caInfo.AmoPointL1;
+			filterMap["CAAMORANKL1"] = caInfo.AmoRankL1;
+			filterMap["CAAMOPOINTL2"] = caInfo.AmoPointL2;
+			filterMap["CAAMORANKL2"] = caInfo.AmoRankL2;
+
+		}
+
+	}
+}
+
 
 
 void CWndSynHandler::OnAddWnd(int nMsgLength, const char * info)
@@ -1087,6 +1241,7 @@ void CWndSynHandler::OnGetMarket(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
 	m_WndSubMap[pDgInfo->hWnd][pDgInfo->Group] = pDgInfo->StockID;
+	m_WndPointSubMap[pDgInfo->hWnd][pDgInfo->Group].clear();
 	GetMarket(pDgInfo->StockID, pDgInfo->Group);
 }
 
@@ -1099,7 +1254,8 @@ void CWndSynHandler::OnGetKline(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetPoint(int nMsgLength, const char * info)
 {
 	ExDataGetInfo *pDgInfo = (ExDataGetInfo *)info;
-	GetHisPoint(m_PointGetMsg[pDgInfo->Type],pDgInfo->StockID,
+	m_WndPointSubMap[pDgInfo->hWnd][pDgInfo->nAskGroup][pDgInfo->StockID].emplace_back(*pDgInfo);
+	GetHisPoint(m_PointGetMsg[pDgInfo->Type], pDgInfo->StockID,
 		pDgInfo->Period, pDgInfo->Group,pDgInfo->exMsg);
 }
 
@@ -1113,84 +1269,42 @@ void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
 
 void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 {
-	for (auto &wndSub : m_WndSubMap)
+	for (auto &wndSub : m_WndPointSubMap)
 	{
 		HWND hWnd = wndSub.first;
 		for (auto &subInfo : wndSub.second)
 		{
-			vector<pair<int, pair<char[MAX_NAME_LENGTH], CoreData>>>subDataVec;
+			vector<RtPointData>subDataVec;
 			::EnterCriticalSection(&m_cs);
-			auto &dataMap = m_RtRpsHash[subInfo.first];
-			for (auto &periodDataPair : dataMap)
+			for (auto &getInfo : subInfo.second)
 			{
-				if (periodDataPair.second.hash.count(subInfo.second))
+				SStringA StockID = getInfo.first;
+				for (int i = Group_SWL1; i <= subInfo.first; ++i)
 				{
-					pair<int, pair<char[MAX_NAME_LENGTH], CoreData>> data;
-					data.first = periodDataPair.first;
-					auto &rpsData = periodDataPair.second.hash[subInfo.second];
-					data.second.second.date = rpsData.nDate;
-					data.second.second.time = rpsData.nTime;
-					data.second.second.value = rpsData.rpsClose.fPoint520;
-					strcpy_s(data.second.first, "closePoint520");
-					subDataVec.emplace_back(data);
-					data.second.second.value = rpsData.rpsClose.fPoint2060;
-					strcpy_s(data.second.first, "closePoint2060");
-					subDataVec.emplace_back(data);
-					if (subInfo.first == Group_Stock)
+					auto &dataMap = m_RtRpsHash[i];
+					for (auto &periodDataPair : dataMap)
 					{
-						data.second.second.value = rpsData.rpsClose.fL1Point520;
-						strcpy_s(data.second.first, "closePoint520L1");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.rpsClose.fL1Point2060;
-						strcpy_s(data.second.first, "closePoint2060L1");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.rpsClose.fL2Point520;
-						strcpy_s(data.second.first, "closePoint520L2");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.rpsClose.fL2Point2060;
-						strcpy_s(data.second.first, "closePoint2060L2");
-						subDataVec.emplace_back(data);
+						if (periodDataPair.second.hash.count(StockID))
+						{
+							if (periodDataPair.second.hash.count(StockID))
+							{
+								RtPointData data;
+								strcpy_s(data.stockID, StockID);
+								data.period = periodDataPair.first;
+								auto &rpsData = periodDataPair.second.hash[StockID];
+								data.data.date = rpsData.nDate;
+								data.data.time = rpsData.nTime;
+								UpdateRtRpsPointData(subDataVec, data, rpsData.rpsClose, "close", subInfo.first);
+								UpdateRtRpsPointData(subDataVec, data, rpsData.rpsAmount, "amount", subInfo.first);
+								UpdateRtSecPointData(subDataVec, data, rpsData.secAmount, "amount", subInfo.first);
 
+							}
+						}
 					}
-
-					data.second.second.value = rpsData.rpsAmount.fPoint520;
-					strcpy_s(data.second.first, "amountPoint520");
-					subDataVec.emplace_back(data);
-					data.second.second.value = rpsData.rpsAmount.fPoint2060;
-					strcpy_s(data.second.first, "amountPoint2060");
-					subDataVec.emplace_back(data);
-					if (subInfo.first == Group_Stock)
-					{
-						data.second.second.value = rpsData.rpsAmount.fL1Point520;
-						strcpy_s(data.second.first, "amountPoint520L1");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.rpsAmount.fL1Point2060;
-						strcpy_s(data.second.first, "amountPoint2060L1");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.rpsAmount.fL2Point520;
-						strcpy_s(data.second.first, "amountPoint520L2");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.rpsAmount.fL2Point2060;
-						strcpy_s(data.second.first, "amountPoint2060L2");
-						subDataVec.emplace_back(data);
-
-					}
-
-					data.second.second.value = rpsData.secAmount.point;
-					strcpy_s(data.second.first, "amountPoint");
-					subDataVec.emplace_back(data);
-					if (subInfo.first == Group_Stock)
-					{
-						data.second.second.value = rpsData.secAmount.pointL1;
-						strcpy_s(data.second.first, "amountPointL1");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.secAmount.pointL2;
-						strcpy_s(data.second.first, "amountPointL2");
-						subDataVec.emplace_back(data);
-					}
-
 				}
+
 			}
+
 			if (!subDataVec.empty())
 			{
 				int length = 4 + subDataVec.size() *
@@ -1212,14 +1326,35 @@ void CWndSynHandler::OnHisRpsPoint(int nMsgLength, const char * info)
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
 	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nOffset = sizeof(*pRecvInfo);
+	int nAttMsgSize = *(int*)(info + nOffset);
+	nOffset += sizeof(nAttMsgSize);
+	char *msg = new char[nAttMsgSize + 1];
+	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
+	for (auto &it : m_WndPointSubMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisRpsPoint,
-				info, nMsgLength);
+		for (int i = Group_SWL1; i < Group_Count; ++i)
+		{
+			if (it.second.count(i)
+				&& it.second[i].count(strStock))
+			{
+				auto &infoVec = it.second[i][strStock];
+				for (auto getInfo = infoVec.begin(); getInfo<infoVec.end();++getInfo)
+				{
+					if (getInfo->Period == pRecvInfo->Period &&
+						strcmp(getInfo->exMsg, msg) == 0)
+					{
+						SendMsg(m_hWndMap[hWnd], Syn_HisRpsPoint,
+							info, nMsgLength);
+						infoVec.erase(getInfo);
+						break;
+					}
+				}
+			}
+		}
 	}
+	delete[]msg;
 }
 
 void CWndSynHandler::OnRTIndexMarket(int nMsgLength, const char * info)
@@ -1330,13 +1465,33 @@ void CWndSynHandler::OnHisSecPoint(int nMsgLength, const char * info)
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
 	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nOffset = sizeof(*pRecvInfo);
+	int nAttMsgSize = *(int*)(info + nOffset);
+	nOffset += sizeof(nAttMsgSize);
+	char *msg = new char[nAttMsgSize + 1];
+	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
+	for (auto &it : m_WndPointSubMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisSecPoint,
-				info, nMsgLength);
+		for (int i = Group_SWL1; i < Group_Count; ++i)
+		{
+			if (it.second.count(i)
+				&& it.second[i].count(strStock))
+			{
+				auto &infoVec = it.second[i][strStock];
+				for (auto getInfo = infoVec.begin(); getInfo<infoVec.end(); ++getInfo)
+				{
+					if (getInfo->Period == pRecvInfo->Period &&
+						strcmp(getInfo->exMsg, msg) == 0)
+					{
+						SendMsg(m_hWndMap[hWnd], Syn_HisSecPoint,
+							info, nMsgLength);
+						infoVec.erase(getInfo);
+						break;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -1356,12 +1511,14 @@ void CWndSynHandler::OnRehabInfo(int nMsgLength, const char * info)
 }
 
 
+
 void CWndSynHandler::SetVectorSize()
 {
 	m_ListInsVec.resize(Group_Count);
 	m_ListInfoVec.resize(Group_Count);
 	m_FilterDataMap.resize(Group_Count);
 	m_RtRpsHash.resize(Group_Count);
+	m_CallActionHash.resize(Group_Count);
 	for (auto period = Period_FenShi; period < Period_End; ++period)
 		m_TFMarketHash[period] = strHash<TickFlowMarket>();
 }

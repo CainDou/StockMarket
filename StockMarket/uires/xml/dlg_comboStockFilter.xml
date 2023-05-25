@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0"?>
-<SOUI name="filterWindow" title="选股器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="950" height="600" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+<SOUI name="filterWindow" title="选股器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1050" height="700" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
 	<root cache="1" colorBkgnd="rgb(50,50,50)">
 		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff"  cache="1">
 			<icon pos="10,8" src="ICON_LOGO:16" />
@@ -7,16 +7,16 @@
 			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 		</caption>
 		<window pos="0,30,-0,-0"  cache="1" font="face:微软雅黑" colorText="#00ffffff">
-			<group pos="5,5,@700,-5" align="left" headerHeight="0" text="条件列表">
+			<group pos="5,5,@790,-5" align="left" headerHeight="0" text="条件列表">
 				<check name="chk_use" pos="5,[20" checked="0">启用选股器</check>
-				<color_listctrlex name="ls_filter" cache="1" bkgndBlend="0" pos="5,[5,@690,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-					<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+				<color_listctrlex name="ls_filter" cache="1" bkgndBlend="0" pos="5,[5,-5,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+					<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 						<items>
-							<item width="30">序号</item>
-							<item width="190">指标1</item>
+							<item width="40">序号</item>
+							<item width="230">指标1</item>
 							<item width="90">周期1</item>
 							<item width="80">条件</item>
-							<item width="190">指标2</item>
+							<item width="230">指标2</item>
 							<item width="90">周期2/数值</item>
 						</items>
 					</headerex>

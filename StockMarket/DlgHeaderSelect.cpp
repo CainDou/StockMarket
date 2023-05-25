@@ -56,6 +56,12 @@ void SOUI::CDlgHeaderSelect::InitTilteMap()
 	m_titleMap[SHead_AmountRank2060] = L"成交额2060排名";
 	m_titleMap[SHead_AmountPoint] = L"成交额截面分数";
 	m_titleMap[SHead_AmountRank] = L"成交额截面排名";
+	m_titleMap[SHead_CAVol] = L"集合竞价成交量";
+	m_titleMap[SHead_CAVolPoint] = L"集合竞价成交量分数";
+	m_titleMap[SHead_CAVolRank] = L"集合竞价成交量排名";
+	m_titleMap[SHead_CAAmo] = L"集合竞价成交额";
+	m_titleMap[SHead_CAAmoPoint] = L"集合竞价成交额分数";
+	m_titleMap[SHead_CAAmoRank] = L"集合竞价成交额排名";
 	m_titleMap[SHead_ActBuySellRatio] = L"主动量比%";
 	m_titleMap[SHead_ActToPasBuySellRatio] = L"转换主被动量比%";
 	m_titleMap[SHead_AvgBuySellRatio] = L"平均量比%";

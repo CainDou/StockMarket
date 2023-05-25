@@ -42,7 +42,7 @@ namespace SOUI
 		void		OutputComboStockFilterPara(vector<StockFilter>& sfVec);
 		void		InitStockFilterPara(SFPlan &sfPlan);
 		void		InitComboStockFilterPara(vector<StockFilter>& sfVec);
-		void		SetPointInfo(map<ePointDataType, ShowPointInfo> &infoMap);
+		void		SetPointInfo(map<int, ShowPointInfo> &infoMap);
 		map<int, int> GetListTitleOrder();
 		// 消息响应
 	protected:
@@ -78,9 +78,10 @@ namespace SOUI
 		void SetListDataOrder();
 		void UpdateListShowStock();
 		void UpdateList();
-		void UpdateRpsData(int nRow, sRps &rps, int nStart, int nEnd);
-		void UpdateSecData(int nRow, sSection &sec, int nStart, int nEnd);
-		void UpdateTFData(int nRow, TickFlowMarket& tfData,double fPreClose);
+		void UpdateListRpsData(int nRow, sRps &rps, int nStart, int nEnd);
+		void UpdateListSecData(int nRow, sSection &sec, int nStart, int nEnd);
+		void UpdateListCAData(int nRow, CAInfo& caData);
+		void UpdateListTFData(int nRow, TickFlowMarket& tfData,double fPreClose);
 		void UpdateListFilterShowStock();
 		void SortList(SColorListCtrlEx* pList, bool bSortCode = false);
 
@@ -142,6 +143,7 @@ namespace SOUI
 		void GetPointData(ShowPointInfo &info, SStringA StockID,int nPeriod);
 		//数据更新处理
 		void UpdateTmData(vector<CoreData>& comData, CoreData& data);
+		bool CheckDataIsGot(ShowPointInfo & info, int nPeriod);
 	protected:
 		//外部消息处理
 		void OnUpdateListData(int nMsgLength, const char* info);
@@ -268,6 +270,10 @@ namespace SOUI
 		map<int, strHash<RtRps>> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
 		map<int, strHash<map<string, double>>>* m_pFilterDataMap;
+		map<int, strHash<map<string, double>>>* m_pL1IndyFilterDataMap;
+		map<int, strHash<map<string, double>>>* m_pL2IndyFilterDataMap;
+		strHash<CAInfo>* m_pCallActionHash;
+
 		strHash<double> m_preCloseMap;
 		strHash<SStringA> m_StockName;
 		vector<SStringA> m_dataNameVec;
@@ -277,7 +283,7 @@ namespace SOUI
 		SFPlan m_sfPlan;
 		vector<StockFilter> m_sfVec;
 		vector<BOOL> m_frmlExistVec;
-		map<ePointDataType, ShowPointInfo> m_pointInfoMap;
+		map<int, ShowPointInfo> m_pointInfoMap;
 		map<int, int> m_SFPeriodMap;
 		map<int, string> m_SFIndexMap;
 		map<int, PCOMPAREFUNC> m_SFConditionMap;
@@ -294,12 +300,16 @@ namespace SOUI
 		//分析图数据
 	protected:
 		map<int, map<SStringA, vector<CoreData>>> m_PointData;
+		map<int, map<SStringA, vector<CoreData>>> m_L1IndyPointData;
+		map<int, map<SStringA, vector<CoreData>>> m_L2IndyPointData;
 		vector<CommonIndexMarket>m_IndexMarketVec;
 		vector<CommonStockMarket>m_StockMarketVec;
 		map<int, vector<KlineType>>m_KlineMap;
 
 		bool m_bMarketGet;
 		map<int, map<SStringA,BOOL>>m_PointGetMap;
+		map<int, map<SStringA, BOOL>>m_L1IndyPointGetMap;
+		map<int, map<SStringA, BOOL>>m_L2IndyPointGetMap;
 		map<int, bool>m_KlineGetMap;
 		//map<SStringA,map<int, bool>>m_PointGetMap;
 		//set<ShowPointInfo> m_PointUseMap;
@@ -308,6 +318,7 @@ namespace SOUI
 	protected:
 		unordered_map<int, PDATAHANDLEFUNC>m_dataHandleMap;
 		vector<StockInfo> m_InfoVec;
+		strHash<StockInfo>m_infoMap;
 		UINT m_nLastChar;
 		HWND m_hParWnd;
 		unsigned m_uThreadID;
@@ -338,7 +349,7 @@ inline void CWorkWnd::SetPreClose(strHash<double>& preCloseMap)
 	m_preCloseMap = preCloseMap;
 }
 
-inline void SOUI::CWorkWnd::SetParThreadID(UINT uThreadID)
+inline void CWorkWnd::SetParThreadID(UINT uThreadID)
 {
 	m_uParWndThreadID = uThreadID;
 }

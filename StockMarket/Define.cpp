@@ -345,23 +345,12 @@ HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
 
 bool _UsedPointInfo::operator<(const _UsedPointInfo & other) const
 {
-	if (this->type != other.type)
-		return this->type < other.type;
-	else if (this->srcDataName != other.srcDataName)
-		return this->srcDataName < other.srcDataName;
-	else
-		return this->range < other.range;
+	return this->overallType < other.overallType;
 }
 
 bool _UsedPointInfo::operator==(const _UsedPointInfo & other) const
 {
-	if (this->type != other.type)
-		return false;
-	else if (this->srcDataName != other.srcDataName)
-		return false;
-	else if(this->range != other.range)
-		return false;
-	return true;
+	return other.overallType == this->overallType;
 }
 
 bool _StockFilterPara::operator<(const _StockFilterPara & other) const

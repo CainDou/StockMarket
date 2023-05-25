@@ -118,7 +118,7 @@ void SFenShiPic::ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec)
 
 }
 
-vector<ShowPointInfo> SFenShiPic::GetSubPicDataToGet(int nNum, map<ePointDataType, ShowPointInfo>& infoMap)
+vector<ShowPointInfo> SFenShiPic::GetSubPicDataToGet(int nNum, map<int, ShowPointInfo>& infoMap)
 {
 	::EnterCriticalSection(&m_csSub);
 	vector<ShowPointInfo> infoVec;
@@ -1257,9 +1257,9 @@ void SFenShiPic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)
 	{
 		auto info = m_ppSubPic[i]->GetSubPicInfo();
 		SStringA str;
-		if ("L1" == info.range)
+		if ("L1" == info.dataInRange)
 			str.Format("行业:%s", strNameVec[0]);
-		else if ("L2" == info.range)
+		else if ("L2" == info.dataInRange)
 			str.Format("行业:%s", strNameVec[1]);
 		str.Format("%s %s", info.showName, str);
 		m_ppSubPic[i]->SetSubTitleInfo(str);

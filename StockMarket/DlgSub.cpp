@@ -149,7 +149,10 @@ void CDlgSub::InitWorkWnd()
 	vector<map<int, strHash<map<string, double>>>>* pFilterData =
 		g_WndSyn.GetFilterData();
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
-	InitConfig();
+	auto infoMap = g_WndSyn.GetPointInfo();
+	vector<strHash<CAInfo>>* pCallAction = g_WndSyn.GetCallActionData();
+
+	InitConfig(infoMap);
 	InitComboStockFilter();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
@@ -157,6 +160,11 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
 		m_WndMap[i]->SetDataPoint(&pFilterData->at(i), DT_FilterData);
+		m_WndMap[i]->SetPointInfo(infoMap);
+		m_WndMap[i]->SetDataPoint(&pCallAction->at(i), DT_CallAction);
+
+		for (int j = Group_SWL1; j < i; ++j)
+			m_WndMap[i]->SetDataPoint(&pFilterData->at(j), DT_L1IndyFilterData + j);
 		if (i == Group_Stock)
 		{
 			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
@@ -166,7 +174,6 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->InitList();
 	}
 	InitListConfig();
-
 }
 
 void CDlgSub::InitStockFilter()
@@ -210,7 +217,7 @@ void SOUI::CDlgSub::InitComboStockFilter()
 
 }
 
-void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection)
+void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
 {
 	vector<SStringA> strRangeVec;
 	strRangeVec.emplace_back("");
@@ -221,6 +228,7 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 	strShowNameVec.emplace_back("一级行业");
 	strShowNameVec.emplace_back("二级行业");
 	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
+	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
 	if (initPara.nTSCPointWndNum == -1)
 	{
 		int nCount = 0;
@@ -229,12 +237,10 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 			if (initPara.bShowTSCRPS[i])
 			{
 				++nCount;
-				ShowPointInfo spi;
-				spi.type = eRpsPoint;
-				spi.srcDataName = "close";
-				spi.range = strRangeVec[i];
-				spi.showName = strShowNameVec[i] + "CRPS";
-				initPara.TSCPonitWndInfo.emplace_back(spi);
+				if (i == 0)
+					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+				else
+					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
 			}
 		}
 		initPara.nTSCPointWndNum = nCount;
@@ -243,20 +249,28 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 	{
 		for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
 		{
-			ShowPointInfo spi;
 			SStringA tmp;
-			spi.type = (ePointType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
-			spi.srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
-			spi.range = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
-			spi.showName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dShowName", i), "");
-			if (spi.showName.Find("收盘价") != -1)
-				spi.showName.Replace("收盘价", "C");
-			if (spi.showName.Find("成交额") != -1)
-				spi.showName.Replace("成交额", "AMO");
-			if (spi.showName.Find("相对强度") != -1)
-				spi.showName.Replace("相对强度", "RPS");
-
-			initPara.TSCPonitWndInfo.emplace_back(spi);
+			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
+			if (overallType == -1)
+			{
+				int type = (ePointType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
+				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
+				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
+				for (auto &it : pointMap)
+				{
+					if (it.first > eIndyMarketPointEnd)
+						continue;
+					if (it.second.type == type &&
+						it.second.dataInRange == dataInRange &&
+						it.second.srcDataName == srcDataName)
+					{
+						initPara.TSCPonitWndInfo.emplace_back(it.second);
+						break;
+					}
+				}
+			}
+			else
+				initPara.TSCPonitWndInfo.emplace_back(pointMap[overallType]);
 		}
 	}
 	initPara.nKlinePointWndNum = ini.GetIntA(strSection, "KlinePointWndNum", -1);
@@ -268,12 +282,11 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 			if (initPara.bShowKlineRPS[i])
 			{
 				++nCount;
-				ShowPointInfo spi;
-				spi.type = eRpsPoint;
-				spi.srcDataName = "close";
-				spi.range = strRangeVec[i];
-				spi.showName = strShowNameVec[i] + "收盘价相对强度";
-				initPara.KlinePonitWndInfo.emplace_back(spi);
+				++nCount;
+				if (i == 0)
+					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+				else
+					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
 			}
 		}
 		initPara.nKlinePointWndNum = nCount;
@@ -282,27 +295,35 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 	{
 		for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
 		{
-			ShowPointInfo spi;
 			SStringA tmp;
-			spi.type = (ePointType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
-			spi.srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
-			spi.range = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
-			spi.showName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dShowName", i), "");
-			if (spi.showName.Find("收盘价") != -1)
-				spi.showName.Replace("收盘价", "C");
-			if (spi.showName.Find("成交额") != -1)
-				spi.showName.Replace("成交额", "AMO");
-			if (spi.showName.Find("相对强度") != -1)
-				spi.showName.Replace("相对强度", "RPS");
-
-			initPara.KlinePonitWndInfo.emplace_back(spi);
+			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
+			if (overallType == -1)
+			{
+				int type = (ePointType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
+				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
+				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
+				for (auto &it : pointMap)
+				{
+					if (it.first > eIndyMarketPointEnd)
+						continue;
+					if (it.second.type == type &&
+						it.second.dataInRange == dataInRange &&
+						it.second.srcDataName == srcDataName)
+					{
+						initPara.KlinePonitWndInfo.emplace_back(it.second);
+						break;
+					}
+				}
+			}
+			else
+				initPara.KlinePonitWndInfo.emplace_back(pointMap[overallType]);
 		}
 	}
 
 }
 
 
-void CDlgSub::InitConfig()
+void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 {
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\%s.ini", m_strWindowName);
@@ -407,7 +428,7 @@ void CDlgSub::InitConfig()
 		initPara.nKlineCalcRehabType = ini.GetIntA(strSection, "KlineCalcRehabType", 0);
 		initPara.nKlineFTRehabDate = ini.GetIntA(strSection, "KlineFTRehabDate", 0);
 
-		InitPointWndInfo(ini, initPara, strSection);
+		InitPointWndInfo(ini, initPara, strSection, pointMap);
 
 		m_WndMap[i]->InitShowConfig(initPara);
 	}
@@ -448,12 +469,48 @@ void SOUI::CDlgSub::InitListConfig()
 		}
 		else
 		{
-			SStringA strKey;
-			for (int j = 0; j<nShowItemCount; ++j)
-				showTitleMap[j + SHead_CloseRPS520] =
-				ini.GetIntA(strSection, strKey.Format("Show%d", j + SHead_CloseRPS520), TRUE);
-			for (int j = 0; j<nShowItemCount + SHead_CloseRPS520; ++j)
-				titleOrderMap[j] = ini.GetIntA(strSection, strKey.Format("Order%d", j), j);
+			int nTotalItemCount = Group_Stock ==
+				i ? SHead_StockItemCount : SHead_CommonItmeCount;
+			if (nShowItemCount + SHead_CloseRPS520 < nTotalItemCount)
+			{
+				SStringA strKey;
+				for (int j = 0; j < nShowItemCount; ++j)
+				{
+					int nIndex = j + SHead_CloseRPS520;
+					if (nIndex >= g_nListNewItemStart)
+						nIndex += (g_nListNewItemEnd - g_nListNewItemStart + 1);
+					showTitleMap[nIndex] =
+						ini.GetIntA(strSection, strKey.Format("Show%d", j + SHead_CloseRPS520), TRUE);
+				}
+				//默认新添加的都显示
+				for (int j = g_nListNewItemStart; j <= g_nListNewItemEnd; ++j)
+					showTitleMap[j] = TRUE;
+
+				for (int j = 0; j < nShowItemCount + SHead_CloseRPS520; ++j)
+				{
+					int nIndex = j;
+					if (nIndex >= g_nListNewItemStart)
+						nIndex += (g_nListNewItemEnd - g_nListNewItemStart + 1);
+					int nOrderShow = ini.GetIntA(strSection, strKey.Format("Order%d", j), j);
+					if (nOrderShow >= g_nListNewItemStart)
+						nOrderShow += (g_nListNewItemEnd - g_nListNewItemStart + 1);
+					titleOrderMap[nIndex] = nOrderShow;
+
+				}
+				//默认新添加的都在原有位置
+				for (int j = g_nListNewItemStart; j <= g_nListNewItemEnd; ++j)
+					titleOrderMap[j] = j;
+
+			}
+			else
+			{
+				SStringA strKey;
+				for (int j = 0; j < nShowItemCount; ++j)
+					showTitleMap[j + SHead_CloseRPS520] =
+					ini.GetIntA(strSection, strKey.Format("Show%d", j + SHead_CloseRPS520), TRUE);
+				for (int j = 0; j < nShowItemCount + SHead_CloseRPS520; ++j)
+					titleOrderMap[j] = ini.GetIntA(strSection, strKey.Format("Order%d", j), j);
+			}
 		}
 
 		m_WndMap[i]->InitListConfig(showTitleMap, titleOrderMap);
@@ -468,20 +525,14 @@ void SOUI::CDlgSub::SavePointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 	{
 		auto& spi = initPara.TSCPonitWndInfo[i];
 		SStringA tmp;
-		ini.WriteIntA(strSection, tmp.Format("TSCPoint%dType", i), spi.type);
-		ini.WriteStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), spi.srcDataName);
-		ini.WriteStringA(strSection, tmp.Format("TSCPoint%dRange", i), spi.range);
-		ini.WriteStringA(strSection, tmp.Format("TSCPoint%dShowName", i), spi.showName);
+		ini.WriteIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), spi.overallType);
 	}
 	ini.WriteIntA(strSection, "KlinePointWndNum", initPara.nKlinePointWndNum);
 	for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
 	{
 		auto& spi = initPara.KlinePonitWndInfo[i];
 		SStringA tmp;
-		ini.WriteIntA(strSection, tmp.Format("KlinePoint%dType", i), spi.type);
-		ini.WriteStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), spi.srcDataName);
-		ini.WriteStringA(strSection, tmp.Format("KlinePoint%dRange", i), spi.range);
-		ini.WriteStringA(strSection, tmp.Format("KlinePoint%dShowName", i), spi.showName);
+		ini.WriteIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), spi.overallType);
 	}
 }
 

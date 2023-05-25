@@ -32,11 +32,12 @@ public:
 	vector<map<int, strHash<RtRps>>>* GetListData();
 	map<int, strHash<TickFlowMarket>>* GetTFMarket();
 	vector<map<int,strHash<map<string, double>>>>* GetFilterData();
+	vector<strHash<CAInfo>>* GetCallActionData();
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
 	strHash<double> GetCloseMap() const;
 	void SetCmdLine(LPCTSTR lpstrCmdLine);
-	map<ePointDataType, ShowPointInfo> GetPointInfo();
+	map<int, ShowPointInfo> GetPointInfo();
 	//初始化函数
 protected:
 	void InitCommonSetting();
@@ -59,6 +60,10 @@ protected:
 		map<string, double>&filterDataMap);
 	bool HandleSecData(SStringA strDataName, sSection& data,
 		map<string, double>&filterDataMap);
+	void UpdateRtRpsPointData(vector<RtPointData>& subDataVec,
+		RtPointData& dstData, sRps &rpsData, SStringA strDataName, int nGroup);
+	void UpdateRtSecPointData(vector<RtPointData>& subDataVec,
+		RtPointData& dstData, sSection &secData, SStringA strDataName, int nGroup);
 protected:
 	bool ReceiveData(SOCKET socket, int size, char end,
 		char *buffer, int offset = 0);
@@ -90,6 +95,7 @@ protected:
 	void OnMsgRtRps(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgHisSecPoint(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
+	void OnMsgCallAction(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnNoDefineMsg(SOCKET netSocket, ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -97,6 +103,7 @@ protected:
 	void OnUpdateTFMarket(int nMsgLength, const char* info);
 	void OnUpdateRtRps(int nMsgLength, const char* info);
 	void OnClearData(int nMsgLength, const char* info);
+	void OnUpdateCallAction(int nMsgLength, const char* info);
 	//同步窗口数据处理
 protected:
 	void OnAddWnd(int nMsgLength, const char* info);
@@ -121,7 +128,7 @@ public:
 	vector<SStringA> m_dataNameVec;
 	//vector<SStringA> m_comDataNameVec;
 	vector<SStringA> m_uniDataNameVec;
-	map<ePointDataType, ShowPointInfo>m_pointInfoMap;
+	map<int, ShowPointInfo>m_pointInfoMap;
 	vector<vector<SStringA>> m_SubPicShowNameVec;
 	map<int, strHash<StockInfo>> m_ListStockInfoMap;
 	strHash<SStringA> m_StockName;
@@ -129,6 +136,7 @@ public:
 	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
 	vector<map<int, strHash<RtRps>>> m_RtRpsHash;
 	vector<map<int,strHash<map<string, double>>>> m_FilterDataMap;
+	vector<strHash<CAInfo>> m_CallActionHash;
 protected:
 	map<int, BOOL> m_NetHandleFlag;
 	char *todayDataBuffer;
@@ -165,6 +173,7 @@ protected:
 	HWND m_hMain;
 	map<HWND,UINT> m_hWndMap;
 	map<HWND, map<int, SStringA>> m_WndSubMap;
+	map<HWND, map<int, map<SStringA,vector<ExDataGetInfo>>>> m_WndPointSubMap;
 	SStringA m_strIPAddr;
 	int		m_nIPPort;
 	bool m_bServerReady;
@@ -214,6 +223,11 @@ inline vector<map<int, strHash<map<string, double>>>>* CWndSynHandler::GetFilter
 	return &m_FilterDataMap;
 }
 
+inline vector<strHash<CAInfo>>* CWndSynHandler::GetCallActionData()
+{
+	return &m_CallActionHash;
+}
+
 inline void CWndSynHandler::GetSubPicShowNameVec(
 	vector<vector<SStringA>>& SubPicShowNameVec)
 {
@@ -235,7 +249,7 @@ inline void CWndSynHandler::SetCmdLine(LPCTSTR lpstrCmdLine)
 	m_strCmdLine = lpstrCmdLine;
 }
 
-inline map<ePointDataType, ShowPointInfo> CWndSynHandler::GetPointInfo()
+inline map<int, ShowPointInfo> CWndSynHandler::GetPointInfo()
 {
 	return m_pointInfoMap;
 }

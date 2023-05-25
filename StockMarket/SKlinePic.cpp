@@ -156,7 +156,7 @@ void SKlinePic::ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec)
 
 }
 
-vector<ShowPointInfo> SKlinePic::GetSubPicDataToGet(int nNum, map<ePointDataType, ShowPointInfo>& infoMap)
+vector<ShowPointInfo> SKlinePic::GetSubPicDataToGet(int nNum, map<int, ShowPointInfo>& infoMap)
 {
 	::EnterCriticalSection(&m_csSub);
 	vector<ShowPointInfo> infoVec;
@@ -207,6 +207,12 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_rehabType = (eRehabType)para.nKlineRehabType;
 	m_calcRehabType = (eRehabType)para.nKlineCalcRehabType;
 	m_nFTRehabTime = para.nKlineFTRehabDate;
+	if (m_rgGroup != Group_Stock)
+	{
+		m_rehabType = eRT_NoRehab;
+		m_calcRehabType = eRT_NoRehab;
+		m_nFTRehabTime = 0;
+	}
 
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
@@ -2653,9 +2659,9 @@ void SKlinePic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)
 	{
 		auto info = m_ppSubPic[i]->GetSubPicInfo();
 		SStringA str;
-		if ("L1" == info.range)
+		if ("L1" == info.dataInRange || "L1" == info.IndyRange)
 			str.Format("行业:%s", strNameVec[0]);
-		else if ("L2" == info.range)
+		else if ("L2" == info.dataInRange || "L2" == info.IndyRange)
 			str.Format("行业:%s", strNameVec[1]);
 		str.Format("%s %s", info.showName, str);
 		m_ppSubPic[i]->SetSubTitleInfo(str);
@@ -3264,6 +3270,8 @@ void SKlinePic::KlineDataWithHis()
 			else if (eRT_BackRehab_ReInv == m_calcRehabType)
 				m_pAll->data[count] = BackRehabReInv(m_pAll->srcData[count], m_nFTRehabTime);
 		}
+		else
+			m_pAll->data[count] = m_pAll->srcData[count];
 		++count;
 		KlineMAProc(count);
 		VolMAProc(count);

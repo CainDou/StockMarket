@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -28,6 +28,7 @@
 		<file name="dlg_comboStockFilter" path="xml\dlg_comboStockFilter.xml" />
 		<file name="dlg_headerSelect" path="xml\dlg_headerSelect.xml" />
 		<file name="dlg_rehabFixedTime" path="xml\dlg_rehabFixedTime.xml" />
+		<file name="dlg_updateLog" path="xml\dlg_updateLog.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />

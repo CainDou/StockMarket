@@ -5,7 +5,7 @@ namespace SOUI
 	class CDlgSelTarget : public SHostWnd
 	{
 	public:
-		CDlgSelTarget(HWND hWnd, map<ePointDataType, ShowPointInfo>& pointMap);
+		CDlgSelTarget(HWND hWnd, map<int, ShowPointInfo>& pointMap);
 		~CDlgSelTarget();
 		BOOL	OnInitDialog(EventArgs* e);
 		void	OnBtnClose();
@@ -33,10 +33,10 @@ namespace SOUI
 		SEdit* m_pEditFinder;
 	protected:
 		HWND m_hParWnd;
-		map<ePointDataType, ShowPointInfo> m_PointInfoMap;
-		map<int, ePointDataType> m_itemPointData;
+		map<int, ShowPointInfo> m_PointInfoMap;
+		map<int, int> m_itemPointData;
 		BOOL m_bFindOver;
-		map<ePointDataType, int>m_FinderMap;
+		map<int, int>m_FinderMap;
 		SStringA m_preFindStr;
 
 	};

@@ -2,7 +2,7 @@
 #include "DlgSelTarget.h"
 
 
-CDlgSelTarget::CDlgSelTarget(HWND hWnd, map<ePointDataType, ShowPointInfo>& pointMap) :SHostWnd(_T("LAYOUT:dlg_targetSelect"))
+CDlgSelTarget::CDlgSelTarget(HWND hWnd, map<int, ShowPointInfo>& pointMap) :SHostWnd(_T("LAYOUT:dlg_targetSelect"))
 {
 	m_hParWnd = hWnd;
 	m_bFindOver = TRUE;

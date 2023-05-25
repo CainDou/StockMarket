@@ -35,7 +35,7 @@ namespace SOUI
 		~SFenShiPic();
 		void		InitSubPic(int nNum/*,vector<SStringA> & picNameVec*/);
 		void		ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec);
-		vector<ShowPointInfo> GetSubPicDataToGet(int nNum, map<ePointDataType, ShowPointInfo>& infoMap);
+		vector<ShowPointInfo> GetSubPicDataToGet(int nNum, map<int, ShowPointInfo>& infoMap);
 		void		SetShowData(SStringA subIns, 
 					SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
 		void		SetShowData(SStringA subIns, 

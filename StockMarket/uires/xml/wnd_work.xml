@@ -47,6 +47,13 @@
 						<item width="115">成交额2060排名</item>
 						<item width="130">成交额截面分数</item>
 						<item width="130">成交额截面排名</item>
+						<item width="100">集竞成交量</item>
+						<item width="100">集竞量分数</item>
+						<item width="100">集竞量排名</item>
+						<item width="100">集竞成交额</item>
+						<item width="100">集竞金额分数</item>
+						<item width="100">集竞金额排名</item>
+
 					</items>
 				</headerex>
 			</color_listctrlex>

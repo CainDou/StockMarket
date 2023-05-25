@@ -32,8 +32,8 @@ namespace SOUI
 		void InitWorkWnd();
 		void InitStockFilter();
 		void InitComboStockFilter();
-		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
-		void InitConfig();
+		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap);
+		void InitConfig(map<int, ShowPointInfo> &pointMap);
 		void InitListConfig();
 		void SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 		void SavePicConfig();
