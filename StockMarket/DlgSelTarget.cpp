@@ -2,12 +2,14 @@
 #include "DlgSelTarget.h"
 
 
-CDlgSelTarget::CDlgSelTarget(HWND hWnd, map<int, ShowPointInfo>& pointMap) :SHostWnd(_T("LAYOUT:dlg_targetSelect"))
+CDlgSelTarget::CDlgSelTarget(HWND hWnd, map<int, ShowPointInfo>& pointMap, int nPeriod) 
+	:SHostWnd(_T("LAYOUT:dlg_targetSelect"))
 {
 	m_hParWnd = hWnd;
 	m_bFindOver = TRUE;
 	m_preFindStr = "";
 	m_PointInfoMap = pointMap;
+	m_nPeriod = nPeriod;
 }
 
 
@@ -22,6 +24,10 @@ BOOL CDlgSelTarget::OnInitDialog(EventArgs * e)
 	int nIndex = 0;
 	for (auto &it : m_PointInfoMap)
 	{
+		if (m_nPeriod != Period_1Day 
+			&& it.first >= eCAPointStart
+			&&it.first < eCAPointEnd)
+			continue;
 		m_itemPointData[nIndex] = it.first;
 		m_pLbTarget->InsertString(nIndex, StrA2StrW(it.second.showName));
 		++nIndex;

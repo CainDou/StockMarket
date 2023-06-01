@@ -9,6 +9,12 @@
     <item id="204" check="0">成交量</item>
     <item id="220" check="0">成交额</item>
   </item>
+<!--
+  <item   text="集竞成交量/额" id="223" check="0"  contextHelpId="2">
+    <item id="224" check="0">集竞成交量</item>
+    <item id="225" check="0">集竞成交额</item>
+  </item>
+-->
   <sep/>
   <item id="205" check="0">MACD</item>
   <sep/>

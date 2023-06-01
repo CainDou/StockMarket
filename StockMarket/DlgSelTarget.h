@@ -5,7 +5,7 @@ namespace SOUI
 	class CDlgSelTarget : public SHostWnd
 	{
 	public:
-		CDlgSelTarget(HWND hWnd, map<int, ShowPointInfo>& pointMap);
+		CDlgSelTarget(HWND hWnd, map<int, ShowPointInfo>& pointMap,int nPeriod);
 		~CDlgSelTarget();
 		BOOL	OnInitDialog(EventArgs* e);
 		void	OnBtnClose();
@@ -38,6 +38,7 @@ namespace SOUI
 		BOOL m_bFindOver;
 		map<int, int>m_FinderMap;
 		SStringA m_preFindStr;
+		int m_nPeriod;
 
 	};
 

@@ -109,6 +109,7 @@ enum RecvMsgType
 	RecvMsg_HisSecPoint,
 	RecvMsg_RehabInfo,
 	RecvMsg_CallAction,
+	RecvMsg_HisCallAction,
 
 };
 
@@ -121,6 +122,7 @@ enum SendMsgType
 	SendType_HisPeriodKline,
 	SendType_SubIns,
 	SendType_GetHisSecPoint,
+	SendType_HisCallAction,
 
 };
 
@@ -341,6 +343,9 @@ enum SynMsg
 	Syn_GetSecPoint,
 	Syn_HisSecPoint,
 	Syn_RehabInfo,
+	Syn_HisCallAction,
+	Syn_GetCallAction,
+
 };
 
 enum WorkWndMsg
@@ -373,7 +378,8 @@ enum WorkWndMsg
 	WW_RehabInfo,
 	WW_ChangeRehab,
 	WW_FixedTimeRehab,
-
+	WW_HisCallAction,
+	WW_GetCallAction,
 };
 
 
@@ -840,6 +846,9 @@ enum KlineMenu
 	KM_Amount,
 	KM_VolMaPara,
 	KM_AmoMaPara,
+	KM_CAVolOrAmo,
+	KM_CAVol,
+	KM_CAAmo,
 	KM_End,
 };
 
@@ -1249,7 +1258,8 @@ typedef struct _UsedPointInfo
 // 具体的打分数据类型
 enum ePointDataType
 {
-	eFullMarketPointStart,
+	ePointStart,
+	eFullMarketPointStart = ePointStart,
 	eRpsPoint_Close = eFullMarketPointStart,
 	eRpsPoint_Amount,
 	eSecPoint_Amount,
@@ -1262,6 +1272,7 @@ enum ePointDataType
 	eSecPoint_L1_Amount,
 	eSecPoint_L2_Amount,
 	eIndyMarketPointEnd,
+	ePointEnd = eIndyMarketPointEnd,
 };
 
 enum eL1IndyPointDataType
@@ -1280,6 +1291,22 @@ enum eL2IndyPointDataType
 	eL2Indy_RpsPoint_Amount,
 	eL2Indy_SecPoint_Amount,
 	eL2IndyPointEnd,
+};
+
+enum eCAPointDataType
+{
+	eCAPointStart = 300,
+	eCAFullMarketPointStart = eCAPointStart,
+	eCAPoint_Volume = eCAFullMarketPointStart,
+	eCAPoint_Amount,
+	eCAPointFullMarketEnd,
+	eCAIndyMarketPointStart = eCAPointFullMarketEnd,
+	eCAPoint_L1_Volume = eCAIndyMarketPointStart,
+	eCAPoint_L2_Volume,
+	eCAPoint_L1_Amount,
+	eCAPoint_L2_Amount,
+	eCAIndyMarketPointEnd,
+	eCAPointEnd = eCAIndyMarketPointEnd,
 };
 
 

@@ -41,7 +41,6 @@ namespace SOUI
 			vector<BOOL> bRightVec,
 			vector<SStringA> dataNameVec, SStringA StockID,
 			SStringA StockName);
-
 		void		ReSetSubPicData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		void		SetParentHwnd(HWND hParWnd);
 		void		SetTodayMarketState(bool bReady);
@@ -51,6 +50,8 @@ namespace SOUI
 		void        ClearTip();
 		//LRESULT		OnMsg(UINT uMsg, WPARAM wp, LPARAM lp);
 		void		SetRpsGroup(RpsGroup rg);
+		void		SetCaInfoData(vector<CAInfo>* pInfoVec);
+
 		void		SetRehabInfo(vector<RehabInfo>& rehabVec);
 		void		DataProc();
 		void		UpdateData();		
@@ -99,10 +100,17 @@ namespace SOUI
 		void		DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint = FALSE);	//画时间纵轴
 		void		DrawData(IRenderTarget * pRT);
 		void		DrawTickMainData(IRenderTarget * pRT); //画主图tick
-		void		DrawVolData(IRenderTarget * pRT);		//画附图vol
+		void		DrawVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
+					double data, bool bAmo, int nX, int nShowPos);		//画附图vol
+		void		DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
+			double data, bool bAmo, int nX, int nShowPos);		//画附图vol
+		void		DrawMacdData(IRenderTarget * pRT, vector<CPoint>&DIFLine, 
+					vector<CPoint>&DEALine, int nShowPos ,int nX);
+		void		DrawMALine(IRenderTarget * pRT, vector<vector<CPoint>>& MaLine, int *arrMaPara);
 		void		DrawMainUpperMarket(IRenderTarget *pRT, KlineType& data);
 		void		DrawMainUpperMA(IRenderTarget *pRT, int nPos);
 		void		DrawVolAmoUpperMA(IRenderTarget *pRT, int nPos);
+		void		DrawCAVolAmoUpperMA(IRenderTarget *pRT, int nPos);
 		void		DrawMacdUpperMarket(IRenderTarget *pRT, int nPos);
 		void		DrawMainUpperBand(IRenderTarget *pRT, int nPos);
 		void		DrawBandData(IRenderTarget * pRT, int nDataPos, KlineType &Data, int x, int nJiange);
@@ -134,6 +142,10 @@ namespace SOUI
 		void		GetMACDMaxDiff();
 		int			GetMACDYPos(double fDiff);	//获得MACD图y位置
 		SStringW	GetMACDYPrice(int nY);		//获得MACD图y位置价格
+		void		GetCallActionMaxDiff();		//判断副图坐标最大最小值和k线条数
+		int			GetCallActionYPos(double fDiff, bool bAmo = false);	//获得附图y位置
+		SStringW	GetCallActionYPrice(int nY, bool bAmo = false);		//获得附图y位置价格
+
 		BOOL        ptIsInKlineRect(CPoint pt, int nDataCount, KlineType &data);
 		//控制响应
 	protected:
@@ -203,6 +215,9 @@ namespace SOUI
 		size_t			m_nUsedTickCount;
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
+		vector<CAInfo>* m_pCAInfo;
+		vector<vector<int>> m_CAVolMa;
+		vector<vector<int>> m_CAAmoMa;
 		map<int, vector<KlineType>> *m_pHisKlineMap;
 		SStringA	m_strSubIns;
 		SStringA	m_strStockName;
@@ -213,6 +228,10 @@ namespace SOUI
 		eRehabType m_rehabType;		//用于显示的复权类型
 		eRehabType m_calcRehabType;	//用于计算的复权类型
 		int	 m_nFTRehabTime;
+		double m_fCAVolMax;
+		double m_fCAVolMin;
+		double m_fCAAmoMax;
+		double m_fCAAmoMin;
 		//调用类
 	protected:
 		CPriceList* m_pPriceList;
@@ -229,6 +248,8 @@ namespace SOUI
 		int			m_nMAPara[MAX_MA_COUNT];
 		int			m_nVolMaPara[MAX_MA_COUNT];
 		int			m_nAmoMaPara[MAX_MA_COUNT];
+		int			m_nCAVolMaPara[MAX_MA_COUNT];
+		int			m_nCAAmoMaPara[MAX_MA_COUNT];
 		int			m_nMACDPara[3];
 		bool		m_bDataInited;
 		int			m_nKWidth;		//两线之间的宽度
@@ -262,11 +283,15 @@ namespace SOUI
 		bool		m_bTodayMarketReady;
 		bool		m_bHisKlineReady;
 		bool		m_bHisPointReady;
+		bool		m_bShowCAVol;
+		bool		m_bShowCAAmo;
+
 		//绘图参数
 	protected:
 		CRect       m_rcAll;		//上下框相加
 		CRect		m_rcMain;		//上框坐标,K线
 		CRect		m_rcVolume;		//下框坐标,指标
+		CRect		m_rcCAVol;		//集合竞价图形
 		CRect       m_rcMACD;		//下框2坐标，指标2
 		CRect		m_rcImage;
 		CPoint		m_preMovePoint;
@@ -300,6 +325,11 @@ namespace SOUI
 	inline void SKlinePic::SetRpsGroup(RpsGroup rg)
 	{
 		m_rgGroup = rg;
+	}
+
+	inline void SKlinePic::SetCaInfoData(vector<CAInfo>* pInfoVec)
+	{
+		m_pCAInfo = pInfoVec;
 	}
 
 	inline void SKlinePic::SetRehabInfo(vector<RehabInfo>& rehabVec)

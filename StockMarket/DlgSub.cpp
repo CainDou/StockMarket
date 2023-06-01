@@ -670,6 +670,9 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnGetKline;
 	m_MsgHandleMap[WW_GetPoint]
 		= &CDlgSub::OnGetPoint;
+	m_MsgHandleMap[WW_GetCallAction]
+		= &CDlgSub::OnGetCallAction;
+
 	m_MsgHandleMap[Syn_Point]
 		= &CDlgSub::OnUpdatePoint;
 	//m_MsgHandleMap[Syn_TodayPoint]
@@ -692,6 +695,10 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnChangeIndy;
 	m_MsgHandleMap[Syn_HisSecPoint]
 		= &CDlgSub::OnHisSecPoint;
+	m_MsgHandleMap[Syn_RehabInfo]
+		= &CDlgSub::OnRehabInfo;
+	m_MsgHandleMap[Syn_HisCallAction]
+		= &CDlgSub::OnHisCallAction;
 
 }
 
@@ -835,12 +842,34 @@ void CDlgSub::OnChangeIndy(int nMsgLength, const char * info)
 			info, nMsgLength);
 }
 
-void SOUI::CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
+void CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	int nGroup = pRecvInfo->Group;
 	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisSecPoint,
 		info, nMsgLength);
+}
+
+void CDlgSub::OnRehabInfo(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RehabInfo,
+		info, nMsgLength);
+}
+
+void CDlgSub::OnHisCallAction(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nGroup = pRecvInfo->Group;
+	if (m_WndSubMap[nGroup] == strStock)
+		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisCallAction,
+			info, nMsgLength);
+}
+
+void CDlgSub::OnGetCallAction(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetCallAction, info, nMsgLength);
 }
 
 void CDlgSub::OnFinalMessage(HWND hWnd)
