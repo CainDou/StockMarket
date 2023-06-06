@@ -353,6 +353,10 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 			ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
 		initPara.bShowKlineAmount =
 			ini.GetIntA(strSection, "ShowKlineAmount", 1) == 0 ? false : true;
+		initPara.bShowKlineCAVol =
+			ini.GetIntA(strSection, "ShowKlineCAVol", 1) == 0 ? false : true;
+		initPara.bShowKlineCAAmo =
+			ini.GetIntA(strSection, "ShowKlineCAAmo", 1) == 0 ? false : true;
 		initPara.bShowKlineMACD =
 			ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[0] =
@@ -392,6 +396,13 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 		for (int i = 0; i<MAX_MA_COUNT; ++i)
 			initPara.nAmoMaPara[i] = ini.GetIntA(strSection,
 				strKey.Format("AmoMAPara%d", i + 1), VolAmoMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			initPara.nCAVolMaPara[i] = ini.GetIntA(strSection,
+				strKey.Format("CAVolMAPara%d", i + 1), VolAmoMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			initPara.nCAAmoMaPara[i] = ini.GetIntA(strSection,
+				strKey.Format("CAAmoMAPara%d", i + 1), VolAmoMAPara[i]);
+
 		initPara.nJiange =
 			ini.GetIntA(strSection, "Jiange", 2);
 		initPara.BandPara.N1 =
@@ -558,6 +569,8 @@ void CDlgSub::SavePicConfig()
 		ini.WriteIntA(strSection, "ShowTSCVolume", initPara.bShowTSCVolume);
 		ini.WriteIntA(strSection, "ShowKlineVolume", initPara.bShowKlineVolume);
 		ini.WriteIntA(strSection, "ShowKlineAmount", initPara.bShowKlineAmount);
+		ini.WriteIntA(strSection, "ShowKlineCAVol", initPara.bShowKlineCAVol);
+		ini.WriteIntA(strSection, "ShowKlineCAAmo", initPara.bShowKlineCAAmo);
 		ini.WriteIntA(strSection, "ShowKlineMACD", initPara.bShowKlineMACD);
 		ini.WriteIntA(strSection, "ShowTSCRPS", initPara.bShowTSCRPS[0]);
 		ini.WriteIntA(strSection, "ShowTSCL1RPS", initPara.bShowTSCRPS[0]);
@@ -579,6 +592,11 @@ void CDlgSub::SavePicConfig()
 			ini.WriteIntA(strSection, strKey.Format("VolMAPara%d", i + 1), initPara.nVolMaPara[i]);
 		for (int i = 0; i<MAX_MA_COUNT; ++i)
 			ini.WriteIntA(strSection, strKey.Format("AmoMAPara%d", i + 1), initPara.nAmoMaPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("CAVolMAPara%d", i + 1), initPara.nCAVolMaPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("CAAmoMAPara%d", i + 1), initPara.nCAAmoMaPara[i]);
+
 		ini.WriteIntA(strSection, "Jiange", initPara.nJiange);
 		ini.WriteIntA(strSection, "BandN1", initPara.BandPara.N1);
 		ini.WriteIntA(strSection, "BandN2", initPara.BandPara.N2);
@@ -670,6 +688,9 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnGetKline;
 	m_MsgHandleMap[WW_GetPoint]
 		= &CDlgSub::OnGetPoint;
+	m_MsgHandleMap[WW_GetCallAction]
+		= &CDlgSub::OnGetCallAction;
+
 	m_MsgHandleMap[Syn_Point]
 		= &CDlgSub::OnUpdatePoint;
 	//m_MsgHandleMap[Syn_TodayPoint]
@@ -692,6 +713,10 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnChangeIndy;
 	m_MsgHandleMap[Syn_HisSecPoint]
 		= &CDlgSub::OnHisSecPoint;
+	m_MsgHandleMap[Syn_RehabInfo]
+		= &CDlgSub::OnRehabInfo;
+	m_MsgHandleMap[Syn_HisCallAction]
+		= &CDlgSub::OnHisCallAction;
 
 }
 
@@ -835,12 +860,34 @@ void CDlgSub::OnChangeIndy(int nMsgLength, const char * info)
 			info, nMsgLength);
 }
 
-void SOUI::CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
+void CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	int nGroup = pRecvInfo->Group;
 	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisSecPoint,
 		info, nMsgLength);
+}
+
+void CDlgSub::OnRehabInfo(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RehabInfo,
+		info, nMsgLength);
+}
+
+void CDlgSub::OnHisCallAction(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nGroup = pRecvInfo->Group;
+	if (m_WndSubMap[nGroup] == strStock)
+		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisCallAction,
+			info, nMsgLength);
+}
+
+void CDlgSub::OnGetCallAction(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetCallAction, info, nMsgLength);
 }
 
 void CDlgSub::OnFinalMessage(HWND hWnd)

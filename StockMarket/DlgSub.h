@@ -61,6 +61,9 @@ namespace SOUI
 		void OnCloseInfo(int nMsgLength, const char* info);
 		void OnChangeIndy(int nMsgLength, const char* info);
 		void OnHisSecPoint(int nMsgLength, const char* info);
+		void OnRehabInfo(int nMsgLength, const char* info);
+		void OnHisCallAction(int nMsgLength, const char* info);
+		void OnGetCallAction(int nMsgLength, const char* info);
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);

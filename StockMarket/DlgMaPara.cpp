@@ -20,6 +20,16 @@ CDlgMaPara::~CDlgMaPara()
 {
 }
 
+void CDlgMaPara::InitConfigName()
+{
+	m_MaConfigName[eMa_Close] = "";
+	m_MaConfigName[eMa_Volume] = "Vol";
+	m_MaConfigName[eMa_Amount] = "Amo";
+	m_MaConfigName[eMa_CAVol] = "CAVol";
+	m_MaConfigName[eMa_CAAmo] = "CAAmo";
+
+}
+
 void CDlgMaPara::OnClose()
 {
 	::EnableWindow(m_hParWnd, TRUE);
@@ -31,12 +41,12 @@ void CDlgMaPara::OnClickButtonOk()
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 	{
 		SStringW strName;
-		SEdit *para = FindChildByName2<SEdit>(strName.Format(L"edit_maPara%d",i+1));
+		SEdit *para = FindChildByName2<SEdit>(strName.Format(L"edit_maPara%d", i + 1));
 		strPara[i] = para->GetWindowTextW();
 		if (strPara[i] != L"")
 			nPara[i] = _wtoi(strPara[i].GetBuffer(1));
 		else
-			nPara[i] =0;
+			nPara[i] = 0;
 	}
 	::SendMessageW(m_hParWnd, WM_KLINE_MSG, (WPARAM)nPara, KLINEMSG_MA);
 	OnClose();
@@ -50,24 +60,20 @@ void CDlgMaPara::OnClickButtonCancel()
 
 void CDlgMaPara::OnInit(EventArgs * e)
 {
-	CIniFile ini(L".//config//config.ini");
-	SStringW strSection=L"DefaultPara";
-	SStringW strKey;
+	InitConfigName();
+	CIniFile ini(".//config//config.ini");
+	SStringA strSection = "DefaultPara";
+	SStringA strKey;
 	int tmpDefaultPara[MAX_MA_COUNT] = { 5,10,20,60,0,0 };
-	if (m_maType == eMa_Volume)
+	if (m_maType != eMa_Close)
 	{
-		strSection += L"Vol";
 		tmpDefaultPara[2] = 0;
 		tmpDefaultPara[3] = 0;
+		strSection += m_MaConfigName[m_maType];
 	}
-	else if (m_maType == eMa_Amount)
-	{
-		strSection += L"Amo";
-		tmpDefaultPara[2] = 0;
-		tmpDefaultPara[3] = 0;
-	}
+
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
-		m_nDefaultPara[0] = ini.GetInt(strSection, strKey.Format(L"MAPara%d",i+1), tmpDefaultPara[i]);
+		m_nDefaultPara[0] = ini.GetIntA(strSection, strKey.Format("MAPara%d", i + 1), tmpDefaultPara[i]);
 
 }
 

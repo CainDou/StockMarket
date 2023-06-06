@@ -49,6 +49,8 @@ protected:
 	bool GetHisPoint(int nMsgType,SStringA stockID, int nPeriod, int nGroup,SStringA attInfo);
 	bool GetMarket(SStringA stockID, int nGroup);
 	bool GetHisKline(SStringA stockID, int nPeriod, int nGroup);
+	bool GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
+
 	void InitDataHandleMap();
 	void InitNetHandleMap();
 	void InitSynHandleMap();
@@ -64,6 +66,8 @@ protected:
 		RtPointData& dstData, sRps &rpsData, SStringA strDataName, int nGroup);
 	void UpdateRtSecPointData(vector<RtPointData>& subDataVec,
 		RtPointData& dstData, sSection &secData, SStringA strDataName, int nGroup);
+	void UpdateRtSecPointFromCAInfo(vector<RtPointData>& subDataVec,
+		RtPointData& dstData, CAInfo& caInfo, int nGroup);
 protected:
 	bool ReceiveData(SOCKET socket, int size, char end,
 		char *buffer, int offset = 0);
@@ -96,6 +100,7 @@ protected:
 	void OnMsgHisSecPoint(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnMsgCallAction(SOCKET netSocket, ReceiveInfo &recvInfo);
+	void OnMsgHisCallAction(SOCKET netSocket, ReceiveInfo &recvInfo);
 	void OnNoDefineMsg(SOCKET netSocket, ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -123,6 +128,8 @@ protected:
 	void OnReinit(int nMsgLength, const char* info);	
 	void OnHisSecPoint(int nMsgLength, const char* info);
 	void OnRehabInfo(int nMsgLength, const char* info);
+	void OnHisCallAction(int nMsgLength, const char* info);
+	void OnGetCallAction(int nMsgLength, const char* info);
 
 public:
 	vector<SStringA> m_dataNameVec;
@@ -143,6 +150,7 @@ protected:
 	unsigned long todayDataSize;
 	bool			m_bTodayInit;
 	bool			m_bFirstData;
+	bool			m_bCaUpdate;
 	map<ePointType, int> m_PointGetMsg;
 
 protected:

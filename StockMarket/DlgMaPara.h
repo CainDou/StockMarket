@@ -7,6 +7,7 @@ namespace SOUI
 		CDlgMaPara();
 		CDlgMaPara(RpsGroup rg, HWND hWnd, eMaType maType);
 		~CDlgMaPara();
+		void InitConfigName();
 		void OnClose();
 		void OnClickButtonOk();
 		void OnClickButtonCancel();
@@ -21,6 +22,8 @@ namespace SOUI
 
 		int nPara[MAX_MA_COUNT];
 		int m_nDefaultPara[MAX_MA_COUNT];
+
+		map<eMaType, SStringA> m_MaConfigName;
 
 		RpsGroup m_rgGroup;
 		HWND m_hParWnd;

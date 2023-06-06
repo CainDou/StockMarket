@@ -159,6 +159,7 @@ namespace SOUI
 		void OnChangeShowIndy(int nMsgLength, const char* info);
 		void OnUpdateHisSecPoint(int nMsgLength, const char* info);
 		void OnUpdateRehabInfo(int nMsgLength, const char* info);
+		void OnUpdateHisCallAction(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -177,7 +178,7 @@ namespace SOUI
 			SStringA dataName1, SStringA dataName2,char* attchMsg,int attMsgSize);
 		void ProcHisSecPointFromMsg(ReceivePointInfo*pRecvInfo, const char* info,
 			SStringA dataName, char* attchMsg, int attMsgSize);
-
+		void ProcHisCAPointFromCAInfo();
 
 	protected:
 		EVENT_MAP_BEGIN()
@@ -305,8 +306,10 @@ namespace SOUI
 		vector<CommonIndexMarket>m_IndexMarketVec;
 		vector<CommonStockMarket>m_StockMarketVec;
 		map<int, vector<KlineType>>m_KlineMap;
+		vector<CAInfo>m_CallAction;
 
 		bool m_bMarketGet;
+		bool m_bCAInfoGet;
 		map<int, map<SStringA,BOOL>>m_PointGetMap;
 		map<int, map<SStringA, BOOL>>m_L1IndyPointGetMap;
 		map<int, map<SStringA, BOOL>>m_L2IndyPointGetMap;

@@ -109,6 +109,7 @@ enum RecvMsgType
 	RecvMsg_HisSecPoint,
 	RecvMsg_RehabInfo,
 	RecvMsg_CallAction,
+	RecvMsg_HisCallAction,
 
 };
 
@@ -121,6 +122,7 @@ enum SendMsgType
 	SendType_HisPeriodKline,
 	SendType_SubIns,
 	SendType_GetHisSecPoint,
+	SendType_HisCallAction,
 
 };
 
@@ -341,6 +343,9 @@ enum SynMsg
 	Syn_GetSecPoint,
 	Syn_HisSecPoint,
 	Syn_RehabInfo,
+	Syn_HisCallAction,
+	Syn_GetCallAction,
+
 };
 
 enum WorkWndMsg
@@ -373,7 +378,8 @@ enum WorkWndMsg
 	WW_RehabInfo,
 	WW_ChangeRehab,
 	WW_FixedTimeRehab,
-
+	WW_HisCallAction,
+	WW_GetCallAction,
 };
 
 
@@ -840,6 +846,11 @@ enum KlineMenu
 	KM_Amount,
 	KM_VolMaPara,
 	KM_AmoMaPara,
+	KM_CAVolOrAmo,
+	KM_CAVol,
+	KM_CAAmo,
+	KM_CAVolMaPara,
+	KM_CAAmoMaPara,
 	KM_End,
 };
 
@@ -1249,7 +1260,8 @@ typedef struct _UsedPointInfo
 // 具体的打分数据类型
 enum ePointDataType
 {
-	eFullMarketPointStart,
+	ePointStart,
+	eFullMarketPointStart = ePointStart,
 	eRpsPoint_Close = eFullMarketPointStart,
 	eRpsPoint_Amount,
 	eSecPoint_Amount,
@@ -1262,6 +1274,7 @@ enum ePointDataType
 	eSecPoint_L1_Amount,
 	eSecPoint_L2_Amount,
 	eIndyMarketPointEnd,
+	ePointEnd = eIndyMarketPointEnd,
 };
 
 enum eL1IndyPointDataType
@@ -1280,6 +1293,22 @@ enum eL2IndyPointDataType
 	eL2Indy_RpsPoint_Amount,
 	eL2Indy_SecPoint_Amount,
 	eL2IndyPointEnd,
+};
+
+enum eCAPointDataType
+{
+	eCAPointStart = 300,
+	eCAFullMarketPointStart = eCAPointStart,
+	eCAPoint_Volume = eCAFullMarketPointStart,
+	eCAPoint_Amount,
+	eCAPointFullMarketEnd,
+	eCAIndyMarketPointStart = eCAPointFullMarketEnd,
+	eCAPoint_L1_Volume = eCAIndyMarketPointStart,
+	eCAPoint_L2_Volume,
+	eCAPoint_L1_Amount,
+	eCAPoint_L2_Amount,
+	eCAIndyMarketPointEnd,
+	eCAPointEnd = eCAIndyMarketPointEnd,
 };
 
 
@@ -1301,6 +1330,8 @@ typedef struct InitPara
 	bool bShowTSCVolume;
 	bool bShowKlineVolume;
 	bool bShowKlineAmount;
+	bool bShowKlineCAVol;
+	bool bShowKlineCAAmo;
 	bool bShowKlineMACD;
 	bool bShowTSCRPS[3];
 	bool bShowKlineRPS[3];
@@ -1312,6 +1343,8 @@ typedef struct InitPara
 	int	 nMAPara[MAX_MA_COUNT];
 	int	 nVolMaPara[MAX_MA_COUNT];
 	int  nAmoMaPara[MAX_MA_COUNT];
+	int	 nCAVolMaPara[MAX_MA_COUNT];
+	int	 nCAAmoMaPara[MAX_MA_COUNT];
 	int	 nJiange;
 	BandPara_t  BandPara;
 	int Period;
@@ -1335,6 +1368,7 @@ typedef struct InitPara
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
 		bShowKlineVolume(false), bShowKlineAmount(false),
+		bShowKlineCAVol(false),bShowKlineCAAmo(false),
 		bShowTSCRPS{ false,false,false },
 		bShowKlineRPS{ false ,false,false }, nWidth(9),
 		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
@@ -1371,6 +1405,8 @@ enum eMaType
 	eMa_Close=0,
 	eMa_Volume,
 	eMa_Amount,
+	eMa_CAVol,
+	eMa_CAAmo,
 };
 
 typedef struct _sReHab
@@ -1446,3 +1482,11 @@ typedef struct _CAInfo
 	int AmoRankL1;
 	int AmoRankL2;
 }CAInfo;
+
+enum _volAmoType
+{
+	VAT_Volume,
+	VAT_Amount,
+	VAT_CAVol,
+	VAT_CAAmo,
+};

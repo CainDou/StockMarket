@@ -244,6 +244,12 @@ void SSubTargetPic::DrawArrow(IRenderTarget * pRT)
 	m_rcTargetSel.bottom = m_rcImage.top + MARGIN;
 	m_rcTargetSel.right = m_rcImage.left + 25;
 	DrawTextonPic(pRT, m_rcTargetSel, L"¡ñ", RGBA(80, 80, 80, 255), DT_CENTER | DT_VCENTER, 20);
+	int left = m_rcImage.left + 25;
+	int top = m_rcImage.top + 5;
+	int bottom = m_rcImage.top + MARGIN;
+	int right = m_rcImage.right;
+
+	DrawTextonPic(pRT, CRect(left, top, right, bottom), m_strTitle, m_colorVec[0]);
 
 	pRT->ReleaseDC(pdc);
 

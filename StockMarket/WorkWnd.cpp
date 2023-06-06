@@ -33,7 +33,6 @@ CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 	m_pTFMarketHash = nullptr;
 	m_pL1IndyFilterDataMap = nullptr;
 	m_pL2IndyFilterDataMap = nullptr;
-
 }
 
 
@@ -392,7 +391,10 @@ void CWorkWnd::SetPointInfo(map<int, ShowPointInfo>& infoMap)
 	else
 	{
 		for (int i = eFullMarketPointStart; i < eFullMarketPointEnd; ++i)
-			m_pointInfoMap[(ePointDataType)i] = infoMap[(ePointDataType)i];
+			m_pointInfoMap[i] = infoMap[i];
+		for (int i = eCAPointStart; i < eCAPointEnd; ++i)
+			m_pointInfoMap[i] = infoMap[i];
+
 	}
 }
 
@@ -419,6 +421,7 @@ void CWorkWnd::OnInit(EventArgs * e)
 	m_pCheckSTARM = FindChildByID2<SCheckBox>(R.id.chk_STARM);
 	m_pCheckNewStock = FindChildByID2<SCheckBox>(R.id.chk_NewStock);
 	m_pBtnRehab = FindChildByID2<SImageButton>(R.id.btn_Rehab);
+	m_pKlinePic->SetCaInfoData(&m_CallAction);
 	m_pBtnRehab->SetVisible(FALSE, FALSE);
 	m_pPeriodBtnMap[Period_FenShi] =
 		FindChildByID2<SImageButton>(R.id.btn_FS);
@@ -514,12 +517,8 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 				pPointData = &m_L1IndyPointData;
 			else if (pointData >= eL2IndyPointStart &&  pointData < eL2IndyPointEnd)
 				pPointData = &m_L2IndyPointData;
-			else
-				pPointData = nullptr;
 		}
 
-		if (pPointData == nullptr)
-			break;
 
 		auto &info = m_pointInfoMap[pointData];
 		GetPointData(info, m_strSubStock, m_PicPeriod);
@@ -914,6 +913,47 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		::EnableWindow(m_hWnd, FALSE);
 	}
 	break;
+	case KM_CAVol:
+		m_pKlinePic->SetCAVolState();
+		m_pKlinePic->Invalidate();
+		//bState = m_pKlinePic->GetVolumeState();
+
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case KM_CAAmo:
+		m_pKlinePic->SetCAAmoState();
+		m_pKlinePic->Invalidate();
+		//bState = m_pKlinePic->GetVolumeState();
+
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case KM_CAVolMaPara:
+	{
+		m_MaParaSet = eMa_CAVol;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
+	case KM_CAAmoMaPara:
+	{
+		m_MaParaSet = eMa_CAAmo;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
+
 	default:
 		break;
 	}
@@ -933,7 +973,7 @@ void CWorkWnd::OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		break;
 	case TSM_Select:
 	{
-		CDlgSelTarget *pDlg = new CDlgSelTarget(m_hWnd, m_pointInfoMap);
+		CDlgSelTarget *pDlg = new CDlgSelTarget(m_hWnd, m_pointInfoMap,m_PicPeriod);
 		pDlg->Create(NULL);
 		pDlg->CenterWindow(m_hWnd);
 		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -1147,6 +1187,14 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 			menu.CheckMenuItem(KM_Volume, MF_UNCHECKED);
 			menu.CheckMenuItem(KM_Amount, MF_UNCHECKED);
 		}
+
+		UINT VolState = m_pKlinePic->GetCAVolState() ? MF_CHECKED : MF_UNCHECKED;
+		UINT AmoState = m_pKlinePic->GetCAAmoState() ? MF_CHECKED : MF_UNCHECKED;
+		UINT AllState = (VolState || AmoState)? MF_CHECKED: MF_UNCHECKED;
+		menu.CheckMenuItem(KM_CAVolOrAmo, AllState);
+		menu.CheckMenuItem(KM_CAVol, VolState);
+		menu.CheckMenuItem(KM_CAAmo, AmoState);
+
 		if (m_pKlinePic->GetMacdState())
 			menu.CheckMenuItem(KM_MACD, MF_CHECKED);
 		int nWndNum = m_pKlinePic->GetShowSubPicNum();
@@ -1347,6 +1395,8 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnChangeKlineRehab;
 	m_dataHandleMap[WW_FixedTimeRehab] =
 		&CWorkWnd::OnFixedTimeRehab;
+	m_dataHandleMap[WW_HisCallAction] =
+		&CWorkWnd::OnUpdateHisCallAction;
 
 }
 void CWorkWnd::InitNameVec()
@@ -2890,12 +2940,8 @@ void CWorkWnd::SetFenShiShowData(vector<ShowPointInfo>&infoVec, int nStartWnd)
 					pPointData = &m_L1IndyPointData;
 				else if (info.overallType >= eL2IndyPointStart &&  info.overallType < eL2IndyPointEnd)
 					pPointData = &m_L2IndyPointData;
-				else
-					pPointData = nullptr;
 			}
 
-			if (pPointData == nullptr)
-				break;
 			dataCount[i] = m_PointDataCount[info.type];
 			tmpDataArr[i].resize(dataCount[i]);
 			rightVec[i].resize(dataCount[i]);
@@ -2944,12 +2990,8 @@ void CWorkWnd::SetKlineShowData(vector<ShowPointInfo>&infoVec, int nPeriod, BOOL
 					pPointData = &m_L1IndyPointData;
 				else if (info.overallType >= eL2IndyPointStart &&  info.overallType < eL2IndyPointEnd)
 					pPointData = &m_L2IndyPointData;
-				else
-					pPointData = nullptr;
 			}
 
-			if (pPointData == nullptr)
-				break;
 
 			dataCount[i] = m_PointDataCount[info.type];
 			tmpDataArr[i].resize(dataCount[i]);
@@ -3023,6 +3065,10 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 			strcpy_s(GetInfo.StockID, StockID);
 			GetInfo.Group = m_Group;
 			GetInfo.Period = nPeriod;
+			if(nPeriod == Period_1Day)
+				SendMsg(m_uParWndThreadID, WW_GetCallAction,
+				(char*)&GetInfo, sizeof(GetInfo));
+
 			SendMsg(m_uParWndThreadID, WW_GetKline,
 				(char*)&GetInfo, sizeof(GetInfo));
 		}
@@ -3032,19 +3078,6 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 		m_pKlinePic->GetShowPointInfo(infoVec);
 		for (auto &info : infoVec)
 			GetPointData(info, StockID, nPeriod);
-		//if (m_PointGetMap.count(nPeriod) == 0)
-		//{
-		//	//m_pKlinePic->SetHisPointState(false);
-		//	DataGetInfo GetInfo;
-		//	GetInfo.hWnd = m_hParWnd;
-		//	strcpy_s(GetInfo.StockID, StockID);
-		//	GetInfo.Group = m_Group;
-		//	GetInfo.Period = nPeriod;
-		//	SendMsg(m_uParWndThreadID, WW_GetPoint,
-		//		(char*)&GetInfo, sizeof(GetInfo));
-		//}
-		//else
-		//	m_pKlinePic->SetHisPointState(true);
 
 		SetKlineShowData(infoVec, nPeriod, TRUE);
 	}
@@ -3081,8 +3114,6 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	GetInfo.Period = Period_FenShi;
 	SendMsg(m_uParWndThreadID, WW_GetMarket,
 		(char*)&GetInfo, sizeof(GetInfo));
-	//SendMsg(m_uParWndThreadID, WW_GetPoint,
-	//	(char*)&GetInfo, sizeof(GetInfo));
 	vector<ShowPointInfo>infoVec;
 	m_pFenShiPic->GetShowPointInfo(infoVec);
 	for (auto &info : infoVec)
@@ -3093,6 +3124,10 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	if (Period_FenShi != m_PicPeriod)
 	{
 		GetInfo.Period = m_PicPeriod;
+		if (Period_1Day == m_PicPeriod)
+			SendMsg(m_uParWndThreadID, WW_GetCallAction,
+			(char*)&GetInfo, sizeof(GetInfo));
+
 		SendMsg(m_uParWndThreadID, WW_GetKline,
 			(char*)&GetInfo, sizeof(GetInfo));
 		vector<ShowPointInfo>infoVec;
@@ -3100,8 +3135,6 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 		for (auto &info : infoVec)
 			GetPointData(info, StockID, m_PicPeriod);
 
-		//SendMsg(m_uParWndThreadID, WW_GetPoint,
-		//	(char*)&GetInfo, sizeof(GetInfo));
 		SetKlineShowData(infoVec, m_PicPeriod, FALSE);
 	}
 	SwitchList2Pic(m_PicPeriod);
@@ -3110,51 +3143,70 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 void CWorkWnd::SetDataFlagFalse()
 {
 	m_bMarketGet = false;
+	m_bCAInfoGet = false;
 	m_PointGetMap.clear();
 	m_L1IndyPointGetMap.clear();
 	m_L2IndyPointGetMap.clear();
+	m_CallAction.clear();
 	//m_PointGetMap.clear();
 	m_KlineGetMap.clear();
 	m_pKlinePic->SetTodayMarketState(false);
 	m_pKlinePic->SetHisKlineState(false);
 	m_pKlinePic->SetHisPointState(false);
+	m_pKlinePic->SetHisCAInfoState(false);
+
 }
 
 void CWorkWnd::GetPointData(ShowPointInfo & info, SStringA StockID, int nPeriod)
 {
-	if (!CheckDataIsGot(info, nPeriod))
+	if (CheckDataIsGot(info, nPeriod))
 		return;
-
 	ExDataGetInfo GetInfo;
 	GetInfo.nAskGroup = m_Group;
 	GetInfo.Type = info.type;
 	GetInfo.hWnd = m_hParWnd;
 	GetInfo.Period = nPeriod;
-	if (info.overallType < eIndyMarketPointEnd)
-	{
-		GetInfo.Group = m_Group;
-		strcpy_s(GetInfo.StockID, StockID);
-	}
-	else if (info.overallType < eL1IndyPointEnd
-		&& info.overallType >= eL1IndyPointStart)
-	{
-		GetInfo.Group = Group_SWL1;
-		strcpy_s(GetInfo.StockID, m_infoMap.hash[StockID].SWL1ID);
-	}
-	else if (info.overallType < eL2IndyPointEnd
-		&& info.overallType >= eL2IndyPointStart)
-	{
-		GetInfo.Group = Group_SWL2;
-		strcpy_s(GetInfo.StockID, m_infoMap.hash[StockID].SWL2ID);
-	}
 
-	SStringA strExMsg;
-	strExMsg.Format("dataName:%s,dataRange:%s", info.srcDataName, info.dataInRange);
+	if (info.overallType < eCAPointEnd&&
+		info.overallType >= eCAPointStart)
+	{
+		return;
+		//if (m_PicPeriod != Period_1Day)
+		//	return;
+		//GetInfo.Group = m_Group;
+		//strcpy_s(GetInfo.StockID, StockID);
+		//SendMsg(m_uParWndThreadID, WW_GetCallAction,
+		//	(char*)&GetInfo, sizeof(GetInfo));
+	}
+	else
+	{
+		if (info.overallType < eIndyMarketPointEnd)
+		{
+			GetInfo.Group = m_Group;
+			strcpy_s(GetInfo.StockID, StockID);
+		}
+		else if (info.overallType < eL1IndyPointEnd
+			&& info.overallType >= eL1IndyPointStart)
+		{
+			GetInfo.Group = Group_SWL1;
+			strcpy_s(GetInfo.StockID, m_infoMap.hash[StockID].SWL1ID);
+		}
+		else if (info.overallType < eL2IndyPointEnd
+			&& info.overallType >= eL2IndyPointStart)
+		{
+			GetInfo.Group = Group_SWL2;
+			strcpy_s(GetInfo.StockID, m_infoMap.hash[StockID].SWL2ID);
+		}
 
-	GetInfo.exMsg = new char[strExMsg.GetLength() + 1];
-	strcpy_s(GetInfo.exMsg, strExMsg.GetLength() + 1, strExMsg);
-	SendMsg(m_uParWndThreadID, WW_GetPoint,
-		(char*)&GetInfo, sizeof(GetInfo));
+		SStringA strExMsg;
+		strExMsg.Format("dataName:%s,dataRange:%s", info.srcDataName, info.dataInRange);
+
+		GetInfo.exMsg = new char[strExMsg.GetLength() + 1];
+		strcpy_s(GetInfo.exMsg, strExMsg.GetLength() + 1, strExMsg);
+		SendMsg(m_uParWndThreadID, WW_GetPoint,
+			(char*)&GetInfo, sizeof(GetInfo));
+
+	}
 
 
 }
@@ -3174,8 +3226,16 @@ void CWorkWnd::UpdateTmData(vector<CoreData>& comData, CoreData & data)
 	}
 }
 
-bool SOUI::CWorkWnd::CheckDataIsGot(ShowPointInfo & info, int nPeriod)
+bool CWorkWnd::CheckDataIsGot(ShowPointInfo & info, int nPeriod)
 {
+	if (info.overallType < eCAPointEnd&&
+		info.overallType >= eCAPointStart)
+	{
+		if (m_bCAInfoGet)
+			return true;
+		else
+			return false;
+	}
 	auto pPointGetMap = &m_PointGetMap;
 	if (info.overallType < eL1IndyPointEnd
 		&& info.overallType >= eL1IndyPointStart)
@@ -3191,15 +3251,15 @@ bool SOUI::CWorkWnd::CheckDataIsGot(ShowPointInfo & info, int nPeriod)
 		SStringA dataName2060 = info.srcDataName + "Point2060" + info.dataInRange;
 		if (dataGetMap[dataName520] == 0 ||
 			dataGetMap[dataName2060] == 0)
-			return true;
+			return false;
 	}
 	else if (eSecPoint == info.type)
 	{
 		SStringA dataName = info.srcDataName + "Point" + info.dataInRange;
 		if (dataGetMap[dataName] == 0)
-			return true;
+			return false;
 	}
-	return false;
+	return true;
 }
 
 void CWorkWnd::OnUpdateListData(int nMsgLength, const char * info)
@@ -3423,6 +3483,22 @@ void CWorkWnd::OnUpdateRehabInfo(int nMsgLength, const char * info)
 
 }
 
+void SOUI::CWorkWnd::OnUpdateHisCallAction(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nSize = pRecvInfo->DataSize / sizeof(CAInfo);
+	int nGroup = pRecvInfo->Group;
+	int nPeriod = pRecvInfo->Period;
+	m_CallAction.resize(nSize);
+	memcpy_s(&m_CallAction[0], pRecvInfo->DataSize,
+		info + nOffset, pRecvInfo->DataSize);
+	ProcHisCAPointFromCAInfo();
+	m_bCAInfoGet = TRUE;
+	m_pKlinePic->SetHisCAInfoState(true);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)
 {
 	m_pFenShiPic->ReProcEMA();
@@ -3536,15 +3612,7 @@ void CWorkWnd::ProcHisRpsPointFromMsg(ReceivePointInfo * pRecvInfo,
 			pPointData = &m_L2IndyPointData;
 			pPointGetMap = &m_L2IndyPointGetMap;
 		}
-		else
-		{
-			pPointData = nullptr;
-			pPointGetMap = nullptr;
-		}
 	}
-
-	if (pPointData == nullptr)
-		return;
 
 
 	nOffset += attMsgSize;
@@ -3599,15 +3667,7 @@ void CWorkWnd::ProcHisSecPointFromMsg(ReceivePointInfo * pRecvInfo,
 			pPointData = &m_L2IndyPointData;
 			pPointGetMap = &m_L2IndyPointGetMap;
 		}
-		else
-		{
-			pPointData = nullptr;
-			pPointGetMap = nullptr;
-		}
 	}
-
-	if (pPointData == nullptr)
-		return;
 
 	nOffset += attMsgSize;
 	auto &PointVec = (*pPointData)[nPeriod][pointName];
@@ -3616,4 +3676,46 @@ void CWorkWnd::ProcHisSecPointFromMsg(ReceivePointInfo * pRecvInfo,
 		info + nOffset, pRecvInfo->FirstDataSize);
 
 	(*pPointGetMap)[nPeriod][pointName] = TRUE;
+}
+
+void CWorkWnd::ProcHisCAPointFromCAInfo()
+{
+	auto &CAVolPointVec = m_PointData[Period_1Day]["CaVolPoint"];
+	auto &CAVolPointL1Vec = m_PointData[Period_1Day]["CaVolPointL1"];
+	auto &CAVolPointL2Vec = m_PointData[Period_1Day]["CaVolPointL2"];
+	auto &CAAmoPointVec = m_PointData[Period_1Day]["CaAmoPoint"];
+	auto &CAAmoPointL1Vec = m_PointData[Period_1Day]["CaAmoPointL1"];
+	auto &CAAmoPointL2Vec = m_PointData[Period_1Day]["CaAmoPointL2"];
+	CAVolPointVec.reserve(m_CallAction.size());
+	CAVolPointL1Vec.reserve(m_CallAction.size());
+	CAVolPointL2Vec.reserve(m_CallAction.size());
+	CAAmoPointVec.reserve(m_CallAction.size());
+	CAAmoPointL1Vec.reserve(m_CallAction.size());
+	CAAmoPointL2Vec.reserve(m_CallAction.size());
+
+	for (auto &it : m_CallAction)
+	{
+		CoreData data = { 0 };
+		data.date = it.date;
+		data.value = it.VolPoint;
+		CAVolPointVec.emplace_back(data);
+		data.value = it.VolPointL1;
+		CAVolPointL1Vec.emplace_back(data);
+		data.value = it.VolPointL2;
+		CAVolPointL2Vec.emplace_back(data);
+		data.value = it.AmoPoint;
+		CAAmoPointVec.emplace_back(data);
+		data.value = it.AmoPointL1;
+		CAAmoPointL1Vec.emplace_back(data);
+		data.value = it.AmoPointL2;
+		CAAmoPointL2Vec.emplace_back(data);
+
+	}
+	m_PointGetMap[Period_1Day]["CaVolPoint"] = TRUE;
+	m_PointGetMap[Period_1Day]["CaVolPointL1"] = TRUE;
+	m_PointGetMap[Period_1Day]["CaVolPointL2"] = TRUE;
+	m_PointGetMap[Period_1Day]["CaAmoPoint"] = TRUE;
+	m_PointGetMap[Period_1Day]["CaAmoPointL1"] = TRUE;
+	m_PointGetMap[Period_1Day]["CaAmoPointL2"] = TRUE;
+
 }
