@@ -1630,7 +1630,7 @@ void CWndSynHandler::OnHisCallAction(int nMsgLength, const char * info)
 
 void CWndSynHandler::OnGetCallAction(int nMsgLength, const char * info)
 {
-	ExDataGetInfo *pDgInfo = (ExDataGetInfo *)info;
+	DataGetInfo *pDgInfo = (DataGetInfo *)info;
 	GetHisCallAction(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
 }
 

@@ -9,12 +9,11 @@
     <item id="204" check="0">成交量</item>
     <item id="220" check="0">成交额</item>
   </item>
-<!--
+  <sep/>
   <item   text="集竞成交量/额" id="223" check="0"  contextHelpId="2">
     <item id="224" check="0">集竞成交量</item>
     <item id="225" check="0">集竞成交额</item>
   </item>
--->
   <sep/>
   <item id="205" check="0">MACD</item>
   <sep/>
@@ -36,6 +35,8 @@
     <item id="209">MA参数</item>
     <item id="221">成交量MA参数</item>
     <item id="222">成交额MA参数</item>
+    <item id="226">集竞成交量MA参数</item>
+    <item id="227">集竞成交额MA参数</item>
   </item>
   <sep/>
   <item id="200" >返回</item>

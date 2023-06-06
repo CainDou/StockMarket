@@ -849,6 +849,8 @@ enum KlineMenu
 	KM_CAVolOrAmo,
 	KM_CAVol,
 	KM_CAAmo,
+	KM_CAVolMaPara,
+	KM_CAAmoMaPara,
 	KM_End,
 };
 
@@ -1328,6 +1330,8 @@ typedef struct InitPara
 	bool bShowTSCVolume;
 	bool bShowKlineVolume;
 	bool bShowKlineAmount;
+	bool bShowKlineCAVol;
+	bool bShowKlineCAAmo;
 	bool bShowKlineMACD;
 	bool bShowTSCRPS[3];
 	bool bShowKlineRPS[3];
@@ -1339,6 +1343,8 @@ typedef struct InitPara
 	int	 nMAPara[MAX_MA_COUNT];
 	int	 nVolMaPara[MAX_MA_COUNT];
 	int  nAmoMaPara[MAX_MA_COUNT];
+	int	 nCAVolMaPara[MAX_MA_COUNT];
+	int	 nCAAmoMaPara[MAX_MA_COUNT];
 	int	 nJiange;
 	BandPara_t  BandPara;
 	int Period;
@@ -1362,6 +1368,7 @@ typedef struct InitPara
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
 		bShowKlineVolume(false), bShowKlineAmount(false),
+		bShowKlineCAVol(false),bShowKlineCAAmo(false),
 		bShowTSCRPS{ false,false,false },
 		bShowKlineRPS{ false ,false,false }, nWidth(9),
 		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
@@ -1398,6 +1405,8 @@ enum eMaType
 	eMa_Close=0,
 	eMa_Volume,
 	eMa_Amount,
+	eMa_CAVol,
+	eMa_CAAmo,
 };
 
 typedef struct _sReHab
@@ -1473,3 +1482,11 @@ typedef struct _CAInfo
 	int AmoRankL1;
 	int AmoRankL2;
 }CAInfo;
+
+enum _volAmoType
+{
+	VAT_Volume,
+	VAT_Amount,
+	VAT_CAVol,
+	VAT_CAAmo,
+};

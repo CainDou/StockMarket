@@ -913,6 +913,47 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		::EnableWindow(m_hWnd, FALSE);
 	}
 	break;
+	case KM_CAVol:
+		m_pKlinePic->SetCAVolState();
+		m_pKlinePic->Invalidate();
+		//bState = m_pKlinePic->GetVolumeState();
+
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case KM_CAAmo:
+		m_pKlinePic->SetCAAmoState();
+		m_pKlinePic->Invalidate();
+		//bState = m_pKlinePic->GetVolumeState();
+
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case KM_CAVolMaPara:
+	{
+		m_MaParaSet = eMa_CAVol;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
+	case KM_CAAmoMaPara:
+	{
+		m_MaParaSet = eMa_CAAmo;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
+
 	default:
 		break;
 	}
@@ -1146,6 +1187,14 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 			menu.CheckMenuItem(KM_Volume, MF_UNCHECKED);
 			menu.CheckMenuItem(KM_Amount, MF_UNCHECKED);
 		}
+
+		UINT VolState = m_pKlinePic->GetCAVolState() ? MF_CHECKED : MF_UNCHECKED;
+		UINT AmoState = m_pKlinePic->GetCAAmoState() ? MF_CHECKED : MF_UNCHECKED;
+		UINT AllState = (VolState || AmoState)? MF_CHECKED: MF_UNCHECKED;
+		menu.CheckMenuItem(KM_CAVolOrAmo, AllState);
+		menu.CheckMenuItem(KM_CAVol, VolState);
+		menu.CheckMenuItem(KM_CAAmo, AmoState);
+
 		if (m_pKlinePic->GetMacdState())
 			menu.CheckMenuItem(KM_MACD, MF_CHECKED);
 		int nWndNum = m_pKlinePic->GetShowSubPicNum();
@@ -3016,6 +3065,10 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 			strcpy_s(GetInfo.StockID, StockID);
 			GetInfo.Group = m_Group;
 			GetInfo.Period = nPeriod;
+			if(nPeriod == Period_1Day)
+				SendMsg(m_uParWndThreadID, WW_GetCallAction,
+				(char*)&GetInfo, sizeof(GetInfo));
+
 			SendMsg(m_uParWndThreadID, WW_GetKline,
 				(char*)&GetInfo, sizeof(GetInfo));
 		}
@@ -3025,19 +3078,6 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 		m_pKlinePic->GetShowPointInfo(infoVec);
 		for (auto &info : infoVec)
 			GetPointData(info, StockID, nPeriod);
-		//if (m_PointGetMap.count(nPeriod) == 0)
-		//{
-		//	//m_pKlinePic->SetHisPointState(false);
-		//	DataGetInfo GetInfo;
-		//	GetInfo.hWnd = m_hParWnd;
-		//	strcpy_s(GetInfo.StockID, StockID);
-		//	GetInfo.Group = m_Group;
-		//	GetInfo.Period = nPeriod;
-		//	SendMsg(m_uParWndThreadID, WW_GetPoint,
-		//		(char*)&GetInfo, sizeof(GetInfo));
-		//}
-		//else
-		//	m_pKlinePic->SetHisPointState(true);
 
 		SetKlineShowData(infoVec, nPeriod, TRUE);
 	}
@@ -3074,8 +3114,6 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	GetInfo.Period = Period_FenShi;
 	SendMsg(m_uParWndThreadID, WW_GetMarket,
 		(char*)&GetInfo, sizeof(GetInfo));
-	//SendMsg(m_uParWndThreadID, WW_GetPoint,
-	//	(char*)&GetInfo, sizeof(GetInfo));
 	vector<ShowPointInfo>infoVec;
 	m_pFenShiPic->GetShowPointInfo(infoVec);
 	for (auto &info : infoVec)
@@ -3086,6 +3124,10 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	if (Period_FenShi != m_PicPeriod)
 	{
 		GetInfo.Period = m_PicPeriod;
+		if (Period_1Day == m_PicPeriod)
+			SendMsg(m_uParWndThreadID, WW_GetCallAction,
+			(char*)&GetInfo, sizeof(GetInfo));
+
 		SendMsg(m_uParWndThreadID, WW_GetKline,
 			(char*)&GetInfo, sizeof(GetInfo));
 		vector<ShowPointInfo>infoVec;
@@ -3093,8 +3135,6 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 		for (auto &info : infoVec)
 			GetPointData(info, StockID, m_PicPeriod);
 
-		//SendMsg(m_uParWndThreadID, WW_GetPoint,
-		//	(char*)&GetInfo, sizeof(GetInfo));
 		SetKlineShowData(infoVec, m_PicPeriod, FALSE);
 	}
 	SwitchList2Pic(m_PicPeriod);
@@ -3107,11 +3147,14 @@ void CWorkWnd::SetDataFlagFalse()
 	m_PointGetMap.clear();
 	m_L1IndyPointGetMap.clear();
 	m_L2IndyPointGetMap.clear();
+	m_CallAction.clear();
 	//m_PointGetMap.clear();
 	m_KlineGetMap.clear();
 	m_pKlinePic->SetTodayMarketState(false);
 	m_pKlinePic->SetHisKlineState(false);
 	m_pKlinePic->SetHisPointState(false);
+	m_pKlinePic->SetHisCAInfoState(false);
+
 }
 
 void CWorkWnd::GetPointData(ShowPointInfo & info, SStringA StockID, int nPeriod)
@@ -3127,12 +3170,13 @@ void CWorkWnd::GetPointData(ShowPointInfo & info, SStringA StockID, int nPeriod)
 	if (info.overallType < eCAPointEnd&&
 		info.overallType >= eCAPointStart)
 	{
-		if (m_PicPeriod != Period_1Day)
-			return;
-		GetInfo.Group = m_Group;
-		strcpy_s(GetInfo.StockID, StockID);
-		SendMsg(m_uParWndThreadID, WW_GetCallAction,
-			(char*)&GetInfo, sizeof(GetInfo));
+		return;
+		//if (m_PicPeriod != Period_1Day)
+		//	return;
+		//GetInfo.Group = m_Group;
+		//strcpy_s(GetInfo.StockID, StockID);
+		//SendMsg(m_uParWndThreadID, WW_GetCallAction,
+		//	(char*)&GetInfo, sizeof(GetInfo));
 	}
 	else
 	{
@@ -3451,6 +3495,7 @@ void SOUI::CWorkWnd::OnUpdateHisCallAction(int nMsgLength, const char * info)
 		info + nOffset, pRecvInfo->DataSize);
 	ProcHisCAPointFromCAInfo();
 	m_bCAInfoGet = TRUE;
+	m_pKlinePic->SetHisCAInfoState(true);
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 

@@ -353,6 +353,10 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 			ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
 		initPara.bShowKlineAmount =
 			ini.GetIntA(strSection, "ShowKlineAmount", 1) == 0 ? false : true;
+		initPara.bShowKlineCAVol =
+			ini.GetIntA(strSection, "ShowKlineCAVol", 1) == 0 ? false : true;
+		initPara.bShowKlineCAAmo =
+			ini.GetIntA(strSection, "ShowKlineCAAmo", 1) == 0 ? false : true;
 		initPara.bShowKlineMACD =
 			ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[0] =
@@ -392,6 +396,13 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 		for (int i = 0; i<MAX_MA_COUNT; ++i)
 			initPara.nAmoMaPara[i] = ini.GetIntA(strSection,
 				strKey.Format("AmoMAPara%d", i + 1), VolAmoMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			initPara.nCAVolMaPara[i] = ini.GetIntA(strSection,
+				strKey.Format("CAVolMAPara%d", i + 1), VolAmoMAPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			initPara.nCAAmoMaPara[i] = ini.GetIntA(strSection,
+				strKey.Format("CAAmoMAPara%d", i + 1), VolAmoMAPara[i]);
+
 		initPara.nJiange =
 			ini.GetIntA(strSection, "Jiange", 2);
 		initPara.BandPara.N1 =
@@ -558,6 +569,8 @@ void CDlgSub::SavePicConfig()
 		ini.WriteIntA(strSection, "ShowTSCVolume", initPara.bShowTSCVolume);
 		ini.WriteIntA(strSection, "ShowKlineVolume", initPara.bShowKlineVolume);
 		ini.WriteIntA(strSection, "ShowKlineAmount", initPara.bShowKlineAmount);
+		ini.WriteIntA(strSection, "ShowKlineCAVol", initPara.bShowKlineCAVol);
+		ini.WriteIntA(strSection, "ShowKlineCAAmo", initPara.bShowKlineCAAmo);
 		ini.WriteIntA(strSection, "ShowKlineMACD", initPara.bShowKlineMACD);
 		ini.WriteIntA(strSection, "ShowTSCRPS", initPara.bShowTSCRPS[0]);
 		ini.WriteIntA(strSection, "ShowTSCL1RPS", initPara.bShowTSCRPS[0]);
@@ -579,6 +592,11 @@ void CDlgSub::SavePicConfig()
 			ini.WriteIntA(strSection, strKey.Format("VolMAPara%d", i + 1), initPara.nVolMaPara[i]);
 		for (int i = 0; i<MAX_MA_COUNT; ++i)
 			ini.WriteIntA(strSection, strKey.Format("AmoMAPara%d", i + 1), initPara.nAmoMaPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("CAVolMAPara%d", i + 1), initPara.nCAVolMaPara[i]);
+		for (int i = 0; i<MAX_MA_COUNT; ++i)
+			ini.WriteIntA(strSection, strKey.Format("CAAmoMAPara%d", i + 1), initPara.nCAAmoMaPara[i]);
+
 		ini.WriteIntA(strSection, "Jiange", initPara.nJiange);
 		ini.WriteIntA(strSection, "BandN1", initPara.BandPara.N1);
 		ini.WriteIntA(strSection, "BandN2", initPara.BandPara.N2);
