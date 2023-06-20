@@ -43,19 +43,25 @@ typedef struct _TestRes
 	{
 
 	}
-}TsetRes;
+}TestRes;
 
 typedef struct _singleRes
 {
 	SStringA StockID;
 	int nDate;
-	TsetRes res;
+	TestRes res;
 }SingleRes;
 
 typedef struct _avgRes
 {
-	int nCount;
-	TsetRes res;
+	int nCount[17];
+	TestRes res;
+
+	void clear()
+	{
+		ZeroMemory(nCount,sizeof(nCount));
+		res = TestRes();
+	}
 }AvgRes;
 
 namespace SOUI
@@ -113,7 +119,7 @@ namespace SOUI
 		bool Equal(double a, double b);
 		bool EqualOrLessThan(double a, double b);
 		bool LessThan(double a, double b);
-		bool SaveTestRes(ofstream& ofile, TsetRes& res);
+		bool SaveTestRes(ofstream& ofile, TestRes& res);
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);
 

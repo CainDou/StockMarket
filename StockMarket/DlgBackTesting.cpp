@@ -506,7 +506,7 @@ void CDlgBackTesting::CalcRes()
 	m_bCalc = TRUE;
 	ConditionHandle();
 	m_resVec.clear();
-	m_AvgRes.nCount = 0;
+	m_AvgRes.clear();
 	m_tCalc = thread(&CDlgBackTesting::TestingData, this);
 	m_uCalcThreadID = *(unsigned*)&m_tCalc.get_id();
 	m_nDataGetCount = 0;
@@ -546,7 +546,7 @@ void CDlgBackTesting::UpdateList(int nRow)
 
 	}
 	m_pListDetailRes->RequestRelayout();
-	tmp.Format(L"%d", m_AvgRes.nCount);
+	tmp.Format(L"%d", m_AvgRes.nCount[0]);
 	if (m_pListAvgRes->GetItemCount() <= 0)
 		m_pListAvgRes->InsertItem(0, tmp);
 	else
@@ -1063,41 +1063,41 @@ bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate
 					{
 						res.res.RoR1 = (fNowClose - fFitDayClose) / fFitDayClose * 100;
 						res.res.RoR1Over300 = (f300NowClose - f300FitDayClose) / f300FitDayClose * 100;
-						res.res.RoR1Over300 -= res.res.RoR1;
+						res.res.RoR1Over300 = res.res.RoR1 - res.res.RoR1Over300;
 						res.res.RoR1OverIndy1 = (fIndy1NowClose - fIndy1FitDayClose) / fIndy1FitDayClose * 100;
-						res.res.RoR1OverIndy1 -= res.res.RoR1;
+						res.res.RoR1OverIndy1 = res.res.RoR1 - res.res.RoR1OverIndy1;
 						res.res.RoR1OverIndy2 = (fIndy2NowClose - fIndy2FitDayClose) / fIndy2FitDayClose * 100;
-						res.res.RoR1OverIndy2 -= res.res.RoR1;
+						res.res.RoR1OverIndy2 = res.res.RoR1 - res.res.RoR1OverIndy2;
 					}
 					else if (dayCount.second == 3)
 					{
 						res.res.RoR3 = (fNowClose - fFitDayClose) / fFitDayClose * 100;
 						res.res.RoR3Over300 = (f300NowClose - f300FitDayClose) / f300FitDayClose * 100;
-						res.res.RoR3Over300 -= res.res.RoR3;
+						res.res.RoR3Over300 = res.res.RoR3 - res.res.RoR3Over300;
 						res.res.RoR3OverIndy1 = (fIndy1NowClose - fIndy1FitDayClose) / fIndy1FitDayClose * 100;
-						res.res.RoR3OverIndy1 -= res.res.RoR3;
+						res.res.RoR3OverIndy1 = res.res.RoR3 - res.res.RoR3OverIndy1;
 						res.res.RoR3OverIndy2 = (fIndy2NowClose - fIndy2FitDayClose) / fIndy2FitDayClose * 100;
-						res.res.RoR3OverIndy2 -= res.res.RoR3;
+						res.res.RoR3OverIndy2 = res.res.RoR3 - res.res.RoR3OverIndy2;
 					}
 					else if (dayCount.second == 5)
 					{
 						res.res.RoR5 = (fNowClose - fFitDayClose) / fFitDayClose * 100;
 						res.res.RoR5Over300 = (f300NowClose - f300FitDayClose) / f300FitDayClose * 100;
-						res.res.RoR5Over300 -= res.res.RoR5;
+						res.res.RoR5Over300 = res.res.RoR5 - res.res.RoR5Over300;
 						res.res.RoR5OverIndy1 = (fIndy1NowClose - fIndy1FitDayClose) / fIndy1FitDayClose * 100;
-						res.res.RoR5OverIndy1 -= res.res.RoR5;
+						res.res.RoR5OverIndy1 = res.res.RoR5 - res.res.RoR5OverIndy1;
 						res.res.RoR5OverIndy2 = (fIndy2NowClose - fIndy2FitDayClose) / fIndy2FitDayClose * 100;
-						res.res.RoR5OverIndy2 -= res.res.RoR5;
+						res.res.RoR5OverIndy2 = res.res.RoR5 - res.res.RoR5OverIndy2;
 					}
 					else if (dayCount.second == 10)
 					{
 						res.res.RoR10 = (fNowClose - fFitDayClose) / fFitDayClose * 100;
 						res.res.RoR10Over300 = (f300NowClose - f300FitDayClose) / f300FitDayClose * 100;
-						res.res.RoR10Over300 -= res.res.RoR10;
+						res.res.RoR10Over300 = res.res.RoR10 - res.res.RoR10Over300;
 						res.res.RoR10OverIndy1 = (fIndy1NowClose - fIndy1FitDayClose) / fIndy1FitDayClose * 100;
-						res.res.RoR10OverIndy1 -= res.res.RoR10;
+						res.res.RoR10OverIndy1 = res.res.RoR10 - res.res.RoR10OverIndy1;
 						res.res.RoR10OverIndy2 = (fIndy2NowClose - fIndy2FitDayClose) / fIndy2FitDayClose * 100;
-						res.res.RoR10OverIndy2 -= res.res.RoR10;
+						res.res.RoR10OverIndy2 = res.res.RoR10 - res.res.RoR10OverIndy2;
 						m_resVec.emplace_back(res);
 						ProcAvgRes(res);
 						::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
@@ -1121,7 +1121,7 @@ bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate
 	return false;
 }
 
-bool CDlgBackTesting::SaveTestRes(ofstream & ofile, TsetRes & res)
+bool CDlgBackTesting::SaveTestRes(ofstream & ofile, TestRes & res)
 {
 	if (!isnan(res.RoR1))
 		ofile << res.RoR1 << ",";
@@ -1193,98 +1193,267 @@ bool CDlgBackTesting::SaveTestRes(ofstream & ofile, TsetRes & res)
 
 void CDlgBackTesting::ProcAvgRes(SingleRes & res)
 {
-	if (m_AvgRes.nCount == 0)
-		m_AvgRes.res = res.res;
-	else
+	int nCCount = 0;
+	m_AvgRes.nCount[nCCount++]++;
+
+	if (!isnan(res.res.RoR1))
 	{
-		if (isnan(m_AvgRes.res.RoR1)) m_AvgRes.res.RoR1 = res.res.RoR1;
-		else if (!isnan(res.res.RoR1))
-			m_AvgRes.res.RoR1 =
-			(m_AvgRes.res.RoR1 *m_AvgRes.nCount + res.res.RoR1)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR3)) m_AvgRes.res.RoR3 = res.res.RoR3;
-		else if (!isnan(res.res.RoR3))
-			m_AvgRes.res.RoR3 =
-			(m_AvgRes.res.RoR3 *m_AvgRes.nCount + res.res.RoR3)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR5)) m_AvgRes.res.RoR5 = res.res.RoR5;
-		else if (!isnan(res.res.RoR5))
-			m_AvgRes.res.RoR5 =
-			(m_AvgRes.res.RoR5 *m_AvgRes.nCount + res.res.RoR5)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR10)) m_AvgRes.res.RoR10 = res.res.RoR10;
-		else if (!isnan(res.res.RoR10))
-			m_AvgRes.res.RoR10 =
-			(m_AvgRes.res.RoR10 *m_AvgRes.nCount + res.res.RoR10)
-			/ (m_AvgRes.nCount + 1);
-
-		if (isnan(m_AvgRes.res.RoR1Over300)) m_AvgRes.res.RoR1Over300 = res.res.RoR1Over300;
-		else if (!isnan(res.res.RoR1Over300))
-			m_AvgRes.res.RoR1Over300 =
-			(m_AvgRes.res.RoR1Over300 *m_AvgRes.nCount + res.res.RoR1Over300)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR3Over300)) m_AvgRes.res.RoR3Over300 = res.res.RoR3Over300;
-		else if (!isnan(res.res.RoR3Over300))
-			m_AvgRes.res.RoR3Over300 =
-			(m_AvgRes.res.RoR3Over300 *m_AvgRes.nCount + res.res.RoR3Over300)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR5Over300)) m_AvgRes.res.RoR5Over300 = res.res.RoR5Over300;
-		else if (!isnan(res.res.RoR5Over300))
-			m_AvgRes.res.RoR5Over300 =
-			(m_AvgRes.res.RoR5Over300 *m_AvgRes.nCount + res.res.RoR5Over300)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR10Over300)) m_AvgRes.res.RoR10Over300 = res.res.RoR10Over300;
-		else if (!isnan(res.res.RoR10Over300))
-			m_AvgRes.res.RoR10Over300 =
-			(m_AvgRes.res.RoR10Over300 *m_AvgRes.nCount + res.res.RoR10Over300)
-			/ (m_AvgRes.nCount + 1);
-
-
-		if (isnan(m_AvgRes.res.RoR1OverIndy1)) m_AvgRes.res.RoR1OverIndy1 = res.res.RoR1OverIndy1;
-		else if (!isnan(res.res.RoR1OverIndy1))
-			m_AvgRes.res.RoR1OverIndy1 =
-			(m_AvgRes.res.RoR1OverIndy1 *m_AvgRes.nCount + res.res.RoR1OverIndy1)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR3OverIndy1)) m_AvgRes.res.RoR3OverIndy1 = res.res.RoR3OverIndy1;
-		else if (!isnan(res.res.RoR3OverIndy1))
-			m_AvgRes.res.RoR3OverIndy1 =
-			(m_AvgRes.res.RoR3OverIndy1 *m_AvgRes.nCount + res.res.RoR3OverIndy1)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR5OverIndy1)) m_AvgRes.res.RoR5OverIndy1 = res.res.RoR5OverIndy1;
-		else if (!isnan(res.res.RoR5OverIndy1))
-			m_AvgRes.res.RoR5OverIndy1 =
-			(m_AvgRes.res.RoR5OverIndy1 *m_AvgRes.nCount + res.res.RoR5OverIndy1)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR10OverIndy1)) m_AvgRes.res.RoR10OverIndy1 = res.res.RoR10OverIndy1;
-		else if (!isnan(res.res.RoR10OverIndy1))
-			m_AvgRes.res.RoR10OverIndy1 =
-			(m_AvgRes.res.RoR10OverIndy1 *m_AvgRes.nCount + res.res.RoR10OverIndy1)
-			/ (m_AvgRes.nCount + 1);
-
-		if (isnan(m_AvgRes.res.RoR1OverIndy2)) m_AvgRes.res.RoR1OverIndy2 = res.res.RoR1OverIndy2;
-		else if (!isnan(res.res.RoR1OverIndy2))
-			m_AvgRes.res.RoR1OverIndy2 =
-			(m_AvgRes.res.RoR1OverIndy2 *m_AvgRes.nCount + res.res.RoR1OverIndy2)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR3OverIndy2)) m_AvgRes.res.RoR3OverIndy2 = res.res.RoR3OverIndy2;
-		else if (!isnan(res.res.RoR3OverIndy2))
-			m_AvgRes.res.RoR3OverIndy2 =
-			(m_AvgRes.res.RoR3OverIndy2 *m_AvgRes.nCount + res.res.RoR3OverIndy2)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR5OverIndy2)) m_AvgRes.res.RoR5OverIndy2 = res.res.RoR5OverIndy2;
-		else if (!isnan(res.res.RoR5OverIndy2))
-			m_AvgRes.res.RoR5OverIndy2 =
-			(m_AvgRes.res.RoR5OverIndy2 *m_AvgRes.nCount + res.res.RoR5OverIndy2)
-			/ (m_AvgRes.nCount + 1);
-		if (isnan(m_AvgRes.res.RoR10OverIndy2)) m_AvgRes.res.RoR10OverIndy2 = res.res.RoR10OverIndy2;
-		else if (!isnan(res.res.RoR10OverIndy2))
-			m_AvgRes.res.RoR10OverIndy2 =
-			(m_AvgRes.res.RoR10OverIndy2 *m_AvgRes.nCount + res.res.RoR10OverIndy2)
-			/ (m_AvgRes.nCount + 1);
-
-
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR1 = res.res.RoR1;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR1 = (m_AvgRes.res.RoR1 * m_AvgRes.nCount[nCCount] + res.res.RoR1)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
 	}
-	m_AvgRes.nCount++;
+	nCCount++;
+
+	if (!isnan(res.res.RoR3))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR3 = res.res.RoR3;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR3 = (m_AvgRes.res.RoR3 * m_AvgRes.nCount[nCCount] + res.res.RoR3)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR5))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR5 = res.res.RoR5;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR5 = (m_AvgRes.res.RoR5 * m_AvgRes.nCount[nCCount] + res.res.RoR5)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR10))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR10 = res.res.RoR10;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR10 = (m_AvgRes.res.RoR10 * m_AvgRes.nCount[nCCount] + res.res.RoR10)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR1Over300))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR1Over300 = res.res.RoR1Over300;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR1Over300 = (m_AvgRes.res.RoR1Over300 * m_AvgRes.nCount[nCCount] + res.res.RoR1Over300)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR3Over300))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR3Over300 = res.res.RoR3Over300;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR3Over300 = (m_AvgRes.res.RoR3Over300 * m_AvgRes.nCount[nCCount] + res.res.RoR3Over300)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR5Over300))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR5Over300 = res.res.RoR5Over300;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR5Over300 = (m_AvgRes.res.RoR5Over300 * m_AvgRes.nCount[nCCount] + res.res.RoR5Over300)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR10Over300))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR10Over300 = res.res.RoR10Over300;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR10Over300 = (m_AvgRes.res.RoR10Over300 * m_AvgRes.nCount[nCCount] + res.res.RoR10Over300)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+
+
+	if (!isnan(res.res.RoR1OverIndy1))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR1OverIndy1 = res.res.RoR1OverIndy1;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR1OverIndy1 = (m_AvgRes.res.RoR1OverIndy1 * m_AvgRes.nCount[nCCount] + res.res.RoR1OverIndy1)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR3OverIndy1))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR3OverIndy1 = res.res.RoR3OverIndy1;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR3OverIndy1 = (m_AvgRes.res.RoR3OverIndy1 * m_AvgRes.nCount[nCCount] + res.res.RoR3OverIndy1)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR5OverIndy1))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR5OverIndy1 = res.res.RoR5OverIndy1;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR5OverIndy1 = (m_AvgRes.res.RoR5OverIndy1 * m_AvgRes.nCount[nCCount] + res.res.RoR5OverIndy1)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}	
+	nCCount++;
+
+	if (!isnan(res.res.RoR10OverIndy1))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR10OverIndy1 = res.res.RoR10OverIndy1;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR10OverIndy1 = (m_AvgRes.res.RoR10OverIndy1 * m_AvgRes.nCount[nCCount] + res.res.RoR10OverIndy1)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR1OverIndy2))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR1OverIndy2 = res.res.RoR1OverIndy2;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR1OverIndy2 = (m_AvgRes.res.RoR1OverIndy2 * m_AvgRes.nCount[nCCount] + res.res.RoR1OverIndy2)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR3OverIndy2))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR3OverIndy2 = res.res.RoR3OverIndy2;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR3OverIndy2 = (m_AvgRes.res.RoR3OverIndy2 * m_AvgRes.nCount[nCCount] + res.res.RoR3OverIndy2)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR5OverIndy2))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR5OverIndy2 = res.res.RoR5OverIndy2;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR5OverIndy2 = (m_AvgRes.res.RoR5OverIndy2 * m_AvgRes.nCount[nCCount] + res.res.RoR5OverIndy2)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
+	if (!isnan(res.res.RoR10OverIndy2))
+	{
+		if (m_AvgRes.nCount[nCCount] == 0)
+		{
+			m_AvgRes.res.RoR10OverIndy2 = res.res.RoR10OverIndy2;
+			m_AvgRes.nCount[nCCount]++;
+		}
+		else
+		{
+			m_AvgRes.res.RoR10OverIndy2 = (m_AvgRes.res.RoR10OverIndy2 * m_AvgRes.nCount[nCCount] + res.res.RoR10OverIndy2)
+				/ (m_AvgRes.nCount[nCCount] + 1);
+			m_AvgRes.nCount[nCCount]++;
+		}
+	}
+	nCCount++;
+
 }
 
 void CDlgBackTesting::OnFinalMessage(HWND hWnd)
