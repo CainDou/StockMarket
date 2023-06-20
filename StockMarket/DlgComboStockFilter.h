@@ -3,6 +3,7 @@
 namespace SOUI
 {
 	class SColorListCtrlEx;
+	class CDlgBackTesting;
 	class CDlgComboStockFilter : public SHostWnd
 	{
 	public:
@@ -11,10 +12,13 @@ namespace SOUI
 		BOOL	OnInitDialog(EventArgs* e);
 		void	OnBtnClose();
 		void	OnBtnOK();
+		void	OnBtnBackTesting();
+
 		void	InitList(bool bUse, vector<StockFilter> &sfVec);
 		void	InitComboBox();
 		void	OnCheckUse();
 		void	StopFilter();
+		void	SetStockInfo(vector<StockInfo> &stockInfo);
 
 		void	InitStringMap();
 		void	OutPutCondition(vector<StockFilter> &sfVec);
@@ -46,6 +50,7 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"btn_OK", OnBtnOK)
 			EVENT_NAME_COMMAND(L"btn_close", OnBtnClose)
 			EVENT_NAME_COMMAND(L"chk_use", OnCheckUse)
+			EVENT_NAME_COMMAND(L"btn_backTesting", OnBtnBackTesting)
 
 			EVENT_MAP_END()
 
@@ -93,7 +98,8 @@ namespace SOUI
 		map<SStringW, int> m_ReverseConditionMap;
 		std::set<StockFilter> m_sfSet;
 		UINT m_uParThreadID;
-
+		CDlgBackTesting* m_pDlgBackTesting;
+		vector<StockInfo> m_stockInfo;
 	};
 
 

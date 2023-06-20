@@ -1,12 +1,14 @@
 #include "stdafx.h"
 #include "DlgComboStockFilter.h"
 #include "SColorListCtrlEx.h"
+#include "DlgBackTesting.h"
 
 CDlgComboStockFilter::CDlgComboStockFilter(UINT uParThreadID, RpsGroup Group)
 	:SHostWnd(_T("LAYOUT:dlg_comboStockFilter"))
 {
 	m_uParThreadID = uParThreadID;
 	m_Group = Group;
+	m_pDlgBackTesting = nullptr;
 }
 
 
@@ -36,6 +38,12 @@ BOOL SOUI::CDlgComboStockFilter::OnInitDialog(EventArgs * e)
 	m_pCbxPeriod2 = FindChildByID2<SComboBox>(R.id.cbx_period2);
 	m_pTextNum = FindChildByID2<SStatic>(R.id.text_num);
 	m_pEditNum = FindChildByID2<SEdit>(R.id.edit_num);
+	if (m_Group != Group_Stock)
+	{
+		SImageButton *btn = FindChildByName2<SImageButton>(L"btn_backTesting");
+		if (btn)
+			btn->SetVisible(FALSE, TRUE);
+	}
 	InitStringMap();
 	InitComboBox();
 	return TRUE;
@@ -55,6 +63,31 @@ void SOUI::CDlgComboStockFilter::OnBtnOK()
 		ChangeCondition();
 	else if (SFF_Delete == nSel)
 		DeleteCondition();
+}
+
+void CDlgComboStockFilter::OnBtnBackTesting()
+{
+	if (m_pDlgBackTesting == nullptr)
+	{
+		m_pDlgBackTesting = new CDlgBackTesting(m_sfSet,m_stockInfo);
+		m_pDlgBackTesting->Create(NULL);
+		m_pDlgBackTesting->CenterWindow(m_hWnd);
+		m_pDlgBackTesting->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
+			SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME);
+		m_pDlgBackTesting->ShowWindow(SW_SHOWDEFAULT);
+	}
+	else
+	{
+		if(m_pDlgBackTesting->IsWindowVisible())
+			m_pDlgBackTesting->ShowWindow(SW_HIDE);
+		else
+		{
+			m_pDlgBackTesting->ReSetCondition(m_sfSet);
+			m_pDlgBackTesting->ShowWindow(SW_SHOW);
+		}
+
+	}
+
 }
 
 void SOUI::CDlgComboStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
@@ -88,7 +121,7 @@ void SOUI::CDlgComboStockFilter::InitComboBox()
 	int nCount = 0;
 	for (int i = SFI_Start; i < SFI_Count; ++i)
 	{
-		if (m_IndexMap.count(i))
+		if (m_IndexMap.count(i) && i != SFI_Num)
 		{
 			m_pCbxIndex1->InsertItem(nCount, m_IndexMap[i], NULL, 0);
 			m_Index1PosMap[nCount] = i;
@@ -183,6 +216,11 @@ void SOUI::CDlgComboStockFilter::OnCheckUse()
 void SOUI::CDlgComboStockFilter::StopFilter()
 {
 	m_pCheckUse->SetCheck(FALSE);
+}
+
+void CDlgComboStockFilter::SetStockInfo(vector<StockInfo>& stockInfo)
+{
+	m_stockInfo = stockInfo;
 }
 
 void SOUI::CDlgComboStockFilter::InitStringMap()
@@ -739,8 +777,27 @@ bool SOUI::CDlgComboStockFilter::OnCbxIDChange(EventArgs * e)
 		int nSel = pEvt->nCurSel;
 		StockFilter sf;
 		GetListItem(nSel, sf);
-		m_pCbxIndex1->SetCurSel(sf.index1);
-		m_pCbxIndex2->SetCurSel(sf.index2);
+		int nIndex1ID = sf.index1;
+		int nIndex2ID = sf.index2;
+		for (auto &it : m_Index1PosMap)
+		{
+			if (sf.index1 == it.second)
+			{
+				nIndex1ID = it.first;
+				break;
+			}
+		}
+		for (auto &it : m_Index2PosMap)
+		{
+			if (sf.index2 == it.second)
+			{
+				nIndex2ID = it.first;
+				break;
+			}
+		}
+
+		m_pCbxIndex1->SetCurSel(nIndex1ID);
+		m_pCbxIndex2->SetCurSel(nIndex2ID);
 		m_pCbxPeriod1->SetCurSel(sf.period1);
 		m_pCbxCondition->SetCurSel(sf.condition);
 		if (sf.index2 == SFI_Num)

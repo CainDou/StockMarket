@@ -68,6 +68,7 @@ namespace SOUI
 			if (pChild->IsClass(SHeaderCtrlEx::GetClassName()))
 			{
 				m_pHeader = (SHeaderCtrlEx*)pChild;
+				m_pHeader->InitText();
 				break;
 			}
 			pChild = pChild->GetWindow(GSW_NEXTSIBLING);
@@ -770,8 +771,8 @@ namespace SOUI
 				//rcCol.right = rcCol.left + hdi.cx.toPixelSize(GetScale());
 
 			}
-			if (nNoMoveCol > 0)
-			{
+			//if (nNoMoveCol > 0)
+			//{
 				if (nCol < nNoMoveCol)
 				{
 					rcNoMove.left = rcNoMove.right;
@@ -789,7 +790,7 @@ namespace SOUI
 					rcCol.right -= diff;
 					bFirst = false;
 				}
-			}
+			//}
 
 			rcVisiblePart.IntersectRect(rcItem, rcCol);
 			if (rcCol.right  > rcClient.right + ITEM_MARGIN) break;

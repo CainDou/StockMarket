@@ -28,8 +28,8 @@ bool SHeaderCtrlEx::SetOriItemIndex(int nCol, int iOrder)
 	int nItemCount = m_arrItems.GetCount();
 	if (nCol >= nItemCount || iOrder >= nItemCount)
 		return false;
-	if (!m_bInitText)
-		InitText();
+	//if (!m_bInitText)
+	//	InitText();
 	m_arrItems[nCol].iOrder = iOrder;
 	m_arrItems[nCol].strText = m_arrSrcItem[iOrder].strText;
 	m_arrItems[nCol].cx = m_arrSrcItem[iOrder].cx;
@@ -61,6 +61,54 @@ void SHeaderCtrlEx::InitText()
 
 }
 
+int SHeaderCtrlEx::InsertItem(int iItem, LPCTSTR pszText, int nWidth, SHDSORTFLAG stFlag, LPARAM lParam)
+{
+	return InsertItem(iItem, pszText, nWidth, SLayoutSize::px, stFlag, lParam);
+}
+
+int SHeaderCtrlEx::InsertItem(int iItem, LPCTSTR pszText, int nWidth, SLayoutSize::Unit unit, SHDSORTFLAG stFlag, LPARAM lParam)
+{
+	SASSERT(pszText);
+	SASSERT(nWidth >= 0);
+	if (iItem == -1) iItem = (int)m_arrItems.GetCount();
+	SHDITEM item;
+	item.mask = 0xFFFFFFFF;
+	item.cx.setSize((float)nWidth, unit);
+	item.strText.SetCtxProvider(this);
+	item.strText.SetText(pszText);
+	item.stFlag = stFlag;
+	item.state = 0;
+	item.iOrder = iItem;
+	item.lParam = lParam;
+	m_arrItems.InsertAt(iItem, item);
+	m_arrSrcItem.InsertAt(iItem, item);
+	m_arrVisble.InsertAt(iItem, item.bVisible);
+
+	//需要更新列的序号
+	for (size_t i = 0; i < GetItemCount(); i++)
+	{
+		if (i == (size_t)iItem) continue;
+		if (m_arrItems[i].iOrder >= iItem)
+			m_arrItems[i].iOrder++;
+		if (m_arrSrcItem[i].iOrder >= iItem)
+			m_arrSrcItem[i].iOrder++;
+
+	}
+
+	for (size_t i = 0; i < GetItemCount(); i++)
+	{
+		if (i == (size_t)iItem) continue;
+		if (m_arrItems[i].iOrder >= iItem)
+			m_arrItems[i].iOrder++;
+	}
+
+	EventHeaderRelayout e(this);
+	FireEvent(e);
+
+	Invalidate();
+	return iItem;
+}
+
 void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
 {
 	SPainter painter;
@@ -74,67 +122,95 @@ void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
 	rcNoMove.right = rcNoMove.left;
 	bool bFirst = true;
 	int right = rcItem.left;
-	if (!m_bInitText)
-		InitText();
-	if (m_nNoMoveCol > 0)
-	{
-		for (UINT i = 0; i < m_arrItems.GetCount(); i++)
-		{
-			if (!m_arrVisble[i])continue;
+	//if (!m_bInitText)
+	//	InitText();
 
-			m_arrItems[i].bVisible = true;
-			rcItem.left = rcItem.right;
-			rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
-			rcNoMove.left = rcNoMove.right;
-			rcNoMove.right = rcNoMove.left + m_arrItems[i].cx.toPixelSize(GetScale());
-			if (i < m_nNoMoveCol)
-			{
-				CRect rcTmp(rcItem);
-				rcItem = rcNoMove;
-				rcNoMove = rcTmp;
-				right = rcItem.right;
-			}
-			else if (rcItem.left < right)
-			{
-				m_arrItems[i].bVisible = false;
-				continue;
-			}
-			else if (rcItem.left >= right && bFirst)
-			{
-				int  diff = rcItem.left - right;
-				rcItem.left = right;
-				rcItem.right -= diff;
-				bFirst = false;
-			}
-			if (rcItem.right > rcClient.right) break;
-			DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
-			if (i < m_nNoMoveCol)
-			{
-				CRect rcTmp(rcItem);
-				rcItem = rcNoMove;
-				rcNoMove = rcTmp;
-			}
-		}
-	}
-	else
+	for (UINT i = 0; i < m_arrItems.GetCount(); i++)
 	{
-		for (UINT i = 0; i < m_arrItems.GetCount(); i++)
-		{
-			if (!m_arrVisble[i]) continue;
-			m_arrItems[i].bVisible = true;
-			rcItem.left = rcItem.right;
-			rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
-			DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
-			if (rcItem.right >= rcClient.right) break;
-		}
-	}
-	if (rcItem.right < rcClient.right)
-	{
+		if (!m_arrVisble[i])continue;
+
+		m_arrItems[i].bVisible = true;
 		rcItem.left = rcItem.right;
-		rcItem.right = rcClient.right;
-		if (m_pSkinItem) m_pSkinItem->Draw(pRT, rcItem, 3);
+		rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
+		rcNoMove.left = rcNoMove.right;
+		rcNoMove.right = rcNoMove.left + m_arrItems[i].cx.toPixelSize(GetScale());
+		if (i < m_nNoMoveCol)
+		{
+			CRect rcTmp(rcItem);
+			rcItem = rcNoMove;
+			rcNoMove = rcTmp;
+			right = rcItem.right;
+		}
+		else if (rcItem.left < right)
+		{
+			m_arrItems[i].bVisible = false;
+			continue;
+		}
+		else if (rcItem.left >= right && bFirst)
+		{
+			int  diff = rcItem.left - right;
+			rcItem.left = right;
+			rcItem.right -= diff;
+			bFirst = false;
+		}
+		if (rcItem.right > rcClient.right) break;
+		DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
+		if (i < m_nNoMoveCol)
+		{
+			CRect rcTmp(rcItem);
+			rcItem = rcNoMove;
+			rcNoMove = rcTmp;
+		}
 	}
+
+	//if (m_nNoMoveCol > 0)
+	//{
+	//}
+	//else
+	//{
+	//	for (UINT i = 0; i < m_arrItems.GetCount(); i++)
+	//	{
+	//		if (!m_arrVisble[i]) continue;
+	//		m_arrItems[i].bVisible = true;
+	//		rcItem.left = rcItem.right;
+	//		rcItem.right = rcItem.left + m_arrItems[i].cx.toPixelSize(GetScale());
+	//		DrawItem(pRT, rcItem, m_arrItems.GetData() + i);
+	//		if (rcItem.right >= rcClient.right) break;
+	//	}
+	//}
+	if (rcItem.right > rcClient.right)
+		DrawItem(pRT, rcItem, m_arrItems.GetData());
 	AfterPaint(pRT, painter);
+}
+
+void SHeaderCtrlEx::DrawItem(IRenderTarget * pRT, CRect rcItem, const LPSHDITEM pItem)
+{
+	if (!pItem->bVisible) return;
+	CRect rcClient;
+	GetClientRect(&rcClient);
+	if (m_pSkinItem) m_pSkinItem->Draw(pRT, rcItem, pItem->state);
+	if (rcItem.right > rcClient.right)
+	{
+		pRT->DrawText(L"...",3, rcItem, DT_LEFT);
+		return;
+	}
+
+	UINT uTextAlign = m_style.GetTextAlign();
+	if (m_bMultiLines)
+		uTextAlign ^= DT_SINGLELINE;
+
+	pRT->DrawText(pItem->strText.GetText(FALSE), pItem->strText.GetText(FALSE).GetLength(), rcItem, uTextAlign);
+	if (pItem->stFlag == ST_NULL || !m_pSkinSort) return;
+	CSize szSort = m_pSkinSort->GetSkinSize();
+	CPoint ptSort;
+	ptSort.y = rcItem.top + (rcItem.Height() - szSort.cy) / 2;
+
+	if (uTextAlign&DT_RIGHT)
+		ptSort.x = rcItem.left + 2;
+	else
+		ptSort.x = rcItem.right - szSort.cx - 2;
+
+	if (m_pSkinSort) m_pSkinSort->Draw(pRT, CRect(ptSort, szSort), pItem->stFlag == ST_UP ? 0 : 1);
 }
 
 void SHeaderCtrlEx::OnLButtonUp(UINT nFlags, CPoint pt)
@@ -165,10 +241,6 @@ void SHeaderCtrlEx::OnLButtonUp(UINT nFlags, CPoint pt)
 					SetOriItemIndex(LOWORD(m_dwHitTest), tDragTo.iOrder);
 					SetOriItemIndex(LOWORD(m_dwDragTo), tHit.iOrder);
 
-					OutputDebugStringFormat("原顺序:%d %d 现顺序:%d %d 原index:%d %d 现index:%d %d\n",
-						tHit.iOrder, tDragTo.iOrder,
-						m_arrItems[LOWORD(m_dwHitTest)].iOrder, m_arrItems[LOWORD(m_dwDragTo)].iOrder,
-						nHit, nDragTo, LOWORD(m_dwHitTest), LOWORD(m_dwDragTo));
 					//int nTmpOrder = tHit.iOrder;
 					//tHit.iOrder = tDragTo.iOrder;
 					//tDragTo.iOrder = nTmpOrder;
@@ -282,13 +354,13 @@ void SHeaderCtrlEx::OnMouseMove(UINT nFlags, CPoint pt)
 				{
 					WORD iHover = LOWORD(m_dwHitTest);
 					m_arrItems[iHover].state = 0;
-					RedrawItem(iHover);
+					//RedrawItem(iHover);
 				}
 				if (IsItemHover(dwHitTest))
 				{
 					WORD iHover = LOWORD(dwHitTest);
 					m_arrItems[iHover].state = 1;//hover
-					RedrawItem(iHover);
+					//RedrawItem(iHover);
 				}
 			}
 			m_dwHitTest = dwHitTest;
@@ -380,8 +452,8 @@ bool SHeaderCtrlEx::isItemShowVisble(UINT iItem)
 void SHeaderCtrlEx::SetItemShowVisible(int iItem, bool visible)
 {
 	SASSERT(iItem >= 0 && iItem < (int)m_arrItems.GetCount());
-	if (!m_bInitText)
-		InitText();
+	//if (!m_bInitText)
+	//	InitText();
 	m_arrItems[iItem].bVisible = visible;
 	m_arrVisble[iItem] = visible;
 	Invalidate();
@@ -397,7 +469,7 @@ int SHeaderCtrlEx::GetTotalWidth()
 	int nRet = 0;
 	for (UINT i = 0; i < m_arrVisble.GetCount(); i++)
 	{
-		if(m_arrVisble[i])
+		if (m_arrVisble[i])
 			nRet += GetItemWidth(i, true);
 	}
 	return nRet;

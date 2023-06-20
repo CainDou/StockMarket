@@ -191,6 +191,7 @@
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
     <ClCompile Include="DlgAddNew.cpp" />
+    <ClCompile Include="DlgBackTesting.cpp" />
     <ClCompile Include="DlgBandPara.cpp" />
     <ClCompile Include="DlgComboStockFilter.cpp" />
     <ClCompile Include="DlgEmaPara.cpp" />
@@ -249,6 +250,7 @@
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="DlgAddNew.h" />
+    <ClInclude Include="DlgBackTesting.h" />
     <ClInclude Include="DlgBandPara.h" />
     <ClInclude Include="DlgComboStockFilter.h" />
     <ClInclude Include="DlgEmaPara.h" />

@@ -26,13 +26,15 @@ public:
 	BOOL   SetClientID(SOCKET s);
 	SOCKET GetClientID() const;
 	BOOL   GetExitState() const;
-
+	BOOL   ReceiveData(char * buffer, int size, char end = 0);
+	BOOL   SendData(char* msg, int size);
 protected:
 	SOCKET m_socket;
 	SOCKET m_ClientID;
 	HWND m_hWnd;
 	sockaddr_in m_remote;
 	BOOL m_bConnected;
+	BOOL m_bRun;
 	BOOL m_bExit;
 	UINT m_uThreadID;
 	HANDLE m_hFunc;
@@ -53,7 +55,7 @@ inline SOCKET CNetWorkClient::GetSocket() const
 
 inline BOOL CNetWorkClient::GetState() const
 {
-	return m_bConnected;
+	return m_bConnected && m_bRun;
 }
 
 inline BOOL CNetWorkClient::SetState(BOOL bState)
@@ -78,3 +80,8 @@ inline BOOL CNetWorkClient::GetExitState() const
 	return m_bExit;
 }
 
+
+inline BOOL CNetWorkClient::SendData(char * msg, int size)
+{
+	return send(m_socket, msg, size, 0) > 0;
+}

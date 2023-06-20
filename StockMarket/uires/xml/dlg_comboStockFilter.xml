@@ -1,14 +1,15 @@
 ﻿<?xml version="1.0"?>
 <SOUI name="filterWindow" title="选股器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1050" height="700" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
 	<root cache="1" colorBkgnd="rgb(50,50,50)">
-		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff"  cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#550000" margin="1,1,1,1"  cache="1">
 			<icon pos="10,8" src="ICON_LOGO:16" />
 			<text pos="29,9" colorText="#00FFFF" >选股器</text>
-			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1"  />
 		</caption>
-		<window pos="0,30,-0,-0"  cache="1" font="face:微软雅黑" colorText="#00ffffff">
+		<window pos="0,30,-0,-0"  cache="1" font="face:微软雅黑" colorText="#00ffffff" colorBorder="#550000" margin="1,0,1,1" >
 			<group pos="5,5,@790,-5" align="left" headerHeight="0" text="条件列表">
-				<check name="chk_use" pos="5,[20" checked="0">启用选股器</check>
+				<check name="chk_use" pos="5,[20,@100,@25" checked="0">启用选股器</check>
+		  		<imgbtn name="btn_backTesting" skin="skin_ButtonGrayBlack" pos="[5,{0,@150,@25"  animate="1" text="选股条件回测" />
 				<color_listctrlex name="ls_filter" cache="1" bkgndBlend="0" pos="5,[5,-5,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
 					<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 						<items>

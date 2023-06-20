@@ -21,38 +21,38 @@
 			<check name="chk_STARM" pos="[5,{0" checked="0">科创板</check>
 			<check name="chk_NewStock" pos="[5,{0" checked="0">上市不满一年</check>
 			<imgbtn pos="-300,2" size="35,20" tip="K线复权设置" animate="0" text="复权" name="btn_Rehab" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
-			<color_listctrlex name="ls_rps" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
-				<headerex align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+			<color_listctrlex name="ls_rps" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
 					<items>
 						<item width="45">序号</item>
 						<item width="65">证券代码</item>
 						<item width="110">证券名称</item>
 						<item width="75">最新价</item>
 						<item width="60">涨幅%</item>
-						<item width="95">收盘价rps520</item>
-						<item width="120">收盘价MACD520</item>
-						<item width="105">收盘价520分数</item>
-						<item width="105">收盘价520排名</item>
-						<item width="110">收盘价rps2060</item>
-						<item width="130">收盘价MACD2060</item>
-						<item width="115">收盘价2060分数</item>
-						<item width="115">收盘价2060排名</item>
-						<item width="95">成交额rps520</item>
-						<item width="120">成交额MACD520</item>
-						<item width="105">成交额520分数</item>
-						<item width="105">成交额520排名</item>
-						<item width="110">成交额rps2060</item>
-						<item width="130">成交额MACD2060</item>
-						<item width="115">成交额2060分数</item>
-						<item width="115">成交额2060排名</item>
-						<item width="130">成交额截面分数</item>
-						<item width="130">成交额截面排名</item>
-						<item width="100">集竞成交量</item>
-						<item width="100">集竞量分数</item>
-						<item width="100">集竞量排名</item>
-						<item width="100">集竞成交额</item>
-						<item width="100">集竞金额分数</item>
-						<item width="100">集竞金额排名</item>
+						<item width="70">收盘价rps520</item>
+						<item width="70">收盘价MACD520</item>
+						<item width="70">收盘价520分数</item>
+						<item width="70">收盘价520排名</item>
+						<item width="70">收盘价rps2060</item>
+						<item width="70">收盘价MACD2060</item>
+						<item width="70">收盘价2060分数</item>
+						<item width="70">收盘价2060排名</item>
+						<item width="70">成交额rps520</item>
+						<item width="70">成交额MACD520</item>
+						<item width="70">成交额520分数</item>
+						<item width="70">成交额520排名</item>
+						<item width="70">成交额rps2060</item>
+						<item width="70">成交额MACD2060</item>
+						<item width="70">成交额2060分数</item>
+						<item width="70">成交额2060排名</item>
+						<item width="70">成交额截面分数</item>
+						<item width="70">成交额截面排名</item>
+						<item width="70">集竞成交量</item>
+						<item width="70">集竞量分数</item>
+						<item width="70">集竞量排名</item>
+						<item width="70">集竞成交额</item>
+						<item width="70">集竞金额分数</item>
+						<item width="70">集竞金额排名</item>
 
 					</items>
 				</headerex>

@@ -208,18 +208,18 @@ void CWorkWnd::InitList()
 		Subscriber(&CWorkWnd::OnListHeaderSwap, this));
 	if (Group_Stock == m_Group)
 	{
-		m_pList->InsertColumn(SHead_ActBuySellRatio, L"主动量比%", 80);
+		m_pList->InsertColumn(SHead_ActBuySellRatio, L"主动量比%", 70);
 		m_pList->InsertColumn(SHead_ActToPasBuySellRatio,
-			L"转换主被动量比%", 130);
-		m_pList->InsertColumn(SHead_AvgBuySellRatio, L"平均量比%", 80);
-		m_pList->InsertColumn(SHead_POCRatio, L"最多成交价格比%", 120);
-		m_pList->InsertColumn(SHead_Volume, L"成交量", 80);
-		m_pList->InsertColumn(SHead_ActSellVolume, L"内盘", 80);
-		m_pList->InsertColumn(SHead_ActBuyVolume, L"外盘", 80);
-		m_pList->InsertColumn(SHead_Open, L"开盘", 80);
-		m_pList->InsertColumn(SHead_High, L"最高", 80);
-		m_pList->InsertColumn(SHead_Low, L"最低", 80);
-		m_pList->InsertColumn(SHead_Amount, L"成交额", 80);
+			L"转换主被动量比%", 70);
+		m_pList->InsertColumn(SHead_AvgBuySellRatio, L"平均量比%", 70);
+		m_pList->InsertColumn(SHead_POCRatio, L"最多成交价格比%", 70);
+		m_pList->InsertColumn(SHead_Volume, L"成交量", 70);
+		m_pList->InsertColumn(SHead_ActSellVolume, L"内盘", 70);
+		m_pList->InsertColumn(SHead_ActBuyVolume, L"外盘", 70);
+		m_pList->InsertColumn(SHead_Open, L"开盘", 70);
+		m_pList->InsertColumn(SHead_High, L"最高", 70);
+		m_pList->InsertColumn(SHead_Low, L"最低", 70);
+		m_pList->InsertColumn(SHead_Amount, L"成交额", 70);
 	}
 
 	m_ListDataSortMap[SHead_ID] = eSDT_Int;
@@ -315,6 +315,7 @@ void CWorkWnd::SetListInfo(vector<StockInfo>& infoVec,
 		m_infoMap.hash[it.SecurityID] = it;
 	m_StockName = StockNameMap;
 	m_pDlgKbElf->SetStockInfo(m_InfoVec);
+	m_pDlgCmbStockFilter->SetStockInfo(m_InfoVec);
 }
 
 //void CWorkWnd::UpdateTodayPointData(SStringA pointName,
@@ -2327,9 +2328,10 @@ bool CWorkWnd::CheckCmbStockDataPass(StockFilter & sf, SStringA StockID)
 	double data1 = pFilter1->at(nPeriod1).hash[StockID1][m_SFIndexMap[sf.index1]];
 	double data2 = sf.index2 == SFI_Num ? sf.num :
 		pFilter2->at(nPeriod2).hash[StockID2][m_SFIndexMap[sf.index2]];
-	if (sf.index1 == SFI_Amount)
+	if (sf.index1 == SFI_Amount || sf.index1 == SFI_CAAmo)
 		data1 /= 10000;
-	if (sf.index2 == SFI_Amount)
+
+	if (sf.index2 == SFI_Amount || sf.index1 == SFI_CAAmo)
 		data2 /= 10000;
 	return (this->*m_SFConditionMap[sf.condition])(data1, data2);
 }

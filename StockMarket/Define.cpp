@@ -64,9 +64,137 @@ int	RecvMsg(int  msgQId, char** buf, int& length, int timeout)
 	return l_msg.message;
 }
 
-bool GetFileKlineData(SStringA InsID, vector<KlineType>& dataVec, bool bIsDay)
+HRESULT OpenFile(LPTSTR FileName)
 {
-	return false;
+	IFileDialog* pfd = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		DWORD dwFlags;
+		if (SUCCEEDED(hr))
+		{
+
+			hr = pfd->GetOptions(&dwFlags);
+			if (SUCCEEDED(hr))
+			{
+				hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST);
+				if (SUCCEEDED(hr))
+				{
+					if (SUCCEEDED(hr))
+					{
+						COMDLG_FILTERSPEC fileType[] =
+						{
+							{ L"配置文件", L"*.ini" },
+							{ L"所有文件",L"*.*" },
+						};
+						hr = pfd->SetFileTypes(ARRAYSIZE(fileType), fileType);
+						if (SUCCEEDED(hr))
+						{
+							hr = pfd->SetFileTypeIndex(1);
+							if (SUCCEEDED(hr))
+							{
+
+								//hr=pfd->SetFolder()
+								hr = pfd->Show(NULL);
+								if (SUCCEEDED(hr))
+								{
+									IShellItem *pSelItem;
+
+									hr = pfd->GetResult(&pSelItem);
+									if (SUCCEEDED(hr))
+									{
+
+										LPWSTR pszFilePath = NULL;
+										hr = pSelItem->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &pszFilePath);
+										if (SUCCEEDED(hr))
+										{
+											wcscpy(FileName, pszFilePath);
+											CoTaskMemFree(pszFilePath);
+										}
+										pSelItem->Release();
+									}
+								}
+							}
+
+						}
+
+					}
+				}
+			}
+		}
+		pfd->Release();
+	}
+	return hr;
+}
+
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName)
+{
+	IFileDialog* pfd = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		DWORD dwFlags;
+		if (SUCCEEDED(hr))
+		{
+
+			hr = pfd->GetOptions(&dwFlags);
+			if (SUCCEEDED(hr))
+			{
+				hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
+				if (SUCCEEDED(hr))
+				{
+					if (SUCCEEDED(hr))
+					{
+
+						COMDLG_FILTERSPEC fileType[] =
+						{
+							{ L"CSV(逗号分隔符)", L"*.csv" },
+							{ L"所有文件",L"*.*" },
+						};
+						hr = pfd->SetFileTypes(ARRAYSIZE(fileType), fileType);
+						if (SUCCEEDED(hr))
+						{
+							hr = pfd->SetFileTypeIndex(1);
+							if (SUCCEEDED(hr))
+							{
+								hr = pfd->SetFileName(DefaultFileName);
+								if (SUCCEEDED(hr))
+								{
+
+									//hr=pfd->SetFolder()
+									hr = pfd->Show(NULL);
+									if (SUCCEEDED(hr))
+									{
+										IShellItem *pSelItem;
+
+										hr = pfd->GetResult(&pSelItem);
+										UINT fileType = 0;
+										pfd->GetFileTypeIndex(&fileType);
+
+										if (SUCCEEDED(hr))
+										{
+
+											LPWSTR pszFilePath = NULL;
+											hr = pSelItem->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &pszFilePath);
+											if (SUCCEEDED(hr))
+											{
+												wcscpy(FileName, pszFilePath);
+												CoTaskMemFree(pszFilePath);
+											}
+											pSelItem->Release();
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			}
+		}
+		pfd->Release();
+	}
+	return hr;
 }
 
 TimePreiod & operator++(TimePreiod & tp)

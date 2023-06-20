@@ -29,7 +29,7 @@ CWndSynHandler::~CWndSynHandler()
 	if (m_pLoginDlg)
 		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 			NULL, LoginMsg_Exit);
-	m_NetClinet.Stop();
+	m_NetClient.Stop();
 	SendMsg(m_RpsProcThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
 	if (tRpsCalc.joinable())
@@ -58,7 +58,7 @@ void CWndSynHandler::Run()
 	m_RpsProcThreadID = *(unsigned*)&tRpsCalc.get_id();
 	tMsgSyn = thread(&CWndSynHandler::MsgProc, this);
 	m_uMsgThreadID = *(unsigned*)&tMsgSyn.get_id();
-	m_NetClinet.SetWndHandle(m_hMain);
+	m_NetClient.SetWndHandle(m_hMain);
 	if (!CheckCmdLine())
 		exit(0);
 	tLogin = thread(&CWndSynHandler::Login, this);
@@ -66,12 +66,12 @@ void CWndSynHandler::Run()
 	if (bExit)	exit(0);
 	//ResetEvent(g_hLoginEvent);
 	m_NetHandleFlag.clear();
-	m_NetClinet.RegisterHandle(NetHandle);
-	m_NetClinet.Start(m_uNetThreadID, this);
+	m_NetClient.RegisterHandle(NetHandle);
+	m_NetClient.Start(m_uNetThreadID, this);
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
-	send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
 	while (!m_bServerReady)
 	{
@@ -82,14 +82,14 @@ void CWndSynHandler::Run()
 		if (bExit)	exit(0);
 		//ResetEvent(g_hLoginEvent);
 		ResetEvent(g_hEvent);
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 	while (!CheckInfoRecv())
 	{
 		m_NetHandleFlag.clear();
 		ResetEvent(g_hEvent);
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 	SStringW Info = L"登陆成功,开始程序初始化";
@@ -263,32 +263,31 @@ void CWndSynHandler::InitPointInfo()
 
 }
 
-bool CWndSynHandler::ReceiveData(SOCKET socket, int size, char end,
-	char * buffer, int offset)
-{
-	char*p = buffer + offset;
-	StockInfo stkInfo = { 0 };
-	int sizeLeft = size;
-	while (sizeLeft > 0)
-	{
-		int ret = recv(socket, p, sizeLeft, 0);
-		if (SOCKET_ERROR == ret)
-		{
-			delete[] buffer;
-			buffer = nullptr;
-			p = nullptr;
-			return 0;
-		}
-		sizeLeft -= ret;
-		p += ret;
-	}
-	p = nullptr;
-	char cEnd;
-	int ret = recv(socket, &cEnd, 1, 0);
-	if (cEnd == end)
-		return true;
-	return false;
-}
+//bool CWndSynHandler::ReceiveData(SOCKET socket, int size, char end,
+//	char * buffer, int offset)
+//{
+//	char*p = buffer + offset;
+//	int sizeLeft = size;
+//	while (sizeLeft > 0)
+//	{
+//		int ret = recv(socket, p, sizeLeft, 0);
+//		if (SOCKET_ERROR == ret)
+//		{
+//			delete[] buffer;
+//			buffer = nullptr;
+//			p = nullptr;
+//			return 0;
+//		}
+//		sizeLeft -= ret;
+//		p += ret;
+//	}
+//	p = nullptr;
+//	char cEnd;
+//	int ret = recv(socket, &cEnd, 1, 0);
+//	if (cEnd == end)
+//		return true;
+//	return false;
+//}
 
 unsigned CWndSynHandler::NetHandle(void * para)
 {
@@ -299,14 +298,14 @@ unsigned CWndSynHandler::NetHandle(void * para)
 	//int c = 0;
 	while (true)
 	{
-		if (pMd->m_NetClinet.GetExitState())
+		if (pMd->m_NetClient.GetExitState())
 			return 0;
 		if (pMd->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
 		{
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
 			if (pFuc == nullptr)
 				pFuc = &CWndSynHandler::OnNoDefineMsg;
-			(pMd->*pFuc)(pMd->m_NetClinet.GetSocket(), recvInfo);
+			(pMd->*pFuc)(recvInfo);
 		}
 
 	}
@@ -315,7 +314,7 @@ unsigned CWndSynHandler::NetHandle(void * para)
 
 void CWndSynHandler::Login()
 {
-	m_pLoginDlg = new CDlgLogin(m_hMain, &m_NetClinet);
+	m_pLoginDlg = new CDlgLogin(m_hMain, &m_NetClient);
 	m_pLoginDlg->SetIPInfo(m_strIPAddr, m_nIPPort);
 	m_pLoginDlg->DoModal();
 	bExit = true;
@@ -387,8 +386,7 @@ bool CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, in
 	memcpy_s(msg + nOffset, nSize, &attSize, sizeof(attSize));
 	nOffset += sizeof(attSize);
 	memcpy_s(msg + nOffset, nSize, attInfo, attSize);
-	int ret = send(m_NetClinet.GetSocket(), msg, nSize, 0);
-	return ret > 0;
+	return 	m_NetClient.SendData(msg, nSize);
 }
 
 bool CWndSynHandler::GetMarket(SStringA stockID, int nGroup)
@@ -398,14 +396,13 @@ bool CWndSynHandler::GetMarket(SStringA stockID, int nGroup)
 	info.Group = nGroup;
 	//发送订阅数据
 	info.MsgType = SendType_SubIns;
-	int ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	//发送获取数据请求
 	if (nGroup != Group_Stock)
 		info.MsgType = SendType_IndexMarket;
 	else
 		info.MsgType = SendType_StockMarket;
-	ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
-	return ret > 0;
+	return 	m_NetClient.SendData((char*)&info, sizeof(info));
 }
 
 bool CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
@@ -415,8 +412,7 @@ bool CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
-	int ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
-	return ret > 0;
+	return m_NetClient.SendData((char*)&info, sizeof(info));
 }
 
 bool CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
@@ -426,8 +422,7 @@ bool CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
-	int ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
-	return ret > 0;
+	return m_NetClient.SendData((char*)&info, sizeof(info));
 }
 
 
@@ -561,7 +556,7 @@ bool CWndSynHandler::CheckCmdLine()
 		return true;
 	else
 	{
-		if (!m_NetClinet.OnConnect(m_strIPAddr, m_nIPPort))
+		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
 			return true;
 
 		SStringA strMD5 = "";
@@ -598,22 +593,23 @@ bool CWndSynHandler::CheckCmdLine()
 
 bool CWndSynHandler::GetAutoUpdateFile(SStringA strMD5)
 {
-	SendInfo si = { 0 };
-	si.MsgType = ComSend_UpdateFile;
-	::send(m_NetClinet.GetSocket(), (char*)&si, sizeof(si), 0);
+	SendInfo info = { 0 };
+	info.MsgType = ComSend_UpdateFile;
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	ReceiveInfo recvInfo;
-	int nRecv = 0;
-	while (true)
-	{
-		int nRet = ::recv(m_NetClinet.GetSocket(), (char*)&recvInfo + nRecv,
-			sizeof(recvInfo) - nRecv, 0);
-		nRecv += nRet;
-		if (nRecv == sizeof(recvInfo))
-			break;
-	}
+	m_NetClient.ReceiveData((char*)&recvInfo, sizeof(recvInfo));
+	//int nRecv = 0;
+	//while (true)
+	//{
+	//	int nRet = ::recv(m_NetClient.GetSocket(), (char*)&recvInfo + nRecv,
+	//		sizeof(recvInfo) - nRecv, 0);
+	//	nRecv += nRet;
+	//	if (nRecv == sizeof(recvInfo))
+	//		break;
+	//}
 	bool bSuccess = false;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(m_NetClinet.GetSocket(), recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		MD5 md5(buffer, recvInfo.SrcDataSize);
 		if (md5.toString().c_str() == strMD5)
@@ -635,22 +631,23 @@ bool CWndSynHandler::GetAutoUpdateFile(SStringA strMD5)
 
 bool CWndSynHandler::GetAutoUpdateFileVer(SStringA &strMD5)
 {
-	SendInfo si = { 0 };
-	si.MsgType = ComSend_UpdateFileVer;
-	::send(m_NetClinet.GetSocket(), (char*)&si, sizeof(si), 0);
+	SendInfo info = { 0 };
+	info.MsgType = ComSend_UpdateFileVer;
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	ReceiveInfo recvInfo;
-	int nRecv = 0;
-	while (true)
-	{
-		int nRet = ::recv(m_NetClinet.GetSocket(), (char*)&recvInfo + nRecv,
-			sizeof(recvInfo) - nRecv, 0);
-		nRecv += nRet;
-		if (nRecv == sizeof(recvInfo))
-			break;
-	}
+	m_NetClient.ReceiveData((char*)&recvInfo, sizeof(recvInfo));
+	//int nRecv = 0;
+	//while (true)
+	//{
+	//	int nRet = ::recv(m_NetClient.GetSocket(), (char*)&recvInfo + nRecv,
+	//		sizeof(recvInfo) - nRecv, 0);
+	//	nRecv += nRet;
+	//	if (nRecv == sizeof(recvInfo))
+	//		break;
+	//}
 	bool bSuccess = false;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(m_NetClinet.GetSocket(), recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		strMD5 = buffer;
 		bSuccess = true;
@@ -780,28 +777,27 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 {
 	if (bNeedConnect)
 	{
-		if (m_NetClinet.GetExitState())
+		if (m_NetClient.GetExitState())
 			return 0;
-		if (m_NetClinet.OnConnect(m_strIPAddr, m_nIPPort))
+		if (m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
 		{
-			SendIDInfo_t info = { 0 };
+			SendIDInfo info = { 0 };
 			info.MsgType = ComSend_ReConnect;
-			info.ClinetID = m_NetClinet.GetClientID();
-			::send(m_NetClinet.GetSocket(), (char*)&info,
-				sizeof(info), 0);
+			info.ClinetID = m_NetClient.GetClientID();
+			m_NetClient.SendData((char*)&info, sizeof(info));
 			bNeedConnect = false;
 		}
 		else
 			return false;
 	}
 
-	int ret = recv(m_NetClinet.GetSocket(),
+	int ret = recv(m_NetClient.GetSocket(),
 		(char*)&recvInfo + nOffset,
 		sizeof(recvInfo) - nOffset, 0);
 	if (ret == 0)
 	{
 		nOffset = 0;
-		m_NetClinet.OnConnect(NULL, NULL);
+		m_NetClient.OnConnect(NULL, NULL);
 		bNeedConnect = true;
 		TraceLog("与服务器断开连接");
 		return false;
@@ -810,12 +806,12 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	if (SOCKET_ERROR == ret)
 	{
 		//nOffset = 0;
-		if (m_NetClinet.GetExitState())
+		if (m_NetClient.GetExitState())
 			return false;
 		int nError = WSAGetLastError();
 		if (nError == WSAECONNRESET)
 		{
-			m_NetClinet.OnConnect(NULL, NULL);
+			m_NetClient.OnConnect(NULL, NULL);
 			bNeedConnect = true;
 		}
 		return false;
@@ -831,14 +827,14 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	return true;
 }
 
-void CWndSynHandler::OnMsgClientID(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgClientID(ReceiveInfo & recvInfo)
 {
-	m_NetClinet.SetClientID(((ReceiveIDInfo)recvInfo).ClientID);
+	m_NetClient.SetClientID(((ReceiveIDInfo)recvInfo).ClientID);
 	m_NetHandleFlag[RecvMsg_ClientID] = TRUE;
 	TraceLog("接收客户端ID成功");
 }
 
-void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	StockInfo stkInfo = { 0 };
@@ -853,7 +849,7 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 	else if (StockInfo_Index == info.InfoType)
 		TraceLog("开始接收重要指数信息");
 
-	if (ReceiveData(netSocket, info.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, info.DataSize, '#'))
 	{
 		int size = info.DataSize / sizeof(stkInfo);
 		switch (info.InfoType)
@@ -931,18 +927,18 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
-void CWndSynHandler::OnMsgRTTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTTimeLine(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 		SendMsg(m_RpsProcThreadID, UpdateData,
 			buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgTodayTimeLine(ReceiveInfo & recvInfo)
 {
 	m_NetHandleFlag[RecvMsg_TodayTimeLine] = FALSE;
 	TraceLog("开始接收当日历史数据");
@@ -955,8 +951,8 @@ void CWndSynHandler::OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo
 	todayDataBuffer = new char[todayDataSize];
 	memcpy_s(todayDataBuffer, todayDataSize,
 		&recvInfo.SrcDataSize, sizeof(recvInfo.SrcDataSize));
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#',
-		todayDataBuffer + sizeof(recvInfo.SrcDataSize)))
+	if (m_NetClient.ReceiveData(todayDataBuffer + sizeof(recvInfo.SrcDataSize),
+		recvInfo.DataSize, '#'))
 	{
 		m_NetHandleFlag[RecvMsg_TodayTimeLine] = TRUE;
 		TraceLog("接收当日历史数据成功");
@@ -966,24 +962,24 @@ void CWndSynHandler::OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo
 	SetEvent(g_hEvent);
 }
 
-void CWndSynHandler::OnMsgHisRpsPoint(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisRpsPoint(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisRpsPoint, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgLastDayEma(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgLastDayEma(ReceiveInfo & recvInfo)
 {
 	TraceLog("开始接收最后的EMA数据");
 	m_NetHandleFlag[RecvMsg_LastDayEma] = FALSE;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		SendMsg(m_RpsProcThreadID, UpdateLastDayEma,
 			buffer, recvInfo.DataSize);
@@ -996,66 +992,66 @@ void CWndSynHandler::OnMsgLastDayEma(SOCKET netSocket, ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgRTIndexMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTIndexMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_RTIndexMarket, buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgRTStockMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTStockMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_RTStockMarket, buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgHisIndexMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisIndexMarket(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisIndexMarket, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgHisStockMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisStockMarket(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisStockMarket, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgHisKline(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisKline(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisKline, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgCloseInfo(ReceiveInfo & recvInfo)
 {
 	TraceLog("开始接收昨日收盘数据");
 	m_NetHandleFlag[RecvMsg_CloseInfo] = FALSE;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		SendMsg(m_uMsgThreadID, Syn_CloseInfo,
 			buffer, recvInfo.DataSize);
@@ -1071,23 +1067,23 @@ void CWndSynHandler::OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
-void CWndSynHandler::OnMsgWait(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgWait(ReceiveInfo & recvInfo)
 {
 	m_bServerReady = false;
 	SetEvent(g_hEvent);
 }
 
-void CWndSynHandler::OnMsgReInit(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgReInit(ReceiveInfo & recvInfo)
 {
 	SendMsg(m_uMsgThreadID, Syn_Reinit,
 		NULL, 0);
 }
 
-void CWndSynHandler::OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTTFMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		unsigned long  ulSize = recvInfo.DataSize;
 		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
@@ -1103,11 +1099,11 @@ void CWndSynHandler::OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgRtRps(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRtRps(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		unsigned long  ulSize = recvInfo.DataSize;
 		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
@@ -1125,37 +1121,37 @@ void CWndSynHandler::OnMsgRtRps(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
-void CWndSynHandler::OnMsgHisSecPoint(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisSecPoint(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisSecPoint, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 
 }
 
-void CWndSynHandler::OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRehabInfo(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_RehabInfo, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 
 }
 
-void CWndSynHandler::OnMsgCallAction(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgCallAction(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		unsigned long  ulSize = recvInfo.DataSize;
 		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
@@ -1172,22 +1168,22 @@ void CWndSynHandler::OnMsgCallAction(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
-void CWndSynHandler::OnMsgHisCallAction(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisCallAction(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisCallAction, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnNoDefineMsg(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnNoDefineMsg(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	ReceiveData(netSocket, recvInfo.DataSize, '#', buffer);
+	m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#');
 	delete[]buffer;
 	buffer = nullptr;
 }
@@ -1678,7 +1674,7 @@ void CWndSynHandler::ReInit()
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
-	send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
 	while (!m_bServerReady)
 	{
@@ -1690,14 +1686,14 @@ void CWndSynHandler::ReInit()
 		SendInfo info;
 		info.MsgType = ComSend_Connect;
 		strcpy(info.str, "StkMarket");
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 	while (!CheckInfoRecv())
 	{
 		m_NetHandleFlag.clear();
 		ResetEvent(g_hEvent);
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 

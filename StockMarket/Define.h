@@ -110,7 +110,8 @@ enum RecvMsgType
 	RecvMsg_RehabInfo,
 	RecvMsg_CallAction,
 	RecvMsg_HisCallAction,
-
+	RecvMsg_HisMultiData,
+	RecvMsg_HisIndexKline,
 };
 
 enum SendMsgType
@@ -123,6 +124,8 @@ enum SendMsgType
 	SendType_SubIns,
 	SendType_GetHisSecPoint,
 	SendType_HisCallAction,
+	SendType_HisMultiData,
+	SendType_IndexHisDayKline,
 
 };
 
@@ -134,6 +137,14 @@ enum ComSendMsgType
 	ComSend_File,
 	ComSend_UpdateFile,
 	ComSend_UpdateFileVer,
+};
+
+enum BackTestingMsgType
+{
+	BTM_UpdateList=0,
+	BTM_GetData,
+	BTM_SingleCalcFinish,
+	BTM_AllFinish,
 };
 
 typedef struct _SortPara
@@ -279,11 +290,58 @@ enum SListHead
 	SHead_StockItemCount,
 };
 
+enum SBackTestingListHead
+{
+	SBTH_Num = 0,
+	SBTH_ID,
+	SBTH_Date,
+	SBTH_ROR1,
+	SBTH_ROR3,
+	SBTH_ROR5,
+	SBTH_ROR10,
+	SBTH_ROR1Over300,
+	SBTH_ROR3Over300,
+	SBTH_ROR5Over300,
+	SBTH_ROR10Over300,
+	SBTH_ROR1OverIndy1,
+	SBTH_ROR3OverIndy1,
+	SBTH_ROR5OverIndy1,
+	SBTH_ROR10OverIndy1,
+	SBTH_ROR1OverIndy2,
+	SBTH_ROR3OverIndy2,
+	SBTH_ROR5OverIndy2,
+	SBTH_ROR10OverIndy2,
+	SBTH_ItemCount,
+};
+
+enum SBackTestingAvgListHead
+{
+	SBTAH_DataCount = 0,
+	SBTAH_ROR1,
+	SBTAH_ROR3,
+	SBTAH_ROR5,
+	SBTAH_ROR10,
+	SBTAH_ROR1Over300,
+	SBTAH_ROR3Over300,
+	SBTAH_ROR5Over300,
+	SBTAH_ROR10Over300,
+	SBTAH_ROR1OverIndy1,
+	SBTAH_ROR3OverIndy1,
+	SBTAH_ROR5OverIndy1,
+	SBTAH_ROR10OverIndy1,
+	SBTAH_ROR1OverIndy2,
+	SBTAH_ROR3OverIndy2,
+	SBTAH_ROR5OverIndy2,
+	SBTAH_ROR10OverIndy2,
+	SBTAH_ItemCount,
+};
+
+
 const int g_nListNewItemStart = SHead_CAVol;
 const int g_nListNewItemEnd = SHead_CAAmoRank;
 
 
-typedef struct SendInfo
+typedef struct _SendInfo
 {
 	int MsgType;
 	char str[10];
@@ -291,13 +349,21 @@ typedef struct SendInfo
 	int  Period;
 }SendInfo;
 
-typedef struct SendIDInfo
+typedef struct _SendIDInfo
 {
 	int MsgType;
 	char NoUse1[10];
 	int  ClinetID;
 	int  NoUse2;
-}SendIDInfo_t;
+}SendIDInfo;
+
+typedef struct _SendInfoWithDate
+{
+	int MsgType;
+	char StockID[10];
+	int  StartDate;
+	int  EndDate;
+}SendInfoWithDate;
 
 
 
@@ -308,6 +374,10 @@ SStringA StrW2StrA(const SStringW &cstrSrcW);
 int SendMsg(unsigned uThreadId, unsigned MsgType, const char *SendBuf, unsigned BufLen);
 int	RecvMsg(int  msgQId, char** buf, int& length, int timeout);
 
+HRESULT OpenFile(LPTSTR FileName);
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName);
+
+
 enum DataProcType
 {
 	UpdateData = 10000,
@@ -317,6 +387,7 @@ enum DataProcType
 	UpdateTFMarket,
 	UpdateRtRps,
 	UpdateCallAction,
+	BackTesting,
 	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };
@@ -703,7 +774,6 @@ typedef struct EMAType
 	double EMA2;
 };
 
-bool GetFileKlineData(SStringA InsID, vector<KlineType> &dataVec, bool bIsDay = false);
 
 typedef struct _PARAM_TICK_INFO {
 	int			id;				//Ö¤È¯ÄÚ²¿±àºÅ

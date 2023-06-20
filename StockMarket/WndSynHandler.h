@@ -17,7 +17,7 @@ using std::set;
 class CWndSynHandler
 {
 	typedef void(CWndSynHandler::*PDATAHANDLEFUNC)(int, const char*);
-	typedef void(CWndSynHandler::*PNETHANDLEFUNC)(SOCKET, ReceiveInfo&);
+	typedef void(CWndSynHandler::*PNETHANDLEFUNC)(ReceiveInfo&);
 
 public:
 	CWndSynHandler();
@@ -69,8 +69,8 @@ protected:
 	void UpdateRtSecPointFromCAInfo(vector<RtPointData>& subDataVec,
 		RtPointData& dstData, CAInfo& caInfo, int nGroup);
 protected:
-	bool ReceiveData(SOCKET socket, int size, char end,
-		char *buffer, int offset = 0);
+	//bool ReceiveData(SOCKET socket, int size, char end,
+	//	char *buffer, int offset = 0);
 	static unsigned __stdcall NetHandle(void* para);
 	void Login();
 	void DataProc();
@@ -81,27 +81,27 @@ protected:
 	//Net具体处理
 protected:
 	bool RecvInfoHandle(BOOL & bNeedConnect, int &nOffset, ReceiveInfo &recvInfo);
-	void OnMsgClientID(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgStockInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgRTTimeLine(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgHisRpsPoint(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgLastDayEma(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgRTIndexMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgRTStockMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgHisIndexMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgHisStockMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgHisKline(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgWait(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgReInit(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgRtRps(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgHisSecPoint(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgRehabInfo(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgCallAction(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnMsgHisCallAction(SOCKET netSocket, ReceiveInfo &recvInfo);
-	void OnNoDefineMsg(SOCKET netSocket, ReceiveInfo &recvInfo);
+	void OnMsgClientID( ReceiveInfo &recvInfo);
+	void OnMsgStockInfo( ReceiveInfo &recvInfo);
+	void OnMsgRTTimeLine( ReceiveInfo &recvInfo);
+	void OnMsgTodayTimeLine( ReceiveInfo &recvInfo);
+	void OnMsgHisRpsPoint( ReceiveInfo &recvInfo);
+	void OnMsgLastDayEma( ReceiveInfo &recvInfo);
+	void OnMsgRTIndexMarket( ReceiveInfo &recvInfo);
+	void OnMsgRTStockMarket( ReceiveInfo &recvInfo);
+	void OnMsgHisIndexMarket( ReceiveInfo &recvInfo);
+	void OnMsgHisStockMarket( ReceiveInfo &recvInfo);
+	void OnMsgHisKline( ReceiveInfo &recvInfo);
+	void OnMsgCloseInfo( ReceiveInfo &recvInfo);
+	void OnMsgWait( ReceiveInfo &recvInfo);
+	void OnMsgReInit( ReceiveInfo &recvInfo);
+	void OnMsgRTTFMarket( ReceiveInfo &recvInfo);
+	void OnMsgRtRps( ReceiveInfo &recvInfo);
+	void OnMsgHisSecPoint( ReceiveInfo &recvInfo);
+	void OnMsgRehabInfo( ReceiveInfo &recvInfo);
+	void OnMsgCallAction( ReceiveInfo &recvInfo);
+	void OnMsgHisCallAction( ReceiveInfo &recvInfo);
+	void OnNoDefineMsg( ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
 protected:
@@ -174,7 +174,7 @@ public:
 
 	//调用子类
 protected:
-	CNetWorkClient m_NetClinet;
+	CNetWorkClient m_NetClient;
 	CDlgLogin* m_pLoginDlg;
 
 protected:
