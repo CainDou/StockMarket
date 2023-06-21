@@ -607,11 +607,10 @@ void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 	SStringW strMarket;
 	if (m_nPeriod == Period_1Day)
 	{
+		HDC hdc = pRT->GetDC();
 		auto& arrMA = m_bShowCAVol ? m_CAVolMa : m_CAAmoMa;
 		if (arrMA.empty())
 			return;
-		HDC hdc = pRT->GetDC();
-
 		auto maPara = m_bShowCAVol ? m_nCAVolMaPara : m_nCAAmoMaPara;
 		strMarket = m_bShowCAVol ? L"集合竞价Vol:-" : L"集合竞价Amo:-";
 		int nOffset = m_pAll->nTotal - m_pCAInfo->size();
