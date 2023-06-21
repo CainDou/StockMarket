@@ -601,14 +601,16 @@ void SKlinePic::DrawVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 
 void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 {
-	HDC hdc = pRT->GetDC();
 	CSize size;
 	size.cx = 0; size.cy = 0;
 	int left = 5;
 	SStringW strMarket;
 	if (m_nPeriod == Period_1Day)
 	{
+		HDC hdc = pRT->GetDC();
 		auto& arrMA = m_bShowCAVol ? m_CAVolMa : m_CAAmoMa;
+		if (arrMA.empty())
+			return;
 		auto maPara = m_bShowCAVol ? m_nCAVolMaPara : m_nCAAmoMaPara;
 		strMarket = m_bShowCAVol ? L"集合竞价Vol:-" : L"集合竞价Amo:-";
 		int nOffset = m_pAll->nTotal - m_pCAInfo->size();
@@ -670,6 +672,7 @@ void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 					m_rcVolume.right - 1, m_rcVolume.top + 19),
 				strMarket);
 		}
+		pRT->ReleaseDC(hdc);
 
 	}
 	else
@@ -680,7 +683,6 @@ void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 			strMarket);
 	}
 
-	pRT->ReleaseDC(hdc);
 
 }
 
@@ -2896,7 +2898,9 @@ void SKlinePic::DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& 
 	if (nDataOffset < 0)
 		return;
 	int *arrPara = bAmo ? m_nCAAmoMaPara : m_nCAVolMaPara;
-	auto pMaData = bAmo ? m_CAAmoMa : m_CAVolMa;
+	auto& MaData = bAmo ? m_CAAmoMa : m_CAVolMa;
+	if (MaData.empty())
+		return;
 	if (data != 0)
 	{
 		pRT->SelectObject(m_bBrushGreen);
@@ -2926,7 +2930,7 @@ void SKlinePic::DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& 
 		if (arrPara[j] > 0)
 			if (nShowPos + m_nFirst >= arrPara[j] - 1)
 				VolAmtMALine[j][nShowPos].SetPoint(nX + ZOOMWIDTH / 2,
-					GetCallActionYPos(pMaData[j][nDataOffset], bAmo));
+					GetCallActionYPos(MaData[j][nDataOffset], bAmo));
 	}
 }
 
