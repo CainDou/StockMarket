@@ -30,6 +30,7 @@
 		<file name="dlg_rehabFixedTime" path="xml\dlg_rehabFixedTime.xml" />
 		<file name="dlg_updateLog" path="xml\dlg_updateLog.xml" />
 		<file name="dlg_condBackTesting" path="xml\dlg_condBackTesting.xml" />
+		<file name="dlg_multiFilter" path="xml\dlg_multiFilter.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
