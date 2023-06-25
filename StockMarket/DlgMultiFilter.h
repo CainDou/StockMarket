@@ -1,8 +1,17 @@
 #pragma once
-class CDlgMultiFilter
+#include<thread>
+#include"WorkWnd.h"
+
+namespace SOUI
 {
-public:
-	CDlgMultiFilter();
-	~CDlgMultiFilter();
-};
+	class CDlgMultiFilter : public SHostWnd
+	{
+		typedef void(CDlgMultiFilter::*PDATAHANDLEFUNC)(int, const char*);
+
+	public:
+		CDlgMultiFilter();
+		~CDlgMultiFilter();
+	};
+
+}
 
