@@ -101,6 +101,7 @@ namespace SOUI
 		thread tDataProc;
 		UINT m_DataThreadID;
 		map<int, CWorkWnd*>m_WndMap;
+		map<HWND, int> m_WndHandleMap;
 		map<int, SStringA> m_WndSubMap;
 		UINT m_SynThreadID;
 		BOOL m_bIsValid;

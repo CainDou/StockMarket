@@ -33,6 +33,7 @@ CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 	m_pTFMarketHash = nullptr;
 	m_pL1IndyFilterDataMap = nullptr;
 	m_pL2IndyFilterDataMap = nullptr;
+	m_bFilterWnd = FALSE;
 }
 
 
@@ -91,6 +92,15 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 		m_tfNameVec.emplace_back("HIGH");
 		m_tfNameVec.emplace_back("LOW");
 		m_tfNameVec.emplace_back("AMOUNT");
+		if (m_bFilterWnd)
+		{
+			m_pTextIndy->SetVisible(FALSE);
+			m_pTextIndy->SetAttribute(L"size", L"0,22");
+			m_pBtnConn1->SetVisible(FALSE);
+			m_pBtnConn1->SetAttribute(L"size", L"0,22");
+			m_pBtnConn2->SetVisible(FALSE);
+			m_pBtnConn2->SetAttribute(L"size", L"0,22");
+		}
 
 	}
 
@@ -102,7 +112,6 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 	m_pDlgCmbStockFilter->CenterWindow(m_hParWnd);
 	m_pDlgCmbStockFilter->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
 		SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME);
-
 }
 
 void CWorkWnd::InitShowConfig(InitPara initPara)
@@ -289,7 +298,7 @@ void CWorkWnd::SetDataPoint(void * pData, int DataType)
 		break;
 	case DT_CallAction:
 		m_pCallActionHash = (strHash<CAInfo>*)pData;
-		break;
+	break;
 	default:
 		break;
 	}
@@ -306,6 +315,7 @@ void CWorkWnd::ReSetPic()
 	if (m_strSubStock != "")
 		ShowPicWithNewID(m_strSubStock, true);
 }
+
 
 void CWorkWnd::SetListInfo(vector<StockInfo>& infoVec,
 	strHash<SStringA>& StockNameMap)
@@ -506,8 +516,9 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			SetBtnState(m_pBtnStockFilter, false);
 			UpdateListShowStock();
 		}
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveConfig, 0);
+		break;
 	case WDMsg_ChangePointTarget:
 	{
 		int pointData = (int)lp;
@@ -569,7 +580,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	case WDMsg_ChangeShowTilte:
 		m_TitleShowMap = *(map<int, BOOL>*)lp;
 		SetListDataIsShow();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveListConfig, 0);
 		break;
 	default:
@@ -596,7 +607,7 @@ LRESULT CWorkWnd::OnFSMsg(UINT uMsg, WPARAM wp,
 	default:
 		break;
 	}
-	
+
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 	return 0;
@@ -628,7 +639,7 @@ LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 	default:
 		break;
 	}
-	
+
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 	return 0;
@@ -644,7 +655,7 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetDealState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetDealState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -652,7 +663,7 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetVolumeState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetVolumeState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -660,7 +671,7 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetMacdState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetMacdState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -678,7 +689,7 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetAvgState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetAvgState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -686,7 +697,7 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pFenShiPic->SetEmaState();
 		m_pFenShiPic->Invalidate();
 		bState = m_pFenShiPic->GetEmaState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -725,7 +736,7 @@ void CWorkWnd::OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		}
 		SetFenShiShowData(infoVec, nOldWndNum);
 		m_pFenShiPic->Invalidate();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -759,7 +770,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetDealState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetDealState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -768,7 +779,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetMaState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetMaState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -777,7 +788,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetBandState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetBandState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -785,7 +796,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetVolumeState();
 		m_pKlinePic->Invalidate();
 		//bState = m_pKlinePic->GetVolumeState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -793,7 +804,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->SetMacdState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetMacdState();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -876,7 +887,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		}
 		SetKlineShowData(infoVec, m_PicPeriod, FALSE, nOldWndNum);
 		m_pKlinePic->Invalidate();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -886,7 +897,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		m_pKlinePic->Invalidate();
 		//bState = m_pKlinePic->GetVolumeState();
 
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
@@ -968,13 +979,13 @@ void CWorkWnd::OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 			m_pFenShiPic->CloseSinglePointWnd();
 		else if (m_pKlinePic->IsVisible())
 			m_pKlinePic->CloseSinglePointWnd();
-		
+
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
 		break;
 	case TSM_Select:
 	{
-		CDlgSelTarget *pDlg = new CDlgSelTarget(m_hWnd, m_pointInfoMap,m_PicPeriod);
+		CDlgSelTarget *pDlg = new CDlgSelTarget(m_hWnd, m_pointInfoMap, m_PicPeriod);
 		pDlg->Create(NULL);
 		pDlg->CenterWindow(m_hWnd);
 		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -1191,7 +1202,7 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 
 		UINT VolState = m_pKlinePic->GetCAVolState() ? MF_CHECKED : MF_UNCHECKED;
 		UINT AmoState = m_pKlinePic->GetCAAmoState() ? MF_CHECKED : MF_UNCHECKED;
-		UINT AllState = (VolState || AmoState)? MF_CHECKED: MF_UNCHECKED;
+		UINT AllState = (VolState || AmoState) ? MF_CHECKED : MF_UNCHECKED;
 		menu.CheckMenuItem(KM_CAVolOrAmo, AllState);
 		menu.CheckMenuItem(KM_CAVol, VolState);
 		menu.CheckMenuItem(KM_CAAmo, AmoState);
@@ -1632,10 +1643,6 @@ bool CWorkWnd::OnListHeaderSwap(EventArgs * pEvtBase)
 	for (int i = 0; i < nColCount; ++i)
 	{
 		m_TitleOrderMap[i] = pHead->GetOriItemIndex(i);
-		if (m_TitleOrderMap[i] == -1)
-		{
-			OutputDebugStringFormat("第%d个顺序为-1,排序数据为%d\n", i, m_SortPara.nCol);
-		}
 		if (m_SortPara.nCol == i)
 		{
 			if (m_SortPara.nShowCol != m_TitleOrderMap[i])
@@ -1651,7 +1658,7 @@ bool CWorkWnd::OnListHeaderSwap(EventArgs * pEvtBase)
 
 		}
 	}
-	
+
 	::SendMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveListConfig, 0);
 	return true;
 }
@@ -1751,6 +1758,8 @@ void CWorkWnd::UpdateListShowStock()
 
 void CWorkWnd::UpdateList()
 {
+	if (!IsVisible())
+		return;
 	if (!m_bListInited)
 		return;
 	if (!m_pList->IsVisible())
@@ -1769,10 +1778,16 @@ void CWorkWnd::UpdateList()
 	auto ListData = m_pListDataMap->at(m_ListPeriod);
 	auto TfData = m_pTFMarketHash ?
 		m_pTFMarketHash->at(m_ListPeriod) : strHash<TickFlowMarket>();
-
+	//int nFirstIndex = m_pList->GetTopIndex();
+	//int nPerPageCount = m_pList->GetCountPerPage(TRUE);
+	//int nLastIndex = nFirstIndex + nPerPageCount;
+	m_pList->LockUpdate();
 	for (auto &it : m_ListPosMap.hash)
 	{
 		SStringA StockID = it.first;
+		//int nPos = it.second;
+		//if (nPos < nFirstIndex || nPos > nLastIndex)
+		//	continue;
 		if (ListData.hash.count(StockID))
 		{
 			::EnterCriticalSection(&m_csClose);
@@ -1799,7 +1814,6 @@ void CWorkWnd::UpdateList()
 				//if (isnan(rtData.rpsAmount.fMacd520) || isinf(rtData.rpsAmount.fMacd520))
 				UpdateListRpsData(it.second, rtData.rpsAmount, SHead_AmountRPS520, SHead_AmountRank2060);
 				UpdateListSecData(it.second, rtData.secAmount, SHead_AmountPoint, SHead_AmountRank);
-
 				if (m_pCallActionHash->hash.count(StockID))
 					UpdateListCAData(it.second, m_pCallActionHash->hash[StockID]);
 
@@ -1836,7 +1850,15 @@ void CWorkWnd::UpdateList()
 		}
 
 	}
+	m_pList->UnlockUpdate();
 	SortList(m_pList);
+
+}
+
+void SOUI::CWorkWnd::SetPriceListHalf(bool bHalf)
+{
+	m_pFenShiPic->SetPriceListHalf(bHalf);
+	m_pKlinePic->SetPriceListHalf(bHalf);
 
 }
 
@@ -1963,7 +1985,7 @@ void CWorkWnd::UpdateListCAData(int nRow, CAInfo& caData)
 			else
 				cl = RGBA(255, 255, 255, 255);
 		}
-		if (i == SHead_CAVol||
+		if (i == SHead_CAVol ||
 			i == SHead_CAVolRank ||
 			i == SHead_CAAmoRank)
 			tmp.Format(L"%.0f", dataVec[i - SHead_CAVol]);
@@ -2740,7 +2762,7 @@ void CWorkWnd::OnBtnListConnect1Clicked()
 		m_pDlgCmbStockFilter->StopFilter();
 		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 	}
-	
+
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 }
@@ -2757,7 +2779,7 @@ void CWorkWnd::OnBtnListConnect2Clicked()
 		m_pDlgCmbStockFilter->StopFilter();
 		SetBtnState(m_pBtnStockFilter, m_bUseStockFilter);
 	}
-	
+
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 }
@@ -2862,7 +2884,7 @@ void CWorkWnd::OnBtnShowTypeChange(bool bFroceList)
 			{
 				m_ListShowInd = "";
 				UpdateListShowStock();
-				
+
 				::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 					WDMsg_SaveConfig, NULL);
 			}
@@ -2896,7 +2918,7 @@ void CWorkWnd::OnBtnPeriedChange(int nPeriod)
 	}
 	else
 		SetSelectedPeriod(nPeriod);
-	
+
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 }
@@ -3063,11 +3085,11 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 		{
 			m_pKlinePic->SetHisKlineState(false);
 			DataGetInfo GetInfo;
-			GetInfo.hWnd = m_hParWnd;
+			GetInfo.hWnd = m_hWnd;
 			strcpy_s(GetInfo.StockID, StockID);
 			GetInfo.Group = m_Group;
 			GetInfo.Period = nPeriod;
-			if(nPeriod == Period_1Day)
+			if (nPeriod == Period_1Day)
 				SendMsg(m_uParWndThreadID, WW_GetCallAction,
 				(char*)&GetInfo, sizeof(GetInfo));
 
@@ -3110,7 +3132,7 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	}
 	//获取分时数据
 	DataGetInfo GetInfo;
-	GetInfo.hWnd = m_hParWnd;
+	GetInfo.hWnd = m_hWnd;
 	strcpy_s(GetInfo.StockID, StockID);
 	GetInfo.Group = m_Group;
 	GetInfo.Period = Period_FenShi;
@@ -3165,8 +3187,10 @@ void CWorkWnd::GetPointData(ShowPointInfo & info, SStringA StockID, int nPeriod)
 		return;
 	ExDataGetInfo GetInfo;
 	GetInfo.nAskGroup = m_Group;
+
+	//GetInfo.nAskGroup = m_Group;
 	GetInfo.Type = info.type;
-	GetInfo.hWnd = m_hParWnd;
+	GetInfo.hWnd = m_hWnd;
 	GetInfo.Period = nPeriod;
 
 	if (info.overallType < eCAPointEnd&&
@@ -3323,14 +3347,16 @@ void CWorkWnd::OnUpdateHisKline(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	int nOffset = sizeof(*pRecvInfo);
-	int nSize = pRecvInfo->DataSize / sizeof(KlineType);
+	int nSize = pRecvInfo->SrcDataSize / sizeof(KlineType);
 	int nGroup = pRecvInfo->Group;
 	int nPeriod = pRecvInfo->Period;
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
 	m_KlineGetMap[nPeriod] = TRUE;
 	auto &KlineVec = m_KlineMap[nPeriod];
 	KlineVec.resize(nSize);
-	memcpy_s(&KlineVec[0], pRecvInfo->DataSize,
-		info + nOffset, pRecvInfo->DataSize);
+	memcpy_s(&KlineVec[0], pRecvInfo->SrcDataSize,
+		info + nOffset, pRecvInfo->SrcDataSize);
 	m_pKlinePic->SetHisKlineState(true);
 	if (m_pKlinePic->GetDataReadyState())
 		m_pKlinePic->DataProc();
@@ -3342,6 +3368,8 @@ void CWorkWnd::OnUpdateHisRpsPoint(int nMsgLength, const char * info)
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 
 	int nOffset = sizeof(*pRecvInfo);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
 	int nAttMsgSize = *(int*)(info + nOffset);
 	nOffset += sizeof(nAttMsgSize);
 	char *msg = new char[nAttMsgSize + 1];
@@ -3392,12 +3420,14 @@ void CWorkWnd::OnUpdateHisIndexMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	int nOffset = sizeof(*pRecvInfo);
-	int dataCount = pRecvInfo->DataSize / sizeof(CommonIndexMarket);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	int dataCount = pRecvInfo->SrcDataSize / sizeof(CommonIndexMarket);
 	CommonIndexMarket * dataArr = (CommonIndexMarket *)(info + nOffset);
 	m_IndexMarketVec.reserve(MAX_TICK);
 	m_IndexMarketVec.resize(dataCount);
-	memcpy_s(&m_IndexMarketVec[0], pRecvInfo->DataSize,
-		dataArr, pRecvInfo->DataSize);
+	memcpy_s(&m_IndexMarketVec[0], pRecvInfo->SrcDataSize,
+		dataArr, pRecvInfo->SrcDataSize);
 	m_bMarketGet = TRUE;
 	m_pFenShiPic->DataProc();
 	m_pKlinePic->SetTodayMarketState(true);
@@ -3410,12 +3440,14 @@ void CWorkWnd::OnUpdateHisStockMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	int nOffset = sizeof(*pRecvInfo);
-	int dataCount = pRecvInfo->DataSize / sizeof(CommonStockMarket);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	int dataCount = pRecvInfo->SrcDataSize / sizeof(CommonStockMarket);
 	CommonStockMarket * dataArr = (CommonStockMarket *)(info + nOffset);
 	m_StockMarketVec.reserve(MAX_TICK);
 	m_StockMarketVec.resize(dataCount);
-	memcpy_s(&m_StockMarketVec[0], pRecvInfo->DataSize,
-		dataArr, pRecvInfo->DataSize);
+	memcpy_s(&m_StockMarketVec[0], pRecvInfo->SrcDataSize,
+		dataArr, pRecvInfo->SrcDataSize);
 	m_bMarketGet = TRUE;
 	m_pFenShiPic->DataProc();
 	m_pKlinePic->SetTodayMarketState(true);
@@ -3459,6 +3491,8 @@ void CWorkWnd::OnUpdateHisSecPoint(int nMsgLength, const char * info)
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 
 	int nOffset = sizeof(*pRecvInfo);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
 	int nAttMsgSize = *(int*)(info + nOffset);
 	nOffset += sizeof(nAttMsgSize);
 	char *msg = new char[nAttMsgSize + 1];
@@ -3476,11 +3510,14 @@ void CWorkWnd::OnUpdateRehabInfo(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	int nOffset = sizeof(*pRecvInfo);
-	int dataCount = pRecvInfo->DataSize / sizeof(RehabInfo);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	int dataCount = pRecvInfo->SrcDataSize / sizeof(RehabInfo);
 	RehabInfo * dataArr = (RehabInfo *)(info + nOffset);
 	vector<RehabInfo> rehabInfoVec;
 	rehabInfoVec.resize(dataCount);
-	memcpy_s(&rehabInfoVec[0], pRecvInfo->DataSize, dataArr, pRecvInfo->DataSize);
+	memcpy_s(&rehabInfoVec[0], pRecvInfo->SrcDataSize,
+		dataArr, pRecvInfo->SrcDataSize);
 	m_pKlinePic->SetRehabInfo(rehabInfoVec);
 
 }
@@ -3489,12 +3526,14 @@ void SOUI::CWorkWnd::OnUpdateHisCallAction(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	int nOffset = sizeof(*pRecvInfo);
-	int nSize = pRecvInfo->DataSize / sizeof(CAInfo);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	int nSize = pRecvInfo->SrcDataSize / sizeof(CAInfo);
 	int nGroup = pRecvInfo->Group;
 	int nPeriod = pRecvInfo->Period;
 	m_CallAction.resize(nSize);
-	memcpy_s(&m_CallAction[0], pRecvInfo->DataSize,
-		info + nOffset, pRecvInfo->DataSize);
+	memcpy_s(&m_CallAction[0], pRecvInfo->SrcDataSize,
+		info + nOffset, pRecvInfo->SrcDataSize);
 	ProcHisCAPointFromCAInfo();
 	m_bCAInfoGet = TRUE;
 	m_pKlinePic->SetHisCAInfoState(true);
@@ -3535,15 +3574,17 @@ void CWorkWnd::OnChangeStockFilter(int nMsgLength, const char * info)
 {
 	BOOL bUse = *(BOOL*)info;
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_ChangeStockFilter, bUse);
-	
+
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 		WDMsg_SaveConfig, NULL);
 }
 
 void CWorkWnd::OnSaveStockFilter(int nMsgLength, const char * info)
 {
-	
-	::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveStockFilter, m_Group);
+	if(m_bFilterWnd)
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveStockFilter, m_nWndNum);
+	else
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveStockFilter, m_Group);
 }
 
 void CWorkWnd::OnChangeKlineRehab(int nMsgLength, const char * info)

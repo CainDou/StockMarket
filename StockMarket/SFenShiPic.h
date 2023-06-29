@@ -78,6 +78,7 @@ namespace SOUI
 		const int*  GetMacdPara();
 		void		SetPicUnHandled();
 		int			GetShowSubPicNum() const;
+		void		SetPriceListHalf(bool bHalf);
 		void		SetBelongingIndy(vector<SStringA>& strNameVec,int nStartWnd=0);
 		void		GetShowPointInfo(vector<ShowPointInfo> &infoVec);
 		BOOL		CheckTargetSelectIsClicked(CPoint pt);
@@ -194,6 +195,7 @@ namespace SOUI
 		int			m_nKeyY;
 		int			m_nNowPosition;		//现在的数据线的位置
 		int			m_nPaintTick;
+		bool		m_bHalfPrice;
 
 		//调用子类
 	protected:
@@ -318,6 +320,7 @@ namespace SOUI
 	{
 		return m_nSubPicNum;
 	}
+
 
 	//inline RpsGroup SFenShiPic::GetClickGroup()
 	//{

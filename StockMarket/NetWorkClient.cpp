@@ -13,6 +13,7 @@ CNetWorkClient::CNetWorkClient()
 	m_hFunc = INVALID_HANDLE_VALUE;
 	m_bExit = FALSE;
 	m_bRun = FALSE;
+	m_nAskID = 0;
 }
 
 
@@ -140,3 +141,14 @@ BOOL CNetWorkClient::ReceiveData(char * buffer, int size, char end)
 	return TRUE;
 }
 
+int CNetWorkClient::SendDataWithID(char* msg, int size)
+{
+	int nID = m_nAskID++;
+	int newSize = size + sizeof(nID);
+	char* newMsg = new char[newSize];
+	memcpy_s(newMsg, newSize, msg, size);
+	memcpy_s(newMsg + size, newSize, &nID, sizeof(nID));
+	if (send(m_socket, newMsg, newSize, 0) > 0)
+		return nID;
+	return -1;
+}

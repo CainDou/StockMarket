@@ -156,6 +156,8 @@ void CDlgSub::InitWorkWnd()
 	InitComboStockFilter();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
+		m_WndHandleMap[m_WndMap[i]->m_hWnd] = i;
+		g_WndSyn.SetSubWndInfo(m_WndMap[i]->m_hWnd, m_hWnd, i);
 		m_WndMap[i]->SetParThreadID(m_DataThreadID);
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
@@ -195,7 +197,7 @@ void CDlgSub::InitStockFilter()
 
 }
 
-void SOUI::CDlgSub::InitComboStockFilter()
+void CDlgSub::InitComboStockFilter()
 {
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
@@ -217,7 +219,7 @@ void SOUI::CDlgSub::InitComboStockFilter()
 
 }
 
-void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
+void CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
 {
 	vector<SStringA> strRangeVec;
 	strRangeVec.emplace_back("");
@@ -227,7 +229,6 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 	strShowNameVec.emplace_back("");
 	strShowNameVec.emplace_back("一级行业");
 	strShowNameVec.emplace_back("二级行业");
-	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
 	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
 	if (initPara.nTSCPointWndNum == -1)
 	{
@@ -281,7 +282,6 @@ void SOUI::CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStrin
 		{
 			if (initPara.bShowKlineRPS[i])
 			{
-				++nCount;
 				++nCount;
 				if (i == 0)
 					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
@@ -352,11 +352,11 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 		initPara.bShowKlineVolume =
 			ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
 		initPara.bShowKlineAmount =
-			ini.GetIntA(strSection, "ShowKlineAmount", 1) == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineAmount", 0) == 0 ? false : true;
 		initPara.bShowKlineCAVol =
-			ini.GetIntA(strSection, "ShowKlineCAVol", 1) == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineCAVol", 0) == 0 ? false : true;
 		initPara.bShowKlineCAAmo =
-			ini.GetIntA(strSection, "ShowKlineCAAmo", 1) == 0 ? false : true;
+			ini.GetIntA(strSection, "ShowKlineCAAmo", 0) == 0 ? false : true;
 		initPara.bShowKlineMACD =
 			ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
 		initPara.bShowTSCRPS[0] =
@@ -447,7 +447,7 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 
 }
 
-void SOUI::CDlgSub::InitListConfig()
+void CDlgSub::InitListConfig()
 {
 	SStringA strFile;
 	strFile.Format(".\\config\\ListConfig_%s.ini", m_strWindowName);
@@ -529,7 +529,7 @@ void SOUI::CDlgSub::InitListConfig()
 
 }
 
-void SOUI::CDlgSub::SavePointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection)
+void CDlgSub::SavePointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection)
 {
 	ini.WriteIntA(strSection, "TSCPointWndNum", initPara.nTSCPointWndNum);
 	for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
@@ -618,7 +618,7 @@ void CDlgSub::SavePicConfig()
 
 }
 
-void SOUI::CDlgSub::SaveListConfig()
+void CDlgSub::SaveListConfig()
 {
 	SStringA strFile;
 	strFile.Format(".\\config\\ListConfig_%s.ini", m_strWindowName);
@@ -784,10 +784,10 @@ void CDlgSub::OnUpdatePoint(int nMsgLength, const char * info)
 
 void CDlgSub::OnHisRpsPoint(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	int nGroup = pRecvInfo->Group;
-	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisRpsPoint,
-		info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisRpsPoint,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnRTIndexMarket(int nMsgLength, const char * info)
@@ -811,32 +811,27 @@ void CDlgSub::OnRTStockMarket(int nMsgLength, const char * info)
 
 void CDlgSub::OnHisIndexMarket(int nMsgLength, const char * info)
 {
-	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisIndexMarket,
-			info, nMsgLength);
+
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisIndexMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnHisStockMarket(int nMsgLength, const char * info)
 {
-	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_HisStockMarket,
-			info, nMsgLength);
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisStockMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnHisKline(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SStringA strStock = pRecvInfo->Message;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisKline,
-			info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisKline,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnCloseInfo(int nMsgLength, const char * info)
@@ -862,27 +857,26 @@ void CDlgSub::OnChangeIndy(int nMsgLength, const char * info)
 
 void CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	int nGroup = pRecvInfo->Group;
-	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisSecPoint,
-		info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisSecPoint,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnRehabInfo(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RehabInfo,
-		info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_RehabInfo,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnHisCallAction(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SStringA strStock = pRecvInfo->Message;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisCallAction,
-			info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisCallAction,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnGetCallAction(int nMsgLength, const char * info)
@@ -919,7 +913,7 @@ void CDlgSub::SaveStockFilterPara(int nGroup)
 	}
 }
 
-void SOUI::CDlgSub::SaveComboStockFilterPara(int nGroup)
+void CDlgSub::SaveComboStockFilterPara(int nGroup)
 {
 	vector<StockFilter> sfVec;
 	m_WndMap[nGroup]->OutputComboStockFilterPara(sfVec);

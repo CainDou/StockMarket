@@ -2,9 +2,10 @@
 #include "DlgOpenWnd.h"
 #include "IniFile.h"
 
-CDlgOpenWnd::CDlgOpenWnd(HWND hParWnd) :SHostWnd(_T("LAYOUT:dlg_openWindow"))
+CDlgOpenWnd::CDlgOpenWnd(HWND hParWnd,int nWndType) :SHostWnd(_T("LAYOUT:dlg_openWindow"))
 {
 	m_hParWnd = hParWnd;
+	m_nWndType = nWndType;
 }
 
 
@@ -14,16 +15,17 @@ CDlgOpenWnd::~CDlgOpenWnd()
 
 void SOUI::CDlgOpenWnd::OnInit(EventArgs * e)
 {
+	InitStrings();
+	m_strSection = m_WndTypeSection[m_nWndType];
 	pCbx = FindChildByName2<SComboBox>(L"cbx_open");
 	CIniFile ini(".//config//subWindow.ini");
-	nDefaultWndCount = ini.GetIntA("SubWindowName", "DefaultCount", 0);
-	nNameCount = ini.GetIntA("SubWindowName", "NameCount", 0);
+	nNameCount = ini.GetIntA(m_strSection, "NameCount", 0);
 	SStringA str;
 	SStringA strName;
 	int nItemCount = 0;
 	for (int i = nNameCount - 1; i >= 0; --i)
 	{
-		strName = ini.GetStringA("SubWindowName",
+		strName = ini.GetStringA(m_strSection,
 			str.Format("%d", i), "");
 		if (NameSet.count(strName) == 0)
 		{
@@ -36,11 +38,18 @@ void SOUI::CDlgOpenWnd::OnInit(EventArgs * e)
 	pCbx->SetCurSel(0);
 }
 
+void CDlgOpenWnd::InitStrings()
+{
+	m_WndTypeSection[WT_SubWindow] = "SubWindowName";
+	m_WndTypeSection[WT_FilterWindow] = "FilterWindowName";
+}
+
 void SOUI::CDlgOpenWnd::OnBtnOK()
 {
 	int nSel = pCbx->GetCurSel();
+	LPARAM lp = MAKELPARAM(ItemdNumMap[nSel], m_nWndType);
 	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
-		WDMsg_OpenWindow, ItemdNumMap[nSel]);
+		WDMsg_OpenWindow, lp);
 	CSimpleWnd::DestroyWindow();
 
 }

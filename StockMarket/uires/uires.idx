@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -51,5 +51,6 @@
 		<file name="menu_new" path="smenu\menu_new.xml" />
 		<file name="menu_target" path="smenu\menu_target.xml" />
 		<file name="menu_rehab" path="smenu\menu_rehab.xml" />
+		<file name="menu_filterWndNum" path="smenu\menu_filterWndNum.xml" />
 	</smenu>
 </resource>

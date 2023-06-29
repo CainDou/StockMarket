@@ -735,7 +735,7 @@ void CDlgBackTesting::OnMsgHisIndexKline(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#');
-	KlineType * klineData = (KlineType *)buffer;
+	KlineType * klineData = (KlineType *)(buffer + sizeof(int));
 	int nDataCount = recvInfo.DataSize / sizeof(KlineType);
 	auto &dataMap = m_IndexData[recvInfo.InsID];
 	for (int i = 0; i < nDataCount; ++i)
@@ -762,7 +762,7 @@ void CDlgBackTesting::GetIndexKline(SStringA strIndexID)
 	info.StartDate = m_nLastStartDate;
 	info.EndDate = m_nLastEndDate;
 	strcpy_s(info.StockID, strIndexID);
-	m_NetClient.SendData((char*)&info, sizeof(info));
+	m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
 void CDlgBackTesting::GetTestMultiData(SStringA StockID)
@@ -781,7 +781,7 @@ void CDlgBackTesting::GetTestMultiData(SStringA StockID)
 	memcpy_s(msg + nOffset, nSize, &attSize, sizeof(attSize));
 	nOffset += sizeof(attSize);
 	memcpy_s(msg + nOffset, nSize, m_strDataGetMsg, attSize);
-	BOOL bRet = m_NetClient.SendData(msg, nSize);
+	BOOL bRet = m_NetClient.SendDataWithID(msg, nSize);
 }
 
 

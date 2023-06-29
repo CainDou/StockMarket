@@ -126,7 +126,6 @@ enum SendMsgType
 	SendType_HisCallAction,
 	SendType_HisMultiData,
 	SendType_IndexHisDayKline,
-
 };
 
 enum ComSendMsgType
@@ -1516,6 +1515,18 @@ enum RehabMenu
 
 };
 
+enum FilterWndMenu
+{
+	FWM_Start= 600,
+	FWM_WndNum1= FWM_Start,
+	FWM_WndNum2,
+	FWM_WndNum3,
+	FWM_WndNum4,
+	FWM_WndNum5,
+	FWM_WndNum6,
+	FWM_End,
+};
+
 typedef struct _sFixedTimeRehab
 {
 	int nDate;
@@ -1559,4 +1570,10 @@ enum _volAmoType
 	VAT_Amount,
 	VAT_CAVol,
 	VAT_CAAmo,
+};
+
+enum _WndType
+{
+	WT_SubWindow,
+	WT_FilterWindow,
 };

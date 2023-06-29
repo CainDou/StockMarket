@@ -95,6 +95,7 @@ SKlinePic::SKlinePic()
 
 	m_bShowCAVol = false;
 	m_bShowCAAmo = false;
+	m_bHalfPrice = false;
 
 	//m_pTip = new SKlineTip(m_hParWnd);
 
@@ -820,10 +821,22 @@ void SKlinePic::SetWindowRect()
 		}
 		else
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
-				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 580);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180,
-				m_rcAll.top + 585, m_rcAll.right + 30, m_rcAll.bottom + 30);
+			if (m_bHalfPrice)
+			{
+				m_pPriceList->m_rect.SetRect(m_rcAll.right - 182,
+					m_rcAll.top, m_rcAll.right + 40, m_rcAll.top + 375);
+				m_pDealList->m_rect.SetRect(m_rcAll.right - 182,
+					m_rcAll.top + 378, m_rcAll.right + 40, m_rcAll.bottom + 30);
+
+			}
+			else
+			{
+				m_pPriceList->m_rect.SetRect(m_rcAll.right - 182,
+					m_rcAll.top, m_rcAll.right + 40, m_rcAll.top + 580);
+				m_pDealList->m_rect.SetRect(m_rcAll.right - 182,
+					m_rcAll.top + 585, m_rcAll.right + 40, m_rcAll.bottom + 30);
+
+			}
 		}
 		m_rcImage.SetRect(m_rcAll.left, m_rcAll.top,
 			m_rcAll.right - 240, m_rcAll.bottom);
@@ -2773,6 +2786,12 @@ void SKlinePic::ChangePeriod(int nPeriod, BOOL bNeedReCalc)
 		if (bNeedReCalc && GetDataReadyState())
 			DataProc();
 	}
+}
+
+void SKlinePic::SetPriceListHalf(bool bHalf)
+{
+	m_bHalfPrice = bHalf;
+	m_pPriceList->SetPriceListHalf(m_bHalfPrice);
 }
 
 void SKlinePic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)

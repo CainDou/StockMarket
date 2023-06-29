@@ -90,6 +90,7 @@ namespace SOUI
 		void		SetPicUnHandled();
 		int			GetShowSubPicNum() const;
 		eRehabType	GetRehabType();
+		void		SetPriceListHalf(bool bHalf);
 		void		SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd = 0);
 		void		GetShowPointInfo(vector<ShowPointInfo> &infoVec);
 		BOOL		CheckTargetSelectIsClicked(CPoint pt);
@@ -301,6 +302,7 @@ namespace SOUI
 		bool		m_bHisCAInfoReady;
 		bool		m_bShowCAVol;
 		bool		m_bShowCAAmo;
+		bool		m_bHalfPrice;
 
 		//»æÍ¼²ÎÊý
 	protected:
@@ -496,6 +498,7 @@ namespace SOUI
 	{
 		return m_rehabType;
 	}
+
 
 }
 #endif // !_SKLINE_PIC
