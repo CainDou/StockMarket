@@ -371,7 +371,7 @@ void CWndSynHandler::MsgProc()
 }
 
 
-bool CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo)
+int CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo)
 {
 	SendInfo info = { 0 };
 	info.MsgType = nMsgType;
@@ -386,43 +386,44 @@ bool CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, in
 	memcpy_s(msg + nOffset, nSize, &attSize, sizeof(attSize));
 	nOffset += sizeof(attSize);
 	memcpy_s(msg + nOffset, nSize, attInfo, attSize);
-	return 	m_NetClient.SendData(msg, nSize);
+	return m_NetClient.SendDataWithID(msg, nSize);
 }
 
-bool CWndSynHandler::GetMarket(SStringA stockID, int nGroup)
+int CWndSynHandler::GetMarket(SStringA stockID, int nGroup)
 {
 	SendInfo info = { 0 };
 	strcpy_s(info.str, stockID);
 	info.Group = nGroup;
 	//发送订阅数据
 	info.MsgType = SendType_SubIns;
-	m_NetClient.SendData((char*)&info, sizeof(info));
+
+	m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 	//发送获取数据请求
 	if (nGroup != Group_Stock)
 		info.MsgType = SendType_IndexMarket;
 	else
 		info.MsgType = SendType_StockMarket;
-	return 	m_NetClient.SendData((char*)&info, sizeof(info));
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
-bool CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
+int CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
 {
 	SendInfo info = { 0 };
 	info.MsgType = SendType_HisPeriodKline;
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
-	return m_NetClient.SendData((char*)&info, sizeof(info));
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
-bool CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
+int CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
 {
 	SendInfo info = { 0 };
 	info.MsgType = SendType_HisCallAction;
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
-	return m_NetClient.SendData((char*)&info, sizeof(info));
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
 
@@ -594,6 +595,7 @@ bool CWndSynHandler::CheckCmdLine()
 bool CWndSynHandler::GetAutoUpdateFile(SStringA strMD5)
 {
 	SendInfo info = { 0 };
+
 	info.MsgType = ComSend_UpdateFile;
 	m_NetClient.SendData((char*)&info, sizeof(info));
 	ReceiveInfo recvInfo;
@@ -782,8 +784,8 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 		if (m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
 		{
 			SendIDInfo info = { 0 };
-			info.MsgType = ComSend_ReConnect;
 			info.ClinetID = m_NetClient.GetClientID();
+			info.MsgType = ComSend_ReConnect;
 			m_NetClient.SendData((char*)&info, sizeof(info));
 			bNeedConnect = false;
 		}
@@ -1328,23 +1330,30 @@ void CWndSynHandler::OnRemoveWnd(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetMarket(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	m_WndSubMap[pDgInfo->hWnd][pDgInfo->Group] = pDgInfo->StockID;
-	m_WndPointSubMap[pDgInfo->hWnd][pDgInfo->Group].clear();
-	GetMarket(pDgInfo->StockID, pDgInfo->Group);
+	m_WndSubMap[pDgInfo->hWnd] = pDgInfo->StockID;
+	m_WndPointSubMap[pDgInfo->hWnd].clear();
+	int nID = GetMarket(pDgInfo->StockID, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
 void CWndSynHandler::OnGetKline(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	GetHisKline(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	int nID = GetHisKline(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
 void CWndSynHandler::OnGetPoint(int nMsgLength, const char * info)
 {
 	ExDataGetInfo *pDgInfo = (ExDataGetInfo *)info;
-	m_WndPointSubMap[pDgInfo->hWnd][pDgInfo->nAskGroup][pDgInfo->StockID].emplace_back(*pDgInfo);
-	GetHisPoint(m_PointGetMsg[pDgInfo->Type], pDgInfo->StockID,
+	m_WndPointSubMap[pDgInfo->hWnd].insert(pDgInfo->StockID);
+	int nID = GetHisPoint(m_PointGetMsg[pDgInfo->Type], pDgInfo->StockID,
 		pDgInfo->Period, pDgInfo->Group, pDgInfo->exMsg);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+
 }
 
 void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
@@ -1360,61 +1369,63 @@ void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 	for (auto &wndSub : m_WndPointSubMap)
 	{
 		HWND hWnd = wndSub.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		::EnterCriticalSection(&m_cs);
+
 		for (auto &subInfo : wndSub.second)
 		{
 			vector<RtPointData>subDataVec;
-			::EnterCriticalSection(&m_cs);
-			for (auto &getInfo : subInfo.second)
+			SStringA StockID = subInfo;
+			for (int i = Group_SWL1; i <= nGroup; ++i)
 			{
-				SStringA StockID = getInfo.first;
-				for (int i = Group_SWL1; i <= subInfo.first; ++i)
+				auto &dataMap = m_RtRpsHash[i];
+				for (auto &periodDataPair : dataMap)
 				{
-					auto &dataMap = m_RtRpsHash[i];
-					for (auto &periodDataPair : dataMap)
+					if (periodDataPair.second.hash.count(StockID))
 					{
 						if (periodDataPair.second.hash.count(StockID))
 						{
-							if (periodDataPair.second.hash.count(StockID))
-							{
-								RtPointData data;
-								strcpy_s(data.stockID, StockID);
-								data.period = periodDataPair.first;
-								auto &rpsData = periodDataPair.second.hash[StockID];
-								data.data.date = rpsData.nDate;
-								data.data.time = rpsData.nTime;
-								UpdateRtRpsPointData(subDataVec, data, rpsData.rpsClose, "close", subInfo.first);
-								UpdateRtRpsPointData(subDataVec, data, rpsData.rpsAmount, "amount", subInfo.first);
-								UpdateRtSecPointData(subDataVec, data, rpsData.secAmount, "amount", subInfo.first);
+							RtPointData data;
+							strcpy_s(data.stockID, StockID);
+							data.period = periodDataPair.first;
+							auto &rpsData = periodDataPair.second.hash[StockID];
+							data.data.date = rpsData.nDate;
+							data.data.time = rpsData.nTime;
+							UpdateRtRpsPointData(subDataVec, data, rpsData.rpsClose, "close", i);
+							UpdateRtRpsPointData(subDataVec, data, rpsData.rpsAmount, "amount", i);
+							UpdateRtSecPointData(subDataVec, data, rpsData.secAmount, "amount", i);
 
-							}
 						}
 					}
-					//处理集合竞价数据
-					if (i == subInfo.first && m_bCaUpdate)
-					{
-						auto& caInfo = m_CallActionHash[subInfo.first].hash[StockID];
-						RtPointData data;
-						strcpy_s(data.stockID, StockID);
-						data.period = Period_1Day;
-						UpdateRtSecPointFromCAInfo(subDataVec, data, caInfo, subInfo.first);
-					}
-
 				}
+				//处理集合竞价数据
+				if (i == nGroup && m_bCaUpdate)
+				{
+					auto& caInfo = m_CallActionHash[nGroup].hash[StockID];
+					RtPointData data;
+					strcpy_s(data.stockID, StockID);
+					data.period = Period_1Day;
+					UpdateRtSecPointFromCAInfo(subDataVec, data, caInfo, nGroup);
+				}
+
 			}
-			::LeaveCriticalSection(&m_cs);
 
 			if (!subDataVec.empty())
 			{
 				int length = 4 + subDataVec.size() *
 					sizeof(pair<int, pair<char[MAX_NAME_LENGTH], CoreData>>);
 				char* msg = new char[length];
-				memcpy_s(msg, length, &subInfo.first, 4);
+				memcpy_s(msg, length, &nGroup, 4);
 				memcpy_s(msg + 4, length, &subDataVec[0], length - 4);
-				SendMsg(m_hWndMap[hWnd], Syn_Point, msg, length);
+				SendMsg(m_hWndMap[hParWnd], Syn_Point, msg, length);
 				delete[]msg;
 				msg = nullptr;
 			}
 		}
+
+		::LeaveCriticalSection(&m_cs);
+
 	}
 	m_bCaUpdate = false;
 }
@@ -1423,36 +1434,25 @@ void CWndSynHandler::OnHisRpsPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
-	int nGroup = pRecvInfo->Group;
-	int nOffset = sizeof(*pRecvInfo);
-	int nAttMsgSize = *(int*)(info + nOffset);
-	nOffset += sizeof(nAttMsgSize);
-	char *msg = new char[nAttMsgSize + 1];
-	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
-	for (auto &it : m_WndPointSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		for (int i = Group_SWL1; i < Group_Count; ++i)
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
 		{
-			if (it.second.count(i)
-				&& it.second[i].count(strStock))
-			{
-				auto &infoVec = it.second[i][strStock];
-				for (auto getInfo = infoVec.begin(); getInfo < infoVec.end(); ++getInfo)
-				{
-					if (getInfo->Period == pRecvInfo->Period &&
-						strcmp(getInfo->exMsg, msg) == 0)
-					{
-						SendMsg(m_hWndMap[hWnd], Syn_HisRpsPoint,
-							info, nMsgLength);
-						infoVec.erase(getInfo);
-						break;
-					}
-				}
-			}
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisRpsPoint,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
 		}
 	}
-	delete[]msg;
 }
 
 void CWndSynHandler::OnRTIndexMarket(int nMsgLength, const char * info)
@@ -1461,13 +1461,10 @@ void CWndSynHandler::OnRTIndexMarket(int nMsgLength, const char * info)
 	for (auto &it : m_WndSubMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(Group_SWL1)
-			&& it.second[Group_SWL1] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RTIndexMarket,
-				info, nMsgLength);
-		if (it.second.count(Group_SWL2)
-			&& it.second[Group_SWL2] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RTIndexMarket,
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup < Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_RTIndexMarket,
 				info, nMsgLength);
 	}
 
@@ -1479,9 +1476,10 @@ void CWndSynHandler::OnRTStockMarket(int nMsgLength, const char * info)
 	for (auto &it : m_WndSubMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(Group_Stock)
-			&& it.second[Group_Stock] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RTStockMarket,
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_RTStockMarket,
 				info, nMsgLength);
 	}
 
@@ -1491,14 +1489,23 @@ void CWndSynHandler::OnHisIndexMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisIndexMarket,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisIndexMarket,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
 	}
 }
 
@@ -1506,14 +1513,24 @@ void CWndSynHandler::OnHisStockMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisStockMarket,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisStockMarket,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+		}
 	}
 
 }
@@ -1522,16 +1539,25 @@ void CWndSynHandler::OnHisKline(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisKline,
-				info, nMsgLength);
-	}
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisKline,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
 
+		}
+	}
 }
 
 void CWndSynHandler::OnCloseInfo(int nMsgLength, const char * info)
@@ -1539,7 +1565,6 @@ void CWndSynHandler::OnCloseInfo(int nMsgLength, const char * info)
 	pair<char[8], double>preCloseData;
 	int dataCount = nMsgLength / sizeof(preCloseData);
 	pair<char[8], double> * dataArr = (pair<char[8], double> *)info;
-	//::EnterCriticalSection(&m_csClose);
 	m_preCloseMap.hash.clear();
 	for (int i = 0; i < dataCount; ++i)
 		m_preCloseMap.hash[dataArr[i].first] = dataArr[i].second;
@@ -1562,48 +1587,50 @@ void CWndSynHandler::OnHisSecPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
-	int nGroup = pRecvInfo->Group;
-	int nOffset = sizeof(*pRecvInfo);
-	int nAttMsgSize = *(int*)(info + nOffset);
-	nOffset += sizeof(nAttMsgSize);
-	char *msg = new char[nAttMsgSize + 1];
-	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
-	for (auto &it : m_WndPointSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		for (int i = Group_SWL1; i < Group_Count; ++i)
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
 		{
-			if (it.second.count(i)
-				&& it.second[i].count(strStock))
-			{
-				auto &infoVec = it.second[i][strStock];
-				for (auto getInfo = infoVec.begin(); getInfo < infoVec.end(); ++getInfo)
-				{
-					if (getInfo->Period == pRecvInfo->Period &&
-						strcmp(getInfo->exMsg, msg) == 0)
-					{
-						SendMsg(m_hWndMap[hWnd], Syn_HisSecPoint,
-							info, nMsgLength);
-						infoVec.erase(getInfo);
-						break;
-					}
-				}
-			}
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisSecPoint,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
 		}
 	}
+
 }
 
 void CWndSynHandler::OnRehabInfo(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(Group_Stock)
-			&& it.second[Group_Stock] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RehabInfo,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_RehabInfo,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+		}
 	}
 
 }
@@ -1612,14 +1639,25 @@ void CWndSynHandler::OnHisCallAction(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SStringA strStock = pRecvInfo->Message;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisCallAction,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisCallAction,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+
+		}
 	}
 
 }
@@ -1627,7 +1665,9 @@ void CWndSynHandler::OnHisCallAction(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetCallAction(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	GetHisCallAction(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	int nID = GetHisCallAction(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
 
@@ -1673,6 +1713,7 @@ void CWndSynHandler::ReInit()
 	m_bFirstData = true;
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
+
 	strcpy(info.str, "StkMarket");
 	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
@@ -1684,7 +1725,6 @@ void CWndSynHandler::ReInit()
 		WaitForSingleObject(g_hLoginEvent, INFINITE);
 		//ResetEvent(g_hLoginEvent);
 		SendInfo info;
-		info.MsgType = ComSend_Connect;
 		strcpy(info.str, "StkMarket");
 		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);

@@ -7,12 +7,12 @@
 #include<vector>
 #include<unordered_map>
 #include<set>
-
 using std::map;
 using std::vector;
 using std::unordered_map;
 using std::thread;
 using std::set;
+#define MAX_ASK_ID 32767 //2^15 - 1
 
 class CWndSynHandler
 {
@@ -38,6 +38,7 @@ public:
 	strHash<double> GetCloseMap() const;
 	void SetCmdLine(LPCTSTR lpstrCmdLine);
 	map<int, ShowPointInfo> GetPointInfo();
+	void SetSubWndInfo(HWND hSubWnd,HWND hWnd,int nGroup);
 	//初始化函数
 protected:
 	void InitCommonSetting();
@@ -46,10 +47,10 @@ protected:
 
 	//辅助函数
 protected:
-	bool GetHisPoint(int nMsgType,SStringA stockID, int nPeriod, int nGroup,SStringA attInfo);
-	bool GetMarket(SStringA stockID, int nGroup);
-	bool GetHisKline(SStringA stockID, int nPeriod, int nGroup);
-	bool GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
+	int GetHisPoint(int nMsgType,SStringA stockID, int nPeriod, int nGroup,SStringA attInfo);
+	int GetMarket(SStringA stockID, int nGroup);
+	int GetHisKline(SStringA stockID, int nPeriod, int nGroup);
+	int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
 
 	void InitDataHandleMap();
 	void InitNetHandleMap();
@@ -179,9 +180,12 @@ protected:
 
 protected:
 	HWND m_hMain;
-	map<HWND,UINT> m_hWndMap;
-	map<HWND, map<int, SStringA>> m_WndSubMap;
-	map<HWND, map<int, map<SStringA,vector<ExDataGetInfo>>>> m_WndPointSubMap;
+	map<HWND,UINT> m_hWndMap;	//一级窗口的工作线程号
+	map<HWND, SStringA> m_WndSubMap;
+	map<HWND, HWND> m_hSubWndMap; //工作窗口的窗口句柄与之对应的一级窗口句柄
+	map<HWND, set<SStringA>> m_WndPointSubMap; //窗口的打分数据信息
+	map<HWND, int> m_SubWndGroup; //工作窗口的分组
+	map<HWND, set<int>>m_SubWndGetInfoMap;
 	SStringA m_strIPAddr;
 	int		m_nIPPort;
 	bool m_bServerReady;
@@ -189,7 +193,6 @@ protected:
 	CRITICAL_SECTION m_cs;
 	CRITICAL_SECTION m_csFilterData;
 	SStringW m_strCmdLine;
-
 };
 
 inline void CWndSynHandler::SetMainWnd(HWND hWnd)
@@ -261,3 +264,10 @@ inline map<int, ShowPointInfo> CWndSynHandler::GetPointInfo()
 {
 	return m_pointInfoMap;
 }
+
+inline void CWndSynHandler::SetSubWndInfo(HWND hSubWnd, HWND hWnd, int nGroup)
+{
+	m_hSubWndMap[hSubWnd]= hWnd;
+	m_SubWndGroup[hSubWnd] = nGroup;
+}
+

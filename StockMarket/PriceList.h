@@ -16,6 +16,7 @@ namespace SOUI
 		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
 		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
 		void		SetIndyName(vector<SStringA>& nameVec);
+		void		SetPriceListHalf(bool bHalf);
 		~CPriceList();
 
 		SStringA		m_strSubIns;
@@ -46,11 +47,18 @@ namespace SOUI
 		CAutoRefPtr<IFont> m_pFont15, m_pFont20,m_pFont10;
 		CAutoRefPtr<IPen> m_penRed;
 		void		Paint(IRenderTarget *pRT);
-
+		bool		m_bHalfPrice;
 	protected:
-		void		DrawStockModeOne(IRenderTarget * pRT);
-		void		DrawIndexModeOne(IRenderTarget * pRT);
+		void		DrawStock(IRenderTarget * pRT);
+		void		DrawStockHalf(IRenderTarget * pRT);
+		void		DrawIndex(IRenderTarget * pRT);
 		COLORREF	GetTextColor(double price);
 	};
+
+	inline void CPriceList::SetPriceListHalf(bool bHalf)
+	{
+		m_bHalfPrice = bHalf;
+	}
+
 }
 

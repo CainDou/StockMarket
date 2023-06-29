@@ -33,6 +33,7 @@ namespace SOUI
 		unsigned	GetThreadID() const;
 		RpsGroup	GetGroup() const;
 		map<int, BOOL> GetListShowTitle() const;
+		void		SetFilterWndNum(int nWndNum);
 		void		SetListInfo(vector<StockInfo>& infoVec,
 			strHash<SStringA>& StockNameMap);
 		void		SetPreClose(strHash<double> &preCloseMap);
@@ -78,6 +79,7 @@ namespace SOUI
 		void SetListDataOrder();
 		void UpdateListShowStock();
 		void UpdateList();
+		void SetPriceListHalf(bool bHalf);
 		void UpdateListRpsData(int nRow, sRps &rps, int nStart, int nEnd);
 		void UpdateListSecData(int nRow, sSection &sec, int nStart, int nEnd);
 		void UpdateListCAData(int nRow, CAInfo& caData);
@@ -260,6 +262,8 @@ namespace SOUI
 		bool		m_bShowList;
 		SortPara	m_SortPara;
 		SStringA	m_WndName;
+		int			m_nWndNum;
+		BOOL		m_bFilterWnd;	//是否是用在选股上
 		//列表相关数据
 	protected:
 		bool		m_bListInited;
@@ -344,6 +348,12 @@ inline RpsGroup CWorkWnd::GetGroup() const
 inline map<int, BOOL> SOUI::CWorkWnd::GetListShowTitle() const
 {
 	return m_TitleShowMap;
+}
+
+inline void CWorkWnd::SetFilterWndNum(int nWndNum)
+{
+	m_nWndNum = nWndNum;
+	m_bFilterWnd = TRUE;
 }
 
 

@@ -1,17 +1,18 @@
 #pragma once
 #include<thread>
 #include"WorkWnd.h"
+#include "IniFile.h"
+#include <queue>
 
-class CIniFile;
 namespace SOUI
 {
-	class CDlgSub : public SHostWnd
+	class CDlgMultiFilter : public SHostWnd
 	{
-		typedef void(CDlgSub::*PDATAHANDLEFUNC)(int, const char*);
+		typedef void(CDlgMultiFilter::*PDATAHANDLEFUNC)(int, const char*);
 
 	public:
-		CDlgSub(SStringA strWndName);
-		~CDlgSub();
+		CDlgMultiFilter(SStringA strWndName);
+		~CDlgMultiFilter();
 		void	OnClose();
 		void	OnMaximize();
 		void	OnRestore();
@@ -23,14 +24,13 @@ namespace SOUI
 		void	OnDestroy();
 		void	OnTimer(UINT_PTR nIDEvent);
 		void	OnBtnClose();
-		void	SaveStockFilterPara(int nGroup);
-		void	SaveComboStockFilterPara(int nGroup);
+		void	OnBtnSetWndNum();
+		void	SaveComboStockFilterPara(int nWndNum);		
+		BOOL	SetShowWndNum(int nNum, BOOL bFromInit);
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
-
 	public:
 		void InitWorkWnd();
-		void InitStockFilter();
 		void InitComboStockFilter();
 		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap);
 		void InitConfig(map<int, ShowPointInfo> &pointMap);
@@ -53,19 +53,17 @@ namespace SOUI
 		void OnUpdatePoint(int nMsgLength, const char* info);
 		//void OnTodayPoint(int nMsgLength, const char* info);
 		void OnHisRpsPoint(int nMsgLength, const char* info);
-		void OnRTIndexMarket(int nMsgLength, const char* info);
 		void OnRTStockMarket(int nMsgLength, const char* info);
-		void OnHisIndexMarket(int nMsgLength, const char* info);
 		void OnHisStockMarket(int nMsgLength, const char* info);
 		void OnHisKline(int nMsgLength, const char* info);
 		void OnCloseInfo(int nMsgLength, const char* info);
-		void OnChangeIndy(int nMsgLength, const char* info);
 		void OnHisSecPoint(int nMsgLength, const char* info);
 		void OnRehabInfo(int nMsgLength, const char* info);
 		void OnHisCallAction(int nMsgLength, const char* info);
 		void OnGetCallAction(int nMsgLength, const char* info);
 
 	protected:
+		void OnMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		virtual void OnFinalMessage(HWND hWnd);
 
 	protected:
@@ -76,12 +74,14 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"btn_min", OnMinimize)
 			EVENT_NAME_COMMAND(L"btn_max", OnMaximize)
 			EVENT_NAME_COMMAND(L"btn_restore", OnRestore)
+			EVENT_NAME_COMMAND(L"btn_wndNum", OnBtnSetWndNum)
 
 			EVENT_MAP_END()
 
 			//HostWnd真实窗口消息处理
-			BEGIN_MSG_MAP_EX(CDlgSub)
+			BEGIN_MSG_MAP_EX(CDlgMultiFilter)
 			MESSAGE_HANDLER(WM_WINDOW_MSG, OnMsg)
+			COMMAND_RANGE_HANDLER_EX(FWM_Start, FWM_End, OnMenuCmd)
 			MSG_WM_TIMER(OnTimer)
 			//MSG_WM_CREATE(OnCreate)
 			MSG_WM_CLOSE(OnClose)
@@ -95,23 +95,28 @@ namespace SOUI
 		BOOL			m_bLayoutInited;
 		unordered_map<int, PDATAHANDLEFUNC>m_MsgHandleMap;
 		SStringA		m_strWindowName;
+		int				m_nShowWndNum;
 
 		//子线程
 	protected:
 		thread tDataProc;
 		UINT m_DataThreadID;
-		map<int, CWorkWnd*>m_WndMap;
+		vector<CWorkWnd*>m_WndVec;
+		vector<SRealWnd*>m_SrcWndVec;
 		map<HWND, int> m_WndHandleMap;
 		map<int, SStringA> m_WndSubMap;
+		map<int, vector<DataGetInfo>> m_WndGetInfoMap;
 		UINT m_SynThreadID;
 		BOOL m_bIsValid;
 	};
-	inline BOOL CDlgSub::WindowIsValid()
+	inline BOOL CDlgMultiFilter::WindowIsValid()
 	{
 		return m_bIsValid;
 	}
-	inline SStringA CDlgSub::GetWindowName()
+	inline SStringA CDlgMultiFilter::GetWindowName()
 	{
 		return m_strWindowName;
 	}
+
 }
+

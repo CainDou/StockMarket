@@ -7,9 +7,10 @@ namespace SOUI
 	class CDlgOpenWnd :public SHostWnd
 	{
 	public:
-		CDlgOpenWnd(HWND hParWnd);
+		CDlgOpenWnd(HWND hParWnd,int nWndType);
 		~CDlgOpenWnd();
 		void OnInit(EventArgs* e);
+		void InitStrings();
 		void OnBtnOK();
 		void OnBtnCancel();
 	protected:
@@ -24,6 +25,10 @@ namespace SOUI
 		map<int, int> ItemdNumMap;
 		HWND m_hParWnd;
 		SComboBox *pCbx;
+		int m_nWndType;
+		map<int, SStringA> m_WndTypeSection;
+		SStringA m_strSection;
+
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)

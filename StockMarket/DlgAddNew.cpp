@@ -3,9 +3,10 @@
 #include "IniFile.h"
 
 
-CDlgAddNew::CDlgAddNew(HWND hParWnd) :SHostWnd(_T("LAYOUT:dlg_newWindow"))
+CDlgAddNew::CDlgAddNew(HWND hParWnd, int nWndType) :SHostWnd(_T("LAYOUT:dlg_newWindow"))
 {
 	m_hParWnd = hParWnd;
+	m_nWndType = nWndType;
 }
 
 
@@ -15,23 +16,35 @@ CDlgAddNew::~CDlgAddNew()
 
 void SOUI::CDlgAddNew::OnInit(EventArgs * e)
 {
+	InitStrings();
 	CIniFile ini(".//config//subWindow.ini");
-	nDefaultWndCount = ini.GetIntA("SubWindowName", "DefaultCount", 0);
-	nNameCount = ini.GetIntA("SubWindowName", "NameCount", 0);
+	m_strSection = m_WndTypeSection[m_nWndType];
+	m_strDef = m_WndTypeDefName[m_nWndType];
+	nDefaultWndCount = ini.GetIntA(m_strSection, "DefaultCount", 0);
+	nNameCount = ini.GetIntA(m_strSection, "NameCount", 0);
 	SStringA str;
 	SStringA strName;
 	for (int i = 0; i < nNameCount; ++i)
 	{
-		strName = ini.GetStringA("SubWindowName",
+		strName = ini.GetStringA(m_strSection,
 			str.Format("%d", i), "");
 		if (strName != "")
 			UsedNameSet.insert(strName);
 	}
 	m_pEdit = FindChildByName2<SEdit>(L"edit_name");
-	m_strDefaultName.Format(L"SubWindow%d", nDefaultWndCount + 1);
+	m_strDefaultName.Format(L"%s%d", m_strDef,nDefaultWndCount + 1);
 	m_pEdit->SetWindowTextW(m_strDefaultName);
 	m_pEdit->SetFocus();
 	//m_pEdit->SetSel(0,1);
+
+}
+
+void SOUI::CDlgAddNew::InitStrings()
+{
+	m_WndTypeSection[WT_SubWindow] = "SubWindowName";
+	m_WndTypeSection[WT_FilterWindow] = "FilterWindowName";
+	m_WndTypeDefName[WT_SubWindow] = L"副窗口";
+	m_WndTypeDefName[WT_FilterWindow] = L"选股窗口";
 
 }
 
@@ -56,14 +69,16 @@ void SOUI::CDlgAddNew::OnBtnOK()
 	if (strEdit == m_strDefaultName)
 	{
 		++nDefaultWndCount;
-		ini.WriteIntA("SubWindowName", "DefaultCount", nDefaultWndCount);
+		ini.WriteIntA(m_strSection, "DefaultCount", nDefaultWndCount);
 	}
 	++nNameCount;
-	ini.WriteIntA("SubWindowName", "NameCount", nNameCount);
+	ini.WriteIntA(m_strSection, "NameCount", nNameCount);
 	SStringA str;
-	ini.WriteStringA("SubWindowName",
+	ini.WriteStringA(m_strSection,
 		str.Format("%d", nNameCount - 1), m_strNewWndName);
-	::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_NewWindow, nNameCount - 1);
+	
+	LPARAM lp = MAKELPARAM(nNameCount - 1,m_nWndType);
+	::PostMessageW(m_hParWnd, WM_WINDOW_MSG, WDMsg_NewWindow, lp);
 	CSimpleWnd::DestroyWindow();
 }
 

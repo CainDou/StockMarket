@@ -53,6 +53,8 @@ SFenShiPic::SFenShiPic()
 
 	m_nEMAPara[0] = 12;
 	m_nEMAPara[1] = 26;
+	m_bHalfPrice = false;
+
 	::InitializeCriticalSection(&m_csSub);
 }
 
@@ -1245,6 +1247,12 @@ void SFenShiPic::ReProcEMA()
 		}
 	}
 	//	Invalidate();
+}
+
+void SFenShiPic::SetPriceListHalf(bool bHalf)
+{
+	m_bHalfPrice = bHalf;
+	m_pPriceList->SetPriceListHalf(m_bHalfPrice);
 }
 
 void SFenShiPic::SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd)

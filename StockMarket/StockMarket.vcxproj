@@ -203,6 +203,7 @@
     <ClCompile Include="DlgLogin.cpp" />
     <ClCompile Include="DlgMacdPara.cpp" />
     <ClCompile Include="DlgMaPara.cpp" />
+    <ClCompile Include="DlgMultiFilter.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
     <ClCompile Include="DlgRehabFixedTime.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="DlgLogin.h" />
     <ClInclude Include="DlgMacdPara.h" />
     <ClInclude Include="DlgMaPara.h" />
+    <ClInclude Include="DlgMultiFilter.h" />
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
     <ClInclude Include="DlgRehabFixedTime.h" />

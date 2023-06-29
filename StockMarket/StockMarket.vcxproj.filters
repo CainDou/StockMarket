@@ -158,6 +158,9 @@
     <ClCompile Include="DlgBackTesting.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgMultiFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -295,6 +298,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgBackTesting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgMultiFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
