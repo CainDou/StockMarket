@@ -515,6 +515,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		{
 			SetBtnState(m_pBtnStockFilter, false);
 			UpdateListShowStock();
+			UpdateList();
 		}
 
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveConfig, 0);
@@ -1751,7 +1752,7 @@ void CWorkWnd::UpdateListShowStock()
 	}
 	SetListShowIndyStr(m_pTextIndy);
 
-	UpdateList();
+	//UpdateList();
 	//m_pList->UpdateLayout();
 	m_pList->RequestRelayout();
 }
@@ -2884,7 +2885,7 @@ void CWorkWnd::OnBtnShowTypeChange(bool bFroceList)
 			{
 				m_ListShowInd = "";
 				UpdateListShowStock();
-
+				UpdateList();
 				::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 					WDMsg_SaveConfig, NULL);
 			}

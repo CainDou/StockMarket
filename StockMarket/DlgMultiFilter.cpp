@@ -8,6 +8,7 @@
 extern CWndSynHandler g_WndSyn;
 
 const int MAX_WNDNUM = 6;
+const int DEFAULT_WNDNUM = 4;
 
 CDlgMultiFilter::CDlgMultiFilter(SStringA strWndName) :SHostWnd(_T("LAYOUT:dlg_multiFilter"))
 {
@@ -159,6 +160,7 @@ void CDlgMultiFilter::InitWorkWnd()
 	}
 	InitConfig(infoMap);
 	InitComboStockFilter();
+	SetShowWndNum(m_nShowWndNum, TRUE);
 
 	for (int i = 0; i < MAX_WNDNUM; ++i)
 	{
@@ -177,7 +179,6 @@ void CDlgMultiFilter::InitWorkWnd()
 		m_WndVec[i]->SetPreClose(preCloseMap);
 		m_WndVec[i]->InitList();
 	}
-	SetShowWndNum(m_nShowWndNum,TRUE);
 	InitListConfig();
 }
 
@@ -315,7 +316,7 @@ void CDlgMultiFilter::InitConfig(map<int, ShowPointInfo> &pointMap)
 	int CloseMAPara[] = { 5,10,20,60,0,0 };
 	int VolAmoMAPara[] = { 5,10,0,0,0,0 };
 
-	m_nShowWndNum = ini.GetIntA("Overall", "WndNum", MAX_WNDNUM);
+	m_nShowWndNum = ini.GetIntA("Overall", "WndNum", DEFAULT_WNDNUM);
 	for (int i = 0; i < MAX_WNDNUM; ++i)
 	{
 		InitPara initPara;
@@ -956,6 +957,10 @@ BOOL CDlgMultiFilter::SetShowWndNum(int nNum, BOOL bFromInit)
 		m_WndVec[i]->SetVisible(FALSE, TRUE);
 
 	}
+	if(!bFromInit)
+		for(int i =m_nShowWndNum;i<nNum;++i)
+			m_WndVec[i]->UpdateList();
+
 
 	m_nShowWndNum = nNum;
 }
