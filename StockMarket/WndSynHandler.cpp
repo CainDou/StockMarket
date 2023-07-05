@@ -53,6 +53,7 @@ void CWndSynHandler::Run()
 	InitDataHandleMap();
 	InitNetHandleMap();
 	InitSynHandleMap();
+	InitDataNameMap();
 	CFrmlManager::InitFrmlManage();
 	tRpsCalc = thread(&CWndSynHandler::DataProc, this);
 	m_RpsProcThreadID = *(unsigned*)&tRpsCalc.get_id();
@@ -260,6 +261,50 @@ void CWndSynHandler::InitPointInfo()
 	spi.showName = "集竞AMORPS(二级行业中)";
 	spi.overallType = eCAPoint_L2_Amount;
 	m_pointInfoMap[eCAPoint_L2_Amount] = spi;
+
+}
+
+void CWndSynHandler::InitDataNameMap()
+{
+	InitRpsDataMap("close");
+	InitRpsDataMap("amount");
+	InitSecDataMap("amount");
+
+}
+
+void CWndSynHandler::InitRpsDataMap(string strDataName)
+{
+	auto &nameVec = m_rpsDataNameMap[strDataName];
+	nameVec.resize(eRps_DataCount);
+	nameVec[eRps_MACD520] = strDataName + "MACD520";
+	nameVec[eRps_MACD2060] = strDataName + "MACD2060";
+	nameVec[eRps_RPS520] = strDataName + "RPS520";
+	nameVec[eRps_RPS2060] = strDataName + "RPS2060";
+	nameVec[eRps_RANK520] = strDataName + "RANK520";
+	nameVec[eRps_RANK2060] = strDataName + "RANK2060";
+	nameVec[eRps_POINT520] = strDataName + "POINT520";
+	nameVec[eRps_POINT2060] = strDataName + "POINT2060";
+	nameVec[eRps_RANK520L1] = strDataName + "RANK520L1";
+	nameVec[eRps_RANK2060L1] = strDataName + "RANK2060L1";
+	nameVec[eRps_POINT520L1] = strDataName + "POINT520L1";
+	nameVec[eRps_POINT2060L1] = strDataName + "POINT2060L1";
+	nameVec[eRps_RANK520L2] = strDataName + "RANK520L2";
+	nameVec[eRps_RANK2060L2] = strDataName + "RANK2060L2";
+	nameVec[eRps_POINT520L2] = strDataName + "POINT520L2";
+	nameVec[eRps_POINT2060L2] = strDataName + "POINT2060L2";
+
+}
+
+void CWndSynHandler::InitSecDataMap(string strDataName)
+{
+	auto &nameVec = m_secDataNameMap[strDataName];
+	nameVec.resize(eSec_DataCount);
+	nameVec[eSec_RANK] = strDataName + "RANK";
+	nameVec[eSec_POINT] = strDataName + "POINT";
+	nameVec[eSec_RANKL1] = strDataName + "RANKL1";
+	nameVec[eSec_POINTL1] = strDataName + "POINTL1";
+	nameVec[eSec_RANKL2] = strDataName + "RANKL2";
+	nameVec[eSec_POINTL2] = strDataName + "POINTL2";
 
 }
 
@@ -659,40 +704,40 @@ bool CWndSynHandler::GetAutoUpdateFileVer(SStringA &strMD5)
 	return bSuccess;
 }
 
-bool CWndSynHandler::HandleRpsData(SStringA strDataName,
-	sRps& data, map<string, double>&filterDataMap)
+bool CWndSynHandler::HandleRpsData(string strDataName,
+	sRps& data, unordered_map<string, double>&filterDataMap)
 {
-	string strName = strDataName;
-
-	filterDataMap[strName + "MACD520"] = data.fMacd520;
-	filterDataMap[strName + "MACD2060"] = data.fMacd2060;
-	filterDataMap[strName + "RPS520"] = data.fRps520;
-	filterDataMap[strName + "RPS2060"] = data.fRps2060;
-	filterDataMap[strName + "RANK520"] = data.nRank520;
-	filterDataMap[strName + "RANK2060"] = data.nRank2060;
-	filterDataMap[strName + "POINT520"] = data.fPoint520;
-	filterDataMap[strName + "POINT2060"] = data.fPoint2060;
-	filterDataMap[strName + "RANK520L1"] = data.nL1Rank520;
-	filterDataMap[strName + "RANK2060L1"] = data.nL1Rank2060;
-	filterDataMap[strName + "POINT520L1"] = data.fL1Point520;
-	filterDataMap[strName + "POINT2060L1"] = data.fL1Point2060;
-	filterDataMap[strName + "RANK520L2"] = data.nL2Rank520;
-	filterDataMap[strName + "RANK2060L2"] = data.nL1Rank2060;
-	filterDataMap[strName + "POINT520L2"] = data.fL2Point520;
-	filterDataMap[strName + "POINT2060L2"] = data.fL2Point2060;
+	auto &nameVec = m_rpsDataNameMap[strDataName];
+	filterDataMap[nameVec[eRps_MACD520]] = data.fMacd520;
+	filterDataMap[nameVec[eRps_MACD2060]] = data.fMacd2060;
+	filterDataMap[nameVec[eRps_RPS520]] = data.fRps520;
+	filterDataMap[nameVec[eRps_RPS2060]] = data.fRps2060;
+	filterDataMap[nameVec[eRps_RANK520]] = data.nRank520;
+	filterDataMap[nameVec[eRps_RANK2060]] = data.nRank2060;
+	filterDataMap[nameVec[eRps_POINT520]] = data.fPoint520;
+	filterDataMap[nameVec[eRps_POINT2060]] = data.fPoint2060;
+	filterDataMap[nameVec[eRps_RANK520L1]] = data.nL1Rank520;
+	filterDataMap[nameVec[eRps_RANK2060L1]] = data.nL1Rank2060;
+	filterDataMap[nameVec[eRps_POINT520L1]] = data.fL1Point520;
+	filterDataMap[nameVec[eRps_POINT2060L1]] = data.fL1Point2060;
+	filterDataMap[nameVec[eRps_RANK520L2]] = data.nL2Rank520;
+	filterDataMap[nameVec[eRps_RANK2060L2]] = data.nL1Rank2060;
+	filterDataMap[nameVec[eRps_POINT520L2]] = data.fL2Point520;
+	filterDataMap[nameVec[eRps_POINT2060L2]] = data.fL2Point2060;
 	return true;
 }
 
-bool CWndSynHandler::HandleSecData(SStringA strDataName, sSection & data, map<string, double>& filterDataMap)
+bool CWndSynHandler::HandleSecData(string strDataName, sSection & data, 
+	unordered_map<string, double>& filterDataMap)
 {
-	string strName = strDataName;
+	auto &nameVec = m_secDataNameMap[strDataName];
 
-	filterDataMap[strName + "RANK"] = data.rank;
-	filterDataMap[strName + "POINT"] = data.point;
-	filterDataMap[strName + "RANKL1"] = data.rankL1;
-	filterDataMap[strName + "POINTL1"] = data.pointL1;
-	filterDataMap[strName + "RANKL2"] = data.rankL2;
-	filterDataMap[strName + "POINTL2"] = data.pointL2;
+	filterDataMap[nameVec[eSec_RANK]] = data.rank;
+	filterDataMap[nameVec[eSec_POINT]] = data.point;
+	filterDataMap[nameVec[eSec_RANKL1]] = data.rankL1;
+	filterDataMap[nameVec[eSec_POINTL1]] = data.pointL1;
+	filterDataMap[nameVec[eSec_RANKL2]] = data.rankL2;
+	filterDataMap[nameVec[eSec_POINTL2]] = data.pointL2;
 
 	return true;
 }
@@ -1243,14 +1288,20 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 {
 	int dataCount = nMsgLength / sizeof(RtRps);
 	RtRps* dataArr = (RtRps*)info;
+	set<int>periodSet;
 	for (int i = 0; i < dataCount; ++i)
+	{
 		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
+		periodSet.insert(dataArr[i].nPeriod);
+	}
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		auto &preiodFilterMap = m_FilterDataMap[i];
 
 		for (auto &periodData : m_RtRpsHash[i])
 		{
+			if (periodSet.count(periodData.first) == 0)
+				continue;
 			auto &FilterMap = preiodFilterMap[periodData.first].hash;
 
 			for (auto& data : periodData.second.hash)

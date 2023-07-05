@@ -10,6 +10,7 @@
 #define TIMER_AUTOSAVE 1
 
 extern CWndSynHandler g_WndSyn;
+extern HWND g_MainWnd;
 
 
 CDlgSub::CDlgSub(SStringA strWndName) :SHostWnd(_T("LAYOUT:dlg_subWindow"))
@@ -52,6 +53,7 @@ void CDlgSub::OnClose()
 		ofile.close();
 		for (auto &it : m_WndMap)
 			it.second->CloseWnd();
+		CSimpleWnd::DestroyWindow();
 	}
 
 }
@@ -71,6 +73,7 @@ BOOL CDlgSub::OnInitDialog(EventArgs* e)
 	m_SynThreadID = g_WndSyn.GetThreadID();
 	tDataProc = thread(&CDlgSub::MsgProc, this);
 	m_DataThreadID = *(unsigned*)&tDataProc.get_id();
+	InitWindowPos();
 	InitMsgHandleMap();
 	InitWorkWnd();
 	g_WndSyn.AddWnd(m_hWnd, m_DataThreadID);
@@ -131,6 +134,23 @@ void CDlgSub::OnTimer(UINT_PTR nIDEvent)
 }
 
 
+void CDlgSub::InitWindowPos()
+{
+	WINDOWPLACEMENT wp;
+	std::ifstream ifile;
+	SStringA strFileName;
+	strFileName.Format(".\\config\\%s.position", m_strWindowName);
+	ifile.open(strFileName, std::ios::in | std::ios::binary);
+	if (ifile.is_open())
+	{
+		ifile.read((char*)&wp, sizeof(wp));
+		::SetWindowPlacement(m_hWnd, &wp);
+		ifile.close();
+	}
+	else
+		CenterWindow(g_MainWnd);
+}
+
 void CDlgSub::InitWorkWnd()
 {
 	SRealWnd * pRealWnd = FindChildByName2<SRealWnd>(L"wnd_SWL1");
@@ -146,7 +166,7 @@ void CDlgSub::InitWorkWnd()
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
 	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
-	vector<map<int, strHash<map<string, double>>>>* pFilterData =
+	vector<map<int, strHash<unordered_map<string, double>>>>* pFilterData =
 		g_WndSyn.GetFilterData();
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
 	auto infoMap = g_WndSyn.GetPointInfo();

@@ -29,6 +29,7 @@ namespace SOUI
 		SStringA GetWindowName();
 
 	public:
+		void InitWindowPos();
 		void InitWorkWnd();
 		void InitStockFilter();
 		void InitComboStockFilter();

@@ -6,6 +6,7 @@
 #define TIMER_AUTOSAVE 1
 
 extern CWndSynHandler g_WndSyn;
+extern HWND g_MainWnd;
 
 const int MAX_WNDNUM = 6;
 const int DEFAULT_WNDNUM = 4;
@@ -73,6 +74,7 @@ BOOL CDlgMultiFilter::OnInitDialog(EventArgs* e)
 	m_SynThreadID = g_WndSyn.GetThreadID();
 	tDataProc = thread(&CDlgMultiFilter::MsgProc, this);
 	m_DataThreadID = *(unsigned*)&tDataProc.get_id();
+	InitWindowPos();
 	InitMsgHandleMap();
 	InitWorkWnd();
 	g_WndSyn.AddWnd(m_hWnd, m_DataThreadID);
@@ -132,6 +134,24 @@ void CDlgMultiFilter::OnTimer(UINT_PTR nIDEvent)
 		SavePicConfig();
 }
 
+void CDlgMultiFilter::InitWindowPos()
+{
+	WINDOWPLACEMENT wp;
+	std::ifstream ifile;
+	SStringA strFileName;
+	strFileName.Format(".\\config\\%s.position", m_strWindowName);
+	ifile.open(strFileName, std::ios::in | std::ios::binary);
+	if (ifile.is_open())
+	{
+		ifile.read((char*)&wp, sizeof(wp));
+		::SetWindowPlacement(m_hWnd, &wp);
+		ifile.close();
+	}
+	else
+		CenterWindow(g_MainWnd);
+
+
+}
 
 void CDlgMultiFilter::InitWorkWnd()
 {
@@ -139,7 +159,7 @@ void CDlgMultiFilter::InitWorkWnd()
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
 	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
-	vector<map<int, strHash<map<string, double>>>>* pFilterData =
+	vector<map<int, strHash<unordered_map<string, double>>>>* pFilterData =
 		g_WndSyn.GetFilterData();
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
 	auto infoMap = g_WndSyn.GetPointInfo();
@@ -888,6 +908,7 @@ void SOUI::CDlgMultiFilter::SaveComboStockFilterPara(int nWndNum)
 	else
 		DeleteFileA(strPath);
 }
+
 
 BOOL CDlgMultiFilter::SetShowWndNum(int nNum, BOOL bFromInit)
 {

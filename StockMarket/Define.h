@@ -7,12 +7,15 @@
 #include<string>
 #include<vector>
 #include<map>
+#include<set>
 
 using std::unordered_map;
 using std::hash;
 using std::string;
 using std::vector;
 using std::map;
+using std::set;
+using std::pair;
 
 
 typedef char SecurityID[8];
@@ -140,7 +143,7 @@ enum ComSendMsgType
 
 enum BackTestingMsgType
 {
-	BTM_UpdateList=0,
+	BTM_UpdateList = 0,
 	BTM_GetData,
 	BTM_SingleCalcFinish,
 	BTM_AllFinish,
@@ -464,7 +467,7 @@ enum StockInfoType
 
 enum WDMSG
 {
-	WDMsg_UpdateList,
+	WDMsg_UpdateListData,
 	WDMsg_UpdatePic,
 	WDMsg_SubIns,
 	WDMsg_HideWindow,
@@ -479,6 +482,7 @@ enum WDMSG
 	WDMsg_ChangePointTarget,
 	WDMsg_ChangeShowTilte,
 	WDMsg_SaveListConfig,
+	WDMsg_UpdateList,
 	WDMsg_Exit,
 
 };
@@ -1324,7 +1328,7 @@ typedef struct _UsedPointInfo
 	bool operator ==(const _UsedPointInfo& other) const;
 }ShowPointInfo;
 
- 
+
 
 // 具体的打分数据类型
 enum ePointDataType
@@ -1432,12 +1436,12 @@ typedef struct InitPara
 	int nKlineFTRehabDate;
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
-	
+
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
 		bShowKlineVolume(false), bShowKlineAmount(false),
-		bShowKlineCAVol(false),bShowKlineCAAmo(false),
+		bShowKlineCAVol(false), bShowKlineCAAmo(false),
 		bShowTSCRPS{ false,false,false },
 		bShowKlineRPS{ false ,false,false }, nWidth(9),
 		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
@@ -1452,7 +1456,7 @@ typedef struct InitPara
 
 enum eSortDataType
 {
-	eSDT_Double=0,
+	eSDT_Double = 0,
 	eSDT_Int,
 	eSDT_String,
 	eSDT_BigDouble,
@@ -1471,7 +1475,7 @@ typedef struct _StockFilterPara
 
 enum eMaType
 {
-	eMa_Close=0,
+	eMa_Close = 0,
 	eMa_Volume,
 	eMa_Amount,
 	eMa_CAVol,
@@ -1492,7 +1496,7 @@ typedef struct _sReHab
 
 enum eRehabType
 {
-	eRT_NoRehab=0,
+	eRT_NoRehab = 0,
 	eRT_FrontRehab_Cash,
 	eRT_BackRehab_Cash,
 	eRT_Rehab_Cash_FixedTime,
@@ -1517,8 +1521,8 @@ enum RehabMenu
 
 enum FilterWndMenu
 {
-	FWM_Start= 600,
-	FWM_WndNum1= FWM_Start,
+	FWM_Start = 600,
+	FWM_WndNum1 = FWM_Start,
 	FWM_WndNum2,
 	FWM_WndNum3,
 	FWM_WndNum4,
@@ -1576,4 +1580,43 @@ enum _WndType
 {
 	WT_SubWindow,
 	WT_FilterWindow,
+};
+
+enum SortDirect
+{
+	SD_Greater = 0,
+	SD_Less,
+};
+
+enum eRpsData
+{
+	eRps_MACD520 = 0,
+	eRps_MACD2060,
+	eRps_RPS520,
+	eRps_RPS2060,
+	eRps_RANK520,
+	eRps_RANK2060,
+	eRps_POINT520,
+	eRps_POINT2060,
+	eRps_RANK520L1,
+	eRps_RANK2060L1,
+	eRps_POINT520L1,
+	eRps_POINT2060L1,
+	eRps_RANK520L2,
+	eRps_RANK2060L2,
+	eRps_POINT520L2,
+	eRps_POINT2060L2,
+	eRps_DataCount,
+};
+
+enum eSecData
+{
+	eSec_RANK,
+	eSec_POINT,
+	eSec_RANKL1,
+	eSec_POINTL1,
+	eSec_RANKL2,
+	eSec_POINTL2,
+	eSec_DataCount,
+
 };

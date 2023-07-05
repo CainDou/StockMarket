@@ -31,7 +31,7 @@ public:
 		 strHash<SStringA>& StockNameVec);
 	vector<map<int, strHash<RtRps>>>* GetListData();
 	map<int, strHash<TickFlowMarket>>* GetTFMarket();
-	vector<map<int,strHash<map<string, double>>>>* GetFilterData();
+	vector<map<int,strHash<unordered_map<string, double>>>>* GetFilterData();
 	vector<strHash<CAInfo>>* GetCallActionData();
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
@@ -44,6 +44,9 @@ protected:
 	void InitCommonSetting();
 	void InitNetConfig();
 	void InitPointInfo();
+	void InitDataNameMap();
+	void InitRpsDataMap(string strDataName);
+	void InitSecDataMap(string strDataName);
 
 	//¸¨Öúº¯Êý
 protected:
@@ -59,10 +62,10 @@ protected:
 	bool CheckCmdLine();
 	bool GetAutoUpdateFile(SStringA strMD5);
 	bool GetAutoUpdateFileVer(SStringA &strMD5);
-	bool HandleRpsData(SStringA strDataName, sRps& data, 
-		map<string, double>&filterDataMap);
-	bool HandleSecData(SStringA strDataName, sSection& data,
-		map<string, double>&filterDataMap);
+	bool HandleRpsData(string strDataName, sRps& data, 
+		unordered_map<string, double>&filterDataMap);
+	bool HandleSecData(string strDataName, sSection& data,
+		unordered_map<string, double>&filterDataMap);
 	void UpdateRtRpsPointData(vector<RtPointData>& subDataVec,
 		RtPointData& dstData, sRps &rpsData, SStringA strDataName, int nGroup);
 	void UpdateRtSecPointData(vector<RtPointData>& subDataVec,
@@ -143,8 +146,10 @@ public:
 	vector<int> m_PeriodVec;
 	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
 	vector<map<int, strHash<RtRps>>> m_RtRpsHash;
-	vector<map<int,strHash<map<string, double>>>> m_FilterDataMap;
+	vector<map<int,strHash<unordered_map<string, double>>>> m_FilterDataMap;
 	vector<strHash<CAInfo>> m_CallActionHash;
+	map<string, vector<string>> m_rpsDataNameMap;
+	map<string, vector<string>> m_secDataNameMap;
 protected:
 	map<int, BOOL> m_NetHandleFlag;
 	char *todayDataBuffer;
@@ -229,7 +234,7 @@ inline map<int, strHash<TickFlowMarket>>* CWndSynHandler::GetTFMarket()
 	return &m_TFMarketHash;
 }
 
-inline vector<map<int, strHash<map<string, double>>>>* CWndSynHandler::GetFilterData()
+inline vector<map<int, strHash<unordered_map<string, double>>>>* CWndSynHandler::GetFilterData()
 {
 	return &m_FilterDataMap;
 }

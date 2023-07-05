@@ -72,12 +72,15 @@ namespace SOUI
 		bool OnListHeaderSwap(EventArgs *pEvtBase);
 		bool OnListDbClick(EventArgs *pEvtBase);
 		bool OnListLClick(EventArgs *pEvtBase);
+		bool OnListScroll(EventArgs *pEvtBase);
 
 		//列表辅助函数
 	public:
+		void InitSortItemMapping();
 		void SetListDataIsShow();
 		void SetListDataOrder();
 		void UpdateListShowStock();
+		void HandleListData();
 		void UpdateList();
 		void SetPriceListHalf(bool bHalf);
 		void UpdateListRpsData(int nRow, sRps &rps, int nStart, int nEnd);
@@ -86,6 +89,26 @@ namespace SOUI
 		void UpdateListTFData(int nRow, TickFlowMarket& tfData,double fPreClose);
 		void UpdateListFilterShowStock();
 		void SortList(SColorListCtrlEx* pList, bool bSortCode = false);
+		void SortListData(bool bSortCode=false);
+		void SortCommonData(int nSortHeader,int nFlag);
+		void SortOtherData(int nSortHeader, int nFlag);
+
+		template<typename T1, typename T2>
+		bool compareData(const T1& data1, const T1& data2, int nOffset, int nFlag);
+		template<typename T>
+		bool compareData(const pair<SStringA,T>& data1, const pair<SStringA, T>& data2, int nFlag);
+
+
+		template<typename T>
+		void ResetListStockOrder(vector<T>& dataVec);
+		template<typename T>
+		void ResetListStockOrder(vector<pair<SStringA,T>>& dataVec);
+
+		template<typename T>
+		void SortData(strHash<T>& listDataHash, int nSortHeader, int nOffset, int nFlag);
+
+		template<typename T>
+		void SortData(map<SStringA,T>& listDataMap, int nSortHeader, int nFlag);
 
 		bool CheckStockFitDomain(StockInfo& si);
 		bool CheckStockDataPass(SFCondition& sf,SStringA StockID);
@@ -270,13 +293,13 @@ namespace SOUI
 		BOOL		m_bUseStockFilter;
 		//vector<vector<SStringA>> m_SubPicShowNameVec;
 		map< ePointType, map<SStringA, vector<SStringA>>>m_SubPicShowNameVec;
-		strHash<int>m_ListPosMap;
-		strHash<int>m_MouseWheelMap;
+		map<int,SStringA>m_ListPosMap;
+		map<int, SStringA>m_MouseWheelMap;
 		map<int, strHash<RtRps>> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
-		map<int, strHash<map<string, double>>>* m_pFilterDataMap;
-		map<int, strHash<map<string, double>>>* m_pL1IndyFilterDataMap;
-		map<int, strHash<map<string, double>>>* m_pL2IndyFilterDataMap;
+		map<int, strHash<unordered_map<string, double>>>* m_pFilterDataMap;
+		map<int, strHash<unordered_map<string, double>>>* m_pL1IndyFilterDataMap;
+		map<int, strHash<unordered_map<string, double>>>* m_pL2IndyFilterDataMap;
 		strHash<CAInfo>* m_pCallActionHash;
 
 		strHash<double> m_preCloseMap;
@@ -292,7 +315,10 @@ namespace SOUI
 		map<int, int> m_SFPeriodMap;
 		map<int, string> m_SFIndexMap;
 		map<int, PCOMPAREFUNC> m_SFConditionMap;
-
+		map<int, int>m_ComonSortMap;
+		map<int,int>m_RpsSortMap;
+		map<int, int>m_TFSortMap;
+		map<int, int>m_CASortMap;
 
 		int			m_nDate;
 		BOOL		m_bListShowST;
@@ -301,6 +327,11 @@ namespace SOUI
 		BOOL		m_bListShowNewStock;
 		map<SListHead, eSortDataType> m_ListDataSortMap;
 		map<SListHead, int> m_ListDataDecMap;
+
+		strHash<RtRps> m_ListShowRpsData;
+		strHash<TickFlowMarket> m_ListShowTFData;
+		strHash<CAInfo> m_ListShowCAData;
+		set<int> m_ListItemUpdateSet;
 
 		//分析图数据
 	protected:
@@ -367,3 +398,150 @@ inline void CWorkWnd::SetParThreadID(UINT uThreadID)
 	m_uParWndThreadID = uThreadID;
 }
 
+template<typename T1,typename T2>
+bool CWorkWnd::compareData(const T1& data1, const T1& data2, int nOffset, int nFlag)
+{
+	T2 cmpData1= *((T2*)((BYTE*)&data1 + nOffset));
+	T2 cmpData2 = *((T2*)((BYTE*)&data2 + nOffset));
+	bool bData1Valid = !isinf<double>(cmpData1) && !isnan<double>(cmpData1);
+	bool bData2Valid = !isinf<double>(cmpData2) && !isnan<double>(cmpData2);
+	if (bData1Valid && bData2Valid)
+	{
+		if (cmpData1 != cmpData2)
+		{
+			if(nFlag == SD_Greater)
+				return cmpData1 < cmpData2;
+			else if(nFlag == SD_Less)
+				return cmpData1 > cmpData2;
+		}
+		else
+			return strcmp(data1.SecurityID, data2.SecurityID) < 0;
+
+	}
+	else
+	{
+		if (bData1Valid)
+			return true;
+		else if (bData2Valid)
+			return false;
+		return strcmp(data1.SecurityID, data2.SecurityID) < 0;
+	}
+	return false;
+
+}
+
+template<typename T>
+bool CWorkWnd::compareData(const pair<SStringA, T>& data1, const pair<SStringA, T>& data2, int nFlag)
+{
+	T cmpData1 = data1.second;
+	T cmpData2 = data2.second;
+	bool bData1Valid = !isinf<double>(cmpData1) && !isnan<double>(cmpData1);
+	bool bData2Valid = !isinf<double>(cmpData2) && !isnan<double>(cmpData2);
+	if (bData1Valid && bData2Valid)
+	{
+		if (cmpData1 != cmpData2)
+		{
+			if (nFlag == SD_Greater)
+				return cmpData1 < cmpData2;
+			else if (nFlag == SD_Less)
+				return cmpData1 > cmpData2;
+		}
+		else
+			return data1.first < data2.first;
+
+	}
+	else
+	{
+		if (bData1Valid)
+			return true;
+		else if (bData2Valid)
+			return false;
+		return data1.first < data2.first < 0;
+	}
+	return false;
+}
+
+template<typename T>
+void CWorkWnd::ResetListStockOrder(vector<T>& dataVec)
+{
+	set<SStringA> showStockSet;
+	for (auto &it : m_ListPosMap)
+		showStockSet.insert(it.second);
+	for (int i = 0; i < dataVec.size(); ++i)
+	{
+		auto &stockInfo = m_infoMap.hash[dataVec[i].SecurityID];
+		m_pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID));
+		m_pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName));
+		m_ListPosMap[i] = stockInfo.SecurityID;
+		showStockSet.erase(stockInfo.SecurityID);
+	}
+	int nCount = dataVec.size();
+	for (auto &it : showStockSet)
+	{
+		auto &stockInfo = m_infoMap.hash[it];
+		m_pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID));
+		m_pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName));
+		m_ListPosMap[nCount++] = stockInfo.SecurityID;
+	}
+
+}
+
+template<typename T>
+void CWorkWnd::ResetListStockOrder(vector<pair<SStringA,T>>& dataVec)
+{
+	set<SStringA> showStockSet;
+	for (auto &it : m_ListPosMap)
+		showStockSet.insert(it.second);
+	for (int i = 0; i < dataVec.size(); ++i)
+	{
+		auto &stockInfo = m_infoMap.hash[dataVec[i].first];
+		m_pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID));
+		m_pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName));
+		m_ListPosMap[i] = stockInfo.SecurityID;
+		showStockSet.erase(stockInfo.SecurityID);
+	}
+	int nCount = dataVec.size();
+	for (auto &it : showStockSet)
+	{
+		auto &stockInfo = m_infoMap.hash[it];
+		m_pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID));
+		m_pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName));
+		m_ListPosMap[nCount++] = stockInfo.SecurityID;
+	}
+}
+
+template<typename T>
+void CWorkWnd::SortData(strHash<T>& listDataHash, int nSortHeader, int nOffset, int nFlag)
+{
+	vector<T>dataVec;
+	dataVec.reserve(listDataHash.hash.size());
+	for (auto &it : listDataHash.hash)
+		dataVec.emplace_back(it.second);
+
+	sort(dataVec.begin(), dataVec.end(),
+		[&](const T & data1, const T& data2)
+	{
+		int nSortType = m_ListDataSortMap[(SListHead)nSortHeader];
+		if (eSDT_Int == nSortType)
+			return compareData<T, int>(data1, data2, nOffset, nFlag);
+		else if (eSDT_Double == nSortType || eSDT_BigDouble == nSortType)
+			return compareData<T, double>(data1, data2, nOffset, nFlag);
+		return false;
+	});
+
+	ResetListStockOrder(dataVec);
+
+}
+
+template<typename T>
+void CWorkWnd::SortData(map<SStringA, T>& listDataMap, int nSortHeader,  int nFlag)
+{
+	vector<pair<SStringA, T>>dataVec(listDataMap.begin(), listDataMap.end());
+	sort(dataVec.begin(), dataVec.end(),
+		[&](const pair<SStringA,T> & data1, const pair<SStringA, T>& data2)
+	{
+		return compareData(data1, data2, nFlag);
+	});
+	ResetListStockOrder(dataVec);
+
+}

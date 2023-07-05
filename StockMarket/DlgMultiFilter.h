@@ -30,6 +30,7 @@ namespace SOUI
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
 	public:
+		void InitWindowPos();
 		void InitWorkWnd();
 		void InitComboStockFilter();
 		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap);
