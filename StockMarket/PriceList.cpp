@@ -13,6 +13,7 @@ CPriceList::CPriceList()
 	m_bInit = FALSE;
 	m_bIsStockIndex = false;
 	m_bInsInited = FALSE;
+	m_bHalfPrice = false;
 	
 }
 

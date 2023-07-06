@@ -208,8 +208,6 @@ void CWorkWnd::InitList()
 		Subscriber(&CWorkWnd::OnListDbClick, this));
 	m_pList->GetEventSet()->subscribeEvent(EVT_LC_SELCHANGED,
 		Subscriber(&CWorkWnd::OnListLClick, this));
-	m_pList->GetEventSet()->subscribeEvent(EVT_SCROLL,
-		Subscriber(&CWorkWnd::OnListScroll, this));
 
 	SHeaderCtrlEx * pHeader =
 		(SHeaderCtrlEx *)m_pList->GetWindow(GSW_FIRSTCHILD);
@@ -1648,11 +1646,8 @@ bool CWorkWnd::OnListHeaderClick(EventArgs * pEvtBase)
 			pHeader->SetItemSort(m_SortPara.nShowCol, ST_DOWN);
 
 	}
-	OutputDebugStringFormat("在点击中处理数据开始\n");
 	HandleListData();
-	OutputDebugStringFormat("处理数据结束，开始刷新行情\n");
 	UpdateList();
-	OutputDebugStringFormat("刷新行情结束\n");
 
 	//SortList(pList, true);
 
@@ -1721,11 +1716,6 @@ bool CWorkWnd::OnListLClick(EventArgs * pEvtBase)
 	memcpy_s(msg, 12, &nGroup, 4);
 	memcpy_s(msg + 4, 12, strID, strID.GetLength() + 1);
 	SendMsg(m_uParWndThreadID, WW_ChangeIndy, msg, 12);
-	return true;
-}
-bool SOUI::CWorkWnd::OnListScroll(EventArgs * pEvtBase)
-{
-	OutputDebugStringFormat("进行了滚动");
 	return true;
 }
 void CWorkWnd::InitSortItemMapping()
@@ -1882,9 +1872,6 @@ void CWorkWnd::UpdateList()
 	int nFirstIndex = m_pList->GetTopIndex();
 	int nPerPageCount = m_pList->GetCountPerPage(TRUE);
 	int nLastIndex = nFirstIndex + nPerPageCount;
-	if (m_Group == Group_Stock && !m_bFilterWnd)
-		OutputDebugStringFormat("当前第一项为%d 每页数据量为:%d 最后一项为%d\n",
-			nFirstIndex, nPerPageCount, nLastIndex);
 	//m_pList->LockUpdate();
 	for (auto &it : m_ListPosMap)
 	{

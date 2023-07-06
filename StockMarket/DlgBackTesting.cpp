@@ -349,11 +349,7 @@ void CDlgBackTesting::OnBtnCancel()
 	if (m_bCalc)
 	{
 		m_bCalc = FALSE;
-		if (m_tCalc.joinable())
-		{
-			::SendMsg(m_uCalcThreadID, Msg_Exit, nullptr, 0);
-			m_tCalc.join();
-		}
+		::SendMsg(m_uCalcThreadID, Msg_Exit, nullptr, 0);
 		m_pTextState->SetWindowTextW(L"²âÊÔÈ¡Ïû£¡");
 		m_pBtnCalc->EnableWindow(TRUE, TRUE);
 
@@ -507,6 +503,8 @@ void CDlgBackTesting::CalcRes()
 	ConditionHandle();
 	m_resVec.clear();
 	m_AvgRes.clear();
+	if (m_tCalc.joinable())
+		m_tCalc.join();
 	m_tCalc = thread(&CDlgBackTesting::TestingData, this);
 	m_uCalcThreadID = *(unsigned*)&m_tCalc.get_id();
 	m_nDataGetCount = 0;
@@ -1100,6 +1098,7 @@ bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate
 						res.res.RoR10OverIndy2 = res.res.RoR10 - res.res.RoR10OverIndy2;
 						m_resVec.emplace_back(res);
 						ProcAvgRes(res);
+						if(m_bCalc)
 						::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
 					}
 				}
@@ -1113,6 +1112,7 @@ bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate
 				auto &res = singleResMap[dayCount.first];
 				m_resVec.emplace_back(res);
 				ProcAvgRes(res);
+				if (m_bCalc)
 				::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
 			}
 		}

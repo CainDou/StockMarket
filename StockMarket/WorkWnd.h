@@ -72,7 +72,6 @@ namespace SOUI
 		bool OnListHeaderSwap(EventArgs *pEvtBase);
 		bool OnListDbClick(EventArgs *pEvtBase);
 		bool OnListLClick(EventArgs *pEvtBase);
-		bool OnListScroll(EventArgs *pEvtBase);
 
 		//ÁÐ±í¸¨Öúº¯Êý
 	public:

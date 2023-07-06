@@ -52,6 +52,7 @@ bool CAdpterFixTitle::OnCheckClick(EventCmd * pEvt)
 	SCheckBox* pChk = sobj_cast<SCheckBox>(pEvt->sender);
 	int nTitlePos = pChk->GetRoot()->GetUserData();
 	m_bShowMap[nTitlePos] = pChk->IsChecked();
+	EventLVSelChanged evt();
 	return true;
 }
 

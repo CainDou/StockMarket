@@ -11,6 +11,8 @@
 			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
 			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
 			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+			<imgbtn name="btn_help" skin="skin_btn_help" pos="-159,0" tip="帮助" animate="1" />
+
 		</caption>
 		<window pos="0,30,-0,-0" colorBkgnd="#000000ff" cache="1">
 			<include src="layout:page_workwnd" />

@@ -8,9 +8,11 @@ namespace SOUI
 		~CDlgHeaderSelect();
 		BOOL	OnInitDialog(EventArgs* e);
 		void	InitTilteMap();
+		void	InitTilteDscpMap();
 		void	OnBtnClose();
 		void	OnBtnOK();
 		BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+		bool	OnListTitleClicked(EventArgs* e);
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);
@@ -32,7 +34,9 @@ namespace SOUI
 	protected:
 		HWND m_hParWnd;
 		SListView* m_pLvTitle;
+		SEdit* m_pEditDscp;
 		map<int,BOOL> m_bShowMap;
 		map<int,SStringW>m_titleMap;
+		map<int, SStringW>m_titleDscpMap;
 	};
 }

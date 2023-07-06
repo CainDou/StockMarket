@@ -41,6 +41,7 @@
 		<file name="default_scrollbar_png" path="image\default.scrollbar.png" />
 		<file name="skin_lcex_header_arrow" path="image\lcex_header_arrow.png" />
 		<file name="png_treeicon" path="image\TreeIcon.png" />
+		<file name="btn_help" path="image\btn_help.png" />
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />

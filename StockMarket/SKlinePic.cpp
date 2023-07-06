@@ -814,10 +814,10 @@ void SKlinePic::SetWindowRect()
 	{
 		if (m_bIsStockIndex)
 		{
-			m_pPriceList->m_rect.SetRect(m_rcAll.right - 180,
-				m_rcAll.top, m_rcAll.right + 30, m_rcAll.top + 160);
-			m_pDealList->m_rect.SetRect(m_rcAll.right - 180,
-				m_rcAll.top + 165, m_rcAll.right + 30, m_rcAll.bottom + 30);
+			m_pPriceList->m_rect.SetRect(m_rcAll.right - 182,
+				m_rcAll.top, m_rcAll.right + 40, m_rcAll.top + 160);
+			m_pDealList->m_rect.SetRect(m_rcAll.right - 182,
+				m_rcAll.top + 165, m_rcAll.right + 40, m_rcAll.bottom + 30);
 		}
 		else
 		{

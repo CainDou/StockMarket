@@ -10,4 +10,5 @@
 	<Button name="skin_ButtonGrayBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpDisable="#505050ff" colorDownDisable="#505050ff" colorUpHover="#505050ff" colorDownHover="#505050ff" colorUpPush="#505050ff" colorDownPush="#505050ff"   colorUpDisable="#505050ff" colorDownDisable="#505050ff"/>
 	<imgframe name="skin_lcex_header_arrow" src="img:skin_lcex_header_arrow" states="2" />
 	<imglist name="skin_tree_icon" src="img:png_treeicon" states="3" />
+	<imglist name="skin_btn_help" src="img:btn_help" states="3" />
 </skin>
