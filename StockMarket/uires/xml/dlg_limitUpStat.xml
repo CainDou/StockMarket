@@ -1,0 +1,203 @@
+﻿<?xml version="1.0"?>
+<SOUI name="limitUpStat" title="热门板块涨停统计" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="normal" appWnd="0" translucent="0" colorBkgnd="#000000ff">
+	<root cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" name="text_windowName">热门板块涨停统计</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
+			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
+			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+		</caption>
+		<window layout="vbox"  gravity="center" pos="0,30,%10,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day0" size="80,20" extend="0,5,0,0"  text="今日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate0" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" visible="1" >
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock0" cache="1" bkgndBlend="0"  size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" >
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1" >
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%10,30,%20,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day1" size="80,20" extend="0,5,0,0" text="前一交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate1" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>			
+			<color_listctrlex name="ls_luStock1" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%20,30,%30,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day2" size="80,20" extend="0,5,0,0" text="前二交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate2" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock2" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%30,30,%40,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day3" size="80,20" extend="0,5,0,0" text="前三交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate3" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock3" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%40,30,%50,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day4" size="80,20" extend="0,5,0,0" text="前四交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate4" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock4" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window  layout="vbox"  gravity="center" pos="%50,30,%60,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day5" size="80,20" extend="0,5,0,0" text="前五交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate5" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock5" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%60,30,%70,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day6" size="80,20" extend="0,5,0,0" text="前六交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate6" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock6" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%70,30,%80,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day7" size="80,20" extend="0,5,0,0" text="前七交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate7" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock7" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%80,30,%90,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day8" size="80,20" extend="0,5,0,0" text="前八交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate8" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock8" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+		<window layout="vbox"  gravity="center" pos="%90,30,-0,-5" colorBkgnd="#000000ff" cache="1" font="underline:0,face:微软雅黑,size:13" >
+			<text name = "txt_day9" size="80,20" extend="0,5,0,0" text="前九交易日"  colorText="#FFFF00FF"/>
+			<color_listctrlex name="ls_plate9" cache="1" bkgndBlend="0" size="120,220" extend = "0,5,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
+					<items>
+						<item width="80">名称</item>
+						<item width="40">涨停</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<color_listctrlex name="ls_luStock9" cache="1" bkgndBlend="0" size="135,520" extend = "0,30,0,0" hotTrack="1" itemHeight="20" headerHeight="20"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+				<headerex align="center" itemSwapEnable="0" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1" visible = "1">
+					<items>
+						<item width="65">名称</item>
+						<item width="60">连板</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+	</root>
+</SOUI>

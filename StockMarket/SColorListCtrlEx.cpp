@@ -745,7 +745,7 @@ namespace SOUI
 		rcCol.OffsetRect(-m_ptOrigin.x, 0);
 		CRect rcNoMove(rcItem);
 		rcNoMove.right = rcNoMove.left;
-		int right = 0;
+		int right = rcItem.left;
 		bool bFirst = true;
 		int nNoMoveCol = m_pHeader ? m_pHeader->GetNoMoveCol() : 0;
 		for (int nCol = 0; nCol < GetColumnCount(); nCol++)

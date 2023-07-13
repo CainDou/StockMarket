@@ -149,6 +149,13 @@ enum BackTestingMsgType
 	BTM_AllFinish,
 };
 
+enum LimitUpMsgType
+{
+	LUM_UpdatePlate = 0,
+	LUM_UpdateToday,
+};
+
+
 typedef struct _SortPara
 {
 	_SortPara() :nCol(0), nShowCol(0), nFlag(ST_NULL)
@@ -390,6 +397,7 @@ enum DataProcType
 	UpdateRtRps,
 	UpdateCallAction,
 	BackTesting,
+	GetTodayLimitUp,
 	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };

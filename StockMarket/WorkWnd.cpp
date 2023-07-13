@@ -3532,7 +3532,8 @@ void CWorkWnd::OnUpdateHisRpsPoint(int nMsgLength, const char * info)
 	nOffset += sizeof(nAttMsgSize);
 	char *msg = new char[nAttMsgSize + 1];
 	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
-	pRecvInfo->TotalDataSize -= (nAttMsgSize + sizeof(nAttMsgSize));
+	pRecvInfo->TotalDataSize -= 
+		(nAttMsgSize + sizeof(nAttMsgSize) + sizeof(nMsgID));
 	//ReceivePointInfo *pRecvInfo1 =
 	//	(ReceivePointInfo *)(info + nOffset);
 	//nOffset += sizeof(*pRecvInfo1);
@@ -3655,7 +3656,8 @@ void CWorkWnd::OnUpdateHisSecPoint(int nMsgLength, const char * info)
 	nOffset += sizeof(nAttMsgSize);
 	char *msg = new char[nAttMsgSize + 1];
 	memcpy_s(msg, nAttMsgSize + 1, info + nOffset, nAttMsgSize);
-	pRecvInfo->TotalDataSize -= (nAttMsgSize + sizeof(nAttMsgSize));
+	pRecvInfo->TotalDataSize -= 
+		(nAttMsgSize + sizeof(nAttMsgSize) +sizeof(nMsgID));
 	//ReceivePointInfo *pRecvInfo1 =
 	//	(ReceivePointInfo *)(info + nOffset);
 	//nOffset += sizeof(*pRecvInfo1);
@@ -3787,7 +3789,7 @@ void CWorkWnd::ProcHisRpsPointFromMsg(ReceivePointInfo * pRecvInfo,
 
 	int nOffset = 0;
 	int nSize520 = pRecvInfo->FirstDataSize / sizeof(CoreData);
-	int nSize2060 = (pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize) /
+	int nSize2060 = (pRecvInfo->TotalDataSize  - pRecvInfo->FirstDataSize) /
 		sizeof(CoreData);
 	int nGroup = pRecvInfo->Group;
 	int nPeriod = pRecvInfo->Period;

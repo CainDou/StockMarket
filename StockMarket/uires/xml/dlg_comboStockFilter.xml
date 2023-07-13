@@ -15,10 +15,10 @@
 						<items>
 							<item width="40">序号</item>
 							<item width="230">指标1</item>
-							<item width="90">周期1</item>
+							<item width="92">周期1</item>
 							<item width="80">条件</item>
 							<item width="230">指标2</item>
-							<item width="90">周期2/数值</item>
+							<item width="100">周期2/数值</item>
 						</items>
 					</headerex>
 				</color_listctrlex>

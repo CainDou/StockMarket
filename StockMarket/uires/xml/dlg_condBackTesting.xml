@@ -24,7 +24,7 @@
 		  	<imgbtn name="btn_export" skin="skin_ButtonGrayBlack" pos="[5,{0,@100,@25" enable="0"  animate="1" text="导出结果" />
 
 			<text pos="5,[5,@100,@25">平均回测结果</text>
-			<color_listctrlex name="lc_avgResult" cache="1" bkgndBlend="0" pos="5,[5,-5,@80" hotTrack="0" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">				
+			<color_listctrlex name="lc_avgResult" cache="1" bkgndBlend="0" pos="5,[5,-5,@70" hotTrack="0" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">				
 				<headerex align="center" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack"  sortSkin="skin_lcex_header_arrow" multiLines ="1">
 					<items>
 						<item width="50">数据条数</item>

@@ -21,7 +21,9 @@
 			<check name="chk_STARM" pos="[5,{0" checked="0"  font="face:微软雅黑,size:13">科创板</check>
 			<check name="chk_NewStock" pos="[5,{0" checked="0"  font="face:微软雅黑,size:13">上市不满一年</check>
 			<imgbtn pos="-300,2" size="35,20" tip="K线复权设置" animate="0" text="复权" name="btn_Rehab" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
-			<color_listctrlex name="ls_rps" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
+			<color_listctrlex name="ls_rps" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑"  sbSkin="skin_new_scrollbar" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120"> 
+			<!--<color_listctrlex name="ls_rps" cache="1" bkgndBlend="0" pos="5,25,-10,-5" hotTrack="1" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑"  colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" >
+ -->
 				<headerex align="center" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines = "1">
 					<items>
 						<item width="45">序号</item>

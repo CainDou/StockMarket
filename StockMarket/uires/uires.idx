@@ -31,6 +31,7 @@
 		<file name="dlg_updateLog" path="xml\dlg_updateLog.xml" />
 		<file name="dlg_condBackTesting" path="xml\dlg_condBackTesting.xml" />
 		<file name="dlg_multiFilter" path="xml\dlg_multiFilter.xml" />
+		<file name="dlg_limitUpStat" path="xml\dlg_limitUpStat.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -42,6 +43,9 @@
 		<file name="skin_lcex_header_arrow" path="image\lcex_header_arrow.png" />
 		<file name="png_treeicon" path="image\TreeIcon.png" />
 		<file name="btn_help" path="image\btn_help.png" />
+		<file name="png_vscroll" path="image\vscrollbar.png" />
+		<file name="png_hscroll" path="image\hscrollbar.png" />
+		<file name="png_newscroll" path="image\newscroll.png" />
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />
