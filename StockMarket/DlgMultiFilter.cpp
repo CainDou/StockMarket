@@ -444,6 +444,7 @@ void CDlgMultiFilter::InitConfig(map<int, ShowPointInfo> &pointMap)
 		initPara.nKlineRehabType = ini.GetIntA(strSection, "KlineRehabType", 0);
 		initPara.nKlineCalcRehabType = ini.GetIntA(strSection, "KlineCalcRehabType", 0);
 		initPara.nKlineFTRehabDate = ini.GetIntA(strSection, "KlineFTRehabDate", 0);
+		initPara.strFilterName = ini.GetStringA(strSection, "FilterName", "");
 
 		InitPointWndInfo(ini, initPara, strSection, pointMap);
 
@@ -620,6 +621,8 @@ void CDlgMultiFilter::SavePicConfig()
 		ini.WriteIntA(strSection, "KlineRehabType", initPara.nKlineRehabType);
 		ini.WriteIntA(strSection, "KlineCalcRehabType", initPara.nKlineCalcRehabType);
 		ini.WriteIntA(strSection, "KlineFTRehabDate", initPara.nKlineFTRehabDate);
+
+		ini.WriteStringA(strSection, "FilterName", initPara.strFilterName);
 
 		SavePointWndInfo(ini, initPara, strSection);
 	}

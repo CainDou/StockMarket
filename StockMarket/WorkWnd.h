@@ -254,6 +254,7 @@ namespace SOUI
 		SImageButton* m_pBtnConn2;
 		SImageButton* m_pBtnStockFilter;
 		SImageButton* m_pBtnTitleSel;
+		SStatic *m_pTextFilterName;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
 		SColorListCtrlEx* m_pList;

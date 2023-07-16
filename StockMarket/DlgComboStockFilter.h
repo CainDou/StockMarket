@@ -7,13 +7,14 @@ namespace SOUI
 	class CDlgComboStockFilter : public SHostWnd
 	{
 	public:
-		CDlgComboStockFilter(UINT uParThreadID, RpsGroup Group);
+		CDlgComboStockFilter(HWND hParWnd,UINT uParThreadID, RpsGroup Group);
 		~CDlgComboStockFilter();
 		BOOL	OnInitDialog(EventArgs* e);
 		void	OnBtnClose();
 		void	OnBtnOK();
 		void	OnBtnBackTesting();
-
+		void	OnBtnSetFliterName();
+		void	SetFilterName(SStringA strFilterName);
 		void	InitList(bool bUse, vector<StockFilter> &sfVec);
 		void	InitComboBox();
 		void	OnCheckUse();
@@ -51,6 +52,7 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"btn_close", OnBtnClose)
 			EVENT_NAME_COMMAND(L"chk_use", OnCheckUse)
 			EVENT_NAME_COMMAND(L"btn_backTesting", OnBtnBackTesting)
+			EVENT_NAME_COMMAND(L"btn_setFilterName", OnBtnSetFliterName)
 
 			EVENT_MAP_END()
 
@@ -100,7 +102,11 @@ namespace SOUI
 		UINT m_uParThreadID;
 		CDlgBackTesting* m_pDlgBackTesting;
 		vector<StockInfo> m_stockInfo;
+		SStringA m_strFilterName;
 	};
 
-
+	inline void CDlgComboStockFilter::SetFilterName(SStringA strFilterName)
+	{
+		m_strFilterName = strFilterName;
+	}
 }

@@ -10,6 +10,7 @@
 			<group pos="5,5,@790,-5" align="left" headerHeight="0" text="条件列表">
 				<check name="chk_use" pos="5,[20,@100,@25" checked="0">启用选股器</check>
 		  		<imgbtn name="btn_backTesting" skin="skin_ButtonGrayBlack" pos="[5,{0,@150,@25"  animate="1" text="选股条件回测" />
+		  		<imgbtn name="btn_setFilterName" skin="skin_ButtonGrayBlack" pos="[5,{0,@150,@25"  animate="1" text="设置选股名称" />
 				<color_listctrlex name="ls_filter" cache="1" bkgndBlend="0" pos="5,[5,-5,-5" hotTrack="1" itemHeight="20" headerHeight="30" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">
 					<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 						<items>

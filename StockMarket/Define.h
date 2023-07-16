@@ -491,6 +491,7 @@ enum WDMSG
 	WDMsg_ChangeShowTilte,
 	WDMsg_SaveListConfig,
 	WDMsg_UpdateList,
+	WDMsg_SetFilterName,
 	WDMsg_Exit,
 
 };
@@ -1444,6 +1445,7 @@ typedef struct InitPara
 	int nKlineFTRehabDate;
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
+	SStringA strFilterName;
 
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
@@ -1458,7 +1460,7 @@ typedef struct InitPara
 		Connect1(false), Connect2(false), ShowIndy(""), UseStockFilter(false),
 		ListShowST(true), ListShowSBM(true),
 		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
-		nKlineCalcRehabType(0), nKlineFTRehabDate(0)
+		nKlineCalcRehabType(0), nKlineFTRehabDate(0), strFilterName("")
 	{}
 }InitPara_t;
 
@@ -1588,6 +1590,7 @@ enum _WndType
 {
 	WT_SubWindow,
 	WT_FilterWindow,
+	WT_SetFliterName,
 };
 
 enum SortDirect

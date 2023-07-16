@@ -107,7 +107,7 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 	//2023.5.4修改 将m_pDlgStockFilter 改为 m_pDlgCmbStockFilter
 	//在保留新版本的情况下 将其对外接口隐藏 回退老版本
 
-	m_pDlgCmbStockFilter = new CDlgComboStockFilter(m_uThreadID, m_Group);
+	m_pDlgCmbStockFilter = new CDlgComboStockFilter(m_hWnd,m_uThreadID, m_Group);
 	m_pDlgCmbStockFilter->Create(NULL);
 	m_pDlgCmbStockFilter->CenterWindow(m_hParWnd);
 	m_pDlgCmbStockFilter->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
@@ -122,7 +122,14 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 	SubPicWndNameVec.emplace_back("1级行业RPS");
 	SubPicWndNameVec.emplace_back("2级行业RPS");
 
+
+
 	m_InitPara = initPara;
+	if (m_InitPara.strFilterName == "")
+		m_pTextFilterName->SetAttribute(L"pos", L"5,3,-5,@0");
+	else
+		m_pTextFilterName->SetWindowTextW(StrA2StrW(m_InitPara.strFilterName));
+	m_pDlgCmbStockFilter->SetFilterName(m_InitPara.strFilterName);
 	//if (Group_Stock == m_Group)
 	//{
 	m_pFenShiPic->InitSubPic(m_InitPara.nTSCPointWndNum);
@@ -427,6 +434,7 @@ void CWorkWnd::OnInit(EventArgs * e)
 
 	m_pFenShiPic = FindChildByID2<SFenShiPic>(R.id.fenshiPic);
 	m_pKlinePic = FindChildByID2<SKlinePic>(R.id.klinePic);
+	m_pTextFilterName = FindChildByID2<SStatic>(R.id.text_FilterName);
 	m_pTextTitle = FindChildByID2<SStatic>(R.id.text_Group);
 	m_pTextIndy = FindChildByID2<SStatic>(R.id.text_ShowIndy);
 	m_pBtnMarket = FindChildByID2<SImageButton>(R.id.btn_Market);
@@ -594,6 +602,19 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	case WDMsg_UpdateList:
 		UpdateList();
 		break;
+	case WDMsg_SetFilterName:
+	{
+		m_InitPara.strFilterName = *(SStringA*)lp;
+		if (m_InitPara.strFilterName == "")
+			m_pTextFilterName->SetAttribute(L"pos", L"5,3,-5,@0");
+		else
+		{
+			m_pTextFilterName->SetAttribute(L"pos", L"5,3,-5,@20");
+			m_pTextFilterName->SetWindowTextW(StrA2StrW(m_InitPara.strFilterName));
+			m_pDlgCmbStockFilter->SetFilterName(m_InitPara.strFilterName);
+		}
+	}
+	break;
 	default:
 		break;
 	}
@@ -2373,10 +2394,10 @@ void CWorkWnd::SortOtherData(int nSortHeader, int nFlag)
 	if (nSortHeader == SHead_ChangePct)
 	{
 		map<SStringA, double> dataMap;
-		for (auto &it : m_ListShowTFData.hash)
+		for (auto &it : m_ListShowRpsData.hash)
 		{
 			double preClose = m_preCloseMap.hash[it.first];
-			double fChgPct = (it.second.fClose - preClose) / preClose;
+			double fChgPct = (it.second.fPrice - preClose) / preClose;
 			dataMap[it.first] = fChgPct;
 		}
 		SortData(dataMap, nSortHeader, nFlag);
@@ -2456,7 +2477,6 @@ bool CWorkWnd::CheckCmbStockDataPass(StockFilter & sf, SStringA StockID)
 	int nPeriod2 = m_SFPeriodMap[sf.period2];
 	SStringA StockID1 = "";
 	SStringA StockID2 = "";
-
 	map<int, strHash<unordered_map<string, double>>> *pFilter1 = nullptr;
 	if (sf.index1 >= SFI_Start && sf.index1 < SFI_Count)
 	{
@@ -2502,7 +2522,6 @@ bool CWorkWnd::CheckCmbStockDataPass(StockFilter & sf, SStringA StockID)
 		return false;
 	if (pFilter2->at(nPeriod2).hash.count(StockID2) == 0)
 		return false;
-
 	double data1 = pFilter1->at(nPeriod1).hash[StockID1][m_SFIndexMap[sf.index1]];
 	double data2 = sf.index2 == SFI_Num ? sf.num :
 		pFilter2->at(nPeriod2).hash[StockID2][m_SFIndexMap[sf.index2]];

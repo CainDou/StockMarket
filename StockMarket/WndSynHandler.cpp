@@ -1312,7 +1312,7 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 				cd.time = rpsData.nTime;
 				auto &filter = FilterMap[data.first];
 				HandleRpsData("close", rpsData.rpsClose, filter);
-				HandleRpsData("amount", rpsData.rpsClose, filter);
+				HandleRpsData("amount", rpsData.rpsAmount, filter);
 				HandleSecData("amount", rpsData.secAmount, filter);
 			}
 		}

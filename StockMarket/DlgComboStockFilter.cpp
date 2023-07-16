@@ -2,10 +2,12 @@
 #include "DlgComboStockFilter.h"
 #include "SColorListCtrlEx.h"
 #include "DlgBackTesting.h"
+#include "DlgAddNew.h"
 
-CDlgComboStockFilter::CDlgComboStockFilter(UINT uParThreadID, RpsGroup Group)
+CDlgComboStockFilter::CDlgComboStockFilter(HWND hParWnd, UINT uParThreadID, RpsGroup Group)
 	:SHostWnd(_T("LAYOUT:dlg_comboStockFilter"))
 {
+	m_hParWnd = hParWnd;
 	m_uParThreadID = uParThreadID;
 	m_Group = Group;
 	m_pDlgBackTesting = nullptr;
@@ -90,7 +92,16 @@ void CDlgComboStockFilter::OnBtnBackTesting()
 
 }
 
-void SOUI::CDlgComboStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
+void CDlgComboStockFilter::OnBtnSetFliterName()
+{
+	CDlgAddNew * pDlg = new CDlgAddNew(m_hParWnd, WT_SetFliterName, m_strFilterName);
+	pDlg->Create(NULL);
+	pDlg->CenterWindow(m_hWnd);
+	pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	pDlg->ShowWindow(SW_SHOWDEFAULT);
+}
+
+void CDlgComboStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
 {
 	SStringW strTmp;
 	for (int i = 0; i < sfVec.size(); ++i)
@@ -103,7 +114,7 @@ void SOUI::CDlgComboStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
 
 }
 
-void SOUI::CDlgComboStockFilter::InitComboBox()
+void CDlgComboStockFilter::InitComboBox()
 {
 	for (int i = SFF_Add; i < SFF_Count; ++i)
 		m_pCbxFunc->InsertItem(i, m_FuncMap[i], NULL, 0);
