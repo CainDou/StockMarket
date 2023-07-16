@@ -60,10 +60,10 @@
 					</items>
 				</headerex>
 			</color_listctrlex>
-			<fenshiPic name="fenshiPic" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<fenshiPic name="fenshiPic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
 				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
 			</fenshiPic>
-			<klinePic name="klinePic" pos="5,25,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
+			<klinePic name="klinePic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
 				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
 			</klinePic>
 		</window>
