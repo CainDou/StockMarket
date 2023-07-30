@@ -12,6 +12,7 @@ typedef struct _testDataInfo
 }testData;
 
 
+
 bool _testDataInfo::operator<(const _testDataInfo & other) const
 {
 	if (this->nPeriod == other.nPeriod)
@@ -25,8 +26,10 @@ bool _testDataInfo::operator==(const _testDataInfo & other) const
 }
 
 
-CDlgBackTesting::CDlgBackTesting(set<StockFilter> sfSet, vector<StockInfo>& stockInfo) : SHostWnd(_T("LAYOUT:dlg_condBackTesting"))
+
+CDlgBackTesting::CDlgBackTesting(HWND hParWnd, set<StockFilter> sfSet, vector<StockInfo>& stockInfo) : SHostWnd(_T("LAYOUT:dlg_condBackTesting"))
 {
+	m_hParWnd = hParWnd;
 	m_sfSet = sfSet;
 	m_StockInfo = stockInfo;
 	m_nLastStartDate = 0;
@@ -279,6 +282,9 @@ void CDlgBackTesting::InitNetHandleMap()
 		&CDlgBackTesting::OnMsgHisMultiData;
 	m_netHandleMap[RecvMsg_HisIndexKline] =
 		&CDlgBackTesting::OnMsgHisIndexKline;
+	m_netHandleMap[RecvMsg_HisMultiDataForHSF] =
+		&CDlgBackTesting::OnMsgHisMultiDataForHSF;
+
 	m_NetClient.RegisterHandle(NetHandle);
 	m_NetClient.Start(m_uNetThreadID, this);
 
@@ -586,6 +592,33 @@ BOOL CDlgBackTesting::CheckCondtionIsSame()
 	return TRUE;
 }
 
+void CDlgBackTesting::CalcHisStockFilter(set<HisStockFilter> hsfSet)
+{
+	if (!m_NetClient.GetState())
+	{
+		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
+		{
+			SMessageBox(m_hWnd, L"无法与服务器端连接获取数据，请重试!", L"警告", MB_OK | MB_ICONWARNING);
+			return;
+		}
+	}
+	m_bHisLastIsFinished = FALSE;
+	m_hisSfVec.clear();
+	for (auto &it : hsfSet)
+		m_hisSfVec.emplace_back(it);
+	m_bHisCalc = TRUE;
+	m_hisFitStockSet.clear();
+	HisConditionHandle();
+	if (m_tHisCalc.joinable())
+		m_tHisCalc.join();
+	m_tHisCalc = thread(&CDlgBackTesting::TestingData, this);
+	m_uHisCalcThreadID = *(unsigned*)&m_tHisCalc.get_id();
+	m_nHisDataGetCount = 0;
+	m_nHisFinishCount = 0;
+	::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 0);
+
+}
+
 
 LRESULT CDlgBackTesting::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 {
@@ -631,10 +664,70 @@ LRESULT CDlgBackTesting::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		m_pBtnExport->EnableWindow(TRUE, TRUE);
 
 	}
+	case BTM_GetHisData:
+	{
+		if (m_nHisDataGetCount < m_StockInfo.size())
+		{
+			GetHisTestMultiData(m_StockInfo[m_nHisDataGetCount].SecurityID);
+			++m_nHisDataGetCount;
+		}
+	}
+	break;
+	case BTM_SingleHisCalcFinish:
+	{
+		++m_nHisFinishCount;
+		if (m_nHisFinishCount >= m_StockInfo.size())
+			::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_AllHisFinish, 0);
+	}
+	break;
+	case BTM_AllHisFinish:
+	{
+		m_bHisCalc = FALSE;
+		m_bHisLastIsFinished = TRUE;
+		::SendMessage(m_hParWnd, WM_FILTER_MSG, CFMsg_FinishHis, NULL);
+		if (m_tHisCalc.joinable())
+		{
+			::SendMsg(m_uHisCalcThreadID, Msg_Exit, nullptr, 0);
+			m_tHisCalc.join();
+		}
+	}
+
 	default:
 		break;
 	}
 	return 0;
+}
+
+void CDlgBackTesting::HisConditionHandle()
+{
+	map<testData, int> useDataSet;
+	testData td;
+	for (auto &it : m_hisSfVec)
+	{
+		td.nPeriod = m_SFPeriodMap[it.sf.period1];
+		td.strIndex = m_IndexNameMap[it.sf.index1];
+		useDataSet[td] = max(useDataSet[td], it.countDay);
+		td.nPeriod = m_SFPeriodMap[it.sf.period2];
+		td.strIndex = m_IndexNameMap[it.sf.index2];
+		useDataSet[td] = max(useDataSet[td], it.countDay);
+	}
+	std::sort(m_hisSfVec.begin(), m_hisSfVec.end(),
+		[&](const HisStockFilter& a, const HisStockFilter& b)
+	{int aMax = max(m_SFPeriodMap[a.sf.period1], m_SFPeriodMap[a.sf.period2]);
+	int bMax = max(m_SFPeriodMap[b.sf.period1], m_SFPeriodMap[b.sf.period2]);
+	return aMax > bMax;	});
+	m_strHisDataGetMsg.Empty();
+
+	for (auto &it : useDataSet)
+	{
+		if (it.first.strIndex != "Num")
+		{
+			SStringA str;
+			str.Format("dataName:%s,dataPeriod:%d,dayCount:%d;",
+				it.first.strIndex, it.first.nPeriod, it.second);
+			m_strHisDataGetMsg += str;
+		}
+	}
 }
 
 unsigned CDlgBackTesting::NetHandle(void * para)
@@ -729,6 +822,19 @@ void CDlgBackTesting::OnMsgHisMultiData(ReceiveInfo & recvInfo)
 	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 0);
 }
 
+void SOUI::CDlgBackTesting::OnMsgHisMultiDataForHSF(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#');
+	SendMsg(m_uHisCalcThreadID, CheckHisFilterPass, buffer, recvInfo.DataSize);
+	delete[]buffer;
+	buffer = nullptr;
+	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 0);
+
+}
+
 void CDlgBackTesting::OnMsgHisIndexKline(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -782,6 +888,24 @@ void CDlgBackTesting::GetTestMultiData(SStringA StockID)
 	BOOL bRet = m_NetClient.SendDataWithID(msg, nSize);
 }
 
+void CDlgBackTesting::GetHisTestMultiData(SStringA StockID)
+{
+	SendInfoWithDate info = { 0 };
+	info.MsgType = SendType_HisMultiData;
+
+	strcpy_s(info.StockID, StockID);
+	int attSize = m_strHisDataGetMsg.GetLength() + 1;
+	int nSize = sizeof(info) + attSize + sizeof(attSize);
+	char *msg = new char[nSize];
+	memcpy_s(msg, nSize, &info, sizeof(info));
+	int nOffset = sizeof(info);
+	memcpy_s(msg + nOffset, nSize, &attSize, sizeof(attSize));
+	nOffset += sizeof(attSize);
+	memcpy_s(msg + nOffset, nSize, m_strHisDataGetMsg, attSize);
+	BOOL bRet = m_NetClient.SendDataWithID(msg, nSize);
+
+}
+
 
 void CDlgBackTesting::TestingData()
 {
@@ -802,10 +926,17 @@ void CDlgBackTesting::TestingData()
 		}
 		else if (BackTesting == MsgId)
 			CalcData(info, msgLength);
+		else if (CheckHisFilterPass == MsgId)
+			CheckHisFilter(info, msgLength);
 		delete[]info;
 		info = nullptr;
 	}
 }
+
+void CDlgBackTesting::TestHisData()
+{
+}
+
 
 void CDlgBackTesting::CalcData(char* msg, int nMsgLength)
 {
@@ -841,7 +972,65 @@ void CDlgBackTesting::CalcData(char* msg, int nMsgLength)
 	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_SingleCalcFinish, (LPARAM)Info.InsID);
 }
 
-int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data)
+void CDlgBackTesting::CheckHisFilter(char * msg, int nMsgLength)
+{
+	BackTestingData testDataMap;
+	ReceiveInfo Info = *(ReceiveInfo*)msg;
+	int nOffset = sizeof(ReceiveInfo);
+	while (nOffset < nMsgLength)
+	{
+		int nMsgOffset = GetDataFromMsg(msg + nOffset, testDataMap,TRUE);
+		nOffset += nMsgOffset;
+	}
+	vector<int> dayVec;
+	for (auto &it : testDataMap.dataMap)
+		dayVec.emplace_back(it.first);
+	sort(dayVec.begin(), dayVec.end(), [](const int a, const int b)
+	{return a > b; });
+	BOOL bAllCondFit = TRUE;
+	if (!dayVec.empty())
+	{
+		for (auto &hsf : m_hisSfVec)
+		{
+			BOOL bFit = hsf.type == eJT_Exist ? FALSE : TRUE;
+			for (int i = 0; i < hsf.countDay; ++i)
+			{
+				int nDate = dayVec[i];
+				auto &dataMap = testDataMap.dataMap[nDate];
+				if (hsf.type == eJT_Exist)
+				{
+					if (CheckHisDataPass(hsf, dataMap))
+					{
+						bFit = TRUE;
+						break;
+					}
+
+				}
+				if (hsf.type == eJT_Forall)
+				{
+					if (!CheckHisDataPass(hsf, dataMap))
+					{
+						bFit = FALSE;
+						break;
+					}
+
+				}
+			}
+			if (!bFit)
+			{
+				bAllCondFit = FALSE;
+				break;
+			}
+		}
+
+	}
+
+	if (bAllCondFit)
+		m_hisFitStockSet.insert(Info.InsID);
+	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_SingleHisCalcFinish, (LPARAM)Info.InsID);
+}
+
+int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data, BOOL bForHSF)
 {
 	int nOffset = 0;
 	int nDataNameSize = *(int*)(msg + nOffset);
@@ -872,12 +1061,12 @@ int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data)
 	{
 		KlineType * klineData = (KlineType*)strData;
 		int nDataCount = nDataSize / sizeof(KlineType);
-		int fPreClose = 0;
+		double fPreClose = 0;
 		for (int i = 0; i < nDataCount; ++i)
 		{
 			int nDate = klineData[i].date;
 			int nTime = klineData[i].time;
-			if (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate)
+			if (bForHSF || (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate))
 			{
 				data.dataMap[nDate][nPeriod][SFI_Vol][nTime] = klineData[i].vol;
 				data.dataMap[nDate][nPeriod][SFI_Amount][nTime] = klineData[i].amount;
@@ -900,7 +1089,7 @@ int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data)
 					data.dataMap[nDate][nPeriod][SFI_ChgPct][nTime] =
 						(klineData[i].close - fPreClose) / fPreClose * 100;
 				}
-				if (nDate <m_nLastStartDate || nDate >m_nLastEndDate)
+				if (bForHSF || nDate <m_nLastStartDate || nDate >m_nLastEndDate)
 					data.dataMap[nDate][nPeriod][SFI_Close][nTime] = klineData[i].close;
 				fPreClose = fClose;
 			}
@@ -914,7 +1103,7 @@ int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data)
 		{
 			int nDate = caData[i].date;
 			int nTime = 0;
-			if (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate)
+			if (bForHSF || (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate))
 			{
 				data.dataMap[nDate][nPeriod][SFI_CAVol][nTime] = caData[i].Volume;
 				data.dataMap[nDate][nPeriod][SFI_CAVolPoint][nTime] = caData[i].VolPoint;
@@ -938,7 +1127,7 @@ int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data)
 		{
 			int nDate = crData[i].date;
 			int nTime = crData[i].time;
-			if (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate)
+			if(bForHSF || (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate))
 				data.dataMap[nDate][nPeriod][nDataIndex][nTime] = crData[i].date;
 
 		}
@@ -946,6 +1135,7 @@ int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data)
 	}
 	return nOffset;
 }
+
 
 bool CDlgBackTesting::CheckDataPass(StockFilter & sf, map<int, map<int, map<int, double>>>& dataMap)
 {
@@ -977,6 +1167,8 @@ bool CDlgBackTesting::CheckDataPass(StockFilter & sf, map<int, map<int, map<int,
 			for (itShort; itShort != shortPeriodData.end(); itShort++)
 			{
 				int nNowShortTime = itShort->first == 0 ? 1500 : itShort->first;
+				if (nNowShortTime > nNowTime)
+					break;
 
 				double fData1 = nPeriod1 < nPeriod2 ? itShort->second : dataLong.second;
 				double fData2 = nPeriod1 < nPeriod2 ? dataLong.second : itShort->second;
@@ -987,12 +1179,70 @@ bool CDlgBackTesting::CheckDataPass(StockFilter & sf, map<int, map<int, map<int,
 
 				if ((this->*m_SFConditionMap[sf.condition])(fData1, fData2))
 					return true;
-				if (nNowShortTime == nNowTime)
-					break;
 			}
 		}
 	}
 	return false;
+}
+
+bool CDlgBackTesting::CheckHisDataPass(HisStockFilter & hsf, map<int, map<int, map<int, double>>>& dataMap)
+{
+	int nPeriod1 = m_SFPeriodMap[hsf.sf.period1];
+	int nPeriod2 = m_SFPeriodMap[hsf.sf.period2];
+
+	auto &timeData1 = dataMap[nPeriod1][hsf.sf.index1];
+	if (hsf.sf.index2 == SFI_Num)
+	{
+		double data2 = hsf.sf.num;
+		for (auto &it : timeData1)
+		{
+			double fData1 = it.second;
+			if (hsf.sf.index1 == SFI_Amount || hsf.sf.index1 == SFI_CAAmo)
+				fData1 /= 10000;
+			if (hsf.type == eJT_Exist)
+				if ((this->*m_SFConditionMap[hsf.sf.condition])(fData1, data2))
+					return true;
+			if (hsf.type == eJT_Forall)
+				if (!(this->*m_SFConditionMap[hsf.sf.condition])(fData1, data2))
+					return false;
+		}
+	}
+	else
+	{
+		auto &timeData2 = dataMap[nPeriod2][hsf.sf.index2];
+		auto &longPeriodData = nPeriod1 < nPeriod2 ? timeData2 : timeData1;
+		auto &shortPeriodData = nPeriod1 < nPeriod2 ? timeData1 : timeData2;
+		auto itShort = shortPeriodData.begin();
+		for (auto &dataLong : longPeriodData)
+		{
+			int nNowTime = dataLong.first == 0 ? 1500 : dataLong.first;
+			for (itShort; itShort != shortPeriodData.end(); itShort++)
+			{
+				int nNowShortTime = itShort->first == 0 ? 1500 : itShort->first;
+				if (nNowShortTime > nNowTime)
+					break;
+
+				double fData1 = nPeriod1 < nPeriod2 ? itShort->second : dataLong.second;
+				double fData2 = nPeriod1 < nPeriod2 ? dataLong.second : itShort->second;
+				if (hsf.sf.index1 == SFI_Amount || hsf.sf.index1 == SFI_CAAmo)
+					fData1 /= 10000;
+				if (hsf.sf.index2 == SFI_Amount || hsf.sf.index2 == SFI_CAAmo)
+					fData2 /= 10000;
+
+				if (hsf.type == eJT_Exist)
+					if ((this->*m_SFConditionMap[hsf.sf.condition])(fData1, fData2))
+						return true;
+				if (hsf.type == eJT_Forall)
+					if (!(this->*m_SFConditionMap[hsf.sf.condition])(fData1, fData2))
+						return false;
+
+			}
+		}
+	}
+	if (hsf.type == eJT_Exist)
+		return false;
+	else if (hsf.type == eJT_Forall)
+		return true;
 }
 
 bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate,
@@ -1098,8 +1348,8 @@ bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate
 						res.res.RoR10OverIndy2 = res.res.RoR10 - res.res.RoR10OverIndy2;
 						m_resVec.emplace_back(res);
 						ProcAvgRes(res);
-						if(m_bCalc)
-						::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
+						if (m_bCalc)
+							::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
 					}
 				}
 			}
@@ -1113,7 +1363,7 @@ bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate
 				m_resVec.emplace_back(res);
 				ProcAvgRes(res);
 				if (m_bCalc)
-				::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
+					::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_UpdateList, m_resVec.size() - 1);
 			}
 		}
 		return true;
@@ -1371,7 +1621,7 @@ void CDlgBackTesting::ProcAvgRes(SingleRes & res)
 				/ (m_AvgRes.nCount[nCCount] + 1);
 			m_AvgRes.nCount[nCCount]++;
 		}
-	}	
+	}
 	nCCount++;
 
 	if (!isnan(res.res.RoR10OverIndy1))

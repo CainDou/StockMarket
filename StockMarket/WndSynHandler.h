@@ -31,8 +31,9 @@ public:
 		 strHash<SStringA>& StockNameVec);
 	vector<map<int, strHash<RtRps>>>* GetListData();
 	map<int, strHash<TickFlowMarket>>* GetTFMarket();
-	vector<map<int,strHash<unordered_map<string, double>>>>* GetFilterData();
+	vector<map<int, vector<vector<double>>>>* GetFilterData();
 	vector<strHash<CAInfo>>* GetCallActionData();
+	map<int, strHash<int>>* GetStockPos();
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
 	strHash<double> GetCloseMap() const;
@@ -45,8 +46,8 @@ protected:
 	void InitNetConfig();
 	void InitPointInfo();
 	void InitDataNameMap();
-	void InitRpsDataMap(string strDataName);
-	void InitSecDataMap(string strDataName);
+	void InitRpsDataMap(string strDataName,int nMarketStart,int nL1Start,int nL2Start);
+	void InitSecDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start);
 
 	//辅助函数
 protected:
@@ -63,9 +64,9 @@ protected:
 	bool GetAutoUpdateFile(SStringA strMD5);
 	bool GetAutoUpdateFileVer(SStringA &strMD5);
 	bool HandleRpsData(string strDataName, sRps& data, 
-		unordered_map<string, double>&filterDataMap);
+		vector<double>&filterDataMap);
 	bool HandleSecData(string strDataName, sSection& data,
-		unordered_map<string, double>&filterDataMap);
+		vector<double>&filterDataMap);
 	void UpdateRtRpsPointData(vector<RtPointData>& subDataVec,
 		RtPointData& dstData, sRps &rpsData, SStringA strDataName, int nGroup);
 	void UpdateRtSecPointData(vector<RtPointData>& subDataVec,
@@ -142,14 +143,21 @@ public:
 	map<int, ShowPointInfo>m_pointInfoMap;
 	vector<vector<SStringA>> m_SubPicShowNameVec;
 	map<int, strHash<StockInfo>> m_ListStockInfoMap;
+	map<int, strHash<int>> m_StockPos;
+
 	strHash<SStringA> m_StockName;
 	vector<int> m_PeriodVec;
 	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
 	vector<map<int, strHash<RtRps>>> m_RtRpsHash;
-	vector<map<int,strHash<unordered_map<string, double>>>> m_FilterDataMap;
+	vector<map<int,vector<vector<double>>>> m_FilterDataMap;
+	//分组 - 周期 -股票Index 日期序列 数据ID 数据序列
 	vector<strHash<CAInfo>> m_CallActionHash;
-	map<string, vector<string>> m_rpsDataNameMap;
-	map<string, vector<string>> m_secDataNameMap;
+	//map<string, vector<string>> m_rpsDataNameMap;
+	//map<string, vector<string>> m_secDataNameMap;
+
+	map<string, vector<int>> m_rpsDataNameMap;
+	map<string, vector<int>> m_secDataNameMap;
+
 protected:
 	map<int, BOOL> m_NetHandleFlag;
 	char *todayDataBuffer;
@@ -234,7 +242,7 @@ inline map<int, strHash<TickFlowMarket>>* CWndSynHandler::GetTFMarket()
 	return &m_TFMarketHash;
 }
 
-inline vector<map<int, strHash<unordered_map<string, double>>>>* CWndSynHandler::GetFilterData()
+inline vector<map<int, vector<vector<double>>>>* CWndSynHandler::GetFilterData()
 {
 	return &m_FilterDataMap;
 }
@@ -242,6 +250,11 @@ inline vector<map<int, strHash<unordered_map<string, double>>>>* CWndSynHandler:
 inline vector<strHash<CAInfo>>* CWndSynHandler::GetCallActionData()
 {
 	return &m_CallActionHash;
+}
+
+inline map<int, strHash<int>>* CWndSynHandler::GetStockPos()
+{
+	return &m_StockPos;
 }
 
 inline void CWndSynHandler::GetSubPicShowNameVec(

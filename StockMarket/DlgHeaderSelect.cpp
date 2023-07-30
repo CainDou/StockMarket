@@ -79,6 +79,10 @@ void CDlgHeaderSelect::InitTilteMap()
 	m_titleMap[SHead_High] = L"最高";
 	m_titleMap[SHead_Low] = L"最低";
 	m_titleMap[SHead_Amount] = L"成交额";
+	m_titleMap[SHead_ActBuyOrder] = L"主动买单";
+	m_titleMap[SHead_ActSellOrder] = L"主动卖单";
+	m_titleMap[SHead_AvgActBuyNum] = L"主动买单平均手数";
+	m_titleMap[SHead_AvgActSellNum] = L"主动卖单平均手数";
 
 }
 
@@ -237,6 +241,22 @@ void CDlgHeaderSelect::InitTilteDscpMap()
 	m_titleDscpMap[SHead_Amount] = L"成交额:\n"
 		L"计算说明:\n"
 		L"成交额 = 当前周期内的成交金额(单位:元)";
+
+	m_titleDscpMap[SHead_ActBuyOrder] = L"主动买单:\n"
+		L"计算说明:\n"
+		L"主动买单 = 当前周期内成交的主动买入的笔数";
+
+	m_titleDscpMap[SHead_ActSellOrder] = L"主动卖单:\n"
+		L"计算说明:\n"
+		L"主动卖单 = 当前周期内成交的主动卖出的笔数";
+
+	m_titleDscpMap[SHead_AvgActBuyNum] = L"主动买单平均手数:\n"
+		L"计算说明:\n"
+		L"主动买单平均手数 = 外盘 / 主动买单 ";
+
+	m_titleDscpMap[SHead_AvgActSellNum] = L"主动卖单平均手数:\n"
+		L"计算说明:\n"
+		L"主动卖单平均手数 = 内盘 / 主动卖单 ";
 
 }
 

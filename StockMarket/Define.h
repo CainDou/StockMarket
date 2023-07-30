@@ -8,6 +8,7 @@
 #include<vector>
 #include<map>
 #include<set>
+#include "IniFile.h"
 
 using std::unordered_map;
 using std::hash;
@@ -115,6 +116,7 @@ enum RecvMsgType
 	RecvMsg_HisCallAction,
 	RecvMsg_HisMultiData,
 	RecvMsg_HisIndexKline,
+	RecvMsg_HisMultiDataForHSF,
 };
 
 enum SendMsgType
@@ -147,12 +149,17 @@ enum BackTestingMsgType
 	BTM_GetData,
 	BTM_SingleCalcFinish,
 	BTM_AllFinish,
+	BTM_GetHisData,
+	BTM_SingleHisCalcFinish,
+	BTM_AllHisFinish,
+
 };
 
 enum LimitUpMsgType
 {
 	LUM_UpdatePlate = 0,
 	LUM_UpdateToday,
+	LUM_UpdateShowPlate,
 };
 
 
@@ -296,6 +303,10 @@ enum SListHead
 	SHead_High,
 	SHead_Low,
 	SHead_Amount,
+	SHead_ActBuyOrder,
+	SHead_ActSellOrder,
+	SHead_AvgActBuyNum,
+	SHead_AvgActSellNum,
 	SHead_StockItemCount,
 };
 
@@ -398,6 +409,10 @@ enum DataProcType
 	UpdateCallAction,
 	BackTesting,
 	GetTodayLimitUp,
+	GetPlateLimitUp,
+	ReInitLimitUp,
+	limitUpReconnect,
+	CheckHisFilterPass,
 	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };
@@ -461,6 +476,10 @@ enum WorkWndMsg
 	WW_FixedTimeRehab,
 	WW_HisCallAction,
 	WW_GetCallAction,
+	WW_ChangeHisFiterState,
+	WW_HisFilterStartCalc,
+	WW_HisFilterEndCalc,
+
 };
 
 
@@ -492,6 +511,10 @@ enum WDMSG
 	WDMsg_SaveListConfig,
 	WDMsg_UpdateList,
 	WDMsg_SetFilterName,
+	WDMsg_ChangeHisStockFilter,
+	WDMsg_HisFilterStartCalc,
+	WDMsg_HisFilterEndCalc,
+
 	WDMsg_Exit,
 
 };
@@ -991,6 +1014,9 @@ enum
 	DT_L1IndyFilterData,
 	DT_L2IndyFilterData,
 	DT_CallAction,
+	DT_StockPos,
+	DT_L1IndyIndexPos,
+	DT_L2IndyIndexPos,
 };
 
 
@@ -1111,6 +1137,8 @@ enum SF_INDEX
 
 	//对应一级行业和二级行业的数据
 
+	SFI_LastPx,
+
 	SFI_Count,
 
 };
@@ -1200,6 +1228,8 @@ enum SF_LISTHEAD
 	SFLH_Condition,
 	SFLH_Index2,
 	SFLH_Period2OrNum,
+	SFLH_CountDay,
+	SFLH_JudgeType,
 };
 
 enum SF_DOMAIN
@@ -1443,6 +1473,7 @@ typedef struct InitPara
 	int nKlineRehabType;		//用于显示的复权类型
 	int nKlineCalcRehabType;	//用于内部计算的复权类型
 	int nKlineFTRehabDate;
+	bool UseHisStockFilter;
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
 	SStringA strFilterName;
@@ -1460,7 +1491,7 @@ typedef struct InitPara
 		Connect1(false), Connect2(false), ShowIndy(""), UseStockFilter(false),
 		ListShowST(true), ListShowSBM(true),
 		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
-		nKlineCalcRehabType(0), nKlineFTRehabDate(0), strFilterName("")
+		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), strFilterName("")
 	{}
 }InitPara_t;
 
@@ -1470,11 +1501,13 @@ enum eSortDataType
 	eSDT_Int,
 	eSDT_String,
 	eSDT_BigDouble,
+	eSDT_Uint64,
 };
 
 typedef struct _StockFilterPara
 {
 	bool operator <(const _StockFilterPara& other) const;
+	bool operator ==(const _StockFilterPara& other) const;
 	double num;
 	int index1;
 	int period1;
@@ -1482,6 +1515,21 @@ typedef struct _StockFilterPara
 	int index2;
 	int period2;
 }StockFilter;
+
+typedef struct _HisStockFilterPara
+{
+	bool operator <(const _HisStockFilterPara& other) const;
+
+	StockFilter sf;
+	int countDay;
+	int type;
+}HisStockFilter;
+
+enum eJudgeType
+{
+	eJT_Exist = 0,
+	eJT_Forall,
+};
 
 enum eMaType
 {
@@ -1601,18 +1649,18 @@ enum SortDirect
 
 enum eRpsData
 {
-	eRps_MACD520 = 0,
-	eRps_MACD2060,
-	eRps_RPS520,
-	eRps_RPS2060,
-	eRps_RANK520,
-	eRps_RANK2060,
+	eRps_RPS520 = 0,
+	eRps_MACD520,
 	eRps_POINT520,
+	eRps_RANK520,
+	eRps_RPS2060,
+	eRps_MACD2060,
 	eRps_POINT2060,
-	eRps_RANK520L1,
-	eRps_RANK2060L1,
+	eRps_RANK2060,
 	eRps_POINT520L1,
+	eRps_RANK520L1,
 	eRps_POINT2060L1,
+	eRps_RANK2060L1,
 	eRps_RANK520L2,
 	eRps_RANK2060L2,
 	eRps_POINT520L2,
@@ -1622,12 +1670,20 @@ enum eRpsData
 
 enum eSecData
 {
-	eSec_RANK,
 	eSec_POINT,
-	eSec_RANKL1,
+	eSec_RANK,
 	eSec_POINTL1,
-	eSec_RANKL2,
+	eSec_RANKL1,
 	eSec_POINTL2,
+	eSec_RANKL2,
 	eSec_DataCount,
 
 };
+
+enum eComboFilterMsg
+{
+	CFMsg_FinishHis = 0,
+};
+
+void GetInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
+void SaveInitPara(CIniFile& ini, InitPara& para, SStringA strSection);

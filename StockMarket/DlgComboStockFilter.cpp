@@ -11,6 +11,8 @@ CDlgComboStockFilter::CDlgComboStockFilter(HWND hParWnd, UINT uParThreadID, RpsG
 	m_uParThreadID = uParThreadID;
 	m_Group = Group;
 	m_pDlgBackTesting = nullptr;
+	m_bHisChange = FALSE;
+	m_bHisCalced = FALSE;
 }
 
 
@@ -18,13 +20,14 @@ CDlgComboStockFilter::~CDlgComboStockFilter()
 {
 }
 
-BOOL SOUI::CDlgComboStockFilter::OnInitDialog(EventArgs * e)
+BOOL CDlgComboStockFilter::OnInitDialog(EventArgs * e)
 {
+
 	m_pCheckUse = FindChildByID2<SCheckBox>(R.id.chk_use);
 
-	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.ls_filter); 
-	SHeaderCtrlEx * pHead = (SHeaderCtrlEx *)m_pList->GetChild(GSW_FIRSTCHILD);
-	pHead->SetNoMoveCol(1);
+	m_pList = FindChildByID2<SColorListCtrlEx>(R.id.ls_filter);
+	//SHeaderCtrlEx * pHead = (SHeaderCtrlEx *)m_pList->GetChild(GSW_FIRSTCHILD);
+	//pHead->SetNoMoveCol(1);
 	m_pCbxFunc = FindChildByID2<SComboBox>(R.id.cbx_func);
 	m_pTextID = FindChildByID2<SStatic>(R.id.text_ID);
 	m_pCbxID = FindChildByID2<SComboBox>(R.id.cbx_ID);
@@ -40,6 +43,40 @@ BOOL SOUI::CDlgComboStockFilter::OnInitDialog(EventArgs * e)
 	m_pCbxPeriod2 = FindChildByID2<SComboBox>(R.id.cbx_period2);
 	m_pTextNum = FindChildByID2<SStatic>(R.id.text_num);
 	m_pEditNum = FindChildByID2<SEdit>(R.id.edit_num);
+	m_pEditNum->SetAttribute(L"colorText",L"#000000FF");
+
+	m_pListHis = FindChildByID2<SColorListCtrlEx>(R.id.ls_filterHis);
+	m_pCbxHisFunc = FindChildByID2<SComboBox>(R.id.cbx_funcHis);
+	m_pTextHisID = FindChildByID2<SStatic>(R.id.text_IDHis);
+	m_pCbxHisID = FindChildByID2<SComboBox>(R.id.cbx_IDHis);
+	m_pTextHisPeriod1 = FindChildByID2<SStatic>(R.id.text_period1His);
+	m_pCbxHisPeriod1 = FindChildByID2<SComboBox>(R.id.cbx_period1His);
+	m_pTextHisIndex1 = FindChildByID2<SStatic>(R.id.text_index1His);
+	m_pCbxHisIndex1 = FindChildByID2<SComboBox>(R.id.cbx_index1His);
+	m_pTextHisCondition = FindChildByID2<SStatic>(R.id.text_conditionHis);
+	m_pCbxHisCondition = FindChildByID2<SComboBox>(R.id.cbx_conditionHis);
+	m_pTextHisIndex2 = FindChildByID2<SStatic>(R.id.text_index2His);
+	m_pCbxHisIndex2 = FindChildByID2<SComboBox>(R.id.cbx_index2His);
+	m_pTextHisPeriod2 = FindChildByID2<SStatic>(R.id.text_period2His);
+	m_pCbxHisPeriod2 = FindChildByID2<SComboBox>(R.id.cbx_period2His);
+	m_pTextHisNum = FindChildByID2<SStatic>(R.id.text_numHis);
+	m_pEditHisNum = FindChildByID2<SEdit>(R.id.edit_numHis);
+	m_pEditHisNum->SetAttribute(L"colorText", L"#000000FF");
+
+	m_pTextHisCntDayFront = FindChildByID2<SStatic>(R.id.text_countDayFront);
+	m_pTextHisCntDayBack = FindChildByID2<SStatic>(R.id.text_countDayBack);
+	m_pEditHisCntDay = FindChildByID2<SEdit>(R.id.edit_countDay);
+	m_pEditHisCntDay->SetAttribute(L"colorText", L"#000000FF");
+
+	m_pRadioExist = FindChildByID2<SRadioBox>(R.id.rdb_exist);
+	m_pRadioForall = FindChildByID2<SRadioBox>(R.id.rdb_forall);
+
+	m_pCheckHisUse = FindChildByID2<SCheckBox>(R.id.chk_useHis);
+	m_pBtnSaveHis = FindChildByID2<SImageButton>(R.id.btn_saveHis);
+	m_pTab = FindChildByID2<STabCtrl>(R.id.tab_stockFilter);
+	m_pBtnRtFilter = FindChildByID2<SImageButton>(R.id.btn_rtFilter);
+	m_pBtnHisFilter = FindChildByID2<SImageButton>(R.id.btn_hisFilter);
+	m_pBtnRtFilter->SetAttribute(L"colorText", L"#FF0000FF");
 	if (m_Group != Group_Stock)
 	{
 		SImageButton *btn = FindChildByName2<SImageButton>(L"btn_backTesting");
@@ -47,16 +84,18 @@ BOOL SOUI::CDlgComboStockFilter::OnInitDialog(EventArgs * e)
 			btn->SetVisible(FALSE, TRUE);
 	}
 	InitStringMap();
+	InitHisStringMap();
 	InitComboBox();
+	InitHisComboBox();
 	return TRUE;
 }
 
-void SOUI::CDlgComboStockFilter::OnBtnClose()
+void CDlgComboStockFilter::OnBtnClose()
 {
 	ShowWindow(SW_HIDE);
 }
 
-void SOUI::CDlgComboStockFilter::OnBtnOK()
+void CDlgComboStockFilter::OnBtnOK()
 {
 	int nSel = m_pCbxFunc->GetCurSel();
 	if (SFF_Add == nSel)
@@ -67,11 +106,23 @@ void SOUI::CDlgComboStockFilter::OnBtnOK()
 		DeleteCondition();
 }
 
+void CDlgComboStockFilter::OnBtnOKHis()
+{
+	int nSel = m_pCbxHisFunc->GetCurSel();
+	if (SFF_Add == nSel)
+		AddHisConditon();
+	else if (SFF_Change == nSel)
+		ChangeHisCondition();
+	else if (SFF_Delete == nSel)
+		DeleteHisCondition();
+
+}
+
 void CDlgComboStockFilter::OnBtnBackTesting()
 {
 	if (m_pDlgBackTesting == nullptr)
 	{
-		m_pDlgBackTesting = new CDlgBackTesting(m_sfSet,m_stockInfo);
+		m_pDlgBackTesting = new CDlgBackTesting(m_hWnd, m_sfSet, m_stockInfo);
 		m_pDlgBackTesting->Create(NULL);
 		m_pDlgBackTesting->CenterWindow(m_hWnd);
 		m_pDlgBackTesting->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
@@ -80,7 +131,7 @@ void CDlgComboStockFilter::OnBtnBackTesting()
 	}
 	else
 	{
-		if(m_pDlgBackTesting->IsWindowVisible())
+		if (m_pDlgBackTesting->IsWindowVisible())
 			m_pDlgBackTesting->ShowWindow(SW_HIDE);
 		else
 		{
@@ -101,6 +152,59 @@ void CDlgComboStockFilter::OnBtnSetFliterName()
 	pDlg->ShowWindow(SW_SHOWDEFAULT);
 }
 
+void CDlgComboStockFilter::OnBtnSaveHisFitler()
+{
+	BOOL bUsed = m_pCheckHisUse->IsChecked();
+	m_pBtnSaveHis->EnableWindow(FALSE, TRUE);
+	m_pCheckHisUse->EnableWindow(FALSE, TRUE);
+	if (bUsed)
+	{
+		if (m_bHisChange || !m_bHisCalced)
+		{
+			m_hisSfSet = m_hisTmpSfSet;
+			SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
+			m_bHisChange = FALSE;
+			if (SMessageBox(m_hWnd, L"条件更改，是否重新计算符合条件的股票!", L"提示", MB_OKCANCEL) == IDOK)
+			{
+				SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
+					(char*)&bUsed, sizeof(bUsed));
+				CalcHisStockFilter();
+				return;
+			}
+		}
+		else
+		{
+			m_pCheckHisUse->EnableWindow(TRUE, TRUE);
+			m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+		}
+	}
+	else
+	{
+		SendMsg(m_uParThreadID, WW_ChangeHisFiterState,
+			(char*)&bUsed, sizeof(bUsed));
+		m_pCheckHisUse->EnableWindow(TRUE,TRUE);
+		m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+	}
+
+	
+}
+
+void CDlgComboStockFilter::OnBtnRtFitler()
+{
+	m_pTab->SetCurSel(0);
+	m_pBtnRtFilter->SetAttribute(L"colorText", L"#FF0000FF");
+	m_pBtnHisFilter->SetAttribute(L"colorText", L"#00FFFFFF");
+
+}
+
+void CDlgComboStockFilter::OnBtnHisFitler()
+{
+	m_pTab->SetCurSel(1);
+	m_pBtnHisFilter->SetAttribute(L"colorText", L"#FF0000FF");
+	m_pBtnRtFilter->SetAttribute(L"colorText", L"#00FFFFFF");
+
+}
+
 void CDlgComboStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
 {
 	SStringW strTmp;
@@ -113,6 +217,30 @@ void CDlgComboStockFilter::InitList(bool bUse, vector<StockFilter> &sfVec)
 	m_pCheckUse->SetCheck(bUse);
 
 }
+
+void CDlgComboStockFilter::InitHisList(bool bUse, vector<HisStockFilter>& hsfVec)
+{
+	SStringW strTmp;
+	for (int i = 0; i < hsfVec.size(); ++i)
+	{
+		HisListAddItem(hsfVec[i]);
+		m_pCbxHisID->InsertItem(i, strTmp.Format(L"条件%d", i + 1), NULL, 0);
+		m_hisSfSet.insert(hsfVec[i]);
+	}
+	m_hisTmpSfSet = m_hisSfSet;
+	m_pCheckHisUse->SetCheck(bUse);
+}
+
+void CDlgComboStockFilter::InitHisFilterRes()
+{
+	BOOL bUse = TRUE;
+	m_pCheckHisUse->EnableWindow(FALSE, TRUE);
+	m_pBtnSaveHis->EnableWindow(FALSE, TRUE);
+	SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
+		(char*)&bUse, sizeof(bUse));
+	CalcHisStockFilter();
+}
+
 
 void CDlgComboStockFilter::InitComboBox()
 {
@@ -147,7 +275,7 @@ void CDlgComboStockFilter::InitComboBox()
 			m_Index1PosMap[nCount] = i;
 			++nCount;
 		}
-	}	
+	}
 	for (int i = SFI_L2IndyStart; i < SFI_L2IndyCount; ++i)
 	{
 		if (m_IndexMap.count(i))
@@ -201,40 +329,153 @@ void CDlgComboStockFilter::InitComboBox()
 
 }
 
-void SOUI::CDlgComboStockFilter::OnCheckUse()
+void CDlgComboStockFilter::InitHisComboBox()
 {
-	BOOL bUsed = m_pCheckUse->IsChecked();
-	if (bUsed)
+	for (int i = SFF_Add; i < SFF_Count; ++i)
+		m_pCbxHisFunc->InsertItem(i, m_FuncMap[i], NULL, 0);
+	m_pCbxHisFunc->SetCurSel(0);
+	m_pCbxHisFunc->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
+		Subscriber(&CDlgComboStockFilter::OnCbxHisFuncChange, this));
+	OnCbxHisFuncAdd();
+	for (int i = SFP_D1; i < SFP_Count; ++i)
 	{
-		if (m_pList->GetItemCount() == 0)
+		m_pCbxHisPeriod1->InsertItem(i, m_PeriodMap[i], NULL, 0);
+		m_pCbxHisPeriod2->InsertItem(i, m_PeriodMap[i], NULL, 0);
+	}
+	m_pCbxHisPeriod1->SetCurSel(0);
+	m_pCbxHisPeriod2->SetCurSel(0);
+	int nCount = 0;
+	for (int i = SFI_Start; i < SFI_Count; ++i)
+	{
+		if (m_hisIndexMap.count(i) && i != SFI_Num)
 		{
-			m_pCheckUse->SetCheck(FALSE);
-			SMessageBox(m_hWnd, L"条件为空，请添加条件后重试！",
-				L"错误", MB_ICONERROR | MB_OK);
-		}
-		else
-		{
-			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-				(char*)&bUsed, sizeof(bUsed));
+			m_pCbxHisIndex1->InsertItem(nCount, m_hisIndexMap[i], NULL, 0);
+			m_hisIndex1PosMap[nCount] = i;
+			++nCount;
 		}
 	}
-	else
-		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
+	for (int i = SFI_L1IndyStart; i < SFI_L1IndyCount; ++i)
+	{
+		if (m_hisIndexMap.count(i))
+		{
+			m_pCbxHisIndex1->InsertItem(nCount, m_hisIndexMap[i], NULL, 0);
+			m_hisIndex1PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	for (int i = SFI_L2IndyStart; i < SFI_L2IndyCount; ++i)
+	{
+		if (m_hisIndexMap.count(i))
+		{
+			m_pCbxHisIndex1->InsertItem(nCount, m_hisIndexMap[i], NULL, 0);
+			m_hisIndex1PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+
+	nCount = 0;
+	for (int i = SFI_CloseRps520; i < SFI_Count; ++i)
+	{
+		if (m_hisIndexMap.count(i))
+		{
+			m_pCbxHisIndex2->InsertItem(nCount, m_hisIndexMap[i], NULL, 0);
+			m_hisIndex2PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	for (int i = SFI_L1IndyStart; i < SFI_L1IndyCount; ++i)
+	{
+		if (m_hisIndexMap.count(i))
+		{
+			m_pCbxHisIndex2->InsertItem(nCount, m_hisIndexMap[i], NULL, 0);
+			m_hisIndex2PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	for (int i = SFI_L2IndyStart; i < SFI_L2IndyCount; ++i)
+	{
+		if (m_hisIndexMap.count(i))
+		{
+			m_pCbxHisIndex2->InsertItem(nCount, m_hisIndexMap[i], NULL, 0);
+			m_hisIndex2PosMap[nCount] = i;
+			++nCount;
+		}
+	}
+	m_pCbxHisIndex1->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
+		Subscriber(&CDlgComboStockFilter::OnCbxHisIndex1Change, this));
+	m_pCbxHisIndex1->SetCurSel(SFI_ChgPct);
+	m_pCbxHisIndex2->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
+		Subscriber(&CDlgComboStockFilter::OnCbxHisIndex2Change, this));
+	m_pCbxHisIndex2->SetCurSel(2);
+	m_pCbxHisID->GetEventSet()->subscribeEvent(EVT_CB_SELCHANGE,
+		Subscriber(&CDlgComboStockFilter::OnCbxHisIDChange, this));
+
+	for (int i = SFC_Greater; i < SFC_Count; ++i)
+		m_pCbxHisCondition->InsertItem(i, m_ConditionMap[i], NULL, 0);
+	m_pCbxHisCondition->SetCurSel(0);
+
+}
+
+
+void CDlgComboStockFilter::OnCheckUse()
+{
+	BOOL bUsed = m_pCheckUse->IsChecked();
+	SendMsg(m_uParThreadID, WW_ChangeStockFilter,
 		(char*)&bUsed, sizeof(bUsed));
 
 }
 
-void SOUI::CDlgComboStockFilter::StopFilter()
+void CDlgComboStockFilter::OnCheckUseHis()
+{
+	m_pCheckHisUse->EnableWindow(FALSE, TRUE);
+	m_pBtnSaveHis->EnableWindow(FALSE, TRUE);
+	BOOL bUsed = m_pCheckHisUse->IsChecked();
+
+	if (bUsed)
+	{
+		if (m_bHisChange || !m_bHisCalced)
+		{
+			m_hisSfSet = m_hisTmpSfSet;
+			m_bHisChange = FALSE;
+			SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
+			SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
+				(char*)&bUsed, sizeof(bUsed));
+			CalcHisStockFilter();
+			return;
+		}
+		else
+		{
+			SendMsg(m_uParThreadID, WW_ChangeHisFiterState,
+				(char*)&bUsed, sizeof(bUsed));
+			m_pCheckHisUse->EnableWindow(TRUE, TRUE);
+			m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+		}
+
+	}
+	else
+	{
+		SendMsg(m_uParThreadID, WW_ChangeHisFiterState,
+			(char*)&bUsed, sizeof(bUsed));
+		m_pCheckHisUse->EnableWindow(TRUE, TRUE);
+		m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+	}
+
+}
+
+
+void CDlgComboStockFilter::StopFilter()
 {
 	m_pCheckUse->SetCheck(FALSE);
+	m_pCheckHisUse->SetCheck(FALSE);
 }
 
 void CDlgComboStockFilter::SetStockInfo(vector<StockInfo>& stockInfo)
 {
 	m_stockInfo = stockInfo;
+	m_HisFilterRes.resize(m_stockInfo.size(), FALSE);
 }
 
-void SOUI::CDlgComboStockFilter::InitStringMap()
+void CDlgComboStockFilter::InitStringMap()
 {
 	m_FuncMap[SFF_Add] = L"新增";
 	m_FuncMap[SFF_Change] = L"修改";
@@ -456,7 +697,7 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 
 	m_ReverseIndexMap[L"开盘价"] = SFI_Open;
 	m_ReverseIndexMap[L"最高价"] = SFI_High;
-	m_ReverseIndexMap[L"最低价"] =SFI_Low;
+	m_ReverseIndexMap[L"最低价"] = SFI_Low;
 	m_ReverseIndexMap[L"收盘价"] = SFI_Close;
 
 	m_ReverseIndexMap[L"集合竞价成交量"] = SFI_CAVol;
@@ -609,7 +850,79 @@ void SOUI::CDlgComboStockFilter::InitStringMap()
 	m_NumUint[SFI_L2IndyAmountRank] = L"(> 0)";
 }
 
-void SOUI::CDlgComboStockFilter::OutPutCondition(vector<StockFilter>& sfVec)
+void CDlgComboStockFilter::InitHisStringMap()
+{
+	m_hisIndexMap[SFI_ChgPct] = L"涨跌幅";
+	m_hisIndexMap[SFI_ClosePoint520] = L"收盘价520分数";
+	m_hisIndexMap[SFI_ClosePoint2060] = L"收盘价2060分数";
+	m_hisIndexMap[SFI_Num] = L"数值";
+	m_hisIndexMap[SFI_ABSR] = L"主动量比";
+	m_hisIndexMap[SFI_A2PBSR] = L"主动转被动量比";
+	m_hisIndexMap[SFI_AABSR] = L"平均主动量比";
+	m_hisIndexMap[SFI_POCR] = L"最多成交价比";
+	m_hisIndexMap[SFI_Vol] = L"成交量(手)";
+	m_hisIndexMap[SFI_Amount] = L"成交额(万元)";
+	m_hisIndexMap[SFI_AmountPoint520] = L"成交额520分数";
+	m_hisIndexMap[SFI_AmountPoint2060] = L"成交额2060分数";
+	m_hisIndexMap[SFI_AmountPoint] = L"成交额截面分数";
+
+	m_hisIndexMap[SFI_ClosePoint520L1] = L"收盘价520分数(一级行业中)";
+	m_hisIndexMap[SFI_ClosePoint2060L1] = L"收盘价2060分数(一级行业中)";
+	m_hisIndexMap[SFI_AmountPoint520L1] = L"成交额520分数(一级行业中)";
+	m_hisIndexMap[SFI_AmountPoint2060L1] = L"成交额2060分数(一级行业中)";
+	m_hisIndexMap[SFI_AmountPointL1] = L"成交额截面分数(一级行业中)";
+
+	m_hisIndexMap[SFI_ClosePoint520L2] = L"收盘价520分数(二级行业中)";
+	m_hisIndexMap[SFI_ClosePoint2060L2] = L"收盘价2060分数(二级行业中)";
+	m_hisIndexMap[SFI_AmountPoint520L2] = L"成交额520分数(二级行业中)";
+	m_hisIndexMap[SFI_AmountPoint2060L2] = L"成交额2060分数(二级行业中)";
+	m_hisIndexMap[SFI_AmountPointL2] = L"成交额截面分数(二级行业中)";
+
+	m_hisIndexMap[SFI_ABV] = L"主动买入量";
+	m_hisIndexMap[SFI_ASV] = L"主动卖出量";
+	m_hisIndexMap[SFI_ABO] = L"主动买入单数";
+	m_hisIndexMap[SFI_ASO] = L"主动卖出单数";
+	m_hisIndexMap[SFI_PBO] = L"被动买入单数";
+	m_hisIndexMap[SFI_PSO] = L"被动卖出单数";
+
+	m_hisIndexMap[SFI_Open] = L"开盘价";
+	m_hisIndexMap[SFI_High] = L"最高价";
+	m_hisIndexMap[SFI_Low] = L"最低价";
+	m_hisIndexMap[SFI_Close] = L"收盘价";
+
+
+	m_hisIndexMap[SFI_CAVol] = L"集合竞价成交量";
+	m_hisIndexMap[SFI_CAVolPoint] = L"集合竞价成交量分数";
+	m_hisIndexMap[SFI_CAVolPointL1] = L"集合竞价成交量分数(一级行业中)";
+	m_hisIndexMap[SFI_CAVolPointL2] = L"集合竞价成交量分数(二级行业中)";
+
+	m_hisIndexMap[SFI_CAAmo] = L"集合竞价成交额";
+	m_hisIndexMap[SFI_CAAmoPoint] = L"集合竞价成交额分数";
+	m_hisIndexMap[SFI_CAAmoPointL1] = L"集合竞价成交额分数(一级行业中)";
+	m_hisIndexMap[SFI_CAAmoPointL2] = L"集合竞价成交额分数(二级行业中)";
+
+
+	m_hisIndexMap[SFI_L1IndyClosePoint520] = L"所在一级行业的收盘价520分数";
+	m_hisIndexMap[SFI_L1IndyClosePoint2060] = L"所在一级行业的收盘价2060分数";
+	m_hisIndexMap[SFI_L1IndyAmountPoint520] = L"所在一级行业的成交额520分数";
+	m_hisIndexMap[SFI_L1IndyAmountPoint2060] = L"所在一级行业的成交额2060分数";
+	m_hisIndexMap[SFI_L1IndyAmountPoint] = L"所在一级行业的成交额截面分数";
+
+	m_hisIndexMap[SFI_L2IndyClosePoint520] = L"所在二级行业的收盘价520分数";
+	m_hisIndexMap[SFI_L2IndyClosePoint2060] = L"所在二级行业的收盘价2060分数";
+	m_hisIndexMap[SFI_L2IndyAmountPoint520] = L"所在二级行业的成交额520分数";
+	m_hisIndexMap[SFI_L2IndyAmountPoint2060] = L"所在二级行业的成交额2060分数";
+	m_hisIndexMap[SFI_L2IndyAmountPoint] = L"所在二级行业的成交额截面分数";
+
+	m_JudgeTypeMap[eJT_Exist] = L"存在";
+	m_JudgeTypeMap[eJT_Forall] = L"全部满足";
+
+	m_ReverseJudgeTypeMap[L"存在"] = eJT_Exist;
+	m_ReverseJudgeTypeMap[L"全部满足"] = eJT_Forall;
+
+}
+
+void CDlgComboStockFilter::OutPutCondition(vector<StockFilter>& sfVec)
 {
 	sfVec.clear();
 	for (int i = 0; i < m_pList->GetItemCount(); ++i)
@@ -621,7 +934,19 @@ void SOUI::CDlgComboStockFilter::OutPutCondition(vector<StockFilter>& sfVec)
 
 }
 
-void SOUI::CDlgComboStockFilter::ListAddItem(StockFilter & sf)
+void CDlgComboStockFilter::OutPutHisCondition(vector<HisStockFilter>& sfVec)
+{
+	sfVec.clear();
+	for (int i = 0; i < m_pListHis->GetItemCount(); ++i)
+	{
+		HisStockFilter hsf = { 0 };
+		if (GetHisListItem(i, hsf))
+			sfVec.emplace_back(hsf);
+	}
+}
+
+
+void CDlgComboStockFilter::ListAddItem(StockFilter & sf)
 {
 	int nID = m_pList->GetItemCount() + 1;
 	SStringW strTmp;
@@ -640,7 +965,7 @@ void SOUI::CDlgComboStockFilter::ListAddItem(StockFilter & sf)
 		m_pList->SetSubItemText(nID - 1, SFLH_Period2OrNum, m_PeriodMap[sf.period2]);
 }
 
-void SOUI::CDlgComboStockFilter::ListChangeItem(int nRow, StockFilter & sf)
+void CDlgComboStockFilter::ListChangeItem(int nRow, StockFilter & sf)
 {
 	if (nRow >= m_pList->GetItemCount() || nRow < 0)
 		return;
@@ -659,7 +984,7 @@ void SOUI::CDlgComboStockFilter::ListChangeItem(int nRow, StockFilter & sf)
 
 }
 
-void SOUI::CDlgComboStockFilter::ListDeleteItem(int nRow)
+void CDlgComboStockFilter::ListDeleteItem(int nRow)
 {
 	if (nRow >= m_pList->GetItemCount() || nRow < 0)
 		return;
@@ -669,7 +994,7 @@ void SOUI::CDlgComboStockFilter::ListDeleteItem(int nRow)
 		m_pList->SetSubItemText(i, SFLH_ID, strTmp.Format(L"%d", i + 1));
 }
 
-bool SOUI::CDlgComboStockFilter::GetListItem(int nRow, StockFilter& sf)
+bool CDlgComboStockFilter::GetListItem(int nRow, StockFilter& sf)
 {
 	if (nRow >= m_pList->GetItemCount() || nRow < 0)
 		return false;
@@ -689,8 +1014,126 @@ bool SOUI::CDlgComboStockFilter::GetListItem(int nRow, StockFilter& sf)
 	return true;
 }
 
+void CDlgComboStockFilter::HisListAddItem(HisStockFilter & hsf)
+{
+	int nID = m_pListHis->GetItemCount() + 1;
+	SStringW strTmp;
+	strTmp.Format(L"%d", nID);
+	m_pListHis->InsertItem(nID - 1, strTmp);
+	m_pListHis->SetSubItemText(nID - 1, SFLH_Index1, m_IndexMap[hsf.sf.index1]);
+	m_pListHis->SetSubItemText(nID - 1, SFLH_Period1, m_PeriodMap[hsf.sf.period1]);
+	m_pListHis->SetSubItemText(nID - 1, SFLH_Condition, m_ConditionMap[hsf.sf.condition]);
+	m_pListHis->SetSubItemText(nID - 1, SFLH_Index2, m_IndexMap[hsf.sf.index2]);
+	if (hsf.sf.index2 == SFI_Num)
+	{
+		strTmp.Format(L"%.02f", hsf.sf.num);
+		m_pListHis->SetSubItemText(nID - 1, SFLH_Period2OrNum, strTmp);
+	}
+	else
+		m_pListHis->SetSubItemText(nID - 1, SFLH_Period2OrNum, m_PeriodMap[hsf.sf.period2]);
+	m_pListHis->SetSubItemText(nID - 1, SFLH_CountDay, strTmp.Format(L"%d", hsf.countDay));
+	m_pListHis->SetSubItemText(nID - 1, SFLH_JudgeType, m_JudgeTypeMap[hsf.type]);
 
-bool SOUI::CDlgComboStockFilter::OnCbxFuncChange(EventArgs * e)
+}
+
+void CDlgComboStockFilter::HisListChangeItem(int nRow, HisStockFilter & hsf)
+{
+	if (nRow >= m_pListHis->GetItemCount() || nRow < 0)
+		return;
+	SStringW strTmp;
+	m_pListHis->SetSubItemText(nRow, SFLH_Index1, m_IndexMap[hsf.sf.index1]);
+	m_pListHis->SetSubItemText(nRow, SFLH_Period1, m_PeriodMap[hsf.sf.period1]);
+	m_pListHis->SetSubItemText(nRow, SFLH_Condition, m_ConditionMap[hsf.sf.condition]);
+	m_pListHis->SetSubItemText(nRow, SFLH_Index2, m_IndexMap[hsf.sf.index2]);
+	if (hsf.sf.index2 == SFI_Num)
+	{
+		strTmp.Format(L"%.02f", hsf.sf.num);
+		m_pListHis->SetSubItemText(nRow, SFLH_Period2OrNum, strTmp);
+	}
+	else
+		m_pListHis->SetSubItemText(nRow, SFLH_Period2OrNum, m_PeriodMap[hsf.sf.period2]);
+	m_pListHis->SetSubItemText(nRow, SFLH_CountDay, strTmp.Format(L"%d", hsf.countDay));
+	m_pListHis->SetSubItemText(nRow, SFLH_JudgeType, m_JudgeTypeMap[hsf.type]);
+
+}
+
+void CDlgComboStockFilter::HisListDeleteItem(int nRow)
+{
+	if (nRow >= m_pListHis->GetItemCount() || nRow < 0)
+		return;
+	m_pListHis->DeleteItem(nRow);
+	SStringW strTmp;
+	for (int i = nRow; i < m_pListHis->GetItemCount(); ++i)
+		m_pListHis->SetSubItemText(i, SFLH_ID, strTmp.Format(L"%d", i + 1));
+}
+
+bool CDlgComboStockFilter::GetHisListItem(int nRow, HisStockFilter & hsf)
+{
+	if (nRow >= m_pListHis->GetItemCount() || nRow < 0)
+		return false;
+	SStringW strTmp = m_pListHis->GetSubItemText(nRow, SFLH_Index1);
+	hsf.sf.index1 = m_ReverseIndexMap[strTmp];
+	strTmp = m_pListHis->GetSubItemText(nRow, SFLH_Period1);
+	hsf.sf.period1 = m_ReversePeriodMap[strTmp];
+	strTmp = m_pListHis->GetSubItemText(nRow, SFLH_Condition);
+	hsf.sf.condition = m_ReverseConditionMap[strTmp];
+	strTmp = m_pListHis->GetSubItemText(nRow, SFLH_Index2);
+	hsf.sf.index2 = m_ReverseIndexMap[strTmp];
+	strTmp = m_pListHis->GetSubItemText(nRow, SFLH_Period2OrNum);
+	if (SFI_Num == hsf.sf.index2)
+		hsf.sf.num = _wtof(strTmp);
+	else
+		hsf.sf.period2 = m_ReversePeriodMap[strTmp];
+	strTmp = m_pListHis->GetSubItemText(nRow, SFLH_CountDay);
+	hsf.countDay = _wtof(strTmp);
+	strTmp = m_pListHis->GetSubItemText(nRow, SFLH_JudgeType);
+	hsf.type = m_ReverseJudgeTypeMap[strTmp];
+	return true;
+}
+
+void CDlgComboStockFilter::CalcHisStockFilter()
+{
+	if (m_pDlgBackTesting == nullptr)
+	{
+		m_pDlgBackTesting = new CDlgBackTesting(m_hWnd, m_sfSet, m_stockInfo);
+		m_pDlgBackTesting->Create(NULL);
+		m_pDlgBackTesting->CenterWindow(m_hWnd);
+		m_pDlgBackTesting->SetWindowPos(HWND_TOP, 0, 0, 0, 0,
+			SWP_NOSIZE | SWP_NOMOVE | SWP_DRAWFRAME);
+		m_pDlgBackTesting->ShowWindow(SW_HIDE);
+	}
+	if (m_hisSfSet.empty())
+		::SendMessage(m_hWnd, WM_FILTER_MSG, CFMsg_FinishHis, NULL);
+	else
+		m_pDlgBackTesting->CalcHisStockFilter(m_hisSfSet);
+}
+
+
+LRESULT CDlgComboStockFilter::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
+{
+	int nMsg = (int)wp;
+	switch (nMsg)
+	{
+	case CFMsg_FinishHis:
+	{
+		m_bHisChange = FALSE;
+		m_bHisCalced = TRUE;
+		BOOL bUsed = TRUE;
+		m_hisFitStockSet = m_pDlgBackTesting->GetHisFilterPassStock();
+		SendMsg(m_uParThreadID, WW_HisFilterEndCalc,
+			(char*)&bUsed, sizeof(bUsed));
+		m_pCheckHisUse->EnableWindow(TRUE, TRUE);
+		m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+
+	}
+	break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+bool CDlgComboStockFilter::OnCbxFuncChange(EventArgs * e)
 {
 	EventCBSelChange *pEvt = (EventCBSelChange*)e;
 	SComboBox *pCbx = (SComboBox *)pEvt->sender;
@@ -704,7 +1147,7 @@ bool SOUI::CDlgComboStockFilter::OnCbxFuncChange(EventArgs * e)
 	return true;
 }
 
-bool SOUI::CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
+bool CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 {
 	EventCBSelChange *pEvt = (EventCBSelChange*)e;
 	SComboBox *pCbx = (SComboBox *)pEvt->sender;
@@ -751,7 +1194,7 @@ bool SOUI::CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 
 }
 
-bool SOUI::CDlgComboStockFilter::OnCbxIndex2Change(EventArgs * e)
+bool CDlgComboStockFilter::OnCbxIndex2Change(EventArgs * e)
 {
 	EventCBSelChange *pEvt = (EventCBSelChange*)e;
 	SComboBox *pCbx = (SComboBox *)pEvt->sender;
@@ -778,7 +1221,7 @@ bool SOUI::CDlgComboStockFilter::OnCbxIndex2Change(EventArgs * e)
 	return true;
 }
 
-bool SOUI::CDlgComboStockFilter::OnCbxIDChange(EventArgs * e)
+bool CDlgComboStockFilter::OnCbxIDChange(EventArgs * e)
 {
 	EventCBSelChange *pEvt = (EventCBSelChange*)e;
 	SComboBox *pCbx = (SComboBox *)pEvt->sender;
@@ -837,7 +1280,7 @@ bool SOUI::CDlgComboStockFilter::OnCbxIDChange(EventArgs * e)
 	return true;
 }
 
-void SOUI::CDlgComboStockFilter::OnCbxFuncAdd()
+void CDlgComboStockFilter::OnCbxFuncAdd()
 {
 	m_pTextID->SetAttribute(L"pos", L"5,[0,5,[0");
 	m_pCbxID->SetAttribute(L"pos", L"5,[0,5,[0");
@@ -864,7 +1307,7 @@ void SOUI::CDlgComboStockFilter::OnCbxFuncAdd()
 
 }
 
-void SOUI::CDlgComboStockFilter::OnCbxFuncChange()
+void CDlgComboStockFilter::OnCbxFuncChange()
 {
 	m_pTextID->SetAttribute(L"pos", L"5,[5");
 	m_pCbxID->SetAttribute(L"pos", L"5,[5,-5,@20");
@@ -892,7 +1335,7 @@ void SOUI::CDlgComboStockFilter::OnCbxFuncChange()
 
 }
 
-void SOUI::CDlgComboStockFilter::OnCbxFuncDelete()
+void CDlgComboStockFilter::OnCbxFuncDelete()
 {
 	m_pTextID->SetAttribute(L"pos", L"5,[5");
 	m_pCbxID->SetAttribute(L"pos", L"5,[5,-5,@20");
@@ -913,7 +1356,7 @@ void SOUI::CDlgComboStockFilter::OnCbxFuncDelete()
 
 }
 
-void SOUI::CDlgComboStockFilter::AddConditon()
+void CDlgComboStockFilter::AddConditon()
 {
 	StockFilter sf = { 0 };
 	sf.index1 = m_Index1PosMap[m_pCbxIndex1->GetCurSel()];
@@ -947,7 +1390,7 @@ void SOUI::CDlgComboStockFilter::AddConditon()
 	}
 }
 
-void SOUI::CDlgComboStockFilter::ChangeCondition()
+void CDlgComboStockFilter::ChangeCondition()
 {
 
 	StockFilter sf = { 0 };
@@ -982,7 +1425,7 @@ void SOUI::CDlgComboStockFilter::ChangeCondition()
 	}
 }
 
-void SOUI::CDlgComboStockFilter::DeleteCondition()
+void CDlgComboStockFilter::DeleteCondition()
 {
 	if (m_pList->GetItemCount() == 0)
 	{
@@ -1005,30 +1448,357 @@ void SOUI::CDlgComboStockFilter::DeleteCondition()
 	if (m_pCheckUse->IsChecked())
 	{
 
-		if (m_pList->GetItemCount() > 0)
-		{
-			BOOL bUse = TRUE;
-			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-				(char*)&bUse, sizeof(bUse));
-		}
-		else
-		{
-			m_pCheckUse->SetCheck(FALSE);
-			BOOL bUse = FALSE;
-			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-				(char*)&bUse, sizeof(bUse));
-			SMessageBox(m_hWnd, L"当前选股器无条件，自动关闭!", L"提示", MB_OK);
+		//if (m_pList->GetItemCount() > 0)
+		//{
+		BOOL bUse = TRUE;
+		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
+			(char*)&bUse, sizeof(bUse));
+		/*	}
+			else
+			{
+				m_pCheckUse->SetCheck(FALSE);
+				BOOL bUse = FALSE;
+				SendMsg(m_uParThreadID, WW_ChangeStockFilter,
+					(char*)&bUse, sizeof(bUse));
+				SMessageBox(m_hWnd, L"当前选股器无条件，自动关闭!", L"提示", MB_OK);
 
-		}
-
+			}
+	*/
 	}
 
 
 }
 
-void SOUI::CDlgComboStockFilter::OnFinalMessage(HWND hWnd)
+bool CDlgComboStockFilter::OnCbxHisFuncChange(EventArgs * e)
+{
+	EventCBSelChange *pEvt = (EventCBSelChange*)e;
+	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	int nSel = pEvt->nCurSel;
+	if (SFF_Add == nSel)
+		OnCbxHisFuncAdd();
+	if (SFF_Change == nSel)
+		OnCbxHisFuncChange();
+	if (SFF_Delete == nSel)
+		OnCbxHisFuncDelete();
+	return true;
+}
+
+bool CDlgComboStockFilter::OnCbxHisIndex1Change(EventArgs * e)
+{
+	EventCBSelChange *pEvt = (EventCBSelChange*)e;
+	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	int nSel = pEvt->nCurSel;
+	if (SFI_ChgPct == nSel)
+	{
+		m_pTextHisNum->SetVisible(TRUE, TRUE);
+		m_pEditHisNum->SetVisible(TRUE, TRUE);
+		m_pTextHisPeriod1->SetVisible(FALSE, TRUE);
+		m_pCbxHisPeriod1->SetVisible(FALSE, TRUE);
+		m_pTextHisPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
+		m_pCbxHisPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
+		m_pTextHisPeriod2->SetVisible(FALSE, TRUE);
+		m_pCbxHisPeriod2->SetVisible(FALSE, TRUE);
+		int nNumPos = SFI_Num;
+		for (auto &it : m_hisIndex2PosMap)
+		{
+			if (it.second == SFI_Num)
+			{
+				nNumPos = it.first;
+				break;
+			}
+		}
+		m_pCbxHisIndex2->SetCurSel(nNumPos);
+		m_pCbxHisIndex2->EnableWindow(FALSE, TRUE);
+	}
+	else
+	{
+		m_pTextHisPeriod1->SetVisible(TRUE, TRUE);
+		m_pCbxHisPeriod1->SetVisible(TRUE, TRUE);
+		m_pTextHisPeriod1->SetAttribute(L"pos", L"5,[5");
+		m_pCbxHisPeriod1->SetAttribute(L"pos", L"5,[5,-5,@20");
+		m_pCbxHisIndex2->EnableWindow(TRUE, TRUE);
+	}
+	int nIndex2Sel = m_pCbxHisIndex2->GetCurSel();
+	if (m_hisIndex2PosMap[nIndex2Sel] == SFI_Num)
+	{
+		SStringW strNum = L"数值";
+		if (m_NumUint.count(m_hisIndex1PosMap[nSel]))
+			strNum += m_NumUint[m_hisIndex1PosMap[nSel]];
+		m_pTextHisNum->SetWindowTextW(strNum);
+	}
+	return true;
+}
+
+bool CDlgComboStockFilter::OnCbxHisIndex2Change(EventArgs * e)
+{
+	EventCBSelChange *pEvt = (EventCBSelChange*)e;
+	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	int nSel = pEvt->nCurSel;
+	int nIndex1Sel = m_pCbxHisIndex1->GetCurSel();
+	if (SFI_Num == m_hisIndex2PosMap[nSel])
+	{
+		SStringW strNum = L"数值";
+		if (m_NumUint.count(nIndex1Sel))
+			strNum += m_NumUint[nIndex1Sel];
+		m_pTextHisNum->SetWindowTextW(strNum);
+		m_pTextHisNum->SetVisible(TRUE, TRUE);
+		m_pEditHisNum->SetVisible(TRUE, TRUE);
+		m_pTextHisPeriod2->SetVisible(FALSE, TRUE);
+		m_pCbxHisPeriod2->SetVisible(FALSE, TRUE);
+	}
+	else
+	{
+		m_pTextHisNum->SetVisible(FALSE, TRUE);
+		m_pEditHisNum->SetVisible(FALSE, TRUE);
+		m_pTextHisPeriod2->SetVisible(TRUE, TRUE);
+		m_pCbxHisPeriod2->SetVisible(TRUE, TRUE);
+	}
+	return true;
+}
+
+bool CDlgComboStockFilter::OnCbxHisIDChange(EventArgs * e)
+{
+	EventCBSelChange *pEvt = (EventCBSelChange*)e;
+	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	int nSel = m_pCbxHisFunc->GetCurSel();
+	if (SFF_Change == nSel)
+	{
+		int nSel = pEvt->nCurSel;
+		HisStockFilter hsf;
+		GetHisListItem(nSel, hsf);
+		int nIndex1ID = hsf.sf.index1;
+		int nIndex2ID = hsf.sf.index2;
+		for (auto &it : m_hisIndex1PosMap)
+		{
+			if (hsf.sf.index1 == it.second)
+			{
+				nIndex1ID = it.first;
+				break;
+			}
+		}
+		for (auto &it : m_hisIndex2PosMap)
+		{
+			if (hsf.sf.index2 == it.second)
+			{
+				nIndex2ID = it.first;
+				break;
+			}
+		}
+
+		m_pCbxHisIndex1->SetCurSel(nIndex1ID);
+		m_pCbxHisIndex2->SetCurSel(nIndex2ID);
+		m_pCbxHisPeriod1->SetCurSel(hsf.sf.period1);
+		m_pCbxHisCondition->SetCurSel(hsf.sf.condition);
+		if (hsf.sf.index2 == SFI_Num)
+		{
+			SStringW strNum = L"数值";
+			if (m_NumUint.count(hsf.sf.index1))
+				strNum += m_NumUint[hsf.sf.index1];
+			m_pTextHisNum->SetWindowTextW(strNum);
+			m_pTextHisNum->SetVisible(TRUE, TRUE);
+			m_pEditHisNum->SetVisible(TRUE, TRUE);
+			m_pTextHisPeriod2->SetVisible(FALSE, TRUE);
+			m_pCbxHisPeriod2->SetVisible(FALSE, TRUE);
+			m_pEditHisNum->SetWindowTextW(strNum.Format(L"%.02f", hsf.sf.num));
+		}
+		else
+		{
+			m_pTextHisNum->SetVisible(FALSE, TRUE);
+			m_pEditHisNum->SetVisible(FALSE, TRUE);
+			m_pTextHisPeriod2->SetVisible(TRUE, TRUE);
+			m_pCbxHisPeriod2->SetVisible(TRUE, TRUE);
+			m_pCbxHisPeriod2->SetCurSel(hsf.sf.period2);
+		}
+
+	}
+
+	return true;
+}
+
+void CDlgComboStockFilter::OnCbxHisFuncAdd()
+{
+	m_pTextHisID->SetAttribute(L"pos", L"5,[0,5,[0");
+	m_pCbxHisID->SetAttribute(L"pos", L"5,[0,5,[0");
+	m_pTextHisID->SetVisible(FALSE);
+	m_pCbxHisID->SetVisible(FALSE);
+	m_pTextHisIndex1->SetVisible(TRUE);
+	m_pCbxHisIndex1->SetVisible(TRUE);
+	m_pTextHisPeriod1->SetVisible(TRUE);
+	m_pCbxHisPeriod1->SetVisible(TRUE);
+	m_pTextHisCondition->SetVisible(TRUE);
+	m_pCbxHisCondition->SetVisible(TRUE);
+	m_pTextHisIndex2->SetVisible(TRUE);
+	m_pCbxHisIndex2->SetVisible(TRUE);
+	m_pTextHisCntDayFront->SetVisible(TRUE);
+	m_pTextHisCntDayBack->SetVisible(TRUE);
+	m_pEditHisCntDay->SetVisible(TRUE);
+	m_pRadioExist->SetVisible(TRUE);
+	m_pRadioForall->SetVisible(TRUE);
+
+	if (m_pCbxHisIndex2->GetCurSel() == SFI_Num - 1)
+	{
+		m_pTextHisNum->SetVisible(TRUE, TRUE);
+		m_pEditHisNum->SetVisible(TRUE, TRUE);
+	}
+	else
+	{
+		m_pTextHisPeriod2->SetVisible(TRUE, TRUE);
+		m_pCbxHisPeriod2->SetVisible(TRUE, TRUE);
+	}
+}
+
+void CDlgComboStockFilter::OnCbxHisFuncChange()
+{
+	m_pTextHisID->SetAttribute(L"pos", L"5,[5");
+	m_pCbxHisID->SetAttribute(L"pos", L"5,[5,-5,@20");
+
+	m_pTextHisID->SetVisible(TRUE);
+	m_pCbxHisID->SetVisible(TRUE);
+	m_pTextHisIndex1->SetVisible(TRUE);
+	m_pCbxHisIndex1->SetVisible(TRUE);
+	m_pTextHisPeriod1->SetVisible(TRUE);
+	m_pCbxHisPeriod1->SetVisible(TRUE);
+	m_pTextHisCondition->SetVisible(TRUE);
+	m_pCbxHisCondition->SetVisible(TRUE);
+	m_pTextHisIndex2->SetVisible(TRUE);
+	m_pCbxHisIndex2->SetVisible(TRUE);
+	m_pTextHisCntDayFront->SetVisible(TRUE);
+	m_pTextHisCntDayBack->SetVisible(TRUE);
+	m_pEditHisCntDay->SetVisible(TRUE);
+	m_pRadioExist->SetVisible(TRUE);
+	m_pRadioForall->SetVisible(TRUE);
+
+	if (m_pCbxHisIndex2->GetCurSel() == SFI_Num - 1)
+	{
+		m_pTextNum->SetVisible(TRUE, TRUE);
+		m_pEditNum->SetVisible(TRUE, TRUE);
+	}
+	else
+	{
+		m_pTextPeriod2->SetVisible(TRUE, TRUE);
+		m_pCbxHisPeriod2->SetVisible(TRUE, TRUE);
+	}
+}
+
+void CDlgComboStockFilter::OnCbxHisFuncDelete()
+{
+	m_pTextHisID->SetAttribute(L"pos", L"5,[5");
+	m_pCbxHisID->SetAttribute(L"pos", L"5,[5,-5,@20");
+
+	m_pTextHisID->SetVisible(TRUE);
+	m_pCbxHisID->SetVisible(TRUE);
+	m_pTextHisIndex1->SetVisible(FALSE);
+	m_pCbxHisIndex1->SetVisible(FALSE);
+	m_pTextHisPeriod1->SetVisible(FALSE);
+	m_pCbxHisPeriod1->SetVisible(FALSE);
+	m_pTextHisCondition->SetVisible(FALSE);
+	m_pCbxHisCondition->SetVisible(FALSE);
+	m_pTextHisIndex2->SetVisible(FALSE);
+	m_pCbxHisIndex2->SetVisible(FALSE);
+	m_pTextHisCntDayFront->SetVisible(FALSE);
+	m_pTextHisCntDayBack->SetVisible(FALSE);
+	m_pEditHisCntDay->SetVisible(FALSE);
+	m_pRadioExist->SetVisible(FALSE);
+	m_pRadioForall->SetVisible(FALSE);
+
+}
+
+void CDlgComboStockFilter::AddHisConditon()
+{
+	HisStockFilter hsf = { 0 };
+	hsf.sf.index1 = m_hisIndex1PosMap[m_pCbxHisIndex1->GetCurSel()];
+	if (SFI_ChgPct == hsf.sf.index1)
+		hsf.sf.period1 = SFP_Null;
+	else
+		hsf.sf.period1 = m_pCbxHisPeriod1->GetCurSel();
+	hsf.sf.condition = m_pCbxHisCondition->GetCurSel();
+	hsf.sf.index2 = m_hisIndex2PosMap[m_pCbxHisIndex2->GetCurSel()];
+	if (hsf.sf.index2 != SFI_Num)
+		hsf.sf.period2 = m_pCbxHisPeriod2->GetCurSel();
+	else
+		hsf.sf.num = _wtof(m_pEditHisNum->GetWindowTextW());
+	hsf.countDay = _wtof(m_pEditHisCntDay->GetWindowTextW());
+	hsf.type = m_pRadioExist->IsChecked() ? eJT_Exist : eJT_Forall;
+
+	if (m_hisSfSet.count(hsf))
+	{
+		SMessageBox(m_hWnd, L"已包含相同条件，添加失败", L"警告", MB_OK | MB_ICONERROR);
+		return;
+	}
+	m_bHisChange = TRUE;
+	m_bHisCalced = FALSE;
+	m_hisSfSet.insert(hsf);
+	int nIDCount = m_pListHis->GetItemCount();
+	HisListAddItem(hsf);
+	SStringW strTmp;
+	m_pCbxHisID->InsertItem(nIDCount,
+		strTmp.Format(L"条件%d", nIDCount + 1), NULL, 0);
+}
+
+void CDlgComboStockFilter::ChangeHisCondition()
+{
+
+	HisStockFilter hsf = { 0 };
+	hsf.sf.index1 = m_hisIndex1PosMap[m_pCbxHisIndex1->GetCurSel()];
+	if (SFI_ChgPct == hsf.sf.index1)
+		hsf.sf.period1 = SFP_Null;
+	else
+		hsf.sf.period1 = m_pCbxHisPeriod1->GetCurSel();
+	hsf.sf.condition = m_pCbxHisCondition->GetCurSel();
+	hsf.sf.index2 = m_hisIndex2PosMap[m_pCbxHisIndex2->GetCurSel()];
+	if (hsf.sf.index2 != SFI_Num)
+		hsf.sf.period2 = m_pCbxHisPeriod2->GetCurSel();
+	else
+		hsf.sf.num = _wtof(m_pEditHisNum->GetWindowTextW());
+
+	hsf.countDay = _wtof(m_pEditHisCntDay->GetWindowTextW());
+	hsf.type = m_pRadioExist->IsChecked() ? eJT_Exist : eJT_Forall;
+
+	if (m_hisSfSet.count(hsf))
+	{
+		SMessageBox(m_hWnd, L"已包含相同条件，修改失败", L"警告", MB_OK | MB_ICONERROR);
+		return;
+	}
+	m_bHisChange = TRUE;
+	m_bHisCalced = FALSE;
+
+	m_hisSfSet.insert(hsf);
+	int nID = m_pCbxHisID->GetCurSel();
+	HisStockFilter oriSf = { 0 };
+	GetHisListItem(nID, oriSf);
+	m_hisSfSet.erase(oriSf);
+	HisListChangeItem(nID, hsf);
+}
+
+void CDlgComboStockFilter::DeleteHisCondition()
+{
+	if (m_pListHis->GetItemCount() == 0)
+	{
+		SMessageBox(m_hWnd, L"当前无条件可以删除", L"错误", MB_OK | MB_ICONERROR);
+		return;
+	}
+	m_bHisChange = TRUE;
+	m_bHisCalced = FALSE;
+
+	int nID = m_pCbxID->GetCurSel();
+	StockFilter oriSf = { 0 };
+	GetListItem(nID, oriSf);
+	m_sfSet.erase(oriSf);
+	ListDeleteItem(nID);
+	int nItemCount = m_pCbxID->GetCount();
+	m_pCbxID->DeleteString(nItemCount - 1);
+	if (nID >= m_pCbxID->GetCount())
+		m_pCbxID->SetCurSel(m_pCbxID->GetCount() - 1);
+	if (m_pCbxID->GetCount() == 0)
+		m_pCbxID->SetWindowTextW(L"");
+	m_pList->RequestRelayout();
+}
+
+
+void CDlgComboStockFilter::OnFinalMessage(HWND hWnd)
 {
 	__super::OnFinalMessage(hWnd);
 	delete this;
 }
+
 

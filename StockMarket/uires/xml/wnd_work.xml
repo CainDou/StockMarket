@@ -65,7 +65,10 @@
 			</fenshiPic>
 			<klinePic name="klinePic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
 				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+
 			</klinePic>
+			<text name = "txt_hisFilterCalc" pos="5,%35,-5,%70" colorBkgnd="#000000ff" colorText="#FFFF00FF" font="size:20,face:微软雅黑" multiLines="1" align="center" valign="middle" text="正在计算历史数据，请稍等"  visible="0" margin="1,1,1,1" colorBorder="#FFFF00FF"/>
+
 		</window>
 	</root>
 </SOUI>

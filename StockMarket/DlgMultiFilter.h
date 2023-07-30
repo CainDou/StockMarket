@@ -25,7 +25,8 @@ namespace SOUI
 		void	OnTimer(UINT_PTR nIDEvent);
 		void	OnBtnClose();
 		void	OnBtnSetWndNum();
-		void	SaveComboStockFilterPara(int nWndNum);		
+		void	SaveComboStockFilterPara(int nWndNum);	
+		void	StopAndClearData();
 		BOOL	SetShowWndNum(int nNum, BOOL bFromInit);
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
@@ -86,7 +87,7 @@ namespace SOUI
 			MSG_WM_TIMER(OnTimer)
 			//MSG_WM_CREATE(OnCreate)
 			MSG_WM_CLOSE(OnClose)
-			//MSG_WM_DESTROY(OnDestroy)
+			MSG_WM_DESTROY(OnDestroy)
 			MSG_WM_SIZE(OnSize)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
@@ -119,5 +120,5 @@ namespace SOUI
 		return m_strWindowName;
 	}
 
-}
+	}
 
