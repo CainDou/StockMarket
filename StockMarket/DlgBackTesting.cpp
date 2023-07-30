@@ -921,7 +921,6 @@ void CDlgBackTesting::TestingData()
 			delete[]info;
 			info = nullptr;
 			m_uCalcThreadID = INVALID_THREADID;
-			OutputDebugStringFormat("线程退出\n");
 			break;
 		}
 		else if (BackTesting == MsgId)
@@ -977,7 +976,6 @@ void CDlgBackTesting::CheckHisFilter(char * msg, int nMsgLength)
 	BackTestingData testDataMap;
 	ReceiveInfo Info = *(ReceiveInfo*)msg;
 	int nOffset = sizeof(ReceiveInfo);
-	OutputDebugStringFormat("股票:%s\n", Info.InsID);
 	while (nOffset < nMsgLength)
 	{
 		int nMsgOffset = GetDataFromMsg(msg + nOffset, testDataMap,TRUE);
