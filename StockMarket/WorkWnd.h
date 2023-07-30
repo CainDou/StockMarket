@@ -23,6 +23,7 @@ namespace SOUI
 		void		InitListConfig(map<int, BOOL>& titleShowMap,map<int,int>&titleOrderMap);
 		InitPara	OutPutInitPara();
 		void		ClearData();
+		void		ClearAllData();
 		void		InitList();
 		void		ReInitList();
 		void		SetDataPoint(void* pData, int DataType);
@@ -41,8 +42,11 @@ namespace SOUI
 		void		CloseWnd();
 		void		OutputStockFilterPara(SFPlan &sfPlan);
 		void		OutputComboStockFilterPara(vector<StockFilter>& sfVec);
+		void		OutputComboHisStockFilterPara(vector<HisStockFilter>& sfVec);
 		void		InitStockFilterPara(SFPlan &sfPlan);
 		void		InitComboStockFilterPara(vector<StockFilter>& sfVec);
+		void		InitComboHisStockFilterPara(vector<HisStockFilter>& hsfVec);
+
 		void		SetPointInfo(map<int, ShowPointInfo> &infoMap);
 		map<int, int> GetListTitleOrder();
 		// 消息响应
@@ -108,10 +112,12 @@ namespace SOUI
 
 		template<typename T>
 		void SortData(map<SStringA,T>& listDataMap, int nSortHeader, int nFlag);
+		
 
 		bool CheckStockFitDomain(StockInfo& si);
 		bool CheckStockDataPass(SFCondition& sf,SStringA StockID);
 		bool CheckCmbStockDataPass(StockFilter& sf, SStringA StockID);
+
 
 		bool GreaterThan(double a, double b);
 		bool EqualOrGreaterThan(double a, double b);
@@ -195,6 +201,9 @@ namespace SOUI
 		void OnSaveStockFilter(int nMsgLength, const char* info);
 		void OnChangeKlineRehab(int nMsgLength, const char* info);
 		void OnFixedTimeRehab(int nMsgLength, const char* info);
+		void OnChangeHisStockFilter(int nMsgLength, const char* info);
+		void OnHisFilterStartCalc(int nMsgLength, const char* info);
+		void OnHisFilterEndCalc(int nMsgLength, const char* info);
 
 		//辅助函数
 		BOOL GetAttPara(char * msg, map<SStringA, SStringA>& paraMap);
@@ -254,6 +263,7 @@ namespace SOUI
 		SImageButton* m_pBtnConn2;
 		SImageButton* m_pBtnStockFilter;
 		SImageButton* m_pBtnTitleSel;
+		SStatic *m_pTextFilterName;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
 		SColorListCtrlEx* m_pList;
@@ -268,6 +278,7 @@ namespace SOUI
 		SCheckBox*	  m_pCheckSTARM;
 		SCheckBox*	  m_pCheckNewStock;
 		SImageButton* m_pBtnRehab;
+		SStatic*	  m_pTextCalcInfo;
 
 		//子类
 	protected:
@@ -290,16 +301,23 @@ namespace SOUI
 	protected:
 		bool		m_bListInited;
 		BOOL		m_bUseStockFilter;
+		BOOL		m_bUseHisStockFilter;
 		//vector<vector<SStringA>> m_SubPicShowNameVec;
 		map< ePointType, map<SStringA, vector<SStringA>>>m_SubPicShowNameVec;
 		map<int,SStringA>m_ListPosMap;
 		map<int, SStringA>m_MouseWheelMap;
 		map<int, strHash<RtRps>> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
-		map<int, strHash<unordered_map<string, double>>>* m_pFilterDataMap;
-		map<int, strHash<unordered_map<string, double>>>* m_pL1IndyFilterDataMap;
-		map<int, strHash<unordered_map<string, double>>>* m_pL2IndyFilterDataMap;
+		map<int, vector<vector<double>>>* m_pFilterDataMap;
+		map<int, vector<vector<double>>>* m_pL1IndyFilterDataMap;
+		map<int, vector<vector<double>>>* m_pL2IndyFilterDataMap;
+		map<int, vector<map<int, map<int, vector<double>>>>>* m_pHisFilterDataMap;
+		map<int, vector<map<int, map<int, vector<double>>>>>* m_pL1IndyHisFilterDataMap;
+		map<int, vector<map<int, map<int, vector<double>>>>>* m_pL2IndyHisFilterDataMap;
 		strHash<CAInfo>* m_pCallActionHash;
+		strHash<int>* m_pStockPos;
+		strHash<int>* m_pL1IndyIndexPos;
+		strHash<int>* m_pL2IndyIndexPos;
 
 		strHash<double> m_preCloseMap;
 		strHash<SStringA> m_StockName;
@@ -309,10 +327,11 @@ namespace SOUI
 		map<int, int> m_TitleOrderMap;
 		SFPlan m_sfPlan;
 		vector<StockFilter> m_sfVec;
+		vector<HisStockFilter> m_hisSfVec;
 		vector<BOOL> m_frmlExistVec;
 		map<int, ShowPointInfo> m_pointInfoMap;
 		map<int, int> m_SFPeriodMap;
-		map<int, string> m_SFIndexMap;
+		map<int, int> m_SFIndexMap;
 		map<int, PCOMPAREFUNC> m_SFConditionMap;
 		map<int, int>m_ComonSortMap;
 		map<int,int>m_RpsSortMap;
@@ -332,6 +351,12 @@ namespace SOUI
 		strHash<CAInfo> m_ListShowCAData;
 		set<int> m_ListItemUpdateSet;
 
+		BOOL m_bHisFilterChecked;
+		BOOL m_bHisFilterCalcing;
+
+		vector<BOOL> m_StockPassHisVec;
+		BOOL m_bHisFitlterDataReady;
+		map<HisStockFilter, vector<BOOL>> m_SingleHsfRes;
 		//分析图数据
 	protected:
 		map<int, map<SStringA, vector<CoreData>>> m_PointData;
@@ -525,6 +550,9 @@ void CWorkWnd::SortData(strHash<T>& listDataHash, int nSortHeader, int nOffset, 
 			return compareData<T, int>(data1, data2, nOffset, nFlag);
 		else if (eSDT_Double == nSortType || eSDT_BigDouble == nSortType)
 			return compareData<T, double>(data1, data2, nOffset, nFlag);
+		else if(eSDT_Uint64 == nSortType)
+			return compareData<T, uint64_t>(data1, data2, nOffset, nFlag);
+
 		return false;
 	});
 

@@ -6,7 +6,7 @@ namespace SOUI
 	class CDlgAddNew : public SHostWnd
 	{
 	public:
-		CDlgAddNew(HWND hParWnd,int nWndType);
+		CDlgAddNew(HWND hParWnd,int nWndType, SStringA strOldName = "");
 		~CDlgAddNew();
 		void OnInit(EventArgs* e);
 		void InitStrings();
@@ -28,6 +28,7 @@ namespace SOUI
 		map<int, SStringW> m_WndTypeDefName;
 		SStringA m_strSection;
 		SStringW m_strDef;
+		SStringA m_strOldName;
 
 	protected:
 		EVENT_MAP_BEGIN()

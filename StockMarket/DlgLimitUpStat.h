@@ -8,16 +8,16 @@ namespace SOUI
 {
 	typedef struct _PlateInfo
 	{
-		SStringA strPlateID;
-		SStringW strPlateName;
+		char strPlateID[8];
+		wchar_t strPlateName[16];
 		int nCount;
 	}PlateInfo;
 
 	typedef struct _LimitUpStock
 	{
-		SStringA strStockID;
-		SStringW strStockName;
-		SStringW strLimitUp;
+		char strStockID[8];
+		wchar_t strStockName[8];
+		wchar_t strLimitUp[8];
 		int nCountDay;
 		int nLimitUpDay;
 	}LimitUpStock;
@@ -33,7 +33,7 @@ namespace SOUI
 		BOOL	OnInitDialog(EventArgs* e);
 		BOOL	CloseWnd();
 		void	InitWindowPos();
-		void	InitNet();
+		void	InitNet(BOOL bReinit = FALSE);
 		void	InitData();
 		void	OnBtnClose();
 		void	OnMaximize();
@@ -41,6 +41,10 @@ namespace SOUI
 		void	OnMinimize();
 		void	OnSize(UINT nType, CSize size);
 		void	UpdateShowPlate(int nDataPos);
+		void	SaveHisData(int nDate);
+		void	ReadHisData(int nDate);
+		void	GetHisDataList(set<int>& hisDayVec);
+		void	SaveHisDataList(int nToday);
 
 	protected:
 		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
@@ -70,6 +74,7 @@ namespace SOUI
 			//MESSAGE_HANDLER(WM_BACKTESTING_MSG, OnMsg)
 			MSG_WM_TIMER_EX(OnTimer);
 			MSG_WM_SIZE(OnSize)
+			MSG_WM_DESTROY(OnBtnClose)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()
@@ -87,12 +92,15 @@ namespace SOUI
 		vector<int> m_dayVec;
 		map<int, vector<PlateInfo>> m_dayPlateMap;
 		map<int, map<SStringA, vector<LimitUpStock>>> m_LimitUpMap;
+		map<int, BOOL>m_bUpdateMap;
 
 		unsigned m_uThreadID;
 		std::thread m_thread;
 		SStringA m_ShowPlate;
+		BOOL m_bClose;
 
 		CRITICAL_SECTION m_cs[DAYCOUNT];
+		CRITICAL_SECTION m_csShowPlate;
 	};
 
 }

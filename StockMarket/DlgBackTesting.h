@@ -74,7 +74,7 @@ namespace SOUI
 		typedef bool(CDlgBackTesting::*PCOMPAREFUNC)(double, double);
 
 	public:
-		CDlgBackTesting(set<StockFilter> sfSet, vector<StockInfo>& StockInfo);
+		CDlgBackTesting(HWND hParWnd, set<StockFilter> sfSet, vector<StockInfo>& stockInfo);
 		~CDlgBackTesting();
 		BOOL	OnInitDialog(EventArgs* e);
 		void	ReSetCondition(set<StockFilter> sfSet);
@@ -93,8 +93,15 @@ namespace SOUI
 		void	CalcRes();
 		void	UpdateList(int nRow);
 		BOOL	CheckCondtionIsSame();
+		void	CalcHisStockFilter(set<HisStockFilter> hsfVec);
+		set<SStringA> GetHisFilterPassStock();
 	protected:
 		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
+
+		//历史数据处理
+	protected:
+		void	HisConditionHandle();
+
 
 		//数据通信
 	protected:
@@ -102,16 +109,25 @@ namespace SOUI
 		void InitNetConfig();
 		bool RecvInfoHandle(BOOL & bNeedConnect, int &nOffset, ReceiveInfo &recvInfo);
 		void OnMsgHisMultiData(ReceiveInfo &recvInfo);
+		void OnMsgHisMultiDataForHSF(ReceiveInfo &recvInfo);
 		void OnMsgHisIndexKline(ReceiveInfo &recvInfo);
 		void OnNoDefineMsg(ReceiveInfo &recvInfo);
 		void GetIndexKline(SStringA strIndexID);
 		void GetTestMultiData(SStringA StockID);
+		void GetHisTestMultiData(SStringA StockID);
+
 		//数据处理
 	protected:
 		void TestingData();
+		void TestHisData();
 		void CalcData(char* msg,int nMsgLength);
-		int GetDataFromMsg(char* msg, BackTestingData& data);
+		void CheckHisFilter(char* msg, int nMsgLength);
+
+		int GetDataFromMsg(char* msg, BackTestingData& data, BOOL bForHSF = FALSE);
+
 		bool CheckDataPass(StockFilter &sf, map<int, map<int, map<int, double>>>& dataMap);
+		bool CheckHisDataPass(HisStockFilter &hsf, map<int, map<int, map<int, double>>>& dataMap);
+
 		bool ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate, BackTestingData& testDataMap);
 		void ProcAvgRes(SingleRes &res);
 		bool GreaterThan(double a, double b);
@@ -166,12 +182,18 @@ namespace SOUI
 		int m_nLastStartDate;
 		int m_nLastEndDate;
 		thread m_tCalc;
+		thread m_tHisCalc;
+
 		unsigned m_uCalcThreadID;
+		unsigned m_uHisCalcThreadID;
+
 		unsigned m_uNetThreadID;
 		BOOL m_bCalc;
-
+		BOOL m_bHisCalc;
 		map<SStringA, map<int, KlineType>> m_IndexData;
 		vector<StockFilter> m_sfVecByOrder;
+		vector<HisStockFilter> m_hisSfVec;
+
 		set<int> m_ableCondSet;
 		map<int, SStringA> m_IndexNameMap;
 		map<SStringA, int> m_RevIndexNameMap;
@@ -180,12 +202,24 @@ namespace SOUI
 		vector<SingleRes> m_resVec;
 		AvgRes m_AvgRes;
 		SStringA m_strDataGetMsg;
+		SStringA m_strHisDataGetMsg;
+
 		HANDLE m_hEvent;
+		HANDLE m_hHisEvent;
+
 		int m_nDataGetCount;
 		int m_nFinishCount;
 		BOOL m_bLastIsFinished;
+
+		int m_nHisDataGetCount;
+		int m_nHisFinishCount;
+		BOOL m_bHisLastIsFinished;
+
+
 		map<int, SStringA> m_avgResTitle;
 		map<int, SStringA> m_singleResTitle;
+		set<SStringA> m_hisFitStockSet;
+		HWND m_hParWnd;
 
 	};
 
@@ -193,6 +227,11 @@ namespace SOUI
 	{
 		m_sfSet = sfSet;
 	}
+	inline set<SStringA> CDlgBackTesting::GetHisFilterPassStock()
+	{
+		return m_hisFitStockSet;
+	}
+
 	inline bool CDlgBackTesting::GreaterThan(double a, double b)
 	{
 		return a > b;

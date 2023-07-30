@@ -5,6 +5,7 @@
 #include "zlib.h"
 #include <io.h>
 #include "MD5.h"
+#include <psapi.h>
 
 HANDLE g_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 HANDLE g_hLoginEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -27,6 +28,7 @@ CWndSynHandler::CWndSynHandler()
 CWndSynHandler::~CWndSynHandler()
 {
 	if (m_pLoginDlg)
+		//m_pLoginDlg->EndDialog(0);
 		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 			NULL, LoginMsg_Exit);
 	m_NetClient.Stop();
@@ -266,46 +268,42 @@ void CWndSynHandler::InitPointInfo()
 
 void CWndSynHandler::InitDataNameMap()
 {
-	InitRpsDataMap("close");
-	InitRpsDataMap("amount");
-	InitSecDataMap("amount");
+	InitRpsDataMap("close", SFI_CloseRps520, SFI_CloseRps520L1, SFI_CloseRps520L2);
+	InitRpsDataMap("amount", SFI_AmountRps520, SFI_AmountRps520L1, SFI_AmountRps520L2);
+	InitSecDataMap("amount", SFI_AmountPoint, SFI_AmountPointL1, SFI_AmountPointL2);
 
 }
 
-void CWndSynHandler::InitRpsDataMap(string strDataName)
+void CWndSynHandler::InitRpsDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start)
 {
 	auto &nameVec = m_rpsDataNameMap[strDataName];
+
 	nameVec.resize(eRps_DataCount);
-	nameVec[eRps_MACD520] = strDataName + "MACD520";
-	nameVec[eRps_MACD2060] = strDataName + "MACD2060";
-	nameVec[eRps_RPS520] = strDataName + "RPS520";
-	nameVec[eRps_RPS2060] = strDataName + "RPS2060";
-	nameVec[eRps_RANK520] = strDataName + "RANK520";
-	nameVec[eRps_RANK2060] = strDataName + "RANK2060";
-	nameVec[eRps_POINT520] = strDataName + "POINT520";
-	nameVec[eRps_POINT2060] = strDataName + "POINT2060";
-	nameVec[eRps_RANK520L1] = strDataName + "RANK520L1";
-	nameVec[eRps_RANK2060L1] = strDataName + "RANK2060L1";
-	nameVec[eRps_POINT520L1] = strDataName + "POINT520L1";
-	nameVec[eRps_POINT2060L1] = strDataName + "POINT2060L1";
-	nameVec[eRps_RANK520L2] = strDataName + "RANK520L2";
-	nameVec[eRps_RANK2060L2] = strDataName + "RANK2060L2";
-	nameVec[eRps_POINT520L2] = strDataName + "POINT520L2";
-	nameVec[eRps_POINT2060L2] = strDataName + "POINT2060L2";
+	for(int i = 0;i<= eRps_RANK2060;++i)
+		nameVec[i] = nMarketStart + i;
+
+	nameVec[eRps_POINT520L1] = nL1Start + 2;
+	nameVec[eRps_RANK520L1] = nL1Start + 3;
+	nameVec[eRps_RANK2060L1] = nL1Start + 6;
+	nameVec[eRps_POINT2060L1] = nL1Start + 7;
+
+	nameVec[eRps_POINT520L2] = nL2Start + 2;
+	nameVec[eRps_RANK520L2] = nL2Start + 3;
+	nameVec[eRps_POINT2060L2] = nL2Start + 6;
+	nameVec[eRps_RANK2060L2] = nL2Start + 7;
 
 }
 
-void CWndSynHandler::InitSecDataMap(string strDataName)
+void CWndSynHandler::InitSecDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start)
 {
 	auto &nameVec = m_secDataNameMap[strDataName];
 	nameVec.resize(eSec_DataCount);
-	nameVec[eSec_RANK] = strDataName + "RANK";
-	nameVec[eSec_POINT] = strDataName + "POINT";
-	nameVec[eSec_RANKL1] = strDataName + "RANKL1";
-	nameVec[eSec_POINTL1] = strDataName + "POINTL1";
-	nameVec[eSec_RANKL2] = strDataName + "RANKL2";
-	nameVec[eSec_POINTL2] = strDataName + "POINTL2";
-
+	for (int i = 0; i <= eSec_RANK; ++i)
+		nameVec[i] = nMarketStart + i;
+	for (int i = eSec_POINTL1; i <= eSec_RANKL1; ++i)
+		nameVec[i] = nL1Start + i - eSec_POINTL1;
+	for (int i = eSec_POINTL2; i <= eSec_RANKL2; ++i)
+		nameVec[i] = nL2Start + i - eSec_POINTL2;
 }
 
 //bool CWndSynHandler::ReceiveData(SOCKET socket, int size, char end,
@@ -361,11 +359,10 @@ void CWndSynHandler::Login()
 {
 	m_pLoginDlg = new CDlgLogin(m_hMain, &m_NetClient);
 	m_pLoginDlg->SetIPInfo(m_strIPAddr, m_nIPPort);
-	m_pLoginDlg->DoModal();
+	int nRes = m_pLoginDlg->DoModal();
 	bExit = true;
 	SetEvent(g_hLoginEvent);
-	//delete m_pLoginDlg;
-	//m_pLoginDlg = nullptr;
+	m_pLoginDlg = nullptr;
 }
 
 
@@ -705,7 +702,7 @@ bool CWndSynHandler::GetAutoUpdateFileVer(SStringA &strMD5)
 }
 
 bool CWndSynHandler::HandleRpsData(string strDataName,
-	sRps& data, unordered_map<string, double>&filterDataMap)
+	sRps& data, vector<double>&filterDataMap)
 {
 	auto &nameVec = m_rpsDataNameMap[strDataName];
 	filterDataMap[nameVec[eRps_MACD520]] = data.fMacd520;
@@ -724,11 +721,30 @@ bool CWndSynHandler::HandleRpsData(string strDataName,
 	filterDataMap[nameVec[eRps_RANK2060L2]] = data.nL1Rank2060;
 	filterDataMap[nameVec[eRps_POINT520L2]] = data.fL2Point520;
 	filterDataMap[nameVec[eRps_POINT2060L2]] = data.fL2Point2060;
+
+	//auto &nameVec = m_rpsDataNameMap[strDataName];
+	//filterDataMap[nameVec[eRps_MACD520]] = data.fMacd520;
+	//filterDataMap[nameVec[eRps_MACD2060]] = data.fMacd2060;
+	//filterDataMap[nameVec[eRps_RPS520]] = data.fRps520;
+	//filterDataMap[nameVec[eRps_RPS2060]] = data.fRps2060;
+	//filterDataMap[nameVec[eRps_RANK520]] = data.nRank520;
+	//filterDataMap[nameVec[eRps_RANK2060]] = data.nRank2060;
+	//filterDataMap[nameVec[eRps_POINT520]] = data.fPoint520;
+	//filterDataMap[nameVec[eRps_POINT2060]] = data.fPoint2060;
+	//filterDataMap[nameVec[eRps_RANK520L1]] = data.nL1Rank520;
+	//filterDataMap[nameVec[eRps_RANK2060L1]] = data.nL1Rank2060;
+	//filterDataMap[nameVec[eRps_POINT520L1]] = data.fL1Point520;
+	//filterDataMap[nameVec[eRps_POINT2060L1]] = data.fL1Point2060;
+	//filterDataMap[nameVec[eRps_RANK520L2]] = data.nL2Rank520;
+	//filterDataMap[nameVec[eRps_RANK2060L2]] = data.nL1Rank2060;
+	//filterDataMap[nameVec[eRps_POINT520L2]] = data.fL2Point520;
+	//filterDataMap[nameVec[eRps_POINT2060L2]] = data.fL2Point2060;
+
 	return true;
 }
 
 bool CWndSynHandler::HandleSecData(string strDataName, sSection & data, 
-	unordered_map<string, double>& filterDataMap)
+	vector<double>& filterDataMap)
 {
 	auto &nameVec = m_secDataNameMap[strDataName];
 
@@ -902,15 +918,23 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 		switch (info.InfoType)
 		{
 		case StockInfo_Stock:
-		{
+		{	
+			m_StockPos[Group_Stock].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
 			{
 				auto &data = infoArr[i];
 				m_ListInsVec[Group_Stock].emplace_back(data.SecurityID);
 				m_ListStockInfoMap[Group_Stock].hash[data.SecurityID] = data;
+				m_StockPos[Group_Stock].hash[data.SecurityID] = i;
 				m_ListInfoVec[Group_Stock].emplace_back(data);
 				m_StockName.hash[data.SecurityID] = data.SecurityName;
+			}
+			for (auto period = Period_FenShi; period < Period_End; ++period)
+			{
+				m_FilterDataMap[Group_Stock][period].resize(size);
+				for (auto &it : m_FilterDataMap[Group_Stock][period])
+					it.resize(SFI_Count, 0);
 			}
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[0] = 1;
 			TraceLog("接收股票信息成功");
@@ -918,6 +942,7 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 		break;
 		case StockInfo_SWL1:
 		{
+			m_StockPos[Group_SWL1].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
 			{
@@ -925,6 +950,14 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 				m_ListInsVec[Group_SWL1].emplace_back(data.SecurityID);
 				m_ListInfoVec[Group_SWL1].emplace_back(data);
 				m_StockName.hash[data.SecurityID] = data.SecurityName;
+				m_StockPos[Group_SWL1].hash[data.SecurityID] = i;
+
+			}
+			for (auto period = Period_FenShi; period < Period_End; ++period)
+			{
+				m_FilterDataMap[Group_SWL1][period].resize(size);
+				for (auto &it : m_FilterDataMap[Group_SWL1][period])
+					it.resize(SFI_Count,0);
 
 			}
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[1] = 1;
@@ -933,7 +966,8 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 		}
 		break;
 		case StockInfo_SWL2:
-		{
+		{			
+			m_StockPos[Group_SWL2].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
 			{
@@ -941,7 +975,14 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 				m_ListInsVec[Group_SWL2].emplace_back(data.SecurityID);
 				m_ListInfoVec[Group_SWL2].emplace_back(data);
 				m_StockName.hash[data.SecurityID] = data.SecurityName;
+				m_StockPos[Group_SWL2].hash[data.SecurityID] = i;
 
+			}
+			for (auto period = Period_FenShi; period < Period_End; ++period)
+			{
+				m_FilterDataMap[Group_SWL2][period].resize(size);
+				for (auto &it : m_FilterDataMap[Group_SWL2][period])
+					it.resize(SFI_Count, 0);
 			}
 			TraceLog("接收申万2级行业信息成功");
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[2] = 1;
@@ -1249,29 +1290,31 @@ void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
 		for (auto& data : it.second.hash)
 		{
 			//if(data.second.nTime)
-			auto &tfMarket = data.second;
 			//更新选股器数据
-			auto &filterMap = m_FilterDataMap[Group_Stock][it.first].hash[data.first];
-			filterMap["LASTPX"] = tfMarket.fClose;
-			double fPreClose = m_preCloseMap.hash[data.first];
-			filterMap["CHG"] = (tfMarket.fClose - fPreClose) / fPreClose * 100;
-			filterMap["VOL"] = tfMarket.nVolume;
-			filterMap["HIGH"] = tfMarket.fHigh;
-			filterMap["LOW"] = tfMarket.fLow;
-			filterMap["OPEN"] = tfMarket.fOpen;
-			filterMap["CLOSE"] = tfMarket.fClose;
-			filterMap["AMOUNT"] = tfMarket.fAmount;
-			filterMap["POC"] = tfMarket.fPOC;
-			filterMap["ABV"] = tfMarket.ActBuyVol;
-			filterMap["ASV"] = tfMarket.ActSellVol;
-			filterMap["ABO"] = tfMarket.uActBuyOrderCount;
-			filterMap["ASO"] = tfMarket.uActSellOrderCount;
-			filterMap["PBO"] = tfMarket.uPasBuyOrderCount;
-			filterMap["PSO"] = tfMarket.uPasSellOrderCount;
-			filterMap["ABSR"] = tfMarket.ABSR;
-			filterMap["A2PBSR"] = tfMarket.A2PBSR;
-			filterMap["AABSR"] = tfMarket.AABSR;
-			filterMap["POCR"] = tfMarket.POCR;
+			int nDataPos = m_StockPos[Group_Stock].hash.count(data.first) ?
+				m_StockPos[Group_Stock].hash[data.first] : -1;
+
+			if (nDataPos < 0)
+				continue;
+			auto &tfMarket = data.second;
+
+			auto &filterMap = m_FilterDataMap[Group_Stock][it.first][nDataPos];
+			filterMap[SFI_Close] = tfMarket.fClose;
+			filterMap[SFI_Vol] = tfMarket.nVolume;
+			filterMap[SFI_High] = tfMarket.fHigh;
+			filterMap[SFI_Low] = tfMarket.fLow;
+			filterMap[SFI_Open] = tfMarket.fOpen;
+			filterMap[SFI_Amount] = tfMarket.fAmount;
+			filterMap[SFI_ABV] = tfMarket.ActBuyVol;
+			filterMap[SFI_ASV] = tfMarket.ActSellVol;
+			filterMap[SFI_ABO] = tfMarket.uActBuyOrderCount;
+			filterMap[SFI_ASO] = tfMarket.uActSellOrderCount;
+			filterMap[SFI_PBO] = tfMarket.uPasBuyOrderCount;
+			filterMap[SFI_PSO] = tfMarket.uPasSellOrderCount;
+			filterMap[SFI_ABSR] = tfMarket.ABSR;
+			filterMap[SFI_A2PBSR] = tfMarket.A2PBSR;
+			filterMap[SFI_AABSR] = tfMarket.AABSR;
+			filterMap[SFI_POCR] = tfMarket.POCR;
 		}
 	}
 
@@ -1294,29 +1337,45 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
 		periodSet.insert(dataArr[i].nPeriod);
 	}
+	static BOOL bFirtst = TRUE;
+	size_t datasize = 0;
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		auto &preiodFilterMap = m_FilterDataMap[i];
-
+		auto &stockPos = m_StockPos[i];
 		for (auto &periodData : m_RtRpsHash[i])
 		{
 			if (periodSet.count(periodData.first) == 0)
 				continue;
-			auto &FilterMap = preiodFilterMap[periodData.first].hash;
+			auto &FilterMap = preiodFilterMap[periodData.first];
 
 			for (auto& data : periodData.second.hash)
 			{
+				int nDataPos = stockPos.hash.count(data.first) ?
+					stockPos.hash[data.first] : -1;
+
+				if (nDataPos < 0)
+					continue;
 				auto& rpsData = data.second;
 				CoreData cd = { 0 };
 				cd.date = rpsData.nDate;
 				cd.time = rpsData.nTime;
-				auto &filter = FilterMap[data.first];
+				auto &filter = FilterMap[nDataPos];
+				filter[SFI_LastPx] = rpsData.fPrice;
+				double fPreClose = m_preCloseMap.hash[data.first];
+				filter[SFI_ChgPct] = (rpsData.fPrice - fPreClose) / fPreClose * 100;
+
+
 				HandleRpsData("close", rpsData.rpsClose, filter);
-				HandleRpsData("amount", rpsData.rpsClose, filter);
+				HandleRpsData("amount", rpsData.rpsAmount, filter);
 				HandleSecData("amount", rpsData.secAmount, filter);
+				if (m_bFirstData && i == Group_Stock)
+					datasize += filter.size();
 			}
+
 		}
 	}
+
 }
 
 void CWndSynHandler::OnClearData(int nMsgLength, const char * info)
@@ -1338,26 +1397,34 @@ void CWndSynHandler::OnUpdateCallAction(int nMsgLength, const char * info)
 	m_bCaUpdate = true;
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
+		auto &stockPos = m_StockPos[i];
 		for (auto& data : m_CallActionHash[i].hash)
 		{
 			//if(data.second.nTime)
+			int nDataPos = stockPos.hash.count(data.first) ?
+				stockPos.hash[data.first] : -1;
+
+			if (nDataPos < 0)
+				continue;
+
 			auto &caInfo = data.second;
 			//更新选股器数据
-			auto &filterMap = m_FilterDataMap[i][Period_1Day].hash[data.first];
-			filterMap["CAVOL"] = caInfo.Volume;
-			filterMap["CAVOLPOINT"] = caInfo.VolPoint;
-			filterMap["CAVOLRANK"] = caInfo.VolRank;
-			filterMap["CAVOLPOINTL1"] = caInfo.VolPointL1;
-			filterMap["CAVOLRANKL1"] = caInfo.VolRankL1;
-			filterMap["CAVOLPOINTL2"] = caInfo.VolPointL2;
-			filterMap["CAVOLRANKL2"] = caInfo.VolRankL2;
-			filterMap["CAAMO"] = caInfo.Amount;
-			filterMap["CAAMOPOINT"] = caInfo.AmoPoint;
-			filterMap["CAAMORANK"] = caInfo.AmoRank;
-			filterMap["CAAMOPOINTL1"] = caInfo.AmoPointL1;
-			filterMap["CAAMORANKL1"] = caInfo.AmoRankL1;
-			filterMap["CAAMOPOINTL2"] = caInfo.AmoPointL2;
-			filterMap["CAAMORANKL2"] = caInfo.AmoRankL2;
+			auto &filterMap = m_FilterDataMap[i][Period_1Day][nDataPos];
+
+			filterMap[SFI_CAVol] = caInfo.Volume;
+			filterMap[SFI_CAVolPoint] = caInfo.VolPoint;
+			filterMap[SFI_CAVolRank] = caInfo.VolRank;
+			filterMap[SFI_CAVolPointL1] = caInfo.VolPointL1;
+			filterMap[SFI_CAVolRankL1] = caInfo.VolRankL1;
+			filterMap[SFI_CAVolPointL2] = caInfo.VolPointL2;
+			filterMap[SFI_CAVolRankL2] = caInfo.VolRankL2;
+			filterMap[SFI_CAAmo] = caInfo.Amount;
+			filterMap[SFI_CAAmoPoint] = caInfo.AmoPoint;
+			filterMap[SFI_CAAmoRank] = caInfo.AmoRank;
+			filterMap[SFI_CAAmoPointL1] = caInfo.AmoPointL1;
+			filterMap[SFI_CAAmoRankL1] = caInfo.AmoRankL1;
+			filterMap[SFI_CAAmoPointL2] = caInfo.AmoPointL2;
+			filterMap[SFI_CAAmoRankL2] = caInfo.AmoRankL2;
 
 		}
 

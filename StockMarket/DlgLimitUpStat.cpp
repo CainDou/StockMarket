@@ -4,6 +4,8 @@
 #include <sstream>
 #include <algorithm>
 #include <fstream>
+#include <direct.h>
+#include <io.h>
 #define BUFFERSIZE 16384 //16k
 
 #define MAXPLATE 10
@@ -14,16 +16,15 @@ extern HWND g_MainWnd;
 CDlgLimitUpStat::CDlgLimitUpStat() :SHostWnd(_T("LAYOUT:dlg_LimitUpStat"))
 {
 	m_bLayoutInited = FALSE;
+	m_bClose = FALSE;
 	m_ShowPlate = "";
 }
 
 
 CDlgLimitUpStat::~CDlgLimitUpStat()
 {
-	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
-	if (m_thread.joinable())
-		m_thread.join();
-
+	if (!m_bClose)
+		CloseWnd();
 }
 
 BOOL CDlgLimitUpStat::OnInitDialog(EventArgs * e)
@@ -31,7 +32,8 @@ BOOL CDlgLimitUpStat::OnInitDialog(EventArgs * e)
 	m_bLayoutInited = TRUE;
 	for (int i = 0; i < DAYCOUNT; ++i)
 		::InitializeCriticalSection(&m_cs[i]);
-	InitWindowPos();
+	::InitializeCriticalSection(&m_csShowPlate);
+	//InitWindowPos();
 	for (int i = 0; i < DAYCOUNT; ++i)
 	{
 		SStringW strName;
@@ -41,7 +43,7 @@ BOOL CDlgLimitUpStat::OnInitDialog(EventArgs * e)
 			Subscriber(&CDlgLimitUpStat::OnListPlateLClick, this));
 
 		m_lsLimitUpStock[i] = FindChildByName2<SColorListCtrlEx>(strName.Format(L"ls_luStock%d", i));
-		m_lsLimitUpStock[i]->SetVisible(FALSE);
+		m_lsLimitUpStock[i]->SetVisible(FALSE, TRUE);
 
 	}
 	InitNet();
@@ -57,16 +59,41 @@ BOOL CDlgLimitUpStat::OnInitDialog(EventArgs * e)
 	return 0;
 }
 
-BOOL SOUI::CDlgLimitUpStat::CloseWnd()
+BOOL CDlgLimitUpStat::CloseWnd()
 {
-	WINDOWPLACEMENT wp = { sizeof(wp) };
-	::GetWindowPlacement(m_hWnd, &wp);
-	std::ofstream ofile;
-	ofile.open(L".\\config\\LimitUp.position",
-		std::ios::out | std::ios::binary);
-	if (ofile.is_open())
-		ofile.write((char*)&wp, sizeof(wp));
-	ofile.close();
+	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
+	if (m_thread.joinable())
+		m_thread.join();
+
+	SYSTEMTIME st;
+	::GetLocalTime(&st);
+	int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
+	for (int i = 0; i < m_dayVec.size(); ++i)
+	{
+		for (auto&it : m_bUpdateMap)
+		{
+			if (it.first != nToday)
+				SaveHisData(it.first);
+		}
+	}
+	if (IsWindowVisible())
+	{
+		WINDOWPLACEMENT wp = { sizeof(wp) };
+		::GetWindowPlacement(m_hWnd, &wp);
+		std::ofstream ofile;
+		ofile.open(".\\config\\LimitUp.position",
+			std::ios::out | std::ios::binary);
+		if (ofile.is_open())
+			ofile.write((char*)&wp, sizeof(wp));
+		ofile.close();
+	}
+	else
+	{
+		if (_access(".\\config\\LimitUp.position", 0) == 0)
+			remove(".\\config\\LimitUp.position");
+	}
+	m_bClose = TRUE;
+
 	return TRUE;
 }
 
@@ -88,28 +115,42 @@ void CDlgLimitUpStat::InitWindowPos()
 
 }
 
-void CDlgLimitUpStat::InitNet()
+void CDlgLimitUpStat::InitNet(BOOL bReinit)
 {
 	//LPCTSTR lpszAgent = L"WinInetGet/0.1";
-	hInternet = InternetOpenW(NULL, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-	hConnectRT = InternetConnectW(hInternet, L"apphq.longhuvip.com",
+	if (bReinit)
+	{
+		InternetCloseHandle(hConnectRT);
+		InternetCloseHandle(hConnectHis);
+	}
+	else
+	{
+		hInternet = InternetOpenA(NULL, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+		dwOpenRequestFlags = INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTP |
+			INTERNET_FLAG_KEEP_CONNECTION |
+			INTERNET_FLAG_NO_AUTH |
+			INTERNET_FLAG_NO_COOKIES |
+			INTERNET_FLAG_NO_UI |
+			//设置启用HTTPS
+			INTERNET_FLAG_SECURE |
+			INTERNET_FLAG_RELOAD |
+			INTERNET_FLAG_NO_CACHE_WRITE;
+
+	}
+
+	hConnectRT = InternetConnectA(hInternet, "apphq.longhuvip.com",
 		INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
-	hConnectHis = InternetConnectW(hInternet, L"apphis.longhuvip.com",
+	hConnectHis = InternetConnectA(hInternet, "apphis.longhuvip.com",
 		INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
-	dwOpenRequestFlags = INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTP |
-		INTERNET_FLAG_KEEP_CONNECTION |
-		INTERNET_FLAG_NO_AUTH |
-		INTERNET_FLAG_NO_COOKIES |
-		INTERNET_FLAG_NO_UI |
-		//设置启用HTTPS
-		INTERNET_FLAG_SECURE |
-		INTERNET_FLAG_RELOAD;
 }
 
 void CDlgLimitUpStat::InitData()
 {
+	set<int>SavedDaySet;
+	GetHisDataList(SavedDaySet);
 	SYSTEMTIME st;
 	::GetLocalTime(&st);
+	int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
 	int nDayCount = 0;
 	int nYear = st.wYear;
 	int nMonth = st.wMonth;
@@ -120,12 +161,24 @@ void CDlgLimitUpStat::InitData()
 		int nDate = nYear * 10000 + nMonth * 100 + nDay;
 		int nCount = nDayCount;
 		if (nDayOfWeek != 0 && nDayOfWeek != 6) //去除周六周日
-			if (GetPlateData(nCount,nDate) > 0)
+		{
+			BOOL bGetData = FALSE;
+			if (SavedDaySet.count(nDate))
+			{
+				ReadHisData(nDate);
+				bGetData = TRUE;
+			}
+			else if (GetPlateData(nCount, nDate) > 0)
+				bGetData = TRUE;
+
+			if (bGetData)
 			{
 				m_dayVec.emplace_back(nDate);
 				::SendMessage(m_hWnd, WM_LIMITUP_MSG, LUM_UpdatePlate, nDayCount);
 				++nDayCount;
 			}
+
+		}
 
 		--nDay;
 		if (nDay == 0)
@@ -154,6 +207,16 @@ void CDlgLimitUpStat::InitData()
 		if (nDayOfWeek < 0)
 			nDayOfWeek = 6;
 	}
+	for (auto &it : m_dayVec)
+	{
+		if (SavedDaySet.count(it) == 0)
+		{
+			if (it != nToday)
+				SaveHisData(it);
+		}
+	}
+
+	SaveHisDataList(nToday);
 
 }
 
@@ -187,13 +250,13 @@ void CDlgLimitUpStat::OnSize(UINT nType, CSize size)
 
 	if (nType == SIZE_MAXIMIZED)
 	{
-		pBtnRestore->SetVisible(TRUE);
-		pBtnMax->SetVisible(FALSE);
+		pBtnRestore->SetVisible(TRUE, TRUE);
+		pBtnMax->SetVisible(FALSE, TRUE);
 	}
 	else if (nType == SIZE_RESTORED)
 	{
-		pBtnRestore->SetVisible(FALSE);
-		pBtnMax->SetVisible(TRUE);
+		pBtnRestore->SetVisible(FALSE, TRUE);
+		pBtnMax->SetVisible(TRUE, TRUE);
 	}
 }
 
@@ -207,16 +270,110 @@ void CDlgLimitUpStat::UpdateShowPlate(int nDataPos)
 	::EnterCriticalSection(&m_cs[nDataPos]);
 	auto plateVec = m_dayPlateMap[nDate];
 	::LeaveCriticalSection(&m_cs[nDataPos]);
-	for (int i = 0; i < plateVec.size(); ++i)
+	for (int i = 0; i < MAXPLATE; ++i)
 	{
 		if (m_lsPlate[nDataPos]->GetItemCount() <= i)
 			m_lsPlate[nDataPos]->InsertItem(i, L"");
 
-		m_lsPlate[nDataPos]->SetSubItemText(i, 0, plateVec[i].strPlateName, RGBA(255, 255, 255, 255));
-		m_lsPlate[nDataPos]->SetSubItemText(i, 1, str.Format(L"%d", plateVec[i].nCount), RGBA(255, 255, 255, 255));
+		if (i < plateVec.size())
+		{
+			m_lsPlate[nDataPos]->SetSubItemText(i, 0, plateVec[i].strPlateName, RGBA(255, 255, 255, 255));
+			m_lsPlate[nDataPos]->SetSubItemText(i, 1, str.Format(L"%d", plateVec[i].nCount), RGBA(255, 255, 255, 255));
+		}
+	}
+	int nSel = m_lsPlate[nDataPos]->GetSelectedItem();
+	m_lsPlate[nDataPos]->SetUserData(nDataPos);
+}
+
+void CDlgLimitUpStat::SaveHisData(int nDate)
+{
+	if (_access(".\\limitUp", 0) == -1)
+		_mkdir(".\\limitUp");
+
+	SStringA strFileName;
+	strFileName.Format(".\\limitUp\\day_%d.DAT", nDate);
+	std::ofstream ofile(strFileName, std::ios::binary);
+	if (ofile.is_open())
+	{
+		auto &plateVec = m_dayPlateMap[nDate];
+		for (auto &plInfo : plateVec)
+		{
+			ofile.write((char*)&plInfo, sizeof(plInfo));
+			auto &luStockVec = m_LimitUpMap[nDate][plInfo.strPlateID];
+			for (auto &luStock : luStockVec)
+				ofile.write((char*)&luStock, sizeof(luStock));
+		}
+		ofile.close();
 	}
 
-	m_lsPlate[nDataPos]->SetUserData(nDataPos);
+}
+
+void CDlgLimitUpStat::ReadHisData(int nDate)
+{
+	SStringA strFileName;
+	strFileName.Format(".\\limitUp\\day_%d.DAT", nDate);
+	std::ifstream ifile(strFileName, std::ios::binary);
+	if (ifile.is_open())
+	{
+		PlateInfo plInfo = { "" };
+		while (ifile.read((char*)&plInfo, sizeof(plInfo)))
+		{
+			m_dayPlateMap[nDate].emplace_back(plInfo);
+			auto &limitUpVec = m_LimitUpMap[nDate][plInfo.strPlateID];
+			int nCount = 0;
+			while (nCount < plInfo.nCount)
+			{
+				LimitUpStock luStock = { "" };
+				ifile.read((char*)&luStock, sizeof(luStock));
+				limitUpVec.emplace_back(luStock);
+				++nCount;
+			}
+		}
+		ifile.close();
+	}
+}
+
+void CDlgLimitUpStat::GetHisDataList(set<int>& hisDayVec)
+{
+	std::ifstream ifile(".\\limitUp\\DayList.DAT", std::ios::binary);
+	if (ifile.is_open())
+	{
+		int nDate;
+		while (ifile.read((char*)&nDate, sizeof(nDate)))
+			hisDayVec.insert(nDate);
+		ifile.close();
+	}
+}
+
+void CDlgLimitUpStat::SaveHisDataList(int nToday)
+{
+	std::ofstream ofile(".\\limitUp\\DayList.DAT");
+	set<SStringA> valuedFileName;
+	if (ofile.is_open())
+	{
+		for (auto &nDate : m_dayVec)
+			if (nToday != nDate)
+			{
+				ofile.write((char*)&nDate, sizeof(nDate));
+				SStringA tmp;
+				tmp.Format("day_%d.DAT", nDate);
+				valuedFileName.insert(tmp);
+			}
+		ofile.close();
+	}
+	WIN32_FIND_DATAA FindFileData;
+	SStringA DataPath = ".\\limitUp\\";
+	HANDLE FileHandle = FindFirstFileA(DataPath + "day_*.DAT", &FindFileData);
+	if (valuedFileName.count(FindFileData.cFileName) == 0)
+		DeleteFileA(DataPath + FindFileData.cFileName);
+	while (FindNextFileA(FileHandle, &FindFileData))
+	{
+		if (valuedFileName.count(FindFileData.cFileName) == 0)
+			DeleteFileA(DataPath + FindFileData.cFileName);
+	}
+
+
+
 }
 
 LRESULT CDlgLimitUpStat::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
@@ -235,6 +392,16 @@ LRESULT CDlgLimitUpStat::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		if (m_ShowPlate != "")
 			UpdateShowLimitUpStock(0, m_ShowPlate);
 		break;
+	case LUM_UpdateShowPlate:
+	{
+		SStringA strPlate = *(SStringA*)lp;
+		if (strPlate == m_ShowPlate)
+		{
+			for (int i = 0; i < DAYCOUNT; ++i)
+				UpdateShowLimitUpStock(i, strPlate);
+		}
+	}
+	break;
 	default:
 		break;
 	}
@@ -254,10 +421,22 @@ bool CDlgLimitUpStat::OnListPlateLClick(EventArgs * pEvtBase)
 	::EnterCriticalSection(&m_cs[nDayPos]);
 	SStringA strPlate = m_dayPlateMap[nDate][nSel].strPlateID;
 	::LeaveCriticalSection(&m_cs[nDayPos]);
+	if (strPlate != m_ShowPlate)
+	{
+		::EnterCriticalSection(&m_csShowPlate);
+		m_ShowPlate = strPlate;
+		::LeaveCriticalSection(&m_csShowPlate);
+		for (int i = 0; i < DAYCOUNT; ++i)
+		{
+			m_lsLimitUpStock[i]->SetVisible(FALSE, TRUE);
+			m_lsLimitUpStock[i]->RequestRelayout();
 
-	m_ShowPlate = strPlate;
-	for (int i = 0; i < m_dayVec.size(); ++i)
-		UpdateShowLimitUpStock(i, strPlate);
+		}
+		SendMsg(m_uThreadID, GetPlateLimitUp,
+			strPlate.GetBuffer(0), strPlate.GetLength() + 1);
+	}
+	//for (int i = 0; i < m_dayVec.size(); ++i)
+	//	UpdateShowLimitUpStock(i, strPlate);
 
 	return true;
 }
@@ -277,30 +456,45 @@ void CDlgLimitUpStat::UpdateShowLimitUpStock(int nDataPos, SStringA strPlate)
 			break;
 		}
 	}
+	nPos = nPos >= MAXPLATE ? -1 : nPos;
 	m_lsPlate[nDataPos]->SetSelectedItem(nPos);
+	m_lsLimitUpStock[nDataPos]->DeleteAllItems();
 
-	auto &plateStockMap = m_LimitUpMap[nDate];
-	if (plateStockMap.count(strPlate) == 0)
-		GetPlateLimitUpStock(nDataPos, nDate, strPlate);
-	auto &StockVec = plateStockMap[strPlate];
-	if (!StockVec.empty())
+	::EnterCriticalSection(&m_cs[nDataPos]);
+	auto plateStockMap = m_LimitUpMap[nDate];
+	::LeaveCriticalSection(&m_cs[nDataPos]);
+
+	if (plateStockMap.count(strPlate))
 	{
-		m_lsLimitUpStock[nDataPos]->DeleteAllItems();
-		for (int i = 0; i < StockVec.size(); ++i)
+		auto &StockVec = plateStockMap[strPlate];
+		if (!StockVec.empty())
 		{
-			m_lsLimitUpStock[nDataPos]->InsertItem(i, StockVec[i].strStockName);
-			m_lsLimitUpStock[nDataPos]->SetSubItemText(i, 1, StockVec[i].strLimitUp);
+			for (int i = 0; i < StockVec.size(); ++i)
+			{
+				m_lsLimitUpStock[nDataPos]->InsertItem(i, StockVec[i].strStockName);
+				m_lsLimitUpStock[nDataPos]->SetSubItemText(i, 1, StockVec[i].strLimitUp);
+			}
+			m_lsLimitUpStock[nDataPos]->SetVisible(TRUE, TRUE);
 		}
-		m_lsLimitUpStock[nDataPos]->SetVisible(TRUE, TRUE);
+		/*else*/
+		//{
+		//	m_lsLimitUpStock[nDataPos]->SetVisible(FALSE, TRUE);
+		//	m_lsLimitUpStock[nDataPos]->RequestRelayout();
+		//	
+		//}
 	}
-	else
-		m_lsLimitUpStock[nDataPos]->SetVisible(FALSE, TRUE);
+	//else
+	//{
+	//	m_lsLimitUpStock[nDataPos]->SetVisible(FALSE, TRUE);
+	//	m_lsLimitUpStock[nDataPos]->RequestRelayout();
+
+	//}
 
 }
 
 int CDlgLimitUpStat::GetPlateData(int nPos, int nDate)
 {
-	SStringW strUrl = L"/w1/api/index.php?Order=1&a=RealRankingInfo&st=15&apiv=w21&Type=1&c=ZhiShuRanking&ZSType=7";
+	SStringA strUrl = "/w1/api/index.php?Order=1&a=RealRankingInfo&st=15&apiv=w21&Type=1&c=ZhiShuRanking&ZSType=7";
 	HINTERNET hRequest;
 	string tmpRes;
 	SYSTEMTIME st;
@@ -308,14 +502,14 @@ int CDlgLimitUpStat::GetPlateData(int nPos, int nDate)
 	int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
 	if (nDate == nToday)
 	{
-		hRequest = HttpOpenRequestW(hConnectRT, L"GET", strUrl,
+		hRequest = HttpOpenRequestA(hConnectRT, "GET", strUrl,
 			NULL, NULL, NULL, dwOpenRequestFlags, 0);
 	}
 	else
 	{
-		strUrl.Format(L"%s&Date=%04d-%02d-%02d", strUrl, nDate / 10000,
+		strUrl.Format("%s&Date=%04d-%02d-%02d", strUrl, nDate / 10000,
 			nDate % 10000 / 100, nDate % 100);
-		hRequest = HttpOpenRequestW(hConnectHis, L"GET", strUrl,
+		hRequest = HttpOpenRequestA(hConnectHis, "GET", strUrl,
 			NULL, NULL, NULL, dwOpenRequestFlags, 0);
 	}
 
@@ -371,19 +565,20 @@ void CDlgLimitUpStat::GetPlateDataFromStr(int nPos, int nDate, string& str)
 			}
 
 			if (nCount == 0)
-				plInfo.strPlateID = buffer.c_str();
+				strcpy_s(plInfo.strPlateID, buffer.c_str());
 			if (nCount == 1)
 			{
-				plInfo.strPlateName = Unescape(buffer);
+				wcscpy_s(plInfo.strPlateName, Unescape(buffer));
 				break;
 			}
 			++nCount;
 		}
-		plInfo.nCount = GetPlateLimitUpStock(nPos,nDate, plInfo.strPlateID);
+		plInfo.nCount = GetPlateLimitUpStock(nPos, nDate, plInfo.strPlateID);
 		plVec.emplace_back(plInfo);
 		if (plVec.size() == MAXPLATE)
 			break;
 	}
+
 	::EnterCriticalSection(&m_cs[nPos]);
 	m_dayPlateMap[nDate] = plVec;
 	::LeaveCriticalSection(&m_cs[nPos]);
@@ -392,6 +587,7 @@ void CDlgLimitUpStat::GetPlateDataFromStr(int nPos, int nDate, string& str)
 
 int CDlgLimitUpStat::GetPlateLimitUpStock(int nPos, int nDate, SStringA strPlateID)
 {
+
 	HINTERNET hRequest;
 	string tmpRes;
 	SYSTEMTIME st;
@@ -399,19 +595,19 @@ int CDlgLimitUpStat::GetPlateLimitUpStock(int nPos, int nDate, SStringA strPlate
 	int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
 	if (nDate == nToday)
 	{
-		SStringW strUrl =
-			L"/w1/api/index.php?Order=1&st=50&a=ZhiShuStockList_W8&c=ZhiShuRanking&old=1&apiv=w21&Type=6";
-		strUrl.Format(L"%s&PlateID=%s", strUrl, StrA2StrW(strPlateID));
-		hRequest = HttpOpenRequestW(hConnectRT, L"GET", strUrl,
+		SStringA strUrl =
+			"/w1/api/index.php?Order=1&st=50&a=ZhiShuStockList_W8&c=ZhiShuRanking&old=1&apiv=w21&Type=6&PlateID=%s";
+		strUrl.Format(strUrl, strPlateID);
+		hRequest = HttpOpenRequestA(hConnectRT, "GET", strUrl,
 			NULL, NULL, NULL, dwOpenRequestFlags, 0);
 	}
 	else
 	{
-		SStringW strUrl =
-			L"/w1/api/index.php?st=50&Index=0&old=1&Order=1&a=ZhiShuStockList_W8&apiv=w26&Type=6&c=ZhiShuRanking";
-		strUrl.Format(L"%s&PlateID=%s&Date=%04d-%02d-%02d", strUrl, StrA2StrW(strPlateID),
+		SStringA strUrl =
+			"/w1/api/index.php?st=50&Index=0&old=1&Order=1&a=ZhiShuStockList_W8&apiv=w26&Type=6&c=ZhiShuRanking";
+		strUrl.Format("%s&PlateID=%s&Date=%04d-%02d-%02d", strUrl, strPlateID,
 			nDate / 10000, nDate % 10000 / 100, nDate % 100);
-		hRequest = HttpOpenRequestW(hConnectHis, L"GET", strUrl,
+		hRequest = HttpOpenRequestA(hConnectHis, "GET", strUrl,
 			NULL, NULL, NULL, dwOpenRequestFlags, 0);
 	}
 
@@ -434,19 +630,40 @@ int CDlgLimitUpStat::GetPlateLimitUpStock(int nPos, int nDate, SStringA strPlate
 	}
 	if (tmpRes.find("MYSQL数据库链接出错") == string::npos)
 	{
-		GetPlateLimitUpDataFromMsg(nPos,nDate, tmpRes, strPlateID);
-		int nTotal = m_LimitUpMap[nDate][strPlateID].size();
-		for (int i = nTotal - 1; i >= 0; --i)
+		if (tmpRes.find("list") != string::npos)
 		{
-			if (m_LimitUpMap[nDate][strPlateID][i].nLimitUpDay == 0)
-				--nTotal;
-			else
-				break;
+			size_t countPos = tmpRes.rfind("\"Count\"");
+			size_t countStart = 0;
+			size_t countEnd = 0;
+			for (auto i = countPos; i < tmpRes.size(); ++i)
+			{
+				if (tmpRes[i] == ':')
+					countStart = i + 1;
+				else if (tmpRes[i] == ',')
+				{
+					countEnd = i;
+					break;
+				}
+			}
+
+			int nCount = countEnd > countStart ?
+				atoi(tmpRes.substr(countStart, countEnd - countStart).c_str()) : 0;
+			if (nCount > 0)
+			{
+				GetPlateLimitUpDataFromMsg(nPos, nDate, tmpRes, strPlateID);
+				int nTotal = m_LimitUpMap[nDate][strPlateID].size();
+				for (int i = nTotal - 1; i >= 0; --i)
+				{
+					if (m_LimitUpMap[nDate][strPlateID][i].nLimitUpDay == 0)
+						--nTotal;
+					else
+						break;
+				}
+				return nTotal;
+			}
 		}
-		return nTotal;
 	}
-	else
-		return 0;
+	return 0;
 
 
 }
@@ -481,9 +698,9 @@ void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & s
 			}
 
 			if (nCount == 0)
-				luInfo.strStockID = buffer.c_str();
+				strcpy_s(luInfo.strStockID, buffer.c_str());
 			if (nCount == 1)
-				luInfo.strStockName = Unescape(buffer);
+				wcscpy_s(luInfo.strStockName, Unescape(buffer));
 			if (nCount == 23)
 			{
 				if (buffer.empty())
@@ -491,25 +708,25 @@ void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & s
 				SStringW strlimitUp = Unescape(buffer);
 				if (strlimitUp.Find(L"昨日") != -1)
 				{
-					luInfo.strLimitUp = strlimitUp;
+					wcscpy_s(luInfo.strLimitUp, strlimitUp);
 					luInfo.nCountDay = 1;
 					luInfo.nLimitUpDay = 0;
 				}
 				else if (strlimitUp.Find(L"首板") != -1)
 				{
-					luInfo.strLimitUp = strlimitUp;
+					wcscpy_s(luInfo.strLimitUp, strlimitUp);
 					luInfo.nCountDay = 1;
 					luInfo.nLimitUpDay = 1;
 				}
 				else if (strlimitUp.Find(L"连板") != -1)
 				{
-					luInfo.strLimitUp = strlimitUp;
+					wcscpy_s(luInfo.strLimitUp, strlimitUp);
 					luInfo.nCountDay = luInfo.nLimitUpDay = _wtoi(strlimitUp);
 				}
 				else if (strlimitUp.Find(L"天") != -1 &&
 					strlimitUp.Find(L"板") != -1)
 				{
-					luInfo.strLimitUp = strlimitUp;
+					wcscpy_s(luInfo.strLimitUp, strlimitUp);
 					luInfo.nCountDay = _wtoi(strlimitUp);
 					int nLimitDayPos = strlimitUp.Find(L"天");
 					luInfo.nLimitUpDay = _wtoi(strlimitUp.Right(strlimitUp.GetLength() - nLimitDayPos - 1));
@@ -518,7 +735,7 @@ void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & s
 			}
 			++nCount;
 		}
-		if (luInfo.strLimitUp != L"")
+		if (wcscmp(luInfo.strLimitUp, L"") != 0)
 			limitUpVec.emplace_back(luInfo);
 	}
 	std::stable_sort(limitUpVec.begin(), limitUpVec.end(),
@@ -534,13 +751,14 @@ void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & s
 
 }
 
-void SOUI::CDlgLimitUpStat::DataGet()
+void CDlgLimitUpStat::DataGet()
 {
 	int MsgId;
 	char *info;
 	int msgLength;
 	InitData();
 	SetTimer(1, 10000);
+	SetTimer(2, 60 * 5 * 1000);
 	while (true)
 	{
 		MsgId = RecvMsg(0, &info, msgLength, 0);
@@ -557,26 +775,73 @@ void SOUI::CDlgLimitUpStat::DataGet()
 			::GetLocalTime(&st);
 			int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
 			int nTime = st.wHour * 100 + st.wMinute;
-			if ((nTime >= 915 && nTime <= 1200) || (nTime >= 1300 && nTime <= 1530))
+			if (st.wDayOfWeek != 0 && st.wDayOfWeek != 6)
 			{
-				GetPlateData(0,nToday);
-				::SendMessage(m_hWnd, WM_LIMITUP_MSG, LUM_UpdateToday, NULL);
+				if ((nTime >= 915 && nTime <= 1200) || (nTime >= 1300 && nTime <= 1530))
+				{
+					GetPlateData(0, nToday);
+					::EnterCriticalSection(&m_csShowPlate);
+					SStringA strShowPlate = m_ShowPlate;
+					::LeaveCriticalSection(&m_csShowPlate);
+					if (strShowPlate != "")
+					{
+						BOOL bHasData = FALSE;
+						::EnterCriticalSection(&m_cs[0]);
+						if (m_LimitUpMap[nToday].count(strShowPlate))
+							bHasData = TRUE;
+						::LeaveCriticalSection(&m_cs[0]);
+						if (!bHasData)
+						{
+							PlateInfo plInfo = { "" };
+							strcpy_s(plInfo.strPlateID, strShowPlate);
+							plInfo.nCount = GetPlateLimitUpStock(0, nToday, strShowPlate);
+						}
+					}
+
+					::SendMessage(m_hWnd, WM_LIMITUP_MSG, LUM_UpdateToday, NULL);
+
+				}
 			}
 
 		}
+		else if (GetPlateLimitUp == MsgId)
+		{
+			SStringA strPlateID = info;
+			for (int i = 0; i < m_dayVec.size(); ++i)
+			{
+				int nDate = m_dayVec[i];
+				auto &plateStockMap = m_LimitUpMap[nDate];
+				if (plateStockMap.count(strPlateID) == 0)
+				{
+					PlateInfo plInfo;
+					strcpy_s(plInfo.strPlateID, strPlateID);
+					plInfo.nCount = GetPlateLimitUpStock(i, nDate, strPlateID);
+					m_dayPlateMap[nDate].emplace_back(plInfo);
+					m_bUpdateMap[nDate] = TRUE;
+				}
+
+			}
+			::SendMessage(m_hWnd, WM_LIMITUP_MSG, LUM_UpdateShowPlate, (LPARAM)&strPlateID);
+		}
+		else if (ReInitLimitUp == MsgId)
+			InitData();
+		else if (limitUpReconnect == MsgId)
+			InitNet(TRUE);
 		delete[]info;
 		info = nullptr;
 	}
-
 }
 
 void CDlgLimitUpStat::OnTimer(char cTimerID)
 {
 	if (cTimerID == 1)
 	{
-		if(IsWindowVisible())
+		if (IsWindowVisible())
 			SendMsg(m_uThreadID, GetTodayLimitUp, nullptr, 0);
 	}
+	else if (cTimerID == 2)
+		SendMsg(m_uThreadID, limitUpReconnect, nullptr, 0);
+
 }
 
 SStringW CDlgLimitUpStat::Unescape(const string & input)

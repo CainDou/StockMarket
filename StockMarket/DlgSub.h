@@ -25,6 +25,7 @@ namespace SOUI
 		void	OnBtnClose();
 		void	SaveStockFilterPara(int nGroup);
 		void	SaveComboStockFilterPara(int nGroup);
+		void	StopAndClearData();
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
 
@@ -86,7 +87,7 @@ namespace SOUI
 			MSG_WM_TIMER(OnTimer)
 			//MSG_WM_CREATE(OnCreate)
 			MSG_WM_CLOSE(OnClose)
-			//MSG_WM_DESTROY(OnDestroy)
+			MSG_WM_DESTROY(OnDestroy)
 			MSG_WM_SIZE(OnSize)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
