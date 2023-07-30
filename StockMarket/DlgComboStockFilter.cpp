@@ -43,7 +43,7 @@ BOOL CDlgComboStockFilter::OnInitDialog(EventArgs * e)
 	m_pCbxPeriod2 = FindChildByID2<SComboBox>(R.id.cbx_period2);
 	m_pTextNum = FindChildByID2<SStatic>(R.id.text_num);
 	m_pEditNum = FindChildByID2<SEdit>(R.id.edit_num);
-	m_pEditNum->SetAttribute(L"colorText",L"#000000FF");
+	m_pEditNum->SetAttribute(L"colorText", L"#000000FF");
 
 	m_pListHis = FindChildByID2<SColorListCtrlEx>(R.id.ls_filterHis);
 	m_pCbxHisFunc = FindChildByID2<SComboBox>(R.id.cbx_funcHis);
@@ -157,14 +157,31 @@ void CDlgComboStockFilter::OnBtnSaveHisFitler()
 	BOOL bUsed = m_pCheckHisUse->IsChecked();
 	m_pBtnSaveHis->EnableWindow(FALSE, TRUE);
 	m_pCheckHisUse->EnableWindow(FALSE, TRUE);
+	if (m_bHisChange)
+	{
+		m_hisSfSet = m_hisTmpSfSet;
+		SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
+
+	}
+
 	if (bUsed)
 	{
 		if (m_bHisChange || !m_bHisCalced)
 		{
-			m_hisSfSet = m_hisTmpSfSet;
-			SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
 			m_bHisChange = FALSE;
-			if (SMessageBox(m_hWnd, L"条件更改，是否重新计算符合条件的股票!", L"提示", MB_OKCANCEL) == IDOK)
+			if (m_pListHis->GetItemCount() <= 0)
+			{
+				m_pCheckHisUse->SetCheck(FALSE);
+				SMessageBox(m_hWnd, L"当前历史选股器条件为空,自动关闭!", L"提示", MB_OK);
+				bUsed = FALSE;
+				SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
+					(char*)&bUsed, sizeof(bUsed));
+				m_pCheckHisUse->EnableWindow(TRUE, TRUE);
+				m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+
+			}
+
+			else if (SMessageBox(m_hWnd, L"条件更改，是否重新计算符合条件的股票!", L"提示", MB_OKCANCEL) == IDOK)
 			{
 				SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
 					(char*)&bUsed, sizeof(bUsed));
@@ -182,11 +199,12 @@ void CDlgComboStockFilter::OnBtnSaveHisFitler()
 	{
 		SendMsg(m_uParThreadID, WW_ChangeHisFiterState,
 			(char*)&bUsed, sizeof(bUsed));
-		m_pCheckHisUse->EnableWindow(TRUE,TRUE);
+		m_pCheckHisUse->EnableWindow(TRUE, TRUE);
 		m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
 	}
 
-	
+	m_bHisChange = FALSE;
+
 }
 
 void CDlgComboStockFilter::OnBtnRtFitler()
@@ -437,11 +455,26 @@ void CDlgComboStockFilter::OnCheckUseHis()
 		{
 			m_hisSfSet = m_hisTmpSfSet;
 			m_bHisChange = FALSE;
-			SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
-			SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
-				(char*)&bUsed, sizeof(bUsed));
-			CalcHisStockFilter();
-			return;
+			if (m_pListHis->GetItemCount() <= 0)
+			{
+				m_pCheckHisUse->SetCheck(FALSE);
+				SMessageBox(m_hWnd, L"当前历史选股器条件为空,自动关闭!", L"提示", MB_OK);
+				bUsed = FALSE;
+				SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
+					(char*)&bUsed, sizeof(bUsed));
+				m_pCheckHisUse->EnableWindow(TRUE, TRUE);
+				m_pBtnSaveHis->EnableWindow(TRUE, TRUE);
+
+			}
+			else
+			{
+				SendMsg(m_uParThreadID, WW_SaveStockFilter, NULL, 0);
+				SendMsg(m_uParThreadID, WW_HisFilterStartCalc,
+					(char*)&bUsed, sizeof(bUsed));
+				CalcHisStockFilter();
+				return;
+
+			}
 		}
 		else
 		{
@@ -1448,22 +1481,22 @@ void CDlgComboStockFilter::DeleteCondition()
 	if (m_pCheckUse->IsChecked())
 	{
 
-		//if (m_pList->GetItemCount() > 0)
-		//{
-		BOOL bUse = TRUE;
-		SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-			(char*)&bUse, sizeof(bUse));
-		/*	}
-			else
-			{
-				m_pCheckUse->SetCheck(FALSE);
-				BOOL bUse = FALSE;
-				SendMsg(m_uParThreadID, WW_ChangeStockFilter,
-					(char*)&bUse, sizeof(bUse));
-				SMessageBox(m_hWnd, L"当前选股器无条件，自动关闭!", L"提示", MB_OK);
+		if (m_pList->GetItemCount() > 0)
+		{
+			BOOL bUse = TRUE;
+			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
+				(char*)&bUse, sizeof(bUse));
+		}
+		else
+		{
+			m_pCheckUse->SetCheck(FALSE);
+			BOOL bUse = FALSE;
+			SendMsg(m_uParThreadID, WW_ChangeStockFilter,
+				(char*)&bUse, sizeof(bUse));
+			SMessageBox(m_hWnd, L"当前选股器无条件，自动关闭!", L"提示", MB_OK);
 
-			}
-	*/
+		}
+
 	}
 
 
@@ -1720,14 +1753,14 @@ void CDlgComboStockFilter::AddHisConditon()
 	hsf.countDay = _wtof(m_pEditHisCntDay->GetWindowTextW());
 	hsf.type = m_pRadioExist->IsChecked() ? eJT_Exist : eJT_Forall;
 
-	if (m_hisSfSet.count(hsf))
+	if (m_hisTmpSfSet.count(hsf))
 	{
 		SMessageBox(m_hWnd, L"已包含相同条件，添加失败", L"警告", MB_OK | MB_ICONERROR);
 		return;
 	}
 	m_bHisChange = TRUE;
 	m_bHisCalced = FALSE;
-	m_hisSfSet.insert(hsf);
+	m_hisTmpSfSet.insert(hsf);
 	int nIDCount = m_pListHis->GetItemCount();
 	HisListAddItem(hsf);
 	SStringW strTmp;
@@ -1754,7 +1787,7 @@ void CDlgComboStockFilter::ChangeHisCondition()
 	hsf.countDay = _wtof(m_pEditHisCntDay->GetWindowTextW());
 	hsf.type = m_pRadioExist->IsChecked() ? eJT_Exist : eJT_Forall;
 
-	if (m_hisSfSet.count(hsf))
+	if (m_hisTmpSfSet.count(hsf))
 	{
 		SMessageBox(m_hWnd, L"已包含相同条件，修改失败", L"警告", MB_OK | MB_ICONERROR);
 		return;
@@ -1762,11 +1795,11 @@ void CDlgComboStockFilter::ChangeHisCondition()
 	m_bHisChange = TRUE;
 	m_bHisCalced = FALSE;
 
-	m_hisSfSet.insert(hsf);
+	m_hisTmpSfSet.insert(hsf);
 	int nID = m_pCbxHisID->GetCurSel();
 	HisStockFilter oriSf = { 0 };
 	GetHisListItem(nID, oriSf);
-	m_hisSfSet.erase(oriSf);
+	m_hisTmpSfSet.erase(oriSf);
 	HisListChangeItem(nID, hsf);
 }
 
@@ -1780,18 +1813,19 @@ void CDlgComboStockFilter::DeleteHisCondition()
 	m_bHisChange = TRUE;
 	m_bHisCalced = FALSE;
 
-	int nID = m_pCbxID->GetCurSel();
-	StockFilter oriSf = { 0 };
-	GetListItem(nID, oriSf);
-	m_sfSet.erase(oriSf);
-	ListDeleteItem(nID);
-	int nItemCount = m_pCbxID->GetCount();
-	m_pCbxID->DeleteString(nItemCount - 1);
-	if (nID >= m_pCbxID->GetCount())
-		m_pCbxID->SetCurSel(m_pCbxID->GetCount() - 1);
-	if (m_pCbxID->GetCount() == 0)
-		m_pCbxID->SetWindowTextW(L"");
-	m_pList->RequestRelayout();
+	int nID = m_pCbxHisID->GetCurSel();
+	HisStockFilter oriSf = { 0 };
+	GetHisListItem(nID, oriSf);
+	m_hisTmpSfSet.erase(oriSf);
+	HisListDeleteItem(nID);
+	int nItemCount = m_pCbxHisID->GetCount();
+	m_pCbxHisID->DeleteString(nItemCount - 1);
+	if (nID >= m_pCbxHisID->GetCount())
+		m_pCbxHisID->SetCurSel(m_pCbxID->GetCount() - 1);
+	if (m_pCbxHisID->GetCount() == 0)
+		m_pCbxHisID->SetWindowTextW(L"");
+	m_pListHis->RequestRelayout();
+
 }
 
 

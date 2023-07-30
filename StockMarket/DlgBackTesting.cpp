@@ -816,7 +816,7 @@ void CDlgBackTesting::OnMsgHisMultiData(ReceiveInfo & recvInfo)
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#');
-	SendMsg(m_uCalcThreadID, BackTesting, buffer, recvInfo.DataSize);
+	SendMsg(m_uCalcThreadID, BackTesting, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 0);
@@ -828,7 +828,7 @@ void SOUI::CDlgBackTesting::OnMsgHisMultiDataForHSF(ReceiveInfo & recvInfo)
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#');
-	SendMsg(m_uHisCalcThreadID, CheckHisFilterPass, buffer, recvInfo.DataSize);
+	SendMsg(m_uHisCalcThreadID, CheckHisFilterPass, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 0);
@@ -977,6 +977,7 @@ void CDlgBackTesting::CheckHisFilter(char * msg, int nMsgLength)
 	BackTestingData testDataMap;
 	ReceiveInfo Info = *(ReceiveInfo*)msg;
 	int nOffset = sizeof(ReceiveInfo);
+	OutputDebugStringFormat("¹ÉÆ±:%s\n", Info.InsID);
 	while (nOffset < nMsgLength)
 	{
 		int nMsgOffset = GetDataFromMsg(msg + nOffset, testDataMap,TRUE);
