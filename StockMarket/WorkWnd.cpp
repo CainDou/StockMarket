@@ -560,7 +560,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		break;
 	case WDMsg_ChangeStockFilter:
 		m_bUseStockFilter = (BOOL)lp;
-		if (m_bUseStockFilter)
+		if (m_bUseStockFilter || m_bUseHisStockFilter)
 		{
 			SetBtnState(m_pBtnStockFilter, true);
 			SetBtnState(m_pBtnConn1, false);
@@ -662,8 +662,24 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	break;
 	case WDMsg_ChangeHisStockFilter:
 		m_bUseHisStockFilter = (BOOL)lp;
-		m_pDlgCmbStockFilter->OutPutHisCondition(m_hisSfVec);
-		::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdateListData, 0);
+		if (m_bUseStockFilter || m_bUseHisStockFilter)
+		{
+			SetBtnState(m_pBtnStockFilter, true);
+			SetBtnState(m_pBtnConn1, false);
+			SetBtnState(m_pBtnConn2, false);
+			m_bListConn1 = false;
+			m_bListConn2 = false;
+			m_ListShowInd = "";
+			m_pDlgCmbStockFilter->OutPutHisCondition(m_hisSfVec);
+			::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdateListData, 0);
+		}
+		else
+		{
+			SetBtnState(m_pBtnStockFilter, false);
+			UpdateListShowStock();
+			HandleListData();
+			UpdateList();
+		}
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SaveConfig, 0);
 		break;
 	case WDMsg_HisFilterStartCalc:
