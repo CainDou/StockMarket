@@ -2328,6 +2328,8 @@ void CWorkWnd::UpdateListFilterShowStock()
 	SStringW tmp;
 	for (int i = 0; i < m_InfoVec.size(); ++i)
 	{
+		bool bPassed = true;
+
 		if (m_bUseHisStockFilter)
 			if (!m_StockPassHisVec[i])
 				continue;
@@ -2335,16 +2337,19 @@ void CWorkWnd::UpdateListFilterShowStock()
 		if (Group_Stock == m_Group)
 			if (!CheckStockFitDomain(it))
 				continue;
-
-		bool bPassed = true;
-		for (auto &sf : m_sfVec)
+		if (m_bUseStockFilter)
 		{
-			if (!CheckCmbStockDataPass(sf, it.SecurityID))
+			for (auto &sf : m_sfVec)
 			{
-				bPassed = false;
-				break;
+				if (!CheckCmbStockDataPass(sf, it.SecurityID))
+				{
+					bPassed = false;
+					break;
+				}
 			}
+
 		}
+
 		if (bPassed)
 		{
 			if (nCount >= nNowItemCount)
