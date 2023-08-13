@@ -117,6 +117,9 @@ enum RecvMsgType
 	RecvMsg_HisMultiData,
 	RecvMsg_HisIndexKline,
 	RecvMsg_HisMultiDataForHSF,
+	RecvMsg_HisTFBase,
+	RecvMsg_TodayTFMarket,
+
 };
 
 enum SendMsgType
@@ -131,6 +134,7 @@ enum SendMsgType
 	SendType_HisCallAction,
 	SendType_HisMultiData,
 	SendType_IndexHisDayKline,
+	SendType_HisTFBase,
 };
 
 enum ComSendMsgType
@@ -441,7 +445,10 @@ enum SynMsg
 	Syn_RehabInfo,
 	Syn_HisCallAction,
 	Syn_GetCallAction,
-
+	Syn_HisTFBase,
+	Syn_GetHisTFBase,
+	Syn_TodayTFMarket,
+	Syn_RTTFMarkt,
 };
 
 enum WorkWndMsg
@@ -479,6 +486,10 @@ enum WorkWndMsg
 	WW_ChangeHisFiterState,
 	WW_HisFilterStartCalc,
 	WW_HisFilterEndCalc,
+	WW_HisTFBase,
+	WW_GetHisTFBase,
+	WW_TodayTFMarket,
+	WW_RTTFMarket,
 
 };
 
@@ -672,6 +683,28 @@ typedef struct MACDDataType
 	double fMax;
 	double fMin;
 }MACDData_t;
+
+typedef struct _TFDataType
+{
+	double	ABSR[MAX_BAR_COUNT];
+	double	A2PBSR[MAX_BAR_COUNT];
+	double	AABSR[MAX_BAR_COUNT];
+	int		ActBuyVol[MAX_BAR_COUNT];
+	int		ActSellVol[MAX_BAR_COUNT];
+	double	AvgActBuyVol[MAX_BAR_COUNT];
+	double	AvgActSellVol[MAX_BAR_COUNT];
+	int		ActBuyOrder[MAX_BAR_COUNT];
+	int		ActSellOrder[MAX_BAR_COUNT];
+	double	fMaxRatio;
+	double	fMinRatio;
+	int		nMaxActVol;
+	int		nMinActVol;
+	int		nMaxActOrder;
+	int		nMinActOrder;
+	double	fMaxAvgVol;
+	double	fMinAvgVol;
+
+}TFData;
 
 
 
@@ -956,6 +989,11 @@ enum KlineMenu
 	KM_CAAmo,
 	KM_CAVolMaPara,
 	KM_CAAmoMaPara,
+	KM_TickFlow,
+	KM_TFRatio,
+	KM_TFVol,
+	KM_TFOrder,
+	KM_TFAvgVol,
 	KM_End,
 };
 
@@ -1474,6 +1512,8 @@ typedef struct InitPara
 	int nKlineCalcRehabType;	//用于内部计算的复权类型
 	int nKlineFTRehabDate;
 	bool UseHisStockFilter;
+	bool bKlineUseTickFlowData;
+	int	 nKlineTickFlowDataType;
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
 	SStringA strFilterName;
@@ -1491,7 +1531,8 @@ typedef struct InitPara
 		Connect1(false), Connect2(false), ShowIndy(""), UseStockFilter(false),
 		ListShowST(true), ListShowSBM(true),
 		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
-		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), strFilterName("")
+		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), 
+		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName("")
 	{}
 }InitPara_t;
 
@@ -1687,3 +1728,42 @@ enum eComboFilterMsg
 
 void GetInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
 void SaveInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
+
+typedef struct _TickFlowBaseMarket
+{
+	SecurityID SecurityID;
+	int nDate;
+	int nTime;						//时间
+	int nPeriod;
+	double fPrice;
+	double fPOC;						//POC价格
+	uint64_t ActBuyVol;
+	uint64_t ActSellVol;
+	uint32_t uActBuyOrderCount;	//股票主动买入订单数 或 期货多开量
+	uint32_t uActSellOrderCount;	//股票主动卖出订单数 或 期货空开量
+	uint32_t uPasBuyOrderCount;	//股票被动买入订单数 或 期货空平量
+	uint32_t uPasSellOrderCount;	//股票被动卖出订单数 或 期货多平量
+
+}TFBaseMarket;
+
+enum eDataFigureType
+{
+	eDFT_SolidLine=0,
+	eDFT_DotLine,
+	eDFT_Rect,
+};
+
+enum eFigureColorType
+{
+	eFCT_Appoint,//指定颜色
+	eFCT_Default,//默认颜色
+	eFCT_PriceJudge,//根据价格判定
+};
+
+enum eTFDataType
+{
+	eTFDT_Ratio,
+	eTFDT_Vol,
+	eTFDT_Order,
+	eTFDT_AvgVol,
+};

@@ -17,34 +17,35 @@ CPriceList::CPriceList()
 	
 }
 
-void CPriceList::SetShowData(SStringA StockID, SStringA StockName,
-	vector<CommonStockMarket>* pStkMarketVec)
+void CPriceList::ChangeShowStock(SStringA StockID, SStringA StockName)
 {
 	m_bInsInited = FALSE;
 	m_strSubIns = StockID;
-	m_pStkMarketVec = pStkMarketVec;
-	m_pIdxMarketVec = nullptr;
-	m_bIsStockIndex = false;
 	m_strStockName = StockName;
-	if (m_strStockName.Find("ST") != -1)
-		m_fMaxChgPct = 0.05;
-	else if (m_strSubIns[0] == '3' || m_strSubIns.Find("688") != -1)
-		m_fMaxChgPct = 0.2;
-	else
-		m_fMaxChgPct = 0.1;
+	if (!m_bIsStockIndex)
+	{
+		if (m_strStockName.Find("ST") != -1)
+			m_fMaxChgPct = 0.05;
+		else if (m_strSubIns[0] == '3' || m_strSubIns.Find("688") != -1)
+			m_fMaxChgPct = 0.2;
+		else
+			m_fMaxChgPct = 0.1;
+	}
 	m_bInsInited = TRUE;
 }
 
-void CPriceList::SetShowData(SStringA StockID, SStringA StockName,
-	vector<CommonIndexMarket>* pIdxMarketVec)
+void CPriceList::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec)
 {
-	m_bInsInited = FALSE;
-	m_strSubIns = StockID;
-	m_pIdxMarketVec = pIdxMarketVec;
+	m_pStkMarketVec = pStkMarketVec;
+	m_pIdxMarketVec = nullptr;
+	m_bIsStockIndex = false;
+}
+
+void CPriceList::SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec)
+{
 	m_pStkMarketVec = nullptr;
+	m_pIdxMarketVec = pIdxMarketVec;
 	m_bIsStockIndex = true;
-	m_strStockName = StockName;
-	m_bInsInited = TRUE;
 }
 
 void CPriceList::SetIndyName(vector<SStringA>& nameVec)

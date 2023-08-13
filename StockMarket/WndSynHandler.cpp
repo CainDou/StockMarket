@@ -279,7 +279,7 @@ void CWndSynHandler::InitRpsDataMap(string strDataName, int nMarketStart, int nL
 	auto &nameVec = m_rpsDataNameMap[strDataName];
 
 	nameVec.resize(eRps_DataCount);
-	for(int i = 0;i<= eRps_RANK2060;++i)
+	for (int i = 0; i <= eRps_RANK2060; ++i)
 		nameVec[i] = nMarketStart + i;
 
 	nameVec[eRps_POINT520L1] = nL1Start + 2;
@@ -468,6 +468,16 @@ int CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
+int CWndSynHandler::GetHisTFBase(SStringA stockID, int nPeriod, int nGroup)
+{
+	SendInfo info = { 0 };
+	info.MsgType = SendType_HisTFBase;
+	info.Group = nGroup;
+	info.Period = nPeriod;
+	strcpy_s(info.str, stockID);
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+}
+
 
 void CWndSynHandler::InitDataHandleMap()
 {
@@ -524,6 +534,10 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgCallAction;
 	m_netHandleMap[RecvMsg_HisCallAction]
 		= &CWndSynHandler::OnMsgHisCallAction;
+	m_netHandleMap[RecvMsg_HisTFBase]
+		= &CWndSynHandler::OnMsgHisTFBase;
+	m_netHandleMap[RecvMsg_TodayTFMarket]
+		= &CWndSynHandler::OnMsgTodayTFMarket;
 
 }
 
@@ -565,6 +579,13 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnHisCallAction;
 	m_synHandleMap[Syn_GetCallAction]
 		= &CWndSynHandler::OnGetCallAction;
+	m_synHandleMap[Syn_HisTFBase]
+		= &CWndSynHandler::OnHisTFBase;
+	m_synHandleMap[Syn_GetHisTFBase]
+		= &CWndSynHandler::OnGetHisTFBase;
+	m_synHandleMap[Syn_TodayTFMarket]
+		= &CWndSynHandler::OnTodayTFMarket;
+
 }
 
 
@@ -743,7 +764,7 @@ bool CWndSynHandler::HandleRpsData(string strDataName,
 	return true;
 }
 
-bool CWndSynHandler::HandleSecData(string strDataName, sSection & data, 
+bool CWndSynHandler::HandleSecData(string strDataName, sSection & data,
 	vector<double>& filterDataMap)
 {
 	auto &nameVec = m_secDataNameMap[strDataName];
@@ -918,7 +939,7 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 		switch (info.InfoType)
 		{
 		case StockInfo_Stock:
-		{	
+		{
 			m_StockPos[Group_Stock].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
@@ -957,7 +978,7 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 			{
 				m_FilterDataMap[Group_SWL1][period].resize(size);
 				for (auto &it : m_FilterDataMap[Group_SWL1][period])
-					it.resize(SFI_Count,0);
+					it.resize(SFI_Count, 0);
 
 			}
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[1] = 1;
@@ -966,7 +987,7 @@ void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 		}
 		break;
 		case StockInfo_SWL2:
-		{			
+		{
 			m_StockPos[Group_SWL2].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
@@ -1268,6 +1289,30 @@ void CWndSynHandler::OnMsgHisCallAction(ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
+void CWndSynHandler::OnMsgHisTFBase(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisTFBase, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+}
+
+void CWndSynHandler::OnMsgTodayTFMarket(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_TodayTFMarket, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+}
+
 void CWndSynHandler::OnNoDefineMsg(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -1318,6 +1363,29 @@ void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
 		}
 	}
 
+	for (auto &it : m_WndSubMap)
+	{
+		vector<TickFlowMarket> dataVec;
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup != Group_Stock)
+			continue;
+		SStringA StockID = it.second;
+		for (auto &periodDataPair : m_TFMarketHash)
+		{
+			int nPeriod = periodDataPair.first;
+			auto & dataMap = periodDataPair.second;
+			if (dataMap.hash.count(StockID))
+				dataVec.emplace_back(dataMap.hash[StockID]);
+		}
+
+		if (!dataVec.empty())
+			SendMsg(m_hWndMap[hParWnd], Syn_RTTFMarkt, (char*)&dataVec[0],
+				dataVec.size() * sizeof(TickFlowMarket));
+	}
+
+
 	if (m_bFirstData)
 	{
 		SetEvent(g_hEvent);
@@ -1337,7 +1405,6 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
 		periodSet.insert(dataArr[i].nPeriod);
 	}
-	static BOOL bFirtst = TRUE;
 	size_t datasize = 0;
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
@@ -1786,6 +1853,63 @@ void CWndSynHandler::OnGetCallAction(int nMsgLength, const char * info)
 	int nID = GetHisCallAction(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+}
+
+void CWndSynHandler::OnHisTFBase(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisTFBase,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
+	}
+}
+
+void CWndSynHandler::OnGetHisTFBase(int nMsgLength, const char * info)
+{
+	DataGetInfo *pDgInfo = (DataGetInfo *)info;
+	int nID = GetHisTFBase(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+
+}
+
+void CWndSynHandler::OnTodayTFMarket(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_TodayTFMarket,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
+	}
 }
 
 

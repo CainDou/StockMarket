@@ -96,7 +96,10 @@ SKlinePic::SKlinePic()
 	m_bShowCAVol = false;
 	m_bShowCAAmo = false;
 	m_bHalfPrice = false;
-
+	m_pTFData = nullptr;
+	m_bUseTFBaseData = false;
+	m_nTFDataType = 0;
+	m_bHisTFBaseReady = false;
 	//m_pTip = new SKlineTip(m_hParWnd);
 
 }
@@ -213,6 +216,8 @@ void SKlinePic::InitShowPara(InitPara_t para)
 	m_bShowAmount = para.bShowKlineAmount;
 	m_bShowCAVol = para.bShowKlineCAVol;
 	m_bShowCAAmo = para.bShowKlineCAAmo;
+	m_bUseTFBaseData = para.bKlineUseTickFlowData;
+	m_nTFDataType = para.nKlineTickFlowDataType;
 
 	m_bShowMA = para.bShowMA;
 	m_nKWidth = para.nWidth;
@@ -258,6 +263,8 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 	para.bShowKlineAmount = m_bShowAmount;
 	para.bShowKlineCAVol = m_bShowCAVol;
 	para.bShowKlineCAAmo = m_bShowCAAmo;
+	para.bKlineUseTickFlowData = 	m_bUseTFBaseData;
+	para.nKlineTickFlowDataType = 	m_nTFDataType;
 
 	para.bShowMA = m_bShowMA;
 	para.nWidth = m_nKWidth;
@@ -296,39 +303,40 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 
 }
 
-void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec,
-	map<int, vector<KlineType>>*pHisKlineMap)
+void SKlinePic::SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec, map<int, vector<KlineType>>* pHisKlineMap)
 {
-	m_bDataInited = false;
-	m_strSubIns = subIns;
 	m_pIdxMarketVec = pIdxMarketVec;
 	m_pHisKlineMap = pHisKlineMap;
 	m_pStkMarketVec = nullptr;
+	m_pRtTfMarket = nullptr;
+	m_pHisTFMarket = nullptr;
 	m_bIsStockIndex = true;
-	m_strStockName = StockName;
-	::EnterCriticalSection(&m_csSub);
+	m_pPriceList->SetDataPoint(m_pIdxMarketVec);
+	m_pDealList->SetDataPoint(m_pIdxMarketVec);
 
-	for (int i = 0; i < m_nSubPicNum; ++i)
-	{
-		m_ppSubPic[i]->SetShowWidth(m_nKWidth, m_nJiange, m_nZoomRatio);
-		m_ppSubPic[i]->SetOffset2Zero();
-	}
-	::LeaveCriticalSection(&m_csSub);
-
-	m_pPriceList->SetShowData(subIns, m_strStockName, pIdxMarketVec);
-	m_pDealList->SetShowData(subIns, pIdxMarketVec);
 }
 
-void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec,
-	map<int, vector<KlineType>>*pHisKlineMap)
+void SKlinePic::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec,
+	map<int, vector<KlineType>>* pHisKlineMap,
+	map<int, vector<TickFlowMarket>>* pRtTFMarketVec,
+	map<int, vector<TFBaseMarket>>* pHisTFBaseVec)
+{
+	m_pStkMarketVec = pStkMarketVec;
+	m_pHisKlineMap = pHisKlineMap;
+	m_pIdxMarketVec = nullptr;
+	m_pRtTfMarket = pRtTFMarketVec;
+	m_pHisTFMarket = pHisTFBaseVec;
+	m_bIsStockIndex = false;
+	m_pPriceList->SetDataPoint(m_pStkMarketVec);
+	m_pDealList->SetDataPoint(m_pStkMarketVec);
+
+}
+
+void SKlinePic::ChangeShowStock(SStringA subIns, SStringA StockName)
 {
 	KillTimer(1);
 	m_bDataInited = false;
 	m_strSubIns = subIns;
-	m_pStkMarketVec = pStkMarketVec;
-	m_pHisKlineMap = pHisKlineMap;
-	m_pIdxMarketVec = nullptr;
-	m_bIsStockIndex = false;
 	m_strStockName = StockName;
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
@@ -338,8 +346,8 @@ void SKlinePic::SetShowData(SStringA subIns, SStringA StockName, vector<CommonSt
 	}
 	::LeaveCriticalSection(&m_csSub);
 
-	m_pPriceList->SetShowData(subIns, m_strStockName, pStkMarketVec);
-	m_pDealList->SetShowData(subIns, pStkMarketVec);
+	m_pPriceList->ChangeShowStock(subIns, m_strStockName);
+	m_pDealList->ChangeShowData(subIns);
 }
 
 void SKlinePic::SetSubPicShowData(int nIndex, bool nGroup)
@@ -429,6 +437,12 @@ void SKlinePic::SetHisCAInfoState(bool bReady)
 	m_bHisCAInfoReady = bReady;
 	if (!m_bHisCAInfoReady)
 		m_bDataInited = false;
+
+}
+
+void SKlinePic::SetTFMarketState(bool bReady)
+{
+	m_bHisTFBaseReady = bReady;
 
 }
 
@@ -614,8 +628,7 @@ void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 		HDC hdc = pRT->GetDC();
 		auto maPara = m_bShowCAVol ? m_nCAVolMaPara : m_nCAAmoMaPara;
 		strMarket = m_bShowCAVol ? L"集合竞价Vol:-" : L"集合竞价Amo:-";
-		int nOffset = m_pAll->nTotal - m_pCAInfo->size();
-		int nDataPos = nPos - nOffset;
+		int nDataPos = m_CADataPosMap.count(nPos) ? m_CADataPosMap[nPos] : -1;
 		if (nDataPos >= 0)
 		{
 			double fData = m_bShowCAVol ? m_pCAInfo->at(nDataPos).Volume : m_pCAInfo->at(nDataPos).Amount;
@@ -669,8 +682,8 @@ void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 		else
 		{
 			DrawTextonPic(pRT,
-				CRect(m_rcVolume.left + left, m_rcVolume.top + 5,
-					m_rcVolume.right - 1, m_rcVolume.top + 19),
+				CRect(m_rcCAVol.left + left, m_rcCAVol.top + 5,
+					m_rcCAVol.right - 1, m_rcCAVol.top + 19),
 				strMarket);
 		}
 		pRT->ReleaseDC(hdc);
@@ -679,8 +692,8 @@ void SKlinePic::DrawCAVolAmoUpperMA(IRenderTarget * pRT, int nPos)
 	else
 	{
 		DrawTextonPic(pRT,
-			CRect(m_rcVolume.left + left, m_rcVolume.top + 5,
-				m_rcVolume.right - 1, m_rcVolume.top + 19),
+			CRect(m_rcCAVol.left + left, m_rcCAVol.top + 5,
+				m_rcCAVol.right - 1, m_rcCAVol.top + 19),
 			strMarket);
 	}
 
@@ -699,6 +712,53 @@ void SKlinePic::DrawMacdUpperMarket(IRenderTarget * pRT, int nPos)
 	strMarekt.Format(L"MACD:%.2f", m_pMacdData->MACD[nPos]);
 	DrawTextonPic(pRT, CRect(m_rcMACD.left + 240, m_rcMACD.top + 5, m_rcMACD.right, m_rcMACD.top + 20),
 		strMarekt, RGBA(255, 0, 255, 255));
+
+}
+
+void SKlinePic::DrawTFDataUpperMarket(IRenderTarget * pRT, int nPos)
+{
+	if (!m_bUseTFBaseData)
+		return;
+	if (!m_bHisTFBaseReady)
+		return;
+
+	CSize size;
+	size.cx = 0; size.cy = 0;
+	int left = 5;
+	SStringW strMarket;
+
+	if (m_TFDataSet.count(nPos))
+	{
+		if (m_nTFDataType == eTFDT_Ratio)
+			strMarket.Format(L"ABSR:%.02f A2PBSR:%.02f AABSR:%.02f",
+				m_pTFData->ABSR[nPos], m_pTFData->A2PBSR[nPos],
+				m_pTFData->AABSR[nPos]);
+		else if (m_nTFDataType == eTFDT_Vol)
+			strMarket.Format(L"主动买量:%d 主动卖量:%d",
+				m_pTFData->ActBuyVol[nPos], m_pTFData->ActSellVol[nPos]);
+		else if (m_nTFDataType == eTFDT_Order)
+			strMarket.Format(L"主动买单:%d 主动卖单:%d",
+				m_pTFData->ActBuyOrder[nPos], m_pTFData->ActSellOrder[nPos]);
+		else if (m_nTFDataType == eTFDT_AvgVol)
+			strMarket.Format(L"买单平均手数:%.02f 卖单平均手数:%.02f",
+				m_pTFData->AvgActBuyVol[nPos], m_pTFData->AvgActSellVol[nPos]);
+
+	}
+	else
+	{
+		if (m_nTFDataType == eTFDT_Ratio)
+			strMarket.Format(L"ABSR:- A2PBSR:- AABSR:-");
+		else if (m_nTFDataType == eTFDT_Vol)
+			strMarket.Format(L"主动买量:- 主动卖量:-");
+		else if (m_nTFDataType == eTFDT_Order)
+			strMarket.Format(L"主动买单:- 主动卖单:-");
+		else if (m_nTFDataType == eTFDT_AvgVol)
+			strMarket.Format(L"买单平均手数:- 卖单平均手数:-");
+	}
+
+	DrawTextonPic(pRT, CRect(m_rcTFData.left + 5, m_rcTFData.top + 5,
+		m_rcTFData.right - 1, m_rcTFData.top + 19),
+		strMarket);
 
 }
 
@@ -853,6 +913,11 @@ void SKlinePic::SetWindowRect()
 	if (m_bShowMacd)
 		pSubRect.emplace_back(&m_rcMACD);
 	else m_rcMACD.SetRectEmpty();
+
+	if (m_bUseTFBaseData)
+		pSubRect.emplace_back(&m_rcTFData);
+	else m_rcTFData.SetRectEmpty();
+
 
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
@@ -1107,6 +1172,72 @@ int SKlinePic::ProcMACDData(int nPos, MACDData_t * pMacdData)
 	return nPos;
 }
 
+void SKlinePic::HisTFBaseProc(int nCount, int nDataPos)
+{
+	auto &dataVec = m_pHisTFMarket->at(m_nPeriod);
+	auto &TFMarket = dataVec[nCount];
+	if (TFMarket.ActBuyVol*1.0 + TFMarket.ActSellVol == 0)
+		m_pTFData->ABSR[nDataPos] = 0;
+	else
+		m_pTFData->ABSR[nDataPos] = (TFMarket.ActBuyVol*1.0 - TFMarket.ActSellVol) /
+		(TFMarket.ActBuyVol*1.0 + TFMarket.ActSellVol) * 100;
+
+	double fActBuyVol = TFMarket.ActBuyVol*1.0
+		/ TFMarket.uActBuyOrderCount*TFMarket.uPasSellOrderCount;
+	double fActSelVol = TFMarket.ActSellVol*1.0 /
+		TFMarket.uActSellOrderCount*TFMarket.uPasBuyOrderCount;
+	if (fActBuyVol + fActSelVol == 0)
+		m_pTFData->A2PBSR[nDataPos] = 0;
+	else
+		m_pTFData->A2PBSR[nDataPos] = (fActBuyVol - fActSelVol)
+		/ (fActBuyVol + fActSelVol) * 100;
+
+	double avgBuyVol = TFMarket.uActBuyOrderCount == 0 ?
+		0 : TFMarket.ActBuyVol * 1.0 / TFMarket.uActBuyOrderCount;
+	double avgSellVol = TFMarket.uActSellOrderCount == 0 ?
+		0 : TFMarket.ActSellVol * 1.0 / TFMarket.uActSellOrderCount;
+
+	if (avgBuyVol + avgSellVol == 0)
+		m_pTFData->AABSR[nDataPos] = 0;
+	else
+		m_pTFData->AABSR[nDataPos] = (avgBuyVol - avgSellVol)
+		/ (avgBuyVol + avgSellVol) * 100;
+
+
+	m_pTFData->ActBuyVol[nDataPos] = TFMarket.ActBuyVol;
+	m_pTFData->ActSellVol[nDataPos] = TFMarket.ActSellVol;
+	m_pTFData->AvgActBuyVol[nDataPos] = avgBuyVol;
+	m_pTFData->AvgActSellVol[nDataPos] = avgSellVol;
+	m_pTFData->ActBuyOrder[nDataPos] = TFMarket.uActBuyOrderCount;
+	m_pTFData->ActSellOrder[nDataPos] = TFMarket.uActSellOrderCount;
+
+}
+
+void SKlinePic::RTTFMarketProc(int nCount, int nDataPos)
+{
+
+	auto &dataVec = m_pRtTfMarket->at(m_nPeriod);
+	auto &TFMarket = dataVec[nCount];
+	m_pTFData->ABSR[nDataPos] = (isnan(TFMarket.ABSR) || isinf(TFMarket.ABSR)) ?
+		0 : TFMarket.ABSR;
+	m_pTFData->A2PBSR[nDataPos] = (isnan(TFMarket.A2PBSR) || isinf(TFMarket.A2PBSR)) ?
+		0 : TFMarket.A2PBSR;
+	m_pTFData->A2PBSR[nDataPos] = (isnan(TFMarket.AABSR) || isinf(TFMarket.AABSR)) ?
+		0 : TFMarket.AABSR;
+
+
+	m_pTFData->ActBuyVol[nDataPos] = TFMarket.ActBuyVol;
+	m_pTFData->ActSellVol[nDataPos] = TFMarket.ActSellVol;
+	m_pTFData->AvgActBuyVol[nDataPos] = TFMarket.uActBuyOrderCount == 0 ?
+		0 : TFMarket.ActBuyVol * 1.0 / TFMarket.uActBuyOrderCount;
+	m_pTFData->AvgActSellVol[nDataPos] = TFMarket.uActSellOrderCount == 0 ?
+		0 : TFMarket.ActSellVol * 1.0 / TFMarket.uActSellOrderCount;
+	m_pTFData->ActBuyOrder[nDataPos] = TFMarket.uActBuyOrderCount;
+	m_pTFData->ActSellOrder[nDataPos] = TFMarket.uActSellOrderCount;
+
+}
+
+
 
 void SKlinePic::OnPaint(IRenderTarget * pRT)
 {
@@ -1221,6 +1352,9 @@ void SKlinePic::OnPaint(IRenderTarget * pRT)
 			GetMACDMaxDiff();
 		}
 
+		if (m_bUseTFBaseData)
+			GetTFDataMaxDiff();
+
 
 		DrawTime(pRT, TRUE);
 
@@ -1330,6 +1464,10 @@ void SKlinePic::DrawArrow(IRenderTarget * pRT)
 	if (m_bShowMacd)
 		DrawMacdArrow(pRT, m_rcMACD);
 
+	if (m_bUseTFBaseData)
+		DrawTickFlowArrow(pRT, m_rcTFData);
+
+
 	::EnterCriticalSection(&m_csSub);
 	for (int i = 0; i < m_nSubPicNum; ++i)
 		m_ppSubPic[i]->DrawArrow(pRT);
@@ -1425,6 +1563,54 @@ void SKlinePic::DrawMacdArrow(IRenderTarget * pRT, CRect & rc)
 		CPoint pts[2];
 		{
 			CAutoRefPtr<IPen> pen, oldPen;
+			pRT->CreatePen(PS_SOLID, RGBA(200, 0, 0, 0xFF), 2, &pen);
+			pRT->SelectObject(pen, (IRenderObj**)&oldPen);
+			//y轴	//x轴
+			pts[0].SetPoint(rc.left, nY);
+			pts[1].SetPoint(rc.right, nY);
+			pRT->DrawLines(pts, 2);
+			pRT->SelectObject(oldPen);
+		}
+
+		//k线区y轴加轴标
+		if (m_bDataInited)
+		{
+			SStringW s1 = GetMACDYPrice(nY);
+			DrawTextonPic(pRT, CRect(rc.right + 2, nY - 9,
+				rc.right + RC_RIGHT, nY + 9), s1,
+				RGBA(255, 0, 0, 255), DT_CENTER);
+		}
+
+	}
+	pRT->ReleaseDC(pdc);
+}
+
+void SKlinePic::DrawTickFlowArrow(IRenderTarget * pRT, CRect & rc)
+{
+	CPoint pts[4];
+	{
+		CAutoRefPtr<IPen> pen, oldPen;
+		pRT->CreatePen(PS_SOLID, RGBA(255, 0, 0, 0xFF), 2, &pen);
+		pRT->SelectObject(m_penRed, (IRenderObj**)&oldPen);
+		//y轴	//x轴
+		pts[0].SetPoint(rc.left, rc.top);
+		pts[1].SetPoint(rc.right, rc.top);
+		pts[2].SetPoint(rc.right, rc.bottom);
+		pts[3].SetPoint(rc.left, rc.bottom);
+		pRT->DrawLines(pts + 1, 3);
+		pRT->SelectObject(oldPen);
+	}
+
+	//副图区横向虚线
+	HDC pdc = pRT->GetDC();
+	int nWidth = (rc.Height() - 25) / 4;
+
+	for (int i = 0; i < 4; i++)
+	{
+		int nY = rc.top + 25 + nWidth*i;
+		CPoint pts[2];
+		{
+			CAutoRefPtr<IPen> pen, oldPen;
 			if (i == 2)
 				pRT->CreatePen(PS_SOLID, RGBA(200, 0, 0, 0xFF), 2, &pen);
 			else
@@ -1440,7 +1626,7 @@ void SKlinePic::DrawMacdArrow(IRenderTarget * pRT, CRect & rc)
 		//k线区y轴加轴标
 		if (m_bDataInited)
 		{
-			SStringW s1 = GetMACDYPrice(nY);
+			SStringW s1 = GetTFDataMaxYPrice(nY);
 			DrawTextonPic(pRT, CRect(rc.right + 2, nY - 9,
 				rc.right + RC_RIGHT, nY + 9), s1,
 				RGBA(255, 0, 0, 255), DT_CENTER);
@@ -1480,6 +1666,8 @@ void SKlinePic::DrawPrice(IRenderTarget * pRT)
 	//指标2
 	if (m_bShowMacd)
 		DrawMacdPrice(pRT, m_rcMACD);
+	if (m_bUseTFBaseData)
+		DrawTickFlowPrice(pRT, m_rcTFData);
 }
 
 void SKlinePic::DrawVolAmoPrice(IRenderTarget * pRT, CRect & rc, int volAmoType)
@@ -1514,7 +1702,7 @@ void SKlinePic::DrawVolAmoPrice(IRenderTarget * pRT, CRect & rc, int volAmoType)
 
 void SKlinePic::DrawMacdPrice(IRenderTarget * pRT, CRect & rc)
 {
-	int nWidthMacd = (m_rcMACD.Height() - 20) / 4;
+	int nWidthMacd = (rc.Height() - 20) / 4;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -1526,6 +1714,23 @@ void SKlinePic::DrawMacdPrice(IRenderTarget * pRT, CRect & rc)
 				s1, RGBA(255, 0, 0, 255), DT_CENTER);
 		}
 	}
+}
+
+void SKlinePic::DrawTickFlowPrice(IRenderTarget * pRT, CRect & rc)
+{
+	int nWidth = (rc.Height() - 25) / 4;
+
+	for (int i = 0; i < 4; i++)
+	{
+		int nY = rc.top + 25 + nWidth*i;
+		if (m_bDataInited)
+		{
+			SStringW s1 = GetTFDataMaxYPrice(nY);
+			DrawTextonPic(pRT, CRect(rc.right + 2, nY - 9, rc.right + RC_RIGHT, nY + 9),
+				s1, RGBA(255, 0, 0, 255), DT_CENTER);
+		}
+	}
+
 }
 
 
@@ -1882,16 +2087,17 @@ void SKlinePic::GetCallActionMaxDiff()		//判断副图坐标最大最小值和k线条数
 	double fAmoMax = -100000000000000;
 	double fAmoMin = 0;
 
-
-	int nOffset = m_pAll->nTotal - m_pCAInfo->size();
-	int nStart = max(0, m_nFirst - nOffset);
-	int nEnd = max(0, m_nEnd - nOffset);
-	for (int i = nStart; i < nEnd; i++)
+	for (int i = m_nFirst; i < m_nEnd; i++)
 	{
-		if (m_pCAInfo->at(i).Volume > fVolMax)
-			fVolMax = m_pCAInfo->at(i).Volume;
-		if (m_pCAInfo->at(i).Amount > fAmoMax)
-			fAmoMax = m_pCAInfo->at(i).Amount;
+
+		if (m_CADataPosMap.count(i))
+		{
+			int nDataPos = m_CADataPosMap[i];
+			if (m_pCAInfo->at(nDataPos).Volume > fVolMax)
+				fVolMax = m_pCAInfo->at(nDataPos).Volume;
+			if (m_pCAInfo->at(nDataPos).Amount > fAmoMax)
+				fAmoMax = m_pCAInfo->at(nDataPos).Amount;
+		}
 	}
 
 	//volMA
@@ -1903,14 +2109,17 @@ void SKlinePic::GetCallActionMaxDiff()		//判断副图坐标最大最小值和k线条数
 			if (m_nCAVolMaPara[i] <= 0)
 				continue;
 			auto& maData = m_CAVolMa[i];
-			int j = nStart > 0 ? nStart - 1 : nStart;
-			for (j; j < nEnd; j++)
+			int j = m_nFirst > 0 ? m_nFirst - 1 : m_nFirst;
+			for (j; j < m_nEnd; j++)
 			{
-
-				if (j >= m_nCAVolMaPara[i])
+				if (m_CADataPosMap.count(j))
 				{
-					if (maData[j] > fVolMax)
-						fVolMax = maData[j];
+					int nDataPos = m_CADataPosMap[j];
+					if (nDataPos >= m_nCAVolMaPara[i])
+					{
+						if (maData[nDataPos] > fVolMax)
+							fVolMax = maData[nDataPos];
+					}
 				}
 			}
 		}
@@ -1925,14 +2134,17 @@ void SKlinePic::GetCallActionMaxDiff()		//判断副图坐标最大最小值和k线条数
 			if (m_nCAAmoMaPara[i] <= 0)
 				continue;
 			auto& maData = m_CAAmoMa[i];
-			int j = nStart > 0 ? nStart - 1 : nStart;
-			for (j; j < nEnd; j++)
+			int j = m_nFirst > 0 ? m_nFirst - 1 : m_nFirst;
+			for (j; j < m_nEnd; j++)
 			{
-
-				if (j >= m_nCAAmoMaPara[i])
+				if (m_CADataPosMap.count(j))
 				{
-					if (maData[j] > fAmoMax)
-						fAmoMax = maData[j];
+					int nDataPos = m_CADataPosMap[j];
+					if (nDataPos >= m_nCAAmoMaPara[i])
+					{
+						if (maData[nDataPos] > fAmoMax)
+							fAmoMax = maData[nDataPos];
+					}
 				}
 			}
 		}
@@ -2009,6 +2221,125 @@ SStringW SKlinePic::GetCallActionYPrice(int nY, bool bAmo)
 			strRet.Format(L"%.0f", fDiff);
 
 	}
+	return strRet;
+
+}
+
+void SKlinePic::GetTFDataMaxDiff()		//判断副图坐标最大最小值和k线条数
+{
+	if (!m_bUseTFBaseData)
+		return;
+	if (!m_bHisTFBaseReady)
+		return;
+	if (m_pTFData == nullptr)
+		return;
+	//判断最大最小值
+	double	fMaxRatio = 100;
+	double	fMinRatio = -100;
+	int		nMaxActVol = -10000000;
+	int		nMinActVol = 0;
+	int		nMaxActOrder = -10000000;
+	int		nMinActOrder = 0;
+	double	fMaxAvgVol = -10000000;
+	double	fMinAvgVol = 0;
+
+
+
+	for (int i = m_nFirst; i < m_nEnd; i++)
+	{
+		if (m_TFDataSet.count(i))
+		{
+			nMaxActVol = max(nMaxActVol, m_pTFData->ActBuyVol[i]);
+
+			nMaxActVol = max(nMaxActVol, m_pTFData->ActSellVol[i]);
+			nMinActVol = min(nMinActVol, m_pTFData->ActSellVol[i]);
+
+			nMaxActOrder = max(nMaxActOrder, m_pTFData->ActBuyOrder[i]);
+			nMinActOrder = min(nMinActOrder, m_pTFData->ActBuyOrder[i]);
+
+			nMaxActOrder = max(nMaxActOrder, m_pTFData->ActSellOrder[i]);
+			nMinActOrder = min(nMinActOrder, m_pTFData->ActSellOrder[i]);
+
+			fMaxAvgVol = max(fMaxAvgVol, max(m_pTFData->AvgActBuyVol[i], m_pTFData->AvgActSellVol[i]));
+			fMinAvgVol = min(fMinAvgVol, min(m_pTFData->AvgActBuyVol[i], m_pTFData->AvgActSellVol[i]));
+
+		}
+	}
+	m_pTFData->fMaxRatio = fMaxRatio;
+	m_pTFData->fMinRatio = fMinRatio;
+	m_pTFData->nMaxActVol = nMaxActVol;
+	m_pTFData->nMinActVol = nMinActVol;
+	m_pTFData->nMaxActOrder = nMaxActOrder;
+	m_pTFData->nMinActOrder = nMinActOrder;
+	m_pTFData->fMaxAvgVol = fMaxAvgVol;
+	m_pTFData->fMinAvgVol = fMinAvgVol;
+
+}
+
+int SKlinePic::GetTFDataMaxYPos(double fDiff)
+{
+	if (!m_bUseTFBaseData)
+		return -1;
+	if (!m_bHisTFBaseReady)
+		return -1;
+	if (m_pTFData == nullptr)
+		return -1;
+	double fPos = 0;
+
+	if (m_nTFDataType == eTFDT_Ratio)
+		fPos = m_rcTFData.top +
+		(1 - ((fDiff - m_pTFData->fMinRatio) / (m_pTFData->fMaxRatio - m_pTFData->fMinRatio)))
+		* (m_rcTFData.Height() - 25) + 25;
+	else if (m_nTFDataType == eTFDT_Vol)
+		fPos = m_rcTFData.top +
+		(1 - ((fDiff - m_pTFData->nMinActVol) / (m_pTFData->nMaxActVol - m_pTFData->nMinActVol)))
+		* (m_rcTFData.Height() - 25) + 25;
+	else if (m_nTFDataType == eTFDT_Order)
+		fPos = m_rcTFData.top +
+		(1 - ((fDiff - m_pTFData->nMinActOrder) / (m_pTFData->nMaxActOrder - m_pTFData->nMinActOrder)))
+		* (m_rcTFData.Height() - 25) + 25;
+	else if (m_nTFDataType == eTFDT_AvgVol)
+		fPos = m_rcTFData.top +
+		(1 - ((fDiff - m_pTFData->fMinAvgVol) / (m_pTFData->fMaxAvgVol - m_pTFData->fMinAvgVol)))
+		* (m_rcTFData.Height() - 25) + 25;
+
+	int nPos = (int)fPos;
+	return nPos;
+}
+
+SStringW SKlinePic::GetTFDataMaxYPrice(int nY)
+{
+	if (!m_bUseTFBaseData)
+		return L"";
+	if (!m_bHisTFBaseReady)
+		return L"";
+	if (m_pTFData == nullptr)
+		return L"";
+	if (nY > m_rcTFData.bottom || nY < m_rcTFData.top)
+		return L"";
+
+	SStringW strRet; strRet.Empty();
+
+	double fDiff = 0;
+	if (m_nTFDataType == eTFDT_Ratio)
+		fDiff = m_pTFData->fMaxRatio - (double)(nY - m_rcTFData.top - 25) /
+		(m_rcTFData.Height() - 25) *(m_pTFData->fMaxRatio - m_pTFData->fMinRatio);
+
+	else if (m_nTFDataType == eTFDT_Vol)
+		fDiff = m_pTFData->nMaxActVol - (double)(nY - m_rcTFData.top - 25) /
+		(m_rcTFData.Height() - 25) *(m_pTFData->nMaxActVol - m_pTFData->nMinActVol);
+	else if (m_nTFDataType == eTFDT_Order)
+		fDiff = m_pTFData->nMaxActOrder - (double)(nY - m_rcTFData.top - 25) /
+		(m_rcTFData.Height() - 25) *(m_pTFData->nMaxActOrder - m_pTFData->nMinActOrder);
+
+	else if (m_nTFDataType == eTFDT_AvgVol)
+		fDiff = m_pTFData->fMaxAvgVol - (double)(nY - m_rcTFData.top - 25) /
+		(m_rcTFData.Height() - 25) *(m_pTFData->fMaxAvgVol - m_pTFData->fMinAvgVol);
+
+	if (m_nTFDataType == eTFDT_Ratio || m_nTFDataType == eTFDT_AvgVol)
+		strRet.Format(L"%.2f", fDiff);
+	else
+		strRet.Format(L"%.0f", fDiff);
 	return strRet;
 
 }
@@ -2399,7 +2730,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	vector<vector<CPoint>>MaLine(MAX_MA_COUNT, vector<CPoint>(m_nEnd - m_nFirst));
 	vector<vector<CPoint>> VolAmtMALine(MAX_MA_COUNT, vector<CPoint>(m_nEnd - m_nFirst));
 	vector<vector<CPoint>> CAVolAmtMALine(MAX_MA_COUNT, vector<CPoint>(m_nEnd - m_nFirst));
-
+	vector<vector<CPoint>> TickFlowLine;
 
 	for (int i = 0; i < m_nEnd - m_nFirst; i++)
 	{
@@ -2420,9 +2751,9 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			DrawVolOrAmoData(pRT, VolAmtMALine, fAmount, true, x, i);
 		if (m_nPeriod == Period_1Day)
 		{
-			int nCADataPos = nOffset - (m_pAll->nTotal - m_pCAInfo->size());
-			if (nCADataPos >=  0)
+			if (m_CADataPosMap.count(nOffset))
 			{
+				int nCADataPos = m_CADataPosMap[nOffset];
 				if (m_bShowCAVol)
 					DrawCAVolOrAmoData(pRT, CAVolAmtMALine, m_pCAInfo->at(nCADataPos).Volume, false, x, i);
 
@@ -2434,6 +2765,14 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 		if (m_bShowMacd)
 			DrawMacdData(pRT, DIFLine, DEALine, i, x);
+
+		if (m_bUseTFBaseData)
+		{
+			if(m_TFDataSet.count(i))
+				DrawTickFlow(pRT, TickFlowLine, i, x);
+		}
+
+
 	}
 
 
@@ -2459,6 +2798,9 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			DrawCAVolAmoUpperMA(pRT, nLastDataPos);
 		if (m_bShowMacd)
 			DrawMacdUpperMarket(pRT, nLastDataPos);
+		if (m_bUseTFBaseData)
+			DrawTFDataUpperMarket(pRT, nLastDataPos);
+
 	}
 
 	if (m_bShowBandTarget)
@@ -2478,7 +2820,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 		if (m_bShowCAVol)
 			DrawMALine(pRT, CAVolAmtMALine, m_nCAVolMaPara);
 
-		if (m_bShowAmount)
+		if (m_bShowCAAmo)
 			DrawMALine(pRT, CAVolAmtMALine, m_nCAAmoMaPara);
 	}
 
@@ -2493,6 +2835,15 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 	}
 
+
+	if (m_bUseTFBaseData)
+	{
+		for (int i = 0; i < TickFlowLine.size(); ++i)
+		{
+			pRT->SelectObject(m_MAPenVec[i]);
+			pRT->DrawLines(&TickFlowLine[i][0], TickFlowLine[i].size());
+		}
+	}
 
 
 	pRT->SelectObject(oldPen);
@@ -2756,10 +3107,18 @@ void SKlinePic::ReProcMAData(eMaType maType)
 			AmoMAProc(i);
 	else if (maType == eMa_CAVol)
 		for (int i = 1; i <= m_pCAInfo->size(); i++)
-			CAVolMAProc(i);
+		{
+			uint64_t dataTime = (uint64_t)m_pCAInfo->at(i - 1).date * 10000;
+			if (m_DataTimeMap.count(dataTime))
+				CAVolMAProc(i);
+		}
 	else if (maType == eMa_CAAmo)
 		for (int i = 1; i <= m_pCAInfo->size(); i++)
-			CAAmoMAProc(i);
+		{
+			uint64_t dataTime = (uint64_t)m_pCAInfo->at(i - 1).date * 10000;
+			if (m_DataTimeMap.count(dataTime))
+				CAAmoMAProc(i);
+		}
 
 	m_bDataInited = true;
 }
@@ -2913,9 +3272,10 @@ void SKlinePic::DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& 
 		return;
 	if (!m_bHisCAInfoReady)
 		return;
-	int nDataOffset = nShowPos + m_nFirst - (m_pAll->nTotal - m_pCAInfo->size());
+	int nDataOffset = nShowPos + m_nFirst;
 	if (nDataOffset < 0)
 		return;
+	int nCADataPos = m_CADataPosMap[nDataOffset];
 	int *arrPara = bAmo ? m_nCAAmoMaPara : m_nCAVolMaPara;
 	auto& MaData = bAmo ? m_CAAmoMa : m_CAVolMa;
 	if (MaData.empty())
@@ -2947,9 +3307,9 @@ void SKlinePic::DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& 
 	for (int j = 0; j < MAX_MA_COUNT; ++j)
 	{
 		if (arrPara[j] > 0)
-			if (nShowPos + m_nFirst >= arrPara[j] - 1 )
+			if (nShowPos + m_nFirst >= arrPara[j] - 1)
 				VolAmtMALine[j][nShowPos].SetPoint(nX + ZOOMWIDTH / 2,
-					GetCallActionYPos(MaData[j][nDataOffset], bAmo));
+					GetCallActionYPos(MaData[j][nCADataPos], bAmo));
 	}
 }
 
@@ -2983,23 +3343,79 @@ void SKlinePic::DrawMacdData(IRenderTarget * pRT, vector<CPoint>&DIFLine,
 
 }
 
+void SKlinePic::DrawTickFlow(IRenderTarget * pRT, vector<vector<CPoint>>& TFLine, int nShowPos, int nX)
+{
+	if (TFLine.empty())
+	{
+		if (m_nTFDataType == eTFDT_Ratio)
+			TFLine.resize(3);
+		else
+			TFLine.resize(2);
+	}
+	int nDataOffset = m_nFirst + nShowPos;
+	if (m_nTFDataType == eTFDT_Ratio)
+	{
+		CPoint pt;
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->ABSR[nDataOffset]));
+		TFLine[0].emplace_back(pt);
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->A2PBSR[nDataOffset]));
+		TFLine[1].emplace_back(pt);
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->AABSR[nDataOffset]));
+		TFLine[2].emplace_back(pt);
+	}
+	else if (m_nTFDataType == eTFDT_Vol)
+	{
+		CPoint pt;
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->ActBuyVol[nDataOffset]));
+		TFLine[0].emplace_back(pt);
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->ActSellVol[nDataOffset]));
+		TFLine[1].emplace_back(pt);
+	}
+	else if (m_nTFDataType == eTFDT_Order)
+	{
+		CPoint pt;
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->ActBuyOrder[nDataOffset]));
+		TFLine[0].emplace_back(pt);
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->ActSellOrder[nDataOffset]));
+		TFLine[1].emplace_back(pt);
+	}
+	else if (m_nTFDataType == eTFDT_AvgVol)
+	{
+		CPoint pt;
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->AvgActBuyVol[nDataOffset]));
+		TFLine[0].emplace_back(pt);
+		pt.SetPoint(nX + ZOOMWIDTH / 2, GetTFDataMaxYPos(m_pTFData->AvgActSellVol[nDataOffset]));
+		TFLine[1].emplace_back(pt);
+	}
+
+}
+
 void SKlinePic::DrawMALine(IRenderTarget * pRT, vector<vector<CPoint>>& MaLine, int * arrMaPara)
 {
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 	{
 		if (arrMaPara[i] > 0)
 		{
-			if (m_nFirst >= arrMaPara[i] - 1)
+			vector<CPoint> LineVec;
+			for (auto &it : MaLine[i])
 			{
-				pRT->SelectObject(m_MAPenVec[i]);
-				pRT->DrawLines(&MaLine[i][0], m_nEnd - m_nFirst);
+				if (it.x != 0 || it.y != 0)
+					LineVec.emplace_back(it);
 			}
-			else if (m_nEnd > arrMaPara[i] - 1)
-			{
-				pRT->SelectObject(m_MAPenVec[i]);
-				pRT->DrawLines(&MaLine[i][0] - m_nFirst + arrMaPara[i] - 1, m_nEnd - arrMaPara[i] + 1);
+			pRT->SelectObject(m_MAPenVec[i]);
+			pRT->DrawLines(&LineVec[0], LineVec.size());
 
-			}
+			//if (m_nFirst >= arrMaPara[i] - 1)
+			//{
+			//	pRT->SelectObject(m_MAPenVec[i]);
+			//	pRT->DrawLines(&LineVec[0], LineVec.size());
+			//}
+			//else if (m_nEnd > arrMaPara[i] - 1)
+			//{
+			//	pRT->SelectObject(m_MAPenVec[i]);
+			//	pRT->DrawLines(&MaLine[i][0] - m_nFirst + arrMaPara[i] - 1, m_nEnd - arrMaPara[i] + 1);
+
+			//}
 		}
 	}
 
@@ -3191,13 +3607,13 @@ void SKlinePic::DrawMouseLine(IRenderTarget * pRT, CPoint p)
 	MoveToEx(hdc, p.x, m_rcMain.top + 20, NULL);			LineTo(hdc, p.x, m_rcMain.bottom);
 	if (m_bShowVolume || m_bShowAmount)
 	{
-		MoveToEx(hdc, m_nMouseX, m_rcVolume.top, NULL);	LineTo(hdc, m_nMouseX, m_rcVolume.bottom);
-		MoveToEx(hdc, p.x, m_rcVolume.top, NULL);			LineTo(hdc, p.x, m_rcVolume.bottom);
+		MoveToEx(hdc, m_nMouseX, m_rcVolume.top + 25, NULL);	LineTo(hdc, m_nMouseX, m_rcVolume.bottom);
+		MoveToEx(hdc, p.x, m_rcVolume.top + 25, NULL);			LineTo(hdc, p.x, m_rcVolume.bottom);
 	}
 	if (m_bShowCAVol || m_bShowCAAmo)
 	{
-		MoveToEx(hdc, m_nMouseX, m_rcCAVol.top, NULL);	LineTo(hdc, m_nMouseX, m_rcCAVol.bottom);
-		MoveToEx(hdc, p.x, m_rcCAVol.top, NULL);			LineTo(hdc, p.x, m_rcCAVol.bottom);
+		MoveToEx(hdc, m_nMouseX, m_rcCAVol.top + 25, NULL);	LineTo(hdc, m_nMouseX, m_rcCAVol.bottom);
+		MoveToEx(hdc, p.x, m_rcCAVol.top + 25, NULL);			LineTo(hdc, p.x, m_rcCAVol.bottom);
 
 	}
 	if (m_bShowMacd)
@@ -3206,6 +3622,14 @@ void SKlinePic::DrawMouseLine(IRenderTarget * pRT, CPoint p)
 		MoveToEx(hdc, p.x, m_rcMACD.top + 20, NULL);			LineTo(hdc, p.x, m_rcMACD.bottom);
 
 	}
+
+	if (m_bUseTFBaseData)
+	{
+		MoveToEx(hdc, m_nMouseX, m_rcTFData.top + 25, NULL);	LineTo(hdc, m_nMouseX, m_rcTFData.bottom);
+		MoveToEx(hdc, p.x, m_rcTFData.top + 25, NULL);			LineTo(hdc, p.x, m_rcTFData.bottom);
+
+	}
+
 	MoveToEx(hdc, m_rcMain.left, m_nMouseY, NULL);	LineTo(hdc, m_rcMain.right, m_nMouseY);	//横线
 	MoveToEx(hdc, m_rcMain.left, p.y, NULL);			LineTo(hdc, m_rcMain.right, p.y);
 
@@ -3334,6 +3758,13 @@ void SKlinePic::DrawBarInfo(IRenderTarget * pRT, int nDataPos)
 		DrawMacdUpperMarket(pRT, nDataPos);
 	}
 
+	if (m_bUseTFBaseData)
+	{
+		pRT->FillRectangle(CRect(m_rcTFData.left + 1, m_rcTFData.top + 4, m_rcTFData.right, m_rcTFData.top + 19));
+		DrawTFDataUpperMarket(pRT, nDataPos);
+	}
+
+
 }
 
 double SKlinePic::GetHighPrice(int n, int nPeriod, int nOffset)
@@ -3436,7 +3867,8 @@ void SKlinePic::DataInit()
 	m_CAAmoMa.clear();
 
 	m_nCACalcCount = 0;
-
+	m_nTFCalcCount = 0;
+	m_DataTimeMap.clear();
 	int nsize = sizeof(AllKPIC_INFO);
 	m_pAll->nTotal = 0;
 
@@ -3460,7 +3892,6 @@ void SKlinePic::KlineDataWithHis()
 	int nDate = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
 	auto &dataVec = m_pHisKlineMap->at(m_nPeriod);
 	int count = 0;
-
 	for (auto &data : dataVec)
 	{
 		m_pAll->srcData[count] = data;
@@ -3479,6 +3910,8 @@ void SKlinePic::KlineDataWithHis()
 		}
 		else
 			m_pAll->data[count] = m_pAll->srcData[count];
+		uint64_t u64DateTime = (uint64_t)data.date * 10000 + (uint64_t)data.time;
+		m_DataTimeMap[u64DateTime] = count;
 		++count;
 		KlineMAProc(count);
 		VolMAProc(count);
@@ -3513,6 +3946,10 @@ void SKlinePic::KlineDataUpdate()
 
 	if (m_nPeriod == Period_1Day)
 		CallActionDataUpdate();
+
+	if (m_bUseTFBaseData)
+		TFDataUpdate();
+
 }
 
 void SKlinePic::CallActionDataUpdate()
@@ -3535,11 +3972,67 @@ void SKlinePic::CallActionDataUpdate()
 	int nStart = min(m_nCACalcCount, m_pCAInfo->size() - 1);
 	for (int i = nStart; i < m_pCAInfo->size(); ++i)
 	{
-		CAVolMAProc(i + 1);
-		CAAmoMAProc(i + 1);
+		uint64_t dataTime = (uint64_t)m_pCAInfo->at(i).date * 10000;
+		if (m_DataTimeMap.count(dataTime))
+		{
+			int nDataPos = m_DataTimeMap[dataTime];
+			m_CADataPosMap[nDataPos] = i;
+			CAVolMAProc(i + 1);
+			CAAmoMAProc(i + 1);
+
+		}
 	}
 
 	m_nCACalcCount = m_pCAInfo->size();
+}
+
+void SKlinePic::TFDataUpdate()
+{
+	if (!m_bHisTFBaseReady)
+		return;
+	if (m_pTFData == nullptr)
+		m_pTFData = new TFData;
+
+	if (m_nTFCalcCount == 0)
+		ZeroMemory(m_pTFData, sizeof(TFData));
+
+	auto &HisTFBaseVec = m_pHisTFMarket->at(m_nPeriod);
+	auto &RTTFMarketVec = m_pRtTfMarket->at(m_nPeriod);
+	int nDataCount = HisTFBaseVec.size() + RTTFMarketVec.size();
+
+	if (m_nTFCalcCount > nDataCount)
+		return;
+
+	if (m_nTFCalcCount < HisTFBaseVec.size())
+	{
+		for (int i = 0; i < HisTFBaseVec.size(); ++i)
+		{
+			uint64_t dataTime = (uint64_t)HisTFBaseVec[i].nDate * 10000 +
+				(uint64_t)HisTFBaseVec[i].nTime;
+			if (m_DataTimeMap.count(dataTime))
+			{
+				int nDataPos = m_DataTimeMap[dataTime];
+				m_TFDataSet.insert(nDataPos);
+				HisTFBaseProc(i, nDataPos);
+			}
+		}
+		m_nTFCalcCount = HisTFBaseVec.size();
+	}
+
+	int nStart = min(m_nTFCalcCount, nDataCount - 1) - HisTFBaseVec.size();
+	for (int i = nStart; i < RTTFMarketVec.size(); ++i)
+	{
+		uint64_t dataTime = (uint64_t)m_nTradingDay * 10000 +
+			(uint64_t)RTTFMarketVec[i].nTime;
+		if (m_DataTimeMap.count(dataTime))
+		{
+			int nDataPos = m_DataTimeMap[dataTime];
+			m_TFDataSet.insert(nDataPos);
+			RTTFMarketProc(i, nDataPos);
+		}
+
+	}
+	m_nTFCalcCount = nDataCount;
 }
 
 
@@ -3562,6 +4055,8 @@ void SKlinePic::StockMarket1MinUpdate()
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
 			StockTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
+			uint64_t u64DateTime = (uint64_t)m_nTradingDay * 10000 + (uint64_t)ntime;
+			m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
 			m_pAll->nTotal++;
 		}
 		else if (ntime == m_pAll->data[m_pAll->nTotal - 1].time && m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date)
@@ -3603,6 +4098,8 @@ void SKlinePic::StockMarketMultMinUpdate(int nPeriod)
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
 			StockTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
+			uint64_t u64DateTime = (uint64_t)m_nTradingDay * 10000 + (uint64_t)ntime;
+			m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
 			m_pAll->nTotal++;
 		}
 		else if (ntime >= m_pAll->data[m_pAll->nTotal - 1].time &&
@@ -3638,6 +4135,8 @@ void SKlinePic::StockMarketDayUpdate()
 	if (!m_bAddDay)
 	{
 		StockTickToDayKline(nDataCount, tick);
+		uint64_t u64DateTime = (uint64_t)m_nTradingDay * 10000;
+		m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
 		m_pAll->nTotal++;
 		m_bAddDay = true;
 	}
@@ -3719,6 +4218,8 @@ void SKlinePic::IndexMarket1MinUpdate()
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
 			IndexTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
+			uint64_t u64DateTime = (uint64_t)m_nTradingDay * 10000 + (uint64_t)ntime;
+			m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
 			m_pAll->nTotal++;
 		}
 		else if (ntime == m_pAll->data[m_pAll->nTotal - 1].time && m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date)
@@ -3746,6 +4247,8 @@ void SKlinePic::IndexMarketMultMinUpdate(int nPeriod)
 			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
 		{
 			IndexTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
+			uint64_t u64DateTime = (uint64_t)m_nTradingDay * 10000 + (uint64_t)ntime;
+			m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
 			m_pAll->nTotal++;
 		}
 		else if (ntime >= m_pAll->data[m_pAll->nTotal - 1].time &&
@@ -3773,6 +4276,8 @@ void SKlinePic::IndexMarketDayUpdate()
 	if (!m_bAddDay)
 	{
 		IndexTickToDayKline(nDataCount, tick);
+		uint64_t u64DateTime = (uint64_t)m_nTradingDay * 10000;
+		m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
 		m_pAll->nTotal++;
 		m_bAddDay = true;
 	}

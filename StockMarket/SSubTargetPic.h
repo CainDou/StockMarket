@@ -61,7 +61,6 @@ namespace SOUI
 		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec, vector<SStringA> dataNameVec,
 			SStringA StockID, SStringA StockName);
 		void		OnDbClicked(UINT nFlags, CPoint point);
-		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void		ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		SStringA	GetShowStock() const;
 		void		SetOffset2Zero();
@@ -116,7 +115,16 @@ namespace SOUI
 		vector<SStringA> m_dataNameVec;
 		vector<BOOL> m_bRightArr;
 		vector<COLORREF> m_colorVec;
+		vector<std::pair<int, int>>* m_pDateTimeVec;
+		vector<CAutoRefPtr<IPen>>	m_dotPenVec;
 		vector<CAutoRefPtr<IPen>>	m_penVec;
+		vector<CAutoRefPtr<IBrush>>	m_brushVec;
+		vector<vector<double>> m_dataVec;
+		vector<int>m_dataFigureType;
+		vector<COLORREF>m_UsedColor;
+		vector<int> m_dataColorType;
+		vector<vector<BOOL>>m_judgeVec;
+
 		BOOL		m_bPaintInit;
 		SStringA	m_StockName;
 		SStringA	m_StockID;
@@ -143,6 +151,7 @@ namespace SOUI
 		bool		m_bUseWidth;
 		CRect		m_rcTargetSel;
 		BOOL		m_bPenInit;
+		int			nRectWidth;
 	};
 
 	inline void SSubTargetPic::SetSubPicInfo(ShowPointInfo showInfo)

@@ -15,6 +15,13 @@
     <item id="225" check="0">集竞成交额</item>
   </item>
   <sep/>
+  <item   text="订单流数据" id="228" check="0"  contextHelpId="2">
+    <item id="229" check="0">主被动成交量比</item>
+    <item id="230" check="0">主动成交量</item>
+    <item id="231" check="0">主动挂单数</item>
+    <item id="232" check="0">主动单数平均手数</item>
+  </item>
+  <sep/>
   <item id="205" check="0">MACD</item>
   <sep/>
   <item   text="打分数据窗口" id="206"  contextHelpId="2">

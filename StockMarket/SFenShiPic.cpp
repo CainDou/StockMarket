@@ -155,35 +155,36 @@ vector<ShowPointInfo> SFenShiPic::GetSubPicDataToGet(int nNum, map<int, ShowPoin
 	return infoVec;
 }
 
-void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName,
-	vector<CommonIndexMarket>* pIdxMarketVec)
+void SFenShiPic::SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec)
 {
-	m_bDataInited = false;
-	m_strSubIns = subIns;
 	m_pIdxMarketVec = pIdxMarketVec;
 	m_pStkMarketVec = nullptr;
+	m_pTFMarketVec = nullptr;
 	m_bIsIndex = true;
-	m_strStockName = StockName;
-	m_pPriceList->SetShowData(subIns, m_strStockName, pIdxMarketVec);
-	m_pDealList->SetShowData(subIns, pIdxMarketVec);
+	m_pPriceList->SetDataPoint(pIdxMarketVec);
+	m_pDealList->SetDataPoint(pIdxMarketVec);
 }
 
-void SFenShiPic::SetShowData(SStringA subIns, SStringA StockName,
-	vector<CommonStockMarket>* pStkMarketVec)
+void SFenShiPic::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec, vector<TickFlowMarket>* pTFMarketVec)
+{
+	m_pStkMarketVec = pStkMarketVec;
+	m_pTFMarketVec = pTFMarketVec;
+	m_pIdxMarketVec = nullptr;
+	m_bIsIndex = false;
+	m_pPriceList->SetDataPoint(pStkMarketVec);
+	m_pDealList->SetDataPoint(pStkMarketVec);
+
+}
+
+void SFenShiPic::ChangeShowStock(SStringA subIns, SStringA StockName)
 {
 	m_bDataInited = false;
 	m_strSubIns = subIns;
-	m_pStkMarketVec = pStkMarketVec;
-	m_pIdxMarketVec = nullptr;
-	m_bIsIndex = false;
 	m_strStockName = StockName;
-	m_pPriceList->SetShowData(subIns, m_strStockName, pStkMarketVec);
-	m_pDealList->SetShowData(subIns, pStkMarketVec);
-	//DataInit();
-	//if (m_pData->fPreClose == 0)
-	//	m_pData->fPreClose = fPreClose;
-
+	m_pPriceList->ChangeShowStock(subIns, m_strStockName);
+	m_pDealList->ChangeShowData(subIns);
 }
+
 
 void SFenShiPic::SetSubPicShowData(int nIndex, bool nGroup)
 {

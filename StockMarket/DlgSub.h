@@ -66,6 +66,11 @@ namespace SOUI
 		void OnRehabInfo(int nMsgLength, const char* info);
 		void OnHisCallAction(int nMsgLength, const char* info);
 		void OnGetCallAction(int nMsgLength, const char* info);
+		void OnHisTFBase(int nMsgLength, const char* info);
+		void OnGetHisTFBase(int nMsgLength, const char* info);
+		void OnTodayTFMarket(int nMsgLength, const char* info);
+		void OnRTTFMarket(int nMsgLength, const char* info);
+
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);

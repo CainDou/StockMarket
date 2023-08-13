@@ -560,6 +560,8 @@ void CDlgMultiFilter::InitMsgHandleMap()
 		= &CDlgMultiFilter::OnGetPoint;
 	m_MsgHandleMap[WW_GetCallAction]
 		= &CDlgMultiFilter::OnGetCallAction;
+	m_MsgHandleMap[WW_GetHisTFBase]
+		= &CDlgMultiFilter::OnGetHisTFBase;
 
 	m_MsgHandleMap[Syn_Point]
 		= &CDlgMultiFilter::OnUpdatePoint;
@@ -581,6 +583,12 @@ void CDlgMultiFilter::InitMsgHandleMap()
 		= &CDlgMultiFilter::OnRehabInfo;
 	m_MsgHandleMap[Syn_HisCallAction]
 		= &CDlgMultiFilter::OnHisCallAction;
+	m_MsgHandleMap[Syn_HisTFBase]
+		= &CDlgMultiFilter::OnHisTFBase;
+	m_MsgHandleMap[Syn_TodayTFMarket]
+		= &CDlgMultiFilter::OnTodayTFMarket;
+	m_MsgHandleMap[Syn_RTTFMarkt]
+		= &CDlgMultiFilter::OnRTTFMarket;
 
 }
 
@@ -716,6 +724,36 @@ void CDlgMultiFilter::OnHisCallAction(int nMsgLength, const char * info)
 void CDlgMultiFilter::OnGetCallAction(int nMsgLength, const char * info)
 {
 	SendMsg(m_SynThreadID, Syn_GetCallAction, info, nMsgLength);
+}
+
+void CDlgMultiFilter::OnHisTFBase(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndVec[m_WndHandleMap[hWnd]]->GetThreadID(), WW_TodayTFMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+
+}
+
+void CDlgMultiFilter::OnGetHisTFBase(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetHisTFBase, info, nMsgLength);
+}
+
+void CDlgMultiFilter::OnTodayTFMarket(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndVec[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisTFBase,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgMultiFilter::OnRTTFMarket(int nMsgLength, const char * info)
+{
+	SStringA strStock = ((TickFlowMarket*)info)[0].SecurityID;
+	if (m_WndSubMap[Group_Stock] == strStock)
+		SendMsg(m_WndVec[Group_Stock]->GetThreadID(), WW_RTTFMarket,
+			info, nMsgLength);
 }
 
 void CDlgMultiFilter::OnMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)

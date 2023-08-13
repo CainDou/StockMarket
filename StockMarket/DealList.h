@@ -21,8 +21,9 @@ namespace SOUI
 		bool		m_bGroup;
 		double		m_dPreSettle;
 		double      m_dSettleRatio;
-		void		SetShowData(SStringA StockID, vector<CommonStockMarket>* pStkMarketVec);
-		void		SetShowData(SStringA StockID, vector<CommonIndexMarket>* pIdxMarketVec);
+		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec);
+		void		SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec);
+		void		ChangeShowData(SStringA StockID);
 		CRect		m_rect;
 		bool		m_bIsStockIndex;
 		void		Paint(IRenderTarget *pRT);

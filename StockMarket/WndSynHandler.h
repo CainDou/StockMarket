@@ -55,6 +55,7 @@ protected:
 	int GetMarket(SStringA stockID, int nGroup);
 	int GetHisKline(SStringA stockID, int nPeriod, int nGroup);
 	int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
+	int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
 
 	void InitDataHandleMap();
 	void InitNetHandleMap();
@@ -106,6 +107,8 @@ protected:
 	void OnMsgRehabInfo( ReceiveInfo &recvInfo);
 	void OnMsgCallAction( ReceiveInfo &recvInfo);
 	void OnMsgHisCallAction( ReceiveInfo &recvInfo);
+	void OnMsgHisTFBase(ReceiveInfo &recvInfo);
+	void OnMsgTodayTFMarket(ReceiveInfo &recvInfo);
 	void OnNoDefineMsg( ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -135,7 +138,9 @@ protected:
 	void OnRehabInfo(int nMsgLength, const char* info);
 	void OnHisCallAction(int nMsgLength, const char* info);
 	void OnGetCallAction(int nMsgLength, const char* info);
-
+	void OnHisTFBase(int nMsgLength, const char* info);
+	void OnGetHisTFBase(int nMsgLength, const char* info);
+	void OnTodayTFMarket(int nMsgLength, const char* info);
 public:
 	vector<SStringA> m_dataNameVec;
 	//vector<SStringA> m_comDataNameVec;

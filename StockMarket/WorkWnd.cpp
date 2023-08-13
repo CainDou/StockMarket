@@ -68,6 +68,8 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 		m_pCheckSBM->SetVisible(FALSE, TRUE);
 		m_pCheckSTARM->SetVisible(FALSE, TRUE);
 		m_pCheckNewStock->SetVisible(FALSE, TRUE);
+		m_pFenShiPic->SetDataPoint(&m_IndexMarketVec);
+		m_pKlinePic->SetDataPoint(&m_IndexMarketVec,&m_KlineMap);
 
 	}
 	else if (Group_SWL2 == m_Group)
@@ -80,6 +82,8 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 		m_pCheckSBM->SetVisible(FALSE, TRUE);
 		m_pCheckSTARM->SetVisible(FALSE, TRUE);
 		m_pCheckNewStock->SetVisible(FALSE, TRUE);
+		m_pFenShiPic->SetDataPoint(&m_IndexMarketVec);
+		m_pKlinePic->SetDataPoint(&m_IndexMarketVec, &m_KlineMap);
 
 	}
 	else if (Group_Stock == m_Group)
@@ -105,6 +109,9 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 			m_pBtnConn2->SetVisible(FALSE);
 			m_pBtnConn2->SetAttribute(L"size", L"0,22");
 		}
+		m_pFenShiPic->SetDataPoint(&m_StockMarketVec, &m_RtTFMarketVec[Period_FenShi]);
+		m_pKlinePic->SetDataPoint(&m_StockMarketVec, &m_KlineMap,
+			&m_RtTFMarketVec,&m_TFBaseMap);
 
 	}
 
@@ -395,6 +402,7 @@ void CWorkWnd::CloseWnd()
 	m_StockMarketVec.clear();
 	m_StockMarketVec.shrink_to_fit();
 	m_KlineMap.clear();
+	m_TFBaseMap.clear();
 	m_preCloseMap.hash.clear();
 	m_StockName.hash.clear();
 	m_dataNameVec.clear();
@@ -402,6 +410,7 @@ void CWorkWnd::CloseWnd()
 	//m_PointReadyMap.clear();
 	m_KlineGetMap.clear();
 	m_PointGetMap.clear();
+	m_TFBaseGetMap.clear();
 	m_L1IndyPointGetMap.clear();
 	m_L2IndyPointGetMap.clear();
 	m_SubPicShowNameVec.clear();
@@ -687,7 +696,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		m_bUseHisStockFilter = TRUE;
 		m_pDlgCmbStockFilter->OutPutHisCondition(m_hisSfVec);
 		m_bHisFilterChecked = FALSE;
-		EnableWindow(FALSE,TRUE);
+		EnableWindow(FALSE, TRUE);
 		m_pTextCalcInfo->SetVisible(TRUE, TRUE);
 		break;
 	case WDMsg_HisFilterEndCalc:
@@ -702,7 +711,7 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 				m_StockPassHisVec[i] = FALSE;
 		}
 		m_bHisFilterChecked = TRUE;
-		EnableWindow(TRUE,TRUE);
+		EnableWindow(TRUE, TRUE);
 		//RequestRelayout(m_swnd,FALSE);
 		m_bListInited = TRUE;
 		m_pTextCalcInfo->SetVisible(FALSE, TRUE);
@@ -1093,7 +1102,35 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		::EnableWindow(m_hWnd, FALSE);
 	}
 	break;
+	case KM_TFRatio:
+	case KM_TFVol:
+	case KM_TFOrder:
+	case KM_TFAvgVol:
+	{
+		m_pKlinePic->SetTickFlowDataType(nID - KM_TFRatio);
+		if (m_pKlinePic->GetIsTFBaseDataUsed())
+		{
+			if (m_TFBaseGetMap.count(m_PicPeriod) == 0)
+			{
+				m_pKlinePic->SetTFMarketState(false);
+				DataGetInfo GetInfo;
+				GetInfo.hWnd = m_hWnd;
+				strcpy_s(GetInfo.StockID, m_strSubStock);
+				GetInfo.Group = m_Group;
+				GetInfo.Period = m_PicPeriod;
+				SendMsg(m_uParWndThreadID, WW_GetHisTFBase,
+					(char*)&GetInfo, sizeof(GetInfo));
+			}
+			else
+				m_pKlinePic->SetTFMarketState(true);
 
+		}
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+
+	}
+	break;
 	default:
 		break;
 	}
@@ -1325,6 +1362,12 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 			menu.CheckMenuItem(KM_Amount, MF_UNCHECKED);
 		}
 
+		if (m_pKlinePic->GetIsTFBaseDataUsed())
+		{
+			int nType = m_pKlinePic->GetTickFlowDataType();
+			menu.CheckMenuItem(KM_TFRatio + nType, MF_CHECKED);
+		}
+
 		UINT VolState = m_pKlinePic->GetCAVolState() ? MF_CHECKED : MF_UNCHECKED;
 		UINT AmoState = m_pKlinePic->GetCAAmoState() ? MF_CHECKED : MF_UNCHECKED;
 		UINT AllState = (VolState || AmoState) ? MF_CHECKED : MF_UNCHECKED;
@@ -1544,12 +1587,19 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnFixedTimeRehab;
 	m_dataHandleMap[WW_HisCallAction] =
 		&CWorkWnd::OnUpdateHisCallAction;
+
 	m_dataHandleMap[WW_ChangeHisFiterState] =
 		&CWorkWnd::OnChangeHisStockFilter;
 	m_dataHandleMap[WW_HisFilterStartCalc] =
 		&CWorkWnd::OnHisFilterStartCalc;
 	m_dataHandleMap[WW_HisFilterEndCalc] =
 		&CWorkWnd::OnHisFilterEndCalc;
+	m_dataHandleMap[WW_HisTFBase] =
+		&CWorkWnd::OnUpdateHisTFBase;
+	m_dataHandleMap[WW_TodayTFMarket] =
+		&CWorkWnd::OnUpdateTodayTFMarket;
+	m_dataHandleMap[WW_RTTFMarket] =
+		&CWorkWnd::OnUpdateRTTFMarket;
 
 }
 void CWorkWnd::InitNameVec()
@@ -2278,7 +2328,7 @@ void CWorkWnd::UpdateListTFData(int nRow, TickFlowMarket& tfData, double fPreClo
 		}
 		if (i + SHead_TickFlowStart == SHead_ActBuyVolume ||
 			i + SHead_TickFlowStart == SHead_ActSellVolume ||
-			i + SHead_TickFlowStart == SHead_Volume||
+			i + SHead_TickFlowStart == SHead_Volume ||
 			i + SHead_TickFlowStart == SHead_ActBuyOrder ||
 			i + SHead_TickFlowStart == SHead_ActSellOrder)
 		{
@@ -2540,8 +2590,8 @@ void CWorkWnd::SortOtherData(int nSortHeader, int nFlag)
 	{
 		for (auto &it : m_ListShowTFData.hash)
 		{
-			double fAvg = nSortHeader == SHead_AvgActBuyNum? 
-				it.second.ActBuyVol * 1.0 / it.second.uActBuyOrderCount:
+			double fAvg = nSortHeader == SHead_AvgActBuyNum ?
+				it.second.ActBuyVol * 1.0 / it.second.uActBuyOrderCount :
 				it.second.ActSellVol * 1.0 / it.second.uActSellOrderCount;
 			dataMap[it.first] = fAvg;
 		}
@@ -3576,6 +3626,24 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 		}
 		else
 			m_pKlinePic->SetHisKlineState(true);
+		if (m_pKlinePic->GetIsTFBaseDataUsed())
+		{
+			if (m_TFBaseGetMap.count(nPeriod) == 0)
+			{
+				m_pKlinePic->SetTFMarketState(false);
+				DataGetInfo GetInfo;
+				GetInfo.hWnd = m_hWnd;
+				strcpy_s(GetInfo.StockID, StockID);
+				GetInfo.Group = m_Group;
+				GetInfo.Period = nPeriod;
+				SendMsg(m_uParWndThreadID, WW_GetHisTFBase,
+					(char*)&GetInfo, sizeof(GetInfo));
+			}
+			else
+				m_pKlinePic->SetTFMarketState(true);
+
+		}
+
 		vector<ShowPointInfo> infoVec;
 		m_pKlinePic->GetShowPointInfo(infoVec);
 		for (auto &info : infoVec)
@@ -3598,15 +3666,13 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	SStringA StockName = m_StockName.hash[StockID];
 	if (m_Group != Group_Stock)
 	{
-		m_pFenShiPic->SetShowData(StockID, StockName, &m_IndexMarketVec);
-		m_pKlinePic->SetShowData(StockID, StockName,
-			&m_IndexMarketVec, &m_KlineMap);
+		m_pFenShiPic->ChangeShowStock(StockID, StockName);
+		m_pKlinePic->ChangeShowStock(StockID, StockName);
 	}
 	else
 	{
-		m_pFenShiPic->SetShowData(StockID, StockName, &m_StockMarketVec);
-		m_pKlinePic->SetShowData(StockID, StockName,
-			&m_StockMarketVec, &m_KlineMap);
+		m_pFenShiPic->ChangeShowStock(StockID, StockName);
+		m_pKlinePic->ChangeShowStock(StockID, StockName);
 	}
 	//获取分时数据
 	DataGetInfo GetInfo;
@@ -3632,6 +3698,19 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 
 		SendMsg(m_uParWndThreadID, WW_GetKline,
 			(char*)&GetInfo, sizeof(GetInfo));
+
+		if (m_pKlinePic->GetIsTFBaseDataUsed())
+		{
+			DataGetInfo GetInfo;
+			GetInfo.hWnd = m_hWnd;
+			strcpy_s(GetInfo.StockID, StockID);
+			GetInfo.Group = m_Group;
+			GetInfo.Period = m_PicPeriod;
+			SendMsg(m_uParWndThreadID, WW_GetHisTFBase,
+				(char*)&GetInfo, sizeof(GetInfo));
+
+		}
+
 		vector<ShowPointInfo>infoVec;
 		m_pKlinePic->GetShowPointInfo(infoVec);
 		for (auto &info : infoVec)
@@ -3656,6 +3735,7 @@ void CWorkWnd::SetDataFlagFalse()
 	m_pKlinePic->SetHisKlineState(false);
 	m_pKlinePic->SetHisPointState(false);
 	m_pKlinePic->SetHisCAInfoState(false);
+	m_pKlinePic->SetTFMarketState(false);
 
 }
 
@@ -4018,6 +4098,70 @@ void SOUI::CWorkWnd::OnUpdateHisCallAction(int nMsgLength, const char * info)
 	m_bCAInfoGet = TRUE;
 	m_pKlinePic->SetHisCAInfoState(true);
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void CWorkWnd::OnUpdateHisTFBase(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nSize = pRecvInfo->SrcDataSize / sizeof(TFBaseMarket);
+	int nGroup = pRecvInfo->Group;
+	int nPeriod = pRecvInfo->Period;
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	auto &TFBaseVec = m_TFBaseMap[nPeriod];
+	TFBaseVec.resize(nSize);
+	memcpy_s(&TFBaseVec[0], pRecvInfo->SrcDataSize,
+		info + nOffset, pRecvInfo->SrcDataSize);
+}
+
+void CWorkWnd::OnUpdateTodayTFMarket(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nSize = pRecvInfo->SrcDataSize / sizeof(TickFlowMarket);
+	int nGroup = pRecvInfo->Group;
+	int nPeriod = pRecvInfo->Period;
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	auto &TFMarkteVec = m_RtTFMarketVec[nPeriod];
+	TFMarkteVec.resize(nSize);
+	memcpy_s(&TFMarkteVec[0], pRecvInfo->SrcDataSize,
+		info + nOffset, pRecvInfo->SrcDataSize);
+	m_TFBaseGetMap[nPeriod] = TRUE;
+
+	if (nPeriod != Period_FenShi)
+	{
+		m_pKlinePic->SetTFMarketState(true);
+		m_pKlinePic->UpdateData();
+	}
+
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+
+}
+
+void CWorkWnd::OnUpdateRTTFMarket(int nMsgLength, const char * info)
+{
+	TickFlowMarket* pTickFlow = (TickFlowMarket*)info;
+	int nDataCount = nMsgLength / sizeof(TickFlowMarket);
+	for (int i = 0; i < nDataCount; ++i)
+	{
+		int nPeriod = pTickFlow[i].nPeriod;
+		if (m_TFBaseGetMap[nPeriod])
+		{
+			if(m_RtTFMarketVec[nPeriod].empty())
+				m_RtTFMarketVec[nPeriod].emplace_back(pTickFlow[i]);
+			else
+			{
+				if(m_RtTFMarketVec[nPeriod].back().nTime != pTickFlow[i].nTime)
+					m_RtTFMarketVec[nPeriod].emplace_back(pTickFlow[i]);
+				else
+					m_RtTFMarketVec[nPeriod].back() = pTickFlow[i];
+
+			}
+		}
+
+	}
 }
 
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)

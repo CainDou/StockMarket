@@ -12,9 +12,9 @@ namespace SOUI
 
 	public:
 		CPriceList();
-//		void SetShowData(int nIndex, bool bGroup);
-		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
-		void		SetShowData(SStringA StockID, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
+		void		ChangeShowStock(SStringA StockID, SStringA StockName);
+		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec);
+		void		SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec);
 		void		SetIndyName(vector<SStringA>& nameVec);
 		void		SetPriceListHalf(bool bHalf);
 		~CPriceList();

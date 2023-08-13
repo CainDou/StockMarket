@@ -567,6 +567,8 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnGetPoint;
 	m_MsgHandleMap[WW_GetCallAction]
 		= &CDlgSub::OnGetCallAction;
+	m_MsgHandleMap[WW_GetHisTFBase]
+		= &CDlgSub::OnGetHisTFBase;
 
 	m_MsgHandleMap[Syn_Point]
 		= &CDlgSub::OnUpdatePoint;
@@ -594,6 +596,12 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnRehabInfo;
 	m_MsgHandleMap[Syn_HisCallAction]
 		= &CDlgSub::OnHisCallAction;
+	m_MsgHandleMap[Syn_HisTFBase]
+		= &CDlgSub::OnHisTFBase;
+	m_MsgHandleMap[Syn_TodayTFMarket]
+		= &CDlgSub::OnTodayTFMarket;
+	m_MsgHandleMap[Syn_RTTFMarkt]
+		= &CDlgSub::OnRTTFMarket;
 
 }
 
@@ -759,6 +767,36 @@ void CDlgSub::OnHisCallAction(int nMsgLength, const char * info)
 void CDlgSub::OnGetCallAction(int nMsgLength, const char * info)
 {
 	SendMsg(m_SynThreadID, Syn_GetCallAction, info, nMsgLength);
+}
+
+void CDlgSub::OnHisTFBase(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisTFBase,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnGetHisTFBase(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetHisTFBase, info, nMsgLength);
+
+}
+
+void CDlgSub::OnTodayTFMarket(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_TodayTFMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnRTTFMarket(int nMsgLength, const char * info)
+{
+	SStringA strStock = ((TickFlowMarket*)info)[0].SecurityID;
+	if (m_WndSubMap[Group_Stock] == strStock)
+		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RTTFMarket,
+			info, nMsgLength);
 }
 
 void CDlgSub::OnFinalMessage(HWND hWnd)

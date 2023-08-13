@@ -36,10 +36,10 @@ namespace SOUI
 		void		InitSubPic(int nNum/*,vector<SStringA> & picNameVec*/);
 		void		ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec);
 		vector<ShowPointInfo> GetSubPicDataToGet(int nNum, map<int, ShowPointInfo>& infoMap);
-		void		SetShowData(SStringA subIns, 
-					SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
-		void		SetShowData(SStringA subIns, 
-					SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
+		void		SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec);
+		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec,
+					vector<TickFlowMarket>* pTFMarketVec);
+		void		ChangeShowStock(SStringA subIns, SStringA StockName);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
 		void		SetSubPicShowData(int nDataCount[],
 					vector<vector<vector<CoreData>*>>& data,
@@ -208,6 +208,7 @@ namespace SOUI
 	protected:
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
+		vector<TickFlowMarket>* m_pTFMarketVec;
 		FENSHI_INFO *m_pData;
 		SStringA    m_strSubIns;
 		SStringA	m_strStockName;

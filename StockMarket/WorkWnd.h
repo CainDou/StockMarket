@@ -190,6 +190,9 @@ namespace SOUI
 		void OnUpdateHisSecPoint(int nMsgLength, const char* info);
 		void OnUpdateRehabInfo(int nMsgLength, const char* info);
 		void OnUpdateHisCallAction(int nMsgLength, const char* info);
+		void OnUpdateHisTFBase(int nMsgLength, const char* info);
+		void OnUpdateTodayTFMarket(int nMsgLength, const char* info);
+		void OnUpdateRTTFMarket(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -365,6 +368,8 @@ namespace SOUI
 		vector<CommonIndexMarket>m_IndexMarketVec;
 		vector<CommonStockMarket>m_StockMarketVec;
 		map<int, vector<KlineType>>m_KlineMap;
+		map<int, vector<TFBaseMarket>>m_TFBaseMap;
+		map<int, vector<TickFlowMarket>>m_RtTFMarketVec;
 		vector<CAInfo>m_CallAction;
 
 		bool m_bMarketGet;
@@ -373,6 +378,7 @@ namespace SOUI
 		map<int, map<SStringA, BOOL>>m_L1IndyPointGetMap;
 		map<int, map<SStringA, BOOL>>m_L2IndyPointGetMap;
 		map<int, bool>m_KlineGetMap;
+		map<int, bool>m_TFBaseGetMap;
 		//map<SStringA,map<int, bool>>m_PointGetMap;
 		//set<ShowPointInfo> m_PointUseMap;
 		map<ePointType, int> m_PointDataCount;

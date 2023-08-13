@@ -582,6 +582,8 @@ void GetInitPara(CIniFile & ini, InitPara & para,SStringA strSection)
 	para.nKlineFTRehabDate = ini.GetIntA(strSection, "KlineFTRehabDate", 0);
 	para.strFilterName = ini.GetStringA(strSection, "FilterName", "");
 	para.UseHisStockFilter = ini.GetIntA(strSection, "HisStockFilter", 0);
+	para.bKlineUseTickFlowData = ini.GetIntA(strSection, "KlineUseTickFlowData", 0);
+	para.nKlineTickFlowDataType = ini.GetIntA(strSection, "KlineTickFlowDataType", 0);
 
 }
 
@@ -647,6 +649,9 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 
 	ini.WriteStringA(strSection, "FilterName", para.strFilterName);
 	ini.WriteIntA(strSection, "HisStockFilter", para.UseHisStockFilter);
+
+	ini.WriteIntA(strSection, "KlineUseTickFlowData", para.bKlineUseTickFlowData);
+	ini.WriteIntA(strSection, "KlineTickFlowDataType", para.nKlineTickFlowDataType);
 
 }
 

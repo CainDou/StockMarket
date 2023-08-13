@@ -307,7 +307,7 @@ BOOL SSubTargetPic::IsInRect(int x, int y)
 	CRect *prc;
 	prc = &m_rcImage;
 	if (x >= prc->left && x <= prc->right/*&&
-		y >= prc->top  && y <= prc->bottom*/)
+										 y >= prc->top  && y <= prc->bottom*/)
 		return TRUE;
 	return FALSE;
 }
