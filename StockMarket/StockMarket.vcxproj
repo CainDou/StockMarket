@@ -164,7 +164,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;E:\Zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;E:\Zlib\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -187,28 +187,48 @@
     <Text Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DataProc.cpp" />
+    <ClCompile Include="AdpterFixTitle.cpp" />
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
     <ClCompile Include="DlgAddNew.cpp" />
+    <ClCompile Include="DlgBackTesting.cpp" />
     <ClCompile Include="DlgBandPara.cpp" />
+    <ClCompile Include="DlgComboStockFilter.cpp" />
     <ClCompile Include="DlgEmaPara.cpp" />
     <ClCompile Include="DlgFrmlFind.cpp" />
     <ClCompile Include="DlgFuncInsert.cpp" />
     <ClCompile Include="DlgFrmlManage.cpp" />
+    <ClCompile Include="DlgHeaderSelect.cpp" />
     <ClCompile Include="DlgKbElf.cpp" />
+    <ClCompile Include="DlgLimitUpStat.cpp" />
     <ClCompile Include="DlgLogin.cpp" />
     <ClCompile Include="DlgMacdPara.cpp" />
     <ClCompile Include="DlgMaPara.cpp" />
+    <ClCompile Include="DlgMultiFilter.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
+    <ClCompile Include="DlgRehabFixedTime.cpp" />
     <ClCompile Include="DlgSaveFrmlList.cpp" />
+    <ClCompile Include="DlgSelTarget.cpp" />
     <ClCompile Include="DlgStkFilterEditor.cpp" />
     <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
+    <ClCompile Include="DlgUpdateLog.cpp" />
+    <ClCompile Include="DragWnd.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="FrmlCompiler.cpp" />
     <ClCompile Include="FrmlManager.cpp" />
     <ClCompile Include="IniFile.cpp" />
+    <ClCompile Include="json_reader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="json_value.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="json_writer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="MD5.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -220,7 +240,6 @@
     <ClCompile Include="SFenShiPic.cpp" />
     <ClCompile Include="SKlinePic.cpp" />
     <ClCompile Include="SouiRealWndHandler.cpp" />
-    <ClCompile Include="SSubPic.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
     <ClCompile Include="SKlineTip.cpp" />
     <ClCompile Include="SSubTargetPic.cpp" />
@@ -238,25 +257,33 @@
     <ResourceCompile Include="StockMarket.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DataProc.h" />
+    <ClInclude Include="AdpterFixTitle.h" />
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="DlgAddNew.h" />
+    <ClInclude Include="DlgBackTesting.h" />
     <ClInclude Include="DlgBandPara.h" />
+    <ClInclude Include="DlgComboStockFilter.h" />
     <ClInclude Include="DlgEmaPara.h" />
     <ClInclude Include="DlgFrmlFind.h" />
     <ClInclude Include="DlgFuncInsert.h" />
     <ClInclude Include="DlgFrmlManage.h" />
+    <ClInclude Include="DlgHeaderSelect.h" />
     <ClInclude Include="DlgKbElf.h" />
+    <ClInclude Include="DlgLimitUpStat.h" />
     <ClInclude Include="DlgLogin.h" />
     <ClInclude Include="DlgMacdPara.h" />
     <ClInclude Include="DlgMaPara.h" />
+    <ClInclude Include="DlgMultiFilter.h" />
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
+    <ClInclude Include="DlgRehabFixedTime.h" />
     <ClInclude Include="DlgSaveFrmlList.h" />
+    <ClInclude Include="DlgSelTarget.h" />
     <ClInclude Include="DlgStkFilterEditor.h" />
     <ClInclude Include="DlgStockFilter.h" />
     <ClInclude Include="DlgSub.h" />
+    <ClInclude Include="DlgUpdateLog.h" />
     <ClInclude Include="FrmlCompiler.h" />
     <ClInclude Include="FrmlManager.h" />
     <ClInclude Include="IniFile.h" />
@@ -270,7 +297,6 @@
     <ClInclude Include="SFenShiPic.h" />
     <ClInclude Include="SKlinePic.h" />
     <ClInclude Include="SouiRealWndHandler.h" />
-    <ClInclude Include="SSubPic.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
     <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="SSubTargetPic.h" />
@@ -295,11 +321,13 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="uires\smenu\menu_new.xml" />
     <Xml Include="uires\uidef\init.xml" />
     <Xml Include="uires\values\color.xml" />
     <Xml Include="uires\values\skin.xml" />
     <Xml Include="uires\values\string.xml" />
     <Xml Include="uires\xml\dlg_main.xml" />
+    <Xml Include="uires\xml\dlg_stockFilter.xml" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="uires\image\soui.ico" />

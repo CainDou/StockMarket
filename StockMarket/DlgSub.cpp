@@ -4,12 +4,15 @@
 #include <fstream>
 #include "WndSynHandler.h"
 #include "DlgStockFilter.h"
+#include <io.h>
+#include <direct.h>
 
 
 
 #define TIMER_AUTOSAVE 1
 
 extern CWndSynHandler g_WndSyn;
+extern HWND g_MainWnd;
 
 
 CDlgSub::CDlgSub(SStringA strWndName) :SHostWnd(_T("LAYOUT:dlg_subWindow"))
@@ -30,30 +33,14 @@ CDlgSub::~CDlgSub()
 
 void CDlgSub::OnClose()
 {
-	if (IsVisible())
-	{
-		ShowWindow(SW_HIDE);
-		m_bIsValid = FALSE;
-		KillTimer(TIMER_AUTOSAVE);
-		SendMsg(m_SynThreadID, Syn_RemoveWnd, (char*)&m_hWnd, sizeof(m_hWnd));
-		SendMsg(m_DataThreadID, Msg_Exit, NULL, 0);
-		if (tDataProc.joinable())
-			tDataProc.join();
-		m_DataThreadID = INVALID_THREADID;
-		SavePicConfig();
-		WINDOWPLACEMENT wp = { sizeof(wp) };
-		::GetWindowPlacement(m_hWnd, &wp);
-		std::ofstream ofile;
-		SStringA strPosFile;
-		strPosFile.Format(".\\config\\%s.position", m_strWindowName);
-		ofile.open(strPosFile, std::ios::out | std::ios::binary);
-		if (ofile.is_open())
-			ofile.write((char*)&wp, sizeof(wp));
-		ofile.close();
-		for (auto &it : m_WndMap)
-			it.second->CloseWnd();
-	}
+	m_bIsValid = FALSE;
+	ShowWindow(SW_HIDE);
+	SStringA strPosFile;
+	strPosFile.Format(".\\config\\%s.position", m_strWindowName);
+	if (_access(strPosFile, 0) == 0)
+		remove(strPosFile);
 
+	StopAndClearData();
 }
 
 int CDlgSub::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -71,6 +58,7 @@ BOOL CDlgSub::OnInitDialog(EventArgs* e)
 	m_SynThreadID = g_WndSyn.GetThreadID();
 	tDataProc = thread(&CDlgSub::MsgProc, this);
 	m_DataThreadID = *(unsigned*)&tDataProc.get_id();
+	//InitWindowPos();
 	InitMsgHandleMap();
 	InitWorkWnd();
 	g_WndSyn.AddWnd(m_hWnd, m_DataThreadID);
@@ -92,7 +80,10 @@ LRESULT CDlgSub::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		SavePicConfig();
 		break;
 	case WDMsg_SaveStockFilter:
-		SaveStockFilterPara(int(lp));
+		SaveComboStockFilterPara(int(lp));
+		break;
+	case WDMsg_SaveListConfig:
+		SaveListConfig();
 		break;
 	case WDMsg_Exit:
 		exit(0);
@@ -105,18 +96,24 @@ LRESULT CDlgSub::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 
 void CDlgSub::OnDestroy()
 {
-
 	SetMsgHandled(FALSE);
-	SavePicConfig();
-	WINDOWPLACEMENT wp = { sizeof(wp) };
-	::GetWindowPlacement(m_hWnd, &wp);
-	std::ofstream ofile;
-	SStringA strPosFile;
-	strPosFile.Format(".\\config\\%s.position", m_strWindowName);
-	ofile.open(strPosFile, std::ios::out | std::ios::binary);
-	if (ofile.is_open())
-		ofile.write((char*)&wp, sizeof(wp));
-	ofile.close();
+
+	if (m_bIsValid)
+	{
+		SStringA strPosFile;
+		strPosFile.Format(".\\config\\%s.position", m_strWindowName);
+		std::ofstream ofile(strPosFile);
+		if (ofile.is_open())
+		{
+			WINDOWPLACEMENT wp = { sizeof(wp) };
+			::GetWindowPlacement(m_hWnd, &wp);
+
+			ofile.write((char*)&wp, sizeof(wp));
+			ofile.close();
+		}
+		ShowWindow(SW_HIDE);
+		StopAndClearData();
+	}
 }
 
 void CDlgSub::OnTimer(UINT_PTR nIDEvent)
@@ -126,6 +123,23 @@ void CDlgSub::OnTimer(UINT_PTR nIDEvent)
 		SavePicConfig();
 }
 
+
+void CDlgSub::InitWindowPos()
+{
+	WINDOWPLACEMENT wp;
+	std::ifstream ifile;
+	SStringA strFileName;
+	strFileName.Format(".\\config\\%s.position", m_strWindowName);
+	ifile.open(strFileName, std::ios::in | std::ios::binary);
+	if (ifile.is_open())
+	{
+		ifile.read((char*)&wp, sizeof(wp));
+		::SetWindowPlacement(m_hWnd, &wp);
+		ifile.close();
+	}
+	else
+		CenterWindow(g_MainWnd);
+}
 
 void CDlgSub::InitWorkWnd()
 {
@@ -141,18 +155,34 @@ void CDlgSub::InitWorkWnd()
 	vector<vector<StockInfo>> ListInsVec;
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
-	vector<map<int, TimeLineMap>> *pListData = g_WndSyn.GetListData();
-	vector<map<int, strHash<map<string, double>>>>* pFilterData =
-		g_WndSyn.GetFilterData();
+	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
+	auto pFilterData =g_WndSyn.GetFilterData();
+	auto pStockPos = g_WndSyn.GetStockPos();
+
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
-	InitConfig();
-	InitStockFilter();
+	auto infoMap = g_WndSyn.GetPointInfo();
+	vector<strHash<CAInfo>>* pCallAction = g_WndSyn.GetCallActionData();
+
+	InitConfig(infoMap);
+	InitComboStockFilter();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
+		m_WndHandleMap[m_WndMap[i]->m_hWnd] = i;
+		g_WndSyn.SetSubWndInfo(m_WndMap[i]->m_hWnd, m_hWnd, i);
 		m_WndMap[i]->SetParThreadID(m_DataThreadID);
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
 		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
 		m_WndMap[i]->SetDataPoint(&pFilterData->at(i), DT_FilterData);
+		m_WndMap[i]->SetPointInfo(infoMap);
+		m_WndMap[i]->SetDataPoint(&pCallAction->at(i), DT_CallAction);
+		m_WndMap[i]->SetDataPoint(&pStockPos->at(i), DT_StockPos);
+
+		//添加上级行业的选股器数据
+		for (int j = Group_SWL1; j < i; ++j)
+			m_WndMap[i]->SetDataPoint(&pFilterData->at(j), DT_L1IndyFilterData + j);
+
+		for (int j = Group_SWL1; j < i; ++j)
+			m_WndMap[i]->SetDataPoint(&pStockPos->at(j), DT_L1IndyIndexPos + j);
 		if (i == Group_Stock)
 		{
 			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
@@ -161,7 +191,7 @@ void CDlgSub::InitWorkWnd()
 		m_WndMap[i]->SetPreClose(preCloseMap);
 		m_WndMap[i]->InitList();
 	}
-
+	InitListConfig();
 }
 
 void CDlgSub::InitStockFilter()
@@ -183,106 +213,267 @@ void CDlgSub::InitStockFilter()
 
 }
 
+void CDlgSub::InitComboStockFilter()
+{
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		vector<StockFilter> sfVec;
+		SStringA strPath;
+		strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName, i);
+		std::ifstream ifile(strPath, std::ios::binary | std::ios::_Nocreate);
+		if (ifile.is_open())
+		{
+			int nSFParaSize = 0;
+			ifile.read((char*)&nSFParaSize, sizeof(nSFParaSize));
+			StockFilter sfPara = { 0 };
+			while (ifile.read((char*)&sfPara, nSFParaSize))
+				sfVec.emplace_back(sfPara);
+			m_WndMap[i]->InitComboStockFilterPara(sfVec);
+			ifile.close();
 
-void CDlgSub::InitConfig()
+		}
+		vector<HisStockFilter> hsfVec;
+		strPath.Format(".//config//%s_HSF_%d.DAT", m_strWindowName, i);
+		ifile.open(strPath, std::ios::binary | std::ios::_Nocreate);
+		if (ifile.is_open())
+		{
+			int nSFParaSize = 0;
+			ifile.read((char*)&nSFParaSize, sizeof(nSFParaSize));
+			HisStockFilter hsfPara = { 0 };
+			while (ifile.read((char*)&hsfPara, nSFParaSize))
+				hsfVec.emplace_back(hsfPara);
+			m_WndMap[i]->InitComboHisStockFilterPara(hsfVec);
+			ifile.close();
+		}
+
+	}
+
+}
+
+void CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
+{
+	vector<SStringA> strRangeVec;
+	strRangeVec.emplace_back("");
+	strRangeVec.emplace_back("L1");
+	strRangeVec.emplace_back("L2");
+	vector<SStringA> strShowNameVec;
+	strShowNameVec.emplace_back("");
+	strShowNameVec.emplace_back("一级行业");
+	strShowNameVec.emplace_back("二级行业");
+	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
+	if (initPara.nTSCPointWndNum == -1)
+	{
+		int nCount = 0;
+		for (int i = 0; i < 3; ++i)
+		{
+			if (initPara.bShowTSCRPS[i])
+			{
+				++nCount;
+				if (i == 0)
+					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+				else
+					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
+			}
+		}
+		initPara.nTSCPointWndNum = nCount;
+	}
+	else if (initPara.nTSCPointWndNum > 0)
+	{
+		for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
+		{
+			SStringA tmp;
+			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
+			if (overallType == -1)
+			{
+				int type = (ePointType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
+				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
+				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
+				for (auto &it : pointMap)
+				{
+					if (it.first > eIndyMarketPointEnd)
+						continue;
+					if (it.second.type == type &&
+						it.second.dataInRange == dataInRange &&
+						it.second.srcDataName == srcDataName)
+					{
+						initPara.TSCPonitWndInfo.emplace_back(it.second);
+						break;
+					}
+				}
+			}
+			else
+				initPara.TSCPonitWndInfo.emplace_back(pointMap[overallType]);
+		}
+	}
+	initPara.nKlinePointWndNum = ini.GetIntA(strSection, "KlinePointWndNum", -1);
+	if (initPara.nKlinePointWndNum == -1)
+	{
+		int nCount = 0;
+		for (int i = 0; i < 3; ++i)
+		{
+			if (initPara.bShowKlineRPS[i])
+			{
+				++nCount;
+				if (i == 0)
+					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+				else
+					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
+			}
+		}
+		initPara.nKlinePointWndNum = nCount;
+	}
+	else if (initPara.nKlinePointWndNum > 0)
+	{
+		for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
+		{
+			SStringA tmp;
+			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
+			if (overallType == -1)
+			{
+				int type = (ePointType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
+				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
+				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
+				for (auto &it : pointMap)
+				{
+					if (it.first > eIndyMarketPointEnd)
+						continue;
+					if (it.second.type == type &&
+						it.second.dataInRange == dataInRange &&
+						it.second.srcDataName == srcDataName)
+					{
+						initPara.KlinePonitWndInfo.emplace_back(it.second);
+						break;
+					}
+				}
+			}
+			else
+				initPara.KlinePonitWndInfo.emplace_back(pointMap[overallType]);
+		}
+	}
+
+}
+
+
+void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 {
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\%s.ini", m_strWindowName);
 	CIniFile ini(strPosFile);
+	int CloseMAPara[] = { 5,10,20,60,0,0 };
+	int VolAmoMAPara[] = { 5,10,0,0,0,0 };
+
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		InitPara initPara;
 		SStringA strSection;
 		strSection.Format("Group%d", i);
-		initPara.bShowMA =
-			ini.GetIntA(strSection, "ShowMA", 1) == 0 ? false : true;
-		initPara.bShowBandTarget =
-			ini.GetIntA(strSection, "ShowBand") == 0 ? false : true;
-		initPara.bShowAverage =
-			ini.GetIntA(strSection, "ShowAvg", 1) == 0 ? false : true;
-		initPara.bShowEMA =
-			ini.GetIntA(strSection, "ShowEMA", 1) == 0 ? false : true;
-		initPara.bShowTSCMACD =
-			ini.GetIntA(strSection, "ShowTSCMACD", 1) == 0 ? false : true;
-		initPara.bShowTSCVolume =
-			ini.GetIntA(strSection, "ShowTSCVolume", 1) == 0 ? false : true;
-		initPara.bShowKlineVolume =
-			ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
-		initPara.bShowKlineMACD =
-			ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
-		initPara.bShowTSCRPS[0] =
-			ini.GetIntA(strSection, "ShowTSCRPS", 1) == 0 ? false : true;
-		initPara.bShowTSCRPS[1] =
-			ini.GetIntA(strSection, "ShowTSCL1RPS", 1) == 0 ? false : true;
-		initPara.bShowTSCRPS[2] =
-			ini.GetIntA(strSection, "ShowTSCL2RPS", 1) == 0 ? false : true;
-		initPara.bShowKlineRPS[0] =
-			ini.GetIntA(strSection, "ShowKlineRPS", 1) == 0 ? false : true;
-		initPara.bShowKlineRPS[1] =
-			ini.GetIntA(strSection, "ShowKlineL1RPS", 1) == 0 ? false : true;
-		initPara.bShowKlineRPS[2] =
-			ini.GetIntA(strSection, "ShowKlineL2RPS", 1) == 0 ? false : true;
-
-		initPara.nWidth = ini.GetIntA(strSection, "Width", 16);
-		initPara.bShowTSCDeal =
-			ini.GetIntA(strSection, "ShowTSCDeal", 1) == 0 ? false : true;
-		initPara.bShowKlineDeal =
-			ini.GetIntA(strSection, "ShowKlineDeal", 1) == 0 ? false : true;
-		initPara.nEMAPara[0] =
-			ini.GetIntA(strSection, "EMAPara1", 12);
-		initPara.nEMAPara[1] =
-			ini.GetIntA(strSection, "EMAPara2", 26);
-		initPara.nMACDPara[0] =
-			ini.GetIntA(strSection, "MACDPara1", 12);
-		initPara.nMACDPara[1] =
-			ini.GetIntA(strSection, "MACDPara2", 26);
-		initPara.nMACDPara[2] =
-			ini.GetIntA(strSection, "MACDPara3", 9);
-		initPara.nMAPara[0] =
-			ini.GetIntA(strSection, "MAPara1", 5);
-		initPara.nMAPara[1] =
-			ini.GetIntA(strSection, "MAPara2", 10);
-		initPara.nMAPara[2] =
-			ini.GetIntA(strSection, "MAPara3", 20);
-		initPara.nMAPara[3] =
-			ini.GetIntA(strSection, "MAPara4", 60);
-		initPara.nJiange =
-			ini.GetIntA(strSection, "Jiange", 2);
-		initPara.BandPara.N1 =
-			ini.GetIntA(strSection, "BandN1", 8);
-		initPara.BandPara.N2 =
-			ini.GetIntA(strSection, "BandN2", 11);
-		initPara.BandPara.K =
-			ini.GetIntA(strSection, "BandK", 390);
-		initPara.BandPara.M1 =
-			ini.GetIntA(strSection, "BandM1", 8);
-		initPara.BandPara.M2 =
-			ini.GetIntA(strSection, "BandM2", 4);
-		initPara.BandPara.P =
-			ini.GetIntA(strSection, "BandP", 390);
-
-		initPara.Period = ini.GetIntA(strSection, "Period", Period_1Day);
-		initPara.Connect1 = ini.GetIntA(strSection, "ListConnent1", 0)
-			== 0 ? false : true;
-		initPara.Connect2 = ini.GetIntA(strSection, "ListConnent2", 0)
-			== 0 ? false : true;
-		SStringA strStock = ini.GetStringA(strSection, "ShowIndustry", "");
-		strcpy_s(initPara.ShowIndy, strStock);
-		initPara.UseStockFilter = ini.GetIntA(strSection, "StockFilter", 0)
-			== 0 ? false : true;
-		initPara.ListShowST = ini.GetIntA(strSection, "ListShowST", 1)
-			== 0 ? false : true;
-		initPara.ListShowSBM = ini.GetIntA(strSection, "ListShowSBM", 1)
-			== 0 ? false : true;
-		initPara.ListShowSTARM = ini.GetIntA(strSection, "ListShowSTARM", 1)
-			== 0 ? false : true;
-		initPara.ListShowNewStock = ini.GetIntA(strSection, "ListShowNewSotck", 1)
-			== 0 ? false : true;
+		GetInitPara(ini, initPara, strSection);
+		InitPointWndInfo(ini, initPara, strSection, pointMap);
 
 		m_WndMap[i]->InitShowConfig(initPara);
 	}
 
 
+}
+
+void CDlgSub::InitListConfig()
+{
+	SStringA strFile;
+	strFile.Format(".\\config\\ListConfig_%s.ini", m_strWindowName);
+	CIniFile ini(strFile);
+
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		map<int, BOOL>showTitleMap;
+		map<int, int>titleOrderMap;
+		SStringA strSection;
+		strSection.Format("Group%d", i);
+		int nShowItemCount = ini.GetIntA(strSection, "ShowItemCount", 0);
+		if (nShowItemCount == 0)
+		{
+			if (i != Group_Stock)
+			{
+				for (int j = SHead_CloseRPS520; j < SHead_CommonItmeCount; ++j)
+					showTitleMap[j] = TRUE;
+				for (int j = SHead_ID; j < SHead_CommonItmeCount; ++j)
+					titleOrderMap[j] = j;
+
+			}
+			else
+			{
+				for (int j = SHead_CloseRPS520; j < SHead_StockItemCount; ++j)
+					showTitleMap[j] = TRUE;
+				for (int j = SHead_ID; j < SHead_StockItemCount; ++j)
+					titleOrderMap[j] = j;
+			}
+		}
+		else
+		{
+			int nTotalItemCount = Group_Stock ==
+				i ? SHead_StockItemCount : SHead_CommonItmeCount;
+			if (nShowItemCount + SHead_CloseRPS520 < nTotalItemCount)
+			{
+				SStringA strKey;
+				for (int j = 0; j < nShowItemCount; ++j)
+				{
+					int nIndex = j + SHead_CloseRPS520;
+					if (nIndex >= g_nListNewItemStart)
+						nIndex += (g_nListNewItemEnd - g_nListNewItemStart + 1);
+					showTitleMap[nIndex] =
+						ini.GetIntA(strSection, strKey.Format("Show%d", j + SHead_CloseRPS520), TRUE);
+				}
+				//默认新添加的都显示
+				for (int j = g_nListNewItemStart; j <= g_nListNewItemEnd; ++j)
+					showTitleMap[j] = TRUE;
+
+				for (int j = 0; j < nShowItemCount + SHead_CloseRPS520; ++j)
+				{
+					int nIndex = j;
+					if (nIndex >= g_nListNewItemStart)
+						nIndex += (g_nListNewItemEnd - g_nListNewItemStart + 1);
+					int nOrderShow = ini.GetIntA(strSection, strKey.Format("Order%d", j), j);
+					if (nOrderShow >= g_nListNewItemStart)
+						nOrderShow += (g_nListNewItemEnd - g_nListNewItemStart + 1);
+					titleOrderMap[nIndex] = nOrderShow;
+
+				}
+				//默认新添加的都在原有位置
+				for (int j = g_nListNewItemStart; j <= g_nListNewItemEnd; ++j)
+					titleOrderMap[j] = j;
+
+			}
+			else
+			{
+				SStringA strKey;
+				for (int j = 0; j < nShowItemCount; ++j)
+					showTitleMap[j + SHead_CloseRPS520] =
+					ini.GetIntA(strSection, strKey.Format("Show%d", j + SHead_CloseRPS520), TRUE);
+				for (int j = 0; j < nShowItemCount + SHead_CloseRPS520; ++j)
+					titleOrderMap[j] = ini.GetIntA(strSection, strKey.Format("Order%d", j), j);
+			}
+		}
+
+		m_WndMap[i]->InitListConfig(showTitleMap, titleOrderMap);
+	}
+
+}
+
+void CDlgSub::SavePointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection)
+{
+	ini.WriteIntA(strSection, "TSCPointWndNum", initPara.nTSCPointWndNum);
+	for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
+	{
+		auto& spi = initPara.TSCPonitWndInfo[i];
+		SStringA tmp;
+		ini.WriteIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), spi.overallType);
+	}
+	ini.WriteIntA(strSection, "KlinePointWndNum", initPara.nKlinePointWndNum);
+	for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
+	{
+		auto& spi = initPara.KlinePonitWndInfo[i];
+		SStringA tmp;
+		ini.WriteIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), spi.overallType);
+	}
 }
 
 
@@ -298,44 +489,31 @@ void CDlgSub::SavePicConfig()
 		auto initPara = m_WndMap[i]->OutPutInitPara();
 		SStringA strSection;
 		strSection.Format("Group%d", i);
-		ini.WriteIntA(strSection, "ShowMA", initPara.bShowMA);
-		ini.WriteIntA(strSection, "ShowBand", initPara.bShowBandTarget);
-		ini.WriteIntA(strSection, "ShowAvg", initPara.bShowAverage);
-		ini.WriteIntA(strSection, "ShowEMA", initPara.bShowEMA);
-		ini.WriteIntA(strSection, "ShowTSCMACD", initPara.bShowTSCMACD);
-		ini.WriteIntA(strSection, "ShowTSCVolume", initPara.bShowTSCVolume);
-		ini.WriteIntA(strSection, "ShowKlineVolume", initPara.bShowKlineVolume);
-		ini.WriteIntA(strSection, "ShowKlineMACD", initPara.bShowKlineMACD);
-		ini.WriteIntA(strSection, "ShowTSCRPS", initPara.bShowTSCRPS[0]);
-		ini.WriteIntA(strSection, "ShowTSCL1RPS", initPara.bShowTSCRPS[0]);
-		ini.WriteIntA(strSection, "ShowTSCL2RPS", initPara.bShowTSCRPS[0]);
-		ini.WriteIntA(strSection, "ShowKlineRPS", initPara.bShowKlineRPS[0]);
-		ini.WriteIntA(strSection, "ShowKlineL1RPS", initPara.bShowKlineRPS[1]);
-		ini.WriteIntA(strSection, "ShowKlineL2RPS", initPara.bShowKlineRPS[2]);
-		ini.WriteIntA(strSection, "Width", initPara.nWidth);
-		ini.WriteIntA(strSection, "ShowTSCDeal", initPara.bShowTSCDeal);
-		ini.WriteIntA(strSection, "ShowKlineDeal", initPara.bShowKlineDeal);
-		ini.WriteIntA(strSection, "EMAPara1", initPara.nEMAPara[0]);
-		ini.WriteIntA(strSection, "EMAPara2", initPara.nEMAPara[1]);
-		ini.WriteIntA(strSection, "MACDPara1", initPara.nMACDPara[0]);
-		ini.WriteIntA(strSection, "MACDPara2", initPara.nMACDPara[1]);
-		ini.WriteIntA(strSection, "MACDPara3", initPara.nMACDPara[2]);
-		ini.WriteIntA(strSection, "MAPara1", initPara.nMAPara[0]);
-		ini.WriteIntA(strSection, "MAPara2", initPara.nMAPara[1]);
-		ini.WriteIntA(strSection, "MAPara3", initPara.nMAPara[2]);
-		ini.WriteIntA(strSection, "MAPara4", initPara.nMAPara[3]);
-		ini.WriteIntA(strSection, "Jiange", initPara.nJiange);
-		ini.WriteIntA(strSection, "BandN1", initPara.BandPara.N1);
-		ini.WriteIntA(strSection, "BandN2", initPara.BandPara.N2);
-		ini.WriteIntA(strSection, "BandK", initPara.BandPara.K);
-		ini.WriteIntA(strSection, "BandM1", initPara.BandPara.M1);
-		ini.WriteIntA(strSection, "BandM2", initPara.BandPara.M2);
-		ini.WriteIntA(strSection, "BandP", initPara.BandPara.P);
-		ini.WriteIntA(strSection, "Period", initPara.Period);
-		ini.WriteIntA(strSection, "ListConnent1", initPara.Connect1);
-		ini.WriteIntA(strSection, "ListConnent2", initPara.Connect2);
-		ini.WriteStringA(strSection, "ShowIndustry", initPara.ShowIndy);
-		ini.WriteIntA(strSection, "StockFilter", initPara.UseStockFilter);
+		SaveInitPara(ini, initPara, strSection);
+		SavePointWndInfo(ini, initPara, strSection);
+	}
+
+}
+
+void CDlgSub::SaveListConfig()
+{
+	SStringA strFile;
+	strFile.Format(".\\config\\ListConfig_%s.ini", m_strWindowName);
+	CIniFile ini(strFile);
+
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		map<int, BOOL>showTitleMap = m_WndMap[i]->GetListShowTitle();
+		map<int, int>titleOrderMap = m_WndMap[i]->GetListTitleOrder();
+		SStringA strSection;
+		strSection.Format("Group%d", i);
+		ini.WriteIntA(strSection, "ShowItemCount", showTitleMap.size());
+		SStringA strKey;
+		for (auto &it : showTitleMap)
+			ini.WriteIntA(strSection, strKey.Format("Show%d", it.first), it.second);
+		for (auto &it : titleOrderMap)
+			ini.WriteIntA(strSection, strKey.Format("Order%d", it.first), it.second);
+
 	}
 
 }
@@ -367,7 +545,7 @@ void CDlgSub::ReInitWorkWnd()
 	vector<vector<StockInfo>> ListInsVec;
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
-	vector<map<int, TimeLineMap>> *pListData = g_WndSyn.GetListData();
+	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
@@ -387,12 +565,17 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnGetKline;
 	m_MsgHandleMap[WW_GetPoint]
 		= &CDlgSub::OnGetPoint;
+	m_MsgHandleMap[WW_GetCallAction]
+		= &CDlgSub::OnGetCallAction;
+	m_MsgHandleMap[WW_GetHisTFBase]
+		= &CDlgSub::OnGetHisTFBase;
+
 	m_MsgHandleMap[Syn_Point]
 		= &CDlgSub::OnUpdatePoint;
-	m_MsgHandleMap[Syn_TodayPoint]
-		= &CDlgSub::OnTodayPoint;
-	m_MsgHandleMap[Syn_HisPoint]
-		= &CDlgSub::OnHisPoint;
+	//m_MsgHandleMap[Syn_TodayPoint]
+	//	= &CDlgSub::OnTodayPoint;
+	m_MsgHandleMap[Syn_HisRpsPoint]
+		= &CDlgSub::OnHisRpsPoint;
 	m_MsgHandleMap[Syn_RTIndexMarket]
 		= &CDlgSub::OnRTIndexMarket;
 	m_MsgHandleMap[Syn_RTStockMarket]
@@ -407,6 +590,18 @@ void CDlgSub::InitMsgHandleMap()
 		= &CDlgSub::OnCloseInfo;
 	m_MsgHandleMap[WW_ChangeIndy]
 		= &CDlgSub::OnChangeIndy;
+	m_MsgHandleMap[Syn_HisSecPoint]
+		= &CDlgSub::OnHisSecPoint;
+	m_MsgHandleMap[Syn_RehabInfo]
+		= &CDlgSub::OnRehabInfo;
+	m_MsgHandleMap[Syn_HisCallAction]
+		= &CDlgSub::OnHisCallAction;
+	m_MsgHandleMap[Syn_HisTFBase]
+		= &CDlgSub::OnHisTFBase;
+	m_MsgHandleMap[Syn_TodayTFMarket]
+		= &CDlgSub::OnTodayTFMarket;
+	m_MsgHandleMap[Syn_RTTFMarkt]
+		= &CDlgSub::OnRTTFMarket;
 
 }
 
@@ -465,19 +660,19 @@ void CDlgSub::OnUpdatePoint(int nMsgLength, const char * info)
 		info + 4, nMsgLength - 4);
 }
 
-void CDlgSub::OnTodayPoint(int nMsgLength, const char * info)
-{
-	int nGroup = *(int*)info;
-	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_TodayPoint,
-		info + 4, nMsgLength - 4);
-}
+//void CDlgSub::OnTodayPoint(int nMsgLength, const char * info)
+//{
+//	int nGroup = *(int*)info;
+//	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_TodayPoint,
+//		info + 4, nMsgLength - 4);
+//}
 
-void CDlgSub::OnHisPoint(int nMsgLength, const char * info)
+void CDlgSub::OnHisRpsPoint(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	int nGroup = pRecvInfo->Group;
-	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisPoint,
-		info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisRpsPoint,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnRTIndexMarket(int nMsgLength, const char * info)
@@ -501,32 +696,27 @@ void CDlgSub::OnRTStockMarket(int nMsgLength, const char * info)
 
 void CDlgSub::OnHisIndexMarket(int nMsgLength, const char * info)
 {
-	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisIndexMarket,
-			info, nMsgLength);
+
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisIndexMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnHisStockMarket(int nMsgLength, const char * info)
 {
-	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_HisStockMarket,
-			info, nMsgLength);
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisStockMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnHisKline(int nMsgLength, const char * info)
 {
+	HWND hWnd = *(HWND*)info;
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	if (m_WndSubMap[nGroup] == strStock)
-		SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_HisKline,
-			info, nMsgLength);
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisKline,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
 
 void CDlgSub::OnCloseInfo(int nMsgLength, const char * info)
@@ -547,6 +737,65 @@ void CDlgSub::OnChangeIndy(int nMsgLength, const char * info)
 	}
 	else if (Group_SWL2 == nGroup)
 		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_ChangeIndy,
+			info, nMsgLength);
+}
+
+void CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisSecPoint,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnRehabInfo(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_RehabInfo,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnHisCallAction(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisCallAction,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnGetCallAction(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetCallAction, info, nMsgLength);
+}
+
+void CDlgSub::OnHisTFBase(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisTFBase,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnGetHisTFBase(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetHisTFBase, info, nMsgLength);
+
+}
+
+void CDlgSub::OnTodayTFMarket(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_TodayTFMarket,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgSub::OnRTTFMarket(int nMsgLength, const char * info)
+{
+	SStringA strStock = ((TickFlowMarket*)info)[0].SecurityID;
+	if (m_WndSubMap[Group_Stock] == strStock)
+		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RTTFMarket,
 			info, nMsgLength);
 }
 
@@ -577,6 +826,61 @@ void CDlgSub::SaveStockFilterPara(int nGroup)
 			ofile.close();
 		}
 	}
+}
+
+void CDlgSub::SaveComboStockFilterPara(int nGroup)
+{
+	vector<StockFilter> sfVec;
+	m_WndMap[nGroup]->OutputComboStockFilterPara(sfVec);
+	SStringA strPath;
+	strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName, nGroup);
+	if (!sfVec.empty())
+	{
+		ofstream ofile(strPath, std::ios::binary);
+		if (ofile.is_open())
+		{
+			int paraSize = sizeof(StockFilter);
+			ofile.write((char*)&paraSize, sizeof(paraSize));
+			ofile.write((char*)&sfVec[0], paraSize * sfVec.size());
+			ofile.close();
+		}
+	}
+	else
+		DeleteFileA(strPath);
+
+	vector<HisStockFilter> hsfVec;
+	m_WndMap[nGroup]->OutputComboHisStockFilterPara(hsfVec);
+	strPath.Format(".//config//%s_HSF_%d.DAT", m_strWindowName, nGroup);
+	if (!hsfVec.empty())
+	{
+		ofstream ofile(strPath, std::ios::binary);
+		if (ofile.is_open())
+		{
+			int paraSize = sizeof(HisStockFilter);
+			ofile.write((char*)&paraSize, sizeof(paraSize));
+			ofile.write((char*)&hsfVec[0], paraSize * hsfVec.size());
+			ofile.close();
+		}
+	}
+	else
+		DeleteFileA(strPath);
+
+}
+
+void SOUI::CDlgSub::StopAndClearData()
+{
+	SendMsg(m_SynThreadID, Syn_RemoveWnd, (char*)&m_hWnd, sizeof(m_hWnd));
+	SendMsg(m_DataThreadID, Msg_Exit, NULL, 0);
+	if (tDataProc.joinable())
+		tDataProc.join();
+	m_DataThreadID = INVALID_THREADID;
+
+	SavePicConfig();
+	SaveListConfig();
+
+	for (int i = 0; i < Group_Count; ++i)
+		m_WndMap[i]->DestroyWindow();
+
 }
 
 void CDlgSub::OnMaximize()

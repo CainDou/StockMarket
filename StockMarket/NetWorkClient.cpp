@@ -12,6 +12,8 @@ CNetWorkClient::CNetWorkClient()
 	m_ClientID = INVALID_SOCKET;
 	m_hFunc = INVALID_HANDLE_VALUE;
 	m_bExit = FALSE;
+	m_bRun = FALSE;
+	m_nAskID = 0;
 }
 
 
@@ -66,12 +68,14 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 			m_socket = INVALID_SOCKET;
 			return FALSE;
 		}
+		m_bConnected = TRUE;
 	}
 	else
 	{
 		::shutdown(m_socket, SD_BOTH);
 		::closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
+		m_bConnected = FALSE;
 	}
 	return TRUE;
 }
@@ -89,7 +93,7 @@ HANDLE CNetWorkClient::Start(UINT & ThreadID, void *para)
 	
 	m_hFunc = (HANDLE)_beginthreadex(NULL, 0, m_pFnHandle, para, 0, &m_uThreadID);
 	if (m_hFunc != INVALID_HANDLE_VALUE)
-		m_bConnected = TRUE;
+		m_bRun = TRUE;
 	ThreadID = m_uThreadID;
 	return m_hFunc;
 }
@@ -97,12 +101,54 @@ HANDLE CNetWorkClient::Start(UINT & ThreadID, void *para)
 BOOL CNetWorkClient::Stop()
 {
 	m_bExit = TRUE;
-	if (m_bConnected)
+	if (m_bRun)
 	{
 		OnConnect(NULL, NULL);
 		WaitForSingleObject(m_hFunc, INFINITE);
 		m_hFunc = INVALID_HANDLE_VALUE;
-		m_bConnected = FALSE;
+		m_bRun = FALSE;
 	}
 	return TRUE;
+}
+
+
+BOOL CNetWorkClient::ReceiveData(char * buffer, int size, char end)
+{
+	char*p = buffer;
+	int sizeLeft = size;
+	while (sizeLeft > 0)
+	{
+		int ret = recv(m_socket, p, sizeLeft, 0);
+		if (SOCKET_ERROR == ret)
+		{
+			delete[] buffer;
+			buffer = nullptr;
+			p = nullptr;
+			return 0;
+		}
+		sizeLeft -= ret;
+		p += ret;
+	}
+	p = nullptr;
+	if (0 != end)
+	{
+		char cEnd;
+		int ret = recv(m_socket, &cEnd, 1, 0);
+		if (cEnd == end)
+			return TRUE;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+int CNetWorkClient::SendDataWithID(char* msg, int size)
+{
+	int nID = m_nAskID++;
+	int newSize = size + sizeof(nID);
+	char* newMsg = new char[newSize];
+	memcpy_s(newMsg, newSize, msg, size);
+	memcpy_s(newMsg + size, newSize, &nID, sizeof(nID));
+	if (send(m_socket, newMsg, newSize, 0) > 0)
+		return nID;
+	return -1;
 }

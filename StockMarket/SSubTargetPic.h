@@ -18,12 +18,15 @@ using std::map;
 #define K_WIDTH_TOTAL		16		//k线占用总宽度(在x轴上)
 //一些基本的界面框架信息
 #define RC_FSLEFT		50
-#define RC_FSRIGHT		40
+#define RC_FSRIGHT		50
 #define RC_FSTOP		25
 #define RC_FSBOTTOM		40
 
 #define RC_FSMAX		5
 #define RC_FSMIN		5
+
+#define RC_KLLEFT		0
+#define RC_KLRIGHT		48
 
 typedef struct InStockData
 {
@@ -51,20 +54,23 @@ namespace SOUI
 		SSubTargetPic();
 		~SSubTargetPic();
 
-		void		SetSubPicName(SStringA strName);
+		void		SetSubPicInfo(ShowPointInfo showInfo);
+		void		SetSubTitleInfo(SStringA strTitle);
+		ShowPointInfo GetSubPicInfo();
 		void		SetShowData(int nIndex, bool nGroup);
 		void		SetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec, vector<SStringA> dataNameVec,
 			SStringA StockID, SStringA StockName);
 		void		OnDbClicked(UINT nFlags, CPoint point);
-		void		OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void		ReSetShowData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		SStringA	GetShowStock() const;
 		void		SetOffset2Zero();
 		CRect*		GetPicRect();
 		void		SetPicRect(CRect rc);
-		void		OnPaint(IRenderTarget *pRT);
+		void		Paint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
+		void		DrawPrice(IRenderTarget * pRT);
+		void		DrawMovePrice(IRenderTarget * pRT, int y, bool bNew);
 		void		InitColorAndPen(IRenderTarget *pRT);
 		void		DrawData(IRenderTarget * pRT);
 		void		SetMouseLineState(bool bShow);
@@ -75,7 +81,7 @@ namespace SOUI
 		void		SetOffset(int nOffset);
 		void		SetShowNum(int nNum);
 		void		DrawKeyDownMouseLine(IRenderTarget * pRT,BOOL bDoubleFlash = FALSE);
-
+		BOOL		CheckIsSelectClicked(CPoint pt);
 	protected:
 		void		GetMaxDiff();		//判断坐标最大最小值和k线条数
 		BOOL		IsInRect(int x, int y);	
@@ -85,11 +91,12 @@ namespace SOUI
 		int			GetYPos(double fDiff, BOOL bIsRight);
 		void		OnTimer(char cTimerID);
 		int			OnCreate(LPCREATESTRUCT lpCreateStruct);
-		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
+		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), 
+			UINT uFormat = DT_SINGLELINE,int nSize=12, DWORD rop = SRCINVERT);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		HandleMissData(InStockData f1, int time);
 		void		DrawMouseData(IRenderTarget * pRT, int xPos);
-
+		
 	protected:
 		int			m_nOffset;
 		int			m_nFirst;
@@ -102,12 +109,22 @@ namespace SOUI
 		double		m_fMinR;
 		double		m_fDeltaL;
 		double		m_fDeltaR;
-		SStringW	m_strPicName;
+		SStringW	m_strTitle;
+		ShowPointInfo m_ShowInfo;
 		vector<CoreData> **m_pData;
 		vector<SStringA> m_dataNameVec;
 		vector<BOOL> m_bRightArr;
 		vector<COLORREF> m_colorVec;
+		vector<std::pair<int, int>>* m_pDateTimeVec;
+		vector<CAutoRefPtr<IPen>>	m_dotPenVec;
 		vector<CAutoRefPtr<IPen>>	m_penVec;
+		vector<CAutoRefPtr<IBrush>>	m_brushVec;
+		vector<vector<double>> m_dataVec;
+		vector<int>m_dataFigureType;
+		vector<COLORREF>m_UsedColor;
+		vector<int> m_dataColorType;
+		vector<vector<BOOL>>m_judgeVec;
+
 		BOOL		m_bPaintInit;
 		SStringA	m_StockName;
 		SStringA	m_StockID;
@@ -132,12 +149,24 @@ namespace SOUI
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
 		bool		m_bUseWidth;
-
+		CRect		m_rcTargetSel;
+		BOOL		m_bPenInit;
+		int			nRectWidth;
 	};
 
-	inline void SSubTargetPic::SetSubPicName(SStringA strName)
+	inline void SSubTargetPic::SetSubPicInfo(ShowPointInfo showInfo)
 	{
-		m_strPicName = StrA2StrW(strName);
+		m_ShowInfo = showInfo;
+	}
+
+	inline void SSubTargetPic::SetSubTitleInfo(SStringA strTitle)
+	{
+		m_strTitle = StrA2StrW(strTitle);
+	}
+
+	inline ShowPointInfo SSubTargetPic::GetSubPicInfo()
+	{
+		return m_ShowInfo;
 	}
 
 	inline SStringA SSubTargetPic::GetShowStock() const

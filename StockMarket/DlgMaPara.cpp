@@ -3,17 +3,16 @@
 #include <string>
 #include"IniFile.h"
 
-int g_nDefaultMaPara[4];
-
 
 CDlgMaPara::CDlgMaPara() :SHostWnd(_T("LAYOUT:dlg_MaPara"))
 {
 }
 
-CDlgMaPara::CDlgMaPara(RpsGroup rg, HWND hWnd) : SHostWnd(_T("LAYOUT:dlg_MaPara"))
+CDlgMaPara::CDlgMaPara(RpsGroup rg, HWND hWnd, eMaType maType) : SHostWnd(_T("LAYOUT:dlg_MaPara"))
 {
 	m_rgGroup = rg;
 	m_hParWnd = hWnd;
+	m_maType = maType;
 }
 
 
@@ -21,40 +20,34 @@ CDlgMaPara::~CDlgMaPara()
 {
 }
 
+void CDlgMaPara::InitConfigName()
+{
+	m_MaConfigName[eMa_Close] = "";
+	m_MaConfigName[eMa_Volume] = "Vol";
+	m_MaConfigName[eMa_Amount] = "Amo";
+	m_MaConfigName[eMa_CAVol] = "CAVol";
+	m_MaConfigName[eMa_CAAmo] = "CAAmo";
+
+}
+
 void CDlgMaPara::OnClose()
 {
+	::EnableWindow(m_hParWnd, TRUE);
 	CSimpleWnd::DestroyWindow();
 }
 
 void CDlgMaPara::OnClickButtonOk()
 {
-	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
-	strPara1 = para1->GetWindowTextW();
-	if (strPara1 != L"")
-		nPara[0] = _wtoi(strPara1.GetBuffer(1));
-	else
-		nPara[0] = -1;
-
-	SEdit *para2 = FindChildByName2<SEdit>(L"edit_maPara2");
-	strPara2 = para2->GetWindowTextW();
-	if (strPara2 != L"")
-		nPara[1] = _wtoi(strPara2.GetBuffer(1));
-	else
-		nPara[1] = -1;
-
-	SEdit *para3 = FindChildByName2<SEdit>(L"edit_maPara3");
-	strPara3 = para3->GetWindowTextW();
-	if (strPara3 != L"")
-		nPara[2] = _wtoi(strPara3.GetBuffer(1));
-	else
-		nPara[2] = -1;
-
-	SEdit *para4 = FindChildByName2<SEdit>(L"edit_maPara4");
-	strPara4 = para4->GetWindowTextW();
-	if (strPara2 != L"")
-		nPara[3] = _wtoi(strPara4.GetBuffer(1));
-	else
-		nPara[3] = -1;
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		SStringW strName;
+		SEdit *para = FindChildByName2<SEdit>(strName.Format(L"edit_maPara%d", i + 1));
+		strPara[i] = para->GetWindowTextW();
+		if (strPara[i] != L"")
+			nPara[i] = _wtoi(strPara[i].GetBuffer(1));
+		else
+			nPara[i] = 0;
+	}
 	::SendMessageW(m_hParWnd, WM_KLINE_MSG, (WPARAM)nPara, KLINEMSG_MA);
 	OnClose();
 
@@ -67,81 +60,57 @@ void CDlgMaPara::OnClickButtonCancel()
 
 void CDlgMaPara::OnInit(EventArgs * e)
 {
-	CIniFile ini(L".//config//config.ini");
-	g_nDefaultMaPara[0] = ini.GetInt(L"DefaultPara", L"MAPara1", 5);
-	g_nDefaultMaPara[1] = ini.GetInt(L"DefaultPara", L"MAPara2", 10);
-	g_nDefaultMaPara[2] = ini.GetInt(L"DefaultPara", L"MAPara3", 20);
-	g_nDefaultMaPara[3] = ini.GetInt(L"DefaultPara", L"MAPara4", 60);
+	InitConfigName();
+	CIniFile ini(".//config//config.ini");
+	SStringA strSection = "DefaultPara";
+	SStringA strKey;
+	int tmpDefaultPara[MAX_MA_COUNT] = { 5,10,20,60,0,0 };
+	if (m_maType != eMa_Close)
+	{
+		tmpDefaultPara[2] = 0;
+		tmpDefaultPara[3] = 0;
+		strSection += m_MaConfigName[m_maType];
+	}
+
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		m_nDefaultPara[0] = ini.GetIntA(strSection, strKey.Format("MAPara%d", i + 1), tmpDefaultPara[i]);
 
 }
 
 void CDlgMaPara::OnClickButtonDefault()
 {
-	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
-	para1->SetWindowTextW(std::to_wstring(g_nDefaultMaPara[0]).c_str());
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		SStringW strName;
+		SEdit *para = FindChildByName2<SEdit>(strName.Format(L"edit_maPara%d", i + 1));
+		para->SetWindowTextW(std::to_wstring(m_nDefaultPara[i]).c_str());;
+	}
 
-	SEdit *para2 = FindChildByName2<SEdit>(L"edit_maPara2");
-	para2->SetWindowTextW(std::to_wstring(g_nDefaultMaPara[1]).c_str());
-
-	SEdit *para3 = FindChildByName2<SEdit>(L"edit_maPara3");
-	para3->SetWindowTextW(std::to_wstring(g_nDefaultMaPara[2]).c_str());
-
-	SEdit *para4 = FindChildByName2<SEdit>(L"edit_maPara4");
-	para4->SetWindowTextW(std::to_wstring(g_nDefaultMaPara[3]).c_str());
 }
 
 void CDlgMaPara::OnClickButtonSetDefault()
 {
-	int tmpPara[4];
-	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
-	strPara1 = para1->GetWindowTextW();
-	if (strPara1 != L"")
-		tmpPara[0] = _wtoi(strPara1.GetBuffer(1));
-	else
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 	{
-		SMessageBox(NULL, L"请输入周期1", L"错误", MB_ICONWARNING);
-		return;
-	}
+		SStringW strName;
+		SEdit *para = FindChildByName2<SEdit>(strName.Format(L"edit_maPara%d", i + 1));
+		strPara[i] = para->GetWindowTextW();
+		if (strPara[i] != L"")
+			m_nDefaultPara[i] = _wtoi(strPara[i].GetBuffer(1));
+		else
+			m_nDefaultPara[i] = 0;
 
-	SEdit *para2 = FindChildByName2<SEdit>(L"edit_maPara2");
-	strPara2 = para2->GetWindowTextW();
-	if (strPara2 != L"")
-		tmpPara[1] = _wtoi(strPara2.GetBuffer(1));
-	else
-	{
-		SMessageBox(NULL, L"请输入周期2", L"错误", MB_ICONWARNING);
-		return;
 	}
-
-	SEdit *para3 = FindChildByName2<SEdit>(L"edit_maPara3");
-	strPara3 = para3->GetWindowTextW();
-	if (strPara3 != L"")
-		tmpPara[2] = _wtoi(strPara3.GetBuffer(1));
-	else
-	{
-		SMessageBox(NULL, L"请输入周期3", L"错误", MB_ICONWARNING);
-		return;
-	}
-
-	SEdit *para4 = FindChildByName2<SEdit>(L"edit_maPara4");
-	strPara4 = para4->GetWindowTextW();
-	if (strPara2 != L"")
-		tmpPara[3] = _wtoi(strPara4.GetBuffer(1));
-	else
-	{
-		SMessageBox(NULL, L"请输入周期4", L"错误", MB_ICONWARNING);
-		return;
-	}
-	g_nDefaultMaPara[0] = tmpPara[0];
-	g_nDefaultMaPara[1] = tmpPara[1];
-	g_nDefaultMaPara[2] = tmpPara[2];
-	g_nDefaultMaPara[3] = tmpPara[3];
 
 	CIniFile ini(L".\\config\\config.ini");
-	ini.WriteInt(L"DefaultPara", L"MaPara1", g_nDefaultMaPara[0]);
-	ini.WriteInt(L"DefaultPara", L"MaPara2", g_nDefaultMaPara[1]);
-	ini.WriteInt(L"DefaultPara", L"MaPara3", g_nDefaultMaPara[2]);
-	ini.WriteInt(L"DefaultPara", L"MaPara4", g_nDefaultMaPara[3]);
+	SStringW strSection = L"DefaultPara";
+	SStringW strKey;
+	if (m_maType == eMa_Volume)
+		strSection += L"Vol";
+	else if (m_maType == eMa_Amount)
+		strSection += L"Amo";
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		m_nDefaultPara[0] = ini.WriteInt(strSection, strKey.Format(L"MAPara%d", i + 1), m_nDefaultPara[i]);
 
 	SMessageBox(NULL, L"设置默认参数成功", L"通知", MB_OK);
 
@@ -149,17 +118,12 @@ void CDlgMaPara::OnClickButtonSetDefault()
 
 void CDlgMaPara::SetEditText(const int * pPara)
 {
-	SEdit *para1 = FindChildByName2<SEdit>(L"edit_maPara1");
-	para1->SetWindowTextW(std::to_wstring(pPara[0]).c_str());
-
-	SEdit *para2 = FindChildByName2<SEdit>(L"edit_maPara2");
-	para2->SetWindowTextW(std::to_wstring(pPara[1]).c_str());
-
-	SEdit *para3 = FindChildByName2<SEdit>(L"edit_maPara3");
-	para3->SetWindowTextW(std::to_wstring(pPara[2]).c_str());
-
-	SEdit *para4 = FindChildByName2<SEdit>(L"edit_maPara4");
-	para4->SetWindowTextW(std::to_wstring(pPara[3]).c_str());
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+	{
+		SStringW strName;
+		SEdit *para = FindChildByName2<SEdit>(strName.Format(L"edit_maPara%d", i + 1));
+		para->SetWindowTextW(std::to_wstring(pPara[i]).c_str());
+	}
 
 }
 

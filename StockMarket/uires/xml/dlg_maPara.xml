@@ -1,23 +1,27 @@
-<?xml version="1.0"?>
-<SOUI name="window" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="365" height="200" margin="1,5,5,5" wndType="normal" toolWindow="0">
+﻿<?xml version="1.0"?>
+<SOUI name="window" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="392" height="250" margin="1,5,5,5" wndType="normal" toolWindow="0">
 	<root cache="1">
 		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff">
 			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
 				<text pos="5,4" name="txt_title">MA参数</text>
 				<imgbtn name="btn_MaClose" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 			</caption>
-			<edit name="edit_maPara1" pos="80,48" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
-			<text pos="40,48" size="40, 24">周期1</text>
-			<edit name="edit_maPara2" pos="261,48" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
-			<text pos="221,48" size="40, 24">周期2</text>
-			<edit name="edit_maPara3" pos="80,96" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
-			<text pos="40,96" size="40, 24">周期3</text>
-			<edit name="edit_maPara4" pos="261,96" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
-			<text pos="221,96" size="40, 24">周期4</text>
-			<button name="btn_MaOK" pos="40,170" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">确定</button>
-			<button name="btn_MaCancel" pos="225,170" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">取消</button>
-			<button name="btn_MaDefault" pos="40,138" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">默认参数</button>
-			<button name="btn_MaSetDefault" pos="225,138" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">设置默认参数</button>
+			<text pos="20,64" size="40, 24">周期1</text>
+			<edit name="edit_maPara1" pos="[0,64" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="[20,64" size="40, 24">周期2</text>
+			<edit name="edit_maPara2" pos="[0,64" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="[20,64" size="40, 24">周期3</text>
+			<edit name="edit_maPara3" pos="[0,64" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="20,108" size="40, 24">周期4</text>
+			<edit name="edit_maPara4" pos="[0,108" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="[20,108" size="40, 24">周期5</text>
+			<edit name="edit_maPara5" pos="[0,108" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<text pos="[20,108" size="40, 24">周期6</text>
+			<edit name="edit_maPara6" pos="[0,108" size="64, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />
+			<button name="btn_MaDefault" pos="40,160" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">默认参数</button>
+			<button name="btn_MaSetDefault" pos="252,160" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">设置默认参数</button>
+			<button name="btn_MaOK" pos="40,200" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">确定</button>
+			<button name="btn_MaCancel" pos="252,200" size="100, 24" colorText="#000000" skin="_skin.sys.btn.normal">取消</button>
 		</window>
 	</root>
 </SOUI>

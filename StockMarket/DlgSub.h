@@ -1,6 +1,8 @@
 #pragma once
 #include<thread>
 #include"WorkWnd.h"
+
+class CIniFile;
 namespace SOUI
 {
 	class CDlgSub : public SHostWnd
@@ -22,14 +24,22 @@ namespace SOUI
 		void	OnTimer(UINT_PTR nIDEvent);
 		void	OnBtnClose();
 		void	SaveStockFilterPara(int nGroup);
+		void	SaveComboStockFilterPara(int nGroup);
+		void	StopAndClearData();
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
 
 	public:
+		void InitWindowPos();
 		void InitWorkWnd();
 		void InitStockFilter();
-		void InitConfig();
+		void InitComboStockFilter();
+		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap);
+		void InitConfig(map<int, ShowPointInfo> &pointMap);
+		void InitListConfig();
+		void SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 		void SavePicConfig();
+		void SaveListConfig();
 	public:
 		void ReInit();
 		void ReInitList();
@@ -43,8 +53,8 @@ namespace SOUI
 		void OnGetKline(int nMsgLength, const char* info);
 		void OnGetPoint(int nMsgLength, const char* info);
 		void OnUpdatePoint(int nMsgLength, const char* info);
-		void OnTodayPoint(int nMsgLength, const char* info);
-		void OnHisPoint(int nMsgLength, const char* info);
+		//void OnTodayPoint(int nMsgLength, const char* info);
+		void OnHisRpsPoint(int nMsgLength, const char* info);
 		void OnRTIndexMarket(int nMsgLength, const char* info);
 		void OnRTStockMarket(int nMsgLength, const char* info);
 		void OnHisIndexMarket(int nMsgLength, const char* info);
@@ -52,6 +62,15 @@ namespace SOUI
 		void OnHisKline(int nMsgLength, const char* info);
 		void OnCloseInfo(int nMsgLength, const char* info);
 		void OnChangeIndy(int nMsgLength, const char* info);
+		void OnHisSecPoint(int nMsgLength, const char* info);
+		void OnRehabInfo(int nMsgLength, const char* info);
+		void OnHisCallAction(int nMsgLength, const char* info);
+		void OnGetCallAction(int nMsgLength, const char* info);
+		void OnHisTFBase(int nMsgLength, const char* info);
+		void OnGetHisTFBase(int nMsgLength, const char* info);
+		void OnTodayTFMarket(int nMsgLength, const char* info);
+		void OnRTTFMarket(int nMsgLength, const char* info);
+
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);
@@ -73,7 +92,7 @@ namespace SOUI
 			MSG_WM_TIMER(OnTimer)
 			//MSG_WM_CREATE(OnCreate)
 			MSG_WM_CLOSE(OnClose)
-			//MSG_WM_DESTROY(OnDestroy)
+			MSG_WM_DESTROY(OnDestroy)
 			MSG_WM_SIZE(OnSize)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
@@ -89,6 +108,7 @@ namespace SOUI
 		thread tDataProc;
 		UINT m_DataThreadID;
 		map<int, CWorkWnd*>m_WndMap;
+		map<HWND, int> m_WndHandleMap;
 		map<int, SStringA> m_WndSubMap;
 		UINT m_SynThreadID;
 		BOOL m_bIsValid;

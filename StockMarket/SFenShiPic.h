@@ -16,7 +16,6 @@
 
 #include<set>
 #include<map>
-#include"DataProc.h"
 
 
 //class CDataProc;
@@ -34,17 +33,25 @@ namespace SOUI
 	public:
 		SFenShiPic();
 		~SFenShiPic();
-		void		InitSubPic(int nNum,vector<SStringA> & picNameVec);
-		void		SetShowData(SStringA subIns, 
-					SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec);
-		void		SetShowData(SStringA subIns, 
-					SStringA StockName, vector<CommonStockMarket>* pStkMarketVec);
+		void		InitSubPic(int nNum/*,vector<SStringA> & picNameVec*/);
+		void		ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec);
+		vector<ShowPointInfo> GetSubPicDataToGet(int nNum, map<int, ShowPointInfo>& infoMap);
+		void		SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec);
+		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec,
+					vector<TickFlowMarket>* pTFMarketVec);
+		void		ChangeShowStock(SStringA subIns, SStringA StockName);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
 		void		SetSubPicShowData(int nDataCount[],
 					vector<vector<vector<CoreData>*>>& data,
 					vector<vector<BOOL>> bRightVec,
-					vector<vector<SStringA>> , SStringA StockID, 
-					SStringA StockName);
+					vector<vector<SStringA>>dataNameVec, SStringA StockID,
+					SStringA StockName,int nStartWnd = 0);
+		void		SetSubPicShowData(int nDataCount,
+			vector<vector<CoreData>*>& data,
+			vector<BOOL> bRightVec,
+			vector<SStringA> dataNameVec, SStringA StockID,
+			SStringA StockName);
+
 		void		SetRpsGroup(RpsGroup rg);
 		void		InitShowPara(InitPara_t para);
 		void		OutPutShowPara(InitPara_t &para);
@@ -55,14 +62,14 @@ namespace SOUI
 		bool		GetDealState() const;
 		bool		GetVolumeState() const;
 		bool		GetMacdState() const;
-		bool		GetRpsState(int nWndNum) const;
+		//bool		GetRpsState(int nWndNum) const;
 		bool		GetAvgState() const;
 		bool		GetEmaState() const;
 		void		SetDealState(bool bRevesered = true,bool bState = false);
 		void		SetVolumeState(bool bRevesered = true, bool bState = false);
 		void		SetMacdState(bool bRevesered = true, bool bState = false);
-		void		SetRpsState(int nWndNum, bool bRevesered = true,
-					bool bState = false);
+		//void		SetRpsState(int nWndNum, bool bRevesered = true,
+		//			bool bState = false);
 		void		SetAvgState(bool bRevesered = true, bool bState = false);
 		void		SetEmaState(bool bRevesered = true, bool bState = false);
 		void		SetEmaPara(int EmaPara[]);
@@ -71,8 +78,12 @@ namespace SOUI
 		const int*  GetMacdPara();
 		void		SetPicUnHandled();
 		int			GetShowSubPicNum() const;
-		void		SetBelongingIndy(vector<SStringA>& strNameVec);
-
+		void		SetPriceListHalf(bool bHalf);
+		void		SetBelongingIndy(vector<SStringA>& strNameVec,int nStartWnd=0);
+		void		GetShowPointInfo(vector<ShowPointInfo> &infoVec);
+		BOOL		CheckTargetSelectIsClicked(CPoint pt);
+		void		CloseSinglePointWnd();
+		void		SetSelPointWndInfo(ShowPointInfo& info,SStringA strTitle);
 		//static RpsGroup GetClickGroup();
 		//图形处理
 	protected:
@@ -84,9 +95,15 @@ namespace SOUI
 		void		DrawVirtualTimeLine(IRenderTarget * pRT);
 		void		DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP &data);
 		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str,
-					COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
+					COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE,
+					DWORD rop = SRCINVERT);
+		CRect		GetTextDrawRect(IRenderTarget * pRT, SStringW str, CRect rc);
 		void		DrawEarserLine(IRenderTarget * pRT, CPoint rc, bool bVertical);
 		void		DrawKeyDownMouseLine(IRenderTarget * pRT, UINT nChar);
+		void		DrawPrice(IRenderTarget * pRT);
+		void		DrawMovePrice(IRenderTarget * pRT, int y, bool bNew);
+		void		DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew);
+		void		DrawMouseLine(IRenderTarget * pRT, CPoint po);
 
 		//图形相关数据初始化和计算获取
 	protected:
@@ -136,8 +153,6 @@ namespace SOUI
 		void		MACDHandle(FENSHI_GROUP &f1, int nOffset = 0);
 		void		HandleNoDataTime(FENSHI_GROUP f1);
 		void		HandleMissData(FENSHI_GROUP f1, int time);//补全遗漏的数据
-
-
 		//显示开关和设置
 	protected:
 		BOOL		m_bPaintInit;
@@ -147,7 +162,7 @@ namespace SOUI
 		bool		m_bShowAvg;
 		bool		m_bShowEMA;
 		bool		m_bShowDeal;
-		BOOL*		m_pbShowSubPic;
+		//BOOL*		m_pbShowSubPic;
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
 		bool		m_bIsIndex;
@@ -180,18 +195,20 @@ namespace SOUI
 		int			m_nKeyY;
 		int			m_nNowPosition;		//现在的数据线的位置
 		int			m_nPaintTick;
+		bool		m_bHalfPrice;
 
 		//调用子类
 	protected:
 		CPriceList* m_pPriceList;
 		CDealList*  m_pDealList;
 		SSubTargetPic**    m_ppSubPic;	//rps图
-		CDataProc   m_dataHandler;
 		int			m_nSubPicNum;
+		int			m_nChangeNum;
 		//数据
 	protected:
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
+		vector<TickFlowMarket>* m_pTFMarketVec;
 		FENSHI_INFO *m_pData;
 		SStringA    m_strSubIns;
 		SStringA	m_strStockName;
@@ -200,7 +217,7 @@ namespace SOUI
 		int			m_nTradingDay;
 		int			m_nLastVolume;	//上一个时段结束的交易量
 		RpsGroup	m_rgGroup;
-
+		CRITICAL_SECTION m_csSub;
 	//private:
 	//	static RpsGroup m_rgClickGroup;
 
@@ -235,10 +252,10 @@ namespace SOUI
 	{
 		return m_bShowMacd;
 	}
-	inline bool SFenShiPic::GetRpsState(int nWndNum) const
-	{
-		return m_pbShowSubPic[nWndNum];
-	}
+	//inline bool SFenShiPic::GetRpsState(int nWndNum) const
+	//{
+	//	return m_pbShowSubPic[nWndNum];
+	//}
 	inline bool SFenShiPic::GetAvgState() const
 	{
 		return m_bShowAvg;
@@ -256,17 +273,20 @@ namespace SOUI
 	{
 		if (bRevesered) m_bShowVolume = !m_bShowVolume;
 		else m_bShowVolume = bState;
+		if (!m_bShowVolume) m_rcVolume.SetRectEmpty();
 	}
 	inline void SFenShiPic::SetMacdState(bool bRevesered, bool bState)
 	{
 		if (bRevesered) m_bShowMacd = !m_bShowMacd;
 		else m_bShowMacd = bState;
+		if (!m_bShowMacd) m_rcMACD.SetRectEmpty();
+
 	}
-	inline void SFenShiPic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
-	{
-		if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
-		else m_pbShowSubPic[nWndNum] = bState;
-	}
+	//inline void SFenShiPic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
+	//{
+	//	if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
+	//	else m_pbShowSubPic[nWndNum] = bState;
+	//}
 	inline void SFenShiPic::SetAvgState(bool bRevesered, bool bState)
 	{
 		if (bRevesered) m_bShowAvg = !m_bShowAvg;
@@ -301,6 +321,7 @@ namespace SOUI
 	{
 		return m_nSubPicNum;
 	}
+
 
 	//inline RpsGroup SFenShiPic::GetClickGroup()
 	//{

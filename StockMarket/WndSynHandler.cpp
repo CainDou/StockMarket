@@ -5,10 +5,10 @@
 #include "zlib.h"
 #include <io.h>
 #include "MD5.h"
+#include <psapi.h>
 
 HANDLE g_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 HANDLE g_hLoginEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
 #define SHOWDATACOUNT 2
 #define TIMER_AUTOSAVE 1
 #define MAX_TICK 6000
@@ -21,15 +21,17 @@ CWndSynHandler::CWndSynHandler()
 	todayDataSize = 0;
 	bExit = false;
 	m_bFirstData = true;
+	m_bCaUpdate = false;
 }
 
 
 CWndSynHandler::~CWndSynHandler()
 {
 	if (m_pLoginDlg)
+		//m_pLoginDlg->EndDialog(0);
 		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 			NULL, LoginMsg_Exit);
-	m_NetClinet.Stop();
+	m_NetClient.Stop();
 	SendMsg(m_RpsProcThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
 	if (tRpsCalc.joinable())
@@ -47,17 +49,19 @@ void CWndSynHandler::Run()
 	InitializeCriticalSection(&m_csFilterData);
 
 	InitCommonSetting();
+	InitPointInfo();
 	InitNetConfig();
 	SetVectorSize();
 	InitDataHandleMap();
 	InitNetHandleMap();
 	InitSynHandleMap();
+	InitDataNameMap();
 	CFrmlManager::InitFrmlManage();
 	tRpsCalc = thread(&CWndSynHandler::DataProc, this);
 	m_RpsProcThreadID = *(unsigned*)&tRpsCalc.get_id();
 	tMsgSyn = thread(&CWndSynHandler::MsgProc, this);
 	m_uMsgThreadID = *(unsigned*)&tMsgSyn.get_id();
-	m_NetClinet.SetWndHandle(m_hMain);
+	m_NetClient.SetWndHandle(m_hMain);
 	if (!CheckCmdLine())
 		exit(0);
 	tLogin = thread(&CWndSynHandler::Login, this);
@@ -65,12 +69,12 @@ void CWndSynHandler::Run()
 	if (bExit)	exit(0);
 	//ResetEvent(g_hLoginEvent);
 	m_NetHandleFlag.clear();
-	m_NetClinet.RegisterHandle(NetHandle);
-	m_NetClinet.Start(m_uNetThreadID, this);
+	m_NetClient.RegisterHandle(NetHandle);
+	m_NetClient.Start(m_uNetThreadID, this);
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
-	send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
 	while (!m_bServerReady)
 	{
@@ -81,14 +85,14 @@ void CWndSynHandler::Run()
 		if (bExit)	exit(0);
 		//ResetEvent(g_hLoginEvent);
 		ResetEvent(g_hEvent);
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 	while (!CheckInfoRecv())
 	{
 		m_NetHandleFlag.clear();
 		ResetEvent(g_hEvent);
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 	SStringW Info = L"登陆成功,开始程序初始化";
@@ -122,15 +126,18 @@ void CWndSynHandler::InitCommonSetting()
 	m_PeriodVec[6] = 1440;
 	m_bServerReady = true;
 
-	m_comDataNameVec.emplace_back("close");
-	m_comDataNameVec.emplace_back("RPS520");
-	m_comDataNameVec.emplace_back("MACD520");
-	m_uniDataNameVec.emplace_back("Point520");
-	m_uniDataNameVec.emplace_back("Rank520");
-	m_comDataNameVec.emplace_back("RPS2060");
-	m_comDataNameVec.emplace_back("MACD2060");
-	m_uniDataNameVec.emplace_back("Point2060");
-	m_uniDataNameVec.emplace_back("Rank2060");
+	m_PointGetMsg[eRpsPoint] = SendType_GetHisRpsPoint;
+	m_PointGetMsg[eSecPoint] = SendType_GetHisSecPoint;
+
+	//m_comDataNameVec.emplace_back("close");
+	//m_comDataNameVec.emplace_back("RPS520");
+	//m_comDataNameVec.emplace_back("MACD520");
+	//m_uniDataNameVec.emplace_back("Point520");
+	//m_uniDataNameVec.emplace_back("Rank520");
+	//m_comDataNameVec.emplace_back("RPS2060");
+	//m_comDataNameVec.emplace_back("MACD2060");
+	//m_uniDataNameVec.emplace_back("Point2060");
+	//m_uniDataNameVec.emplace_back("Rank2060");
 
 }
 
@@ -142,32 +149,188 @@ void CWndSynHandler::InitNetConfig()
 
 }
 
-bool CWndSynHandler::ReceiveData(SOCKET socket, int size, char end,
-	char * buffer, int offset)
+void CWndSynHandler::InitPointInfo()
 {
-	char*p = buffer + offset;
-	StockInfo stkInfo = { 0 };
-	int sizeLeft = size;
-	while (sizeLeft > 0)
-	{
-		int ret = recv(socket, p, sizeLeft, 0);
-		if (SOCKET_ERROR == ret)
-		{
-			delete[] buffer;
-			buffer = nullptr;
-			p = nullptr;
-			return 0;
-		}
-		sizeLeft -= ret;
-		p += ret;
-	}
-	p = nullptr;
-	char cEnd;
-	int ret = recv(socket, &cEnd, 1, 0);
-	if (cEnd == end)
-		return true;
-	return false;
+	ShowPointInfo spi;
+	spi.IndyRange = "";
+	spi.type = eRpsPoint;
+	spi.dataInRange = "";
+	spi.srcDataName = "close";
+	spi.showName = "CRPS";
+	spi.overallType = eRpsPoint_Close;
+	m_pointInfoMap[eRpsPoint_Close] = spi;
+	spi.dataInRange = "L1";
+	spi.showName = "CRPS(一级行业中)";
+	spi.overallType = eRpsPoint_L1_Close;
+	m_pointInfoMap[eRpsPoint_L1_Close] = spi;
+	spi.dataInRange = "L2";
+	spi.showName = "CRPS(二级行业中)";
+	spi.overallType = eRpsPoint_L2_Close;
+	m_pointInfoMap[eRpsPoint_L2_Close] = spi;
+
+	spi.srcDataName = "amount";
+	spi.dataInRange = "";
+	spi.IndyRange = "";
+	spi.showName = "AMORPS";
+	spi.overallType = eRpsPoint_Amount;
+	m_pointInfoMap[eRpsPoint_Amount] = spi;
+	spi.dataInRange = "L1";
+	spi.showName = "AMORPS(一级行业中)";
+	spi.overallType = eRpsPoint_L1_Amount;
+	m_pointInfoMap[eRpsPoint_L1_Amount] = spi;
+	spi.dataInRange = "L2";
+	spi.showName = "AMORPS(二级行业中)";
+	spi.overallType = eRpsPoint_L2_Amount;
+	m_pointInfoMap[eRpsPoint_L2_Amount] = spi;
+
+	spi.type = eSecPoint;
+	spi.dataInRange = "";
+	spi.IndyRange = "";
+	spi.showName = "AMO截面分数";
+	spi.overallType = eSecPoint_Amount;
+	m_pointInfoMap[eSecPoint_Amount] = spi;
+	spi.dataInRange = "L1";
+	spi.overallType = eSecPoint_L1_Amount;
+	spi.showName = "AMO截面分数(一级行业中)";
+	m_pointInfoMap[eSecPoint_L1_Amount] = spi;
+	spi.dataInRange = "L2";
+	spi.overallType = eSecPoint_L2_Amount;
+	spi.showName = "AMO截面分数(二级行业中)";
+	m_pointInfoMap[eSecPoint_L2_Amount] = spi;
+
+	//对应1级行业指标
+	spi.type = eRpsPoint;
+	spi.dataInRange = "";
+	spi.IndyRange = "L1";
+	spi.srcDataName = "close";
+	spi.showName = "所属一级行业CRPS";
+	spi.overallType = eL1Indy_RpsPoint_Close;
+	m_pointInfoMap[eL1Indy_RpsPoint_Close] = spi;
+	spi.srcDataName = "amount";
+	spi.showName = "所属一级行业AMORPS";
+	spi.overallType = eL1Indy_RpsPoint_Amount;
+	m_pointInfoMap[eL1Indy_RpsPoint_Amount] = spi;
+	spi.type = eSecPoint;
+	spi.showName = "所属一级行业AMO截面分数";
+	spi.overallType = eL1Indy_SecPoint_Amount;
+	m_pointInfoMap[eL1Indy_SecPoint_Amount] = spi;
+
+
+	spi.type = eRpsPoint;
+	spi.dataInRange = "";
+	spi.IndyRange = "L2";
+	spi.srcDataName = "close";
+	spi.showName = "所属二级行业CRPS";
+	spi.overallType = eL2Indy_RpsPoint_Close;
+	m_pointInfoMap[eL2Indy_RpsPoint_Close] = spi;
+	spi.srcDataName = "amount";
+	spi.showName = "所属二级行业AMORPS";
+	spi.overallType = eL2Indy_RpsPoint_Amount;
+	m_pointInfoMap[eL2Indy_RpsPoint_Amount] = spi;
+	spi.type = eSecPoint;
+	spi.showName = "所属二级行业AMO截面分数";
+	spi.overallType = eL2Indy_SecPoint_Amount;
+	m_pointInfoMap[eL2Indy_SecPoint_Amount] = spi;
+
+
+	spi.IndyRange = "";
+	spi.type = eSecPoint;
+	spi.dataInRange = "";
+	spi.srcDataName = "CaVol";
+	spi.showName = "集竞VRPS";
+	spi.overallType = eCAPoint_Volume;
+	m_pointInfoMap[eCAPoint_Volume] = spi;
+	spi.dataInRange = "L1";
+	spi.showName = "集竞VRPS(一级行业中)";
+	spi.overallType = eCAPoint_L1_Volume;
+	m_pointInfoMap[eCAPoint_L1_Volume] = spi;
+	spi.dataInRange = "L2";
+	spi.showName = "集竞VRPS(二级行业中)";
+	spi.overallType = eCAPoint_L2_Volume;
+	m_pointInfoMap[eCAPoint_L2_Volume] = spi;
+
+	spi.srcDataName = "CaAmo";
+	spi.dataInRange = "";
+	spi.IndyRange = "";
+	spi.showName = "集竞AMORPS";
+	spi.overallType = eCAPoint_Amount;
+	m_pointInfoMap[eCAPoint_Amount] = spi;
+	spi.dataInRange = "L1";
+	spi.showName = "集竞AMORPS(一级行业中)";
+	spi.overallType = eCAPoint_L1_Amount;
+	m_pointInfoMap[eCAPoint_L1_Amount] = spi;
+	spi.dataInRange = "L2";
+	spi.showName = "集竞AMORPS(二级行业中)";
+	spi.overallType = eCAPoint_L2_Amount;
+	m_pointInfoMap[eCAPoint_L2_Amount] = spi;
+
 }
+
+void CWndSynHandler::InitDataNameMap()
+{
+	InitRpsDataMap("close", SFI_CloseRps520, SFI_CloseRps520L1, SFI_CloseRps520L2);
+	InitRpsDataMap("amount", SFI_AmountRps520, SFI_AmountRps520L1, SFI_AmountRps520L2);
+	InitSecDataMap("amount", SFI_AmountPoint, SFI_AmountPointL1, SFI_AmountPointL2);
+
+}
+
+void CWndSynHandler::InitRpsDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start)
+{
+	auto &nameVec = m_rpsDataNameMap[strDataName];
+
+	nameVec.resize(eRps_DataCount);
+	for (int i = 0; i <= eRps_RANK2060; ++i)
+		nameVec[i] = nMarketStart + i;
+
+	nameVec[eRps_POINT520L1] = nL1Start + 2;
+	nameVec[eRps_RANK520L1] = nL1Start + 3;
+	nameVec[eRps_RANK2060L1] = nL1Start + 6;
+	nameVec[eRps_POINT2060L1] = nL1Start + 7;
+
+	nameVec[eRps_POINT520L2] = nL2Start + 2;
+	nameVec[eRps_RANK520L2] = nL2Start + 3;
+	nameVec[eRps_POINT2060L2] = nL2Start + 6;
+	nameVec[eRps_RANK2060L2] = nL2Start + 7;
+
+}
+
+void CWndSynHandler::InitSecDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start)
+{
+	auto &nameVec = m_secDataNameMap[strDataName];
+	nameVec.resize(eSec_DataCount);
+	for (int i = 0; i <= eSec_RANK; ++i)
+		nameVec[i] = nMarketStart + i;
+	for (int i = eSec_POINTL1; i <= eSec_RANKL1; ++i)
+		nameVec[i] = nL1Start + i - eSec_POINTL1;
+	for (int i = eSec_POINTL2; i <= eSec_RANKL2; ++i)
+		nameVec[i] = nL2Start + i - eSec_POINTL2;
+}
+
+//bool CWndSynHandler::ReceiveData(SOCKET socket, int size, char end,
+//	char * buffer, int offset)
+//{
+//	char*p = buffer + offset;
+//	int sizeLeft = size;
+//	while (sizeLeft > 0)
+//	{
+//		int ret = recv(socket, p, sizeLeft, 0);
+//		if (SOCKET_ERROR == ret)
+//		{
+//			delete[] buffer;
+//			buffer = nullptr;
+//			p = nullptr;
+//			return 0;
+//		}
+//		sizeLeft -= ret;
+//		p += ret;
+//	}
+//	p = nullptr;
+//	char cEnd;
+//	int ret = recv(socket, &cEnd, 1, 0);
+//	if (cEnd == end)
+//		return true;
+//	return false;
+//}
 
 unsigned CWndSynHandler::NetHandle(void * para)
 {
@@ -178,14 +341,14 @@ unsigned CWndSynHandler::NetHandle(void * para)
 	//int c = 0;
 	while (true)
 	{
-		if (pMd->m_NetClinet.GetExitState())
+		if (pMd->m_NetClient.GetExitState())
 			return 0;
 		if (pMd->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
 		{
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
 			if (pFuc == nullptr)
 				pFuc = &CWndSynHandler::OnNoDefineMsg;
-			(pMd->*pFuc)(pMd->m_NetClinet.GetSocket(), recvInfo);
+			(pMd->*pFuc)(recvInfo);
 		}
 
 	}
@@ -194,13 +357,12 @@ unsigned CWndSynHandler::NetHandle(void * para)
 
 void CWndSynHandler::Login()
 {
-	m_pLoginDlg = new CDlgLogin(m_hMain, &m_NetClinet);
+	m_pLoginDlg = new CDlgLogin(m_hMain, &m_NetClient);
 	m_pLoginDlg->SetIPInfo(m_strIPAddr, m_nIPPort);
-	m_pLoginDlg->DoModal();
+	int nRes = m_pLoginDlg->DoModal();
 	bExit = true;
 	SetEvent(g_hLoginEvent);
-	//delete m_pLoginDlg;
-	//m_pLoginDlg = nullptr;
+	m_pLoginDlg = nullptr;
 }
 
 
@@ -227,58 +389,6 @@ void CWndSynHandler::DataProc()
 
 }
 
-void CWndSynHandler::CalcHisData(const TimeLineData *dataArr,
-	int nPeriod, int dataCount)
-{
-	auto & periodDataMap = m_commonDataMap[nPeriod];
-
-	int tick = GetTickCount();
-	SStringA nowStockID = "";
-	vector<CoreData> * pDataVec = nullptr;
-
-	for (int i = 0; i < dataCount; ++i)
-	{
-		if (nowStockID != dataArr[i].securityID)
-		{
-			nowStockID = dataArr[i].securityID;
-			pDataVec = &periodDataMap[nowStockID]["close"];
-		}
-		if (dataArr[i].data.time == 925)
-		{
-			if (Period_FenShi == nPeriod)
-				m_dataHandler.SetPeriodFenshiOpenEMAData(periodDataMap,
-					dataArr[i]);
-		}
-		else
-			m_dataHandler.UpdateClose(*pDataVec, dataArr[i], nPeriod);
-		//pDataVec->emplace_back(dataArr[i]);
-	}
-
-	m_dataHandler.CalcHisRps(periodDataMap);
-	m_dataHandler.RankPointHisData(periodDataMap,
-		m_dataVec[Group_SWL1][nPeriod], m_ListInsVec[Group_SWL1],
-		m_ListStockInfoMap[Group_SWL1].hash);
-	m_dataHandler.RankPointHisData(periodDataMap,
-		m_dataVec[Group_SWL2][nPeriod], m_ListInsVec[Group_SWL2],
-		m_ListStockInfoMap[Group_SWL2].hash);
-	m_dataHandler.RankPointHisData(periodDataMap,
-		m_dataVec[Group_Stock][nPeriod], m_ListInsVec[Group_Stock],
-		m_ListStockInfoMap[Group_Stock].hash);
-
-	m_dataHandler.UpdateShowData(m_commonDataMap[nPeriod],
-		m_dataVec[Group_SWL1][nPeriod], m_listDataMap[Group_SWL1][nPeriod],
-		m_comDataNameVec, m_uniDataNameVec,
-		m_ListInsVec[Group_SWL1]);
-	m_dataHandler.UpdateShowData(m_commonDataMap[nPeriod],
-		m_dataVec[Group_SWL2][nPeriod], m_listDataMap[Group_SWL2][nPeriod],
-		m_comDataNameVec, m_uniDataNameVec,
-		m_ListInsVec[Group_SWL2]);
-	m_dataHandler.UpdateShowData(m_commonDataMap[nPeriod],
-		m_dataVec[Group_Stock][nPeriod], m_listDataMap[Group_Stock][nPeriod],
-		m_comDataNameVec, m_uniDataNameVec,
-		m_ListInsVec[Group_Stock]);
-
-}
 
 void CWndSynHandler::MsgProc()
 {
@@ -303,60 +413,82 @@ void CWndSynHandler::MsgProc()
 }
 
 
-bool CWndSynHandler::GetHisPoint(SStringA stockID, int nPeriod, int nGroup)
+int CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo)
 {
 	SendInfo info = { 0 };
-	info.MsgType = SendType_GetHisPoint;
+	info.MsgType = nMsgType;
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
-	int ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
-	return ret > 0;
+	int attSize = attInfo.GetLength() + 1;
+	int nSize = sizeof(info) + attSize + sizeof(attSize);
+	char *msg = new char[nSize];
+	memcpy_s(msg, nSize, &info, sizeof(info));
+	int nOffset = sizeof(info);
+	memcpy_s(msg + nOffset, nSize, &attSize, sizeof(attSize));
+	nOffset += sizeof(attSize);
+	memcpy_s(msg + nOffset, nSize, attInfo, attSize);
+	return m_NetClient.SendDataWithID(msg, nSize);
 }
 
-bool CWndSynHandler::GetMarket(SStringA stockID, int nGroup)
+int CWndSynHandler::GetMarket(SStringA stockID, int nGroup)
 {
 	SendInfo info = { 0 };
 	strcpy_s(info.str, stockID);
 	info.Group = nGroup;
 	//发送订阅数据
 	info.MsgType = SendType_SubIns;
-	int ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+
+	m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 	//发送获取数据请求
 	if (nGroup != Group_Stock)
 		info.MsgType = SendType_IndexMarket;
 	else
 		info.MsgType = SendType_StockMarket;
-	ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
-	return ret > 0;
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
-bool CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
+int CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
 {
 	SendInfo info = { 0 };
 	info.MsgType = SendType_HisPeriodKline;
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
-	int ret = send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
-	return ret > 0;
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+}
+
+int CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
+{
+	SendInfo info = { 0 };
+	info.MsgType = SendType_HisCallAction;
+	info.Group = nGroup;
+	info.Period = nPeriod;
+	strcpy_s(info.str, stockID);
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+}
+
+int CWndSynHandler::GetHisTFBase(SStringA stockID, int nPeriod, int nGroup)
+{
+	SendInfo info = { 0 };
+	info.MsgType = SendType_HisTFBase;
+	info.Group = nGroup;
+	info.Period = nPeriod;
+	strcpy_s(info.str, stockID);
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
 
 void CWndSynHandler::InitDataHandleMap()
 {
-	m_dataHandleMap[UpdateData] =
-		&CWndSynHandler::OnTimeLineUpdate;
-	m_dataHandleMap[UpdateTodayData] =
-		&CWndSynHandler::OnTodayTimeLineProc;
-	m_dataHandleMap[UpdateLastDayEma] =
-		&CWndSynHandler::OnUpdateLastDayEma;
 	m_dataHandleMap[ClearOldData] =
 		&CWndSynHandler::OnClearData;
 	m_dataHandleMap[UpdateTFMarket] =
 		&CWndSynHandler::OnUpdateTFMarket;
 	m_dataHandleMap[UpdateRtRps] =
 		&CWndSynHandler::OnUpdateRtRps;
+	m_dataHandleMap[UpdateCallAction] =
+		&CWndSynHandler::OnUpdateCallAction;
 
 }
 
@@ -370,8 +502,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgRTTimeLine;
 	m_netHandleMap[RecvMsg_TodayTimeLine]
 		= &CWndSynHandler::OnMsgTodayTimeLine;
-	m_netHandleMap[RecvMsg_HisPoint]
-		= &CWndSynHandler::OnMsgHisPoint;
+	m_netHandleMap[RecvMsg_HisRpsPoint]
+		= &CWndSynHandler::OnMsgHisRpsPoint;
 	m_netHandleMap[RecvMsg_LastDayEma]
 		= &CWndSynHandler::OnMsgLastDayEma;
 	m_netHandleMap[RecvMsg_RTIndexMarket]
@@ -394,6 +526,19 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgRTTFMarket;
 	m_netHandleMap[RecvMsg_RTRps]
 		= &CWndSynHandler::OnMsgRtRps;
+	m_netHandleMap[RecvMsg_HisSecPoint]
+		= &CWndSynHandler::OnMsgHisSecPoint;
+	m_netHandleMap[RecvMsg_RehabInfo]
+		= &CWndSynHandler::OnMsgRehabInfo;
+	m_netHandleMap[RecvMsg_CallAction]
+		= &CWndSynHandler::OnMsgCallAction;
+	m_netHandleMap[RecvMsg_HisCallAction]
+		= &CWndSynHandler::OnMsgHisCallAction;
+	m_netHandleMap[RecvMsg_HisTFBase]
+		= &CWndSynHandler::OnMsgHisTFBase;
+	m_netHandleMap[RecvMsg_TodayTFMarket]
+		= &CWndSynHandler::OnMsgTodayTFMarket;
+
 }
 
 void CWndSynHandler::InitSynHandleMap()
@@ -410,8 +555,8 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnGetPoint;
 	m_synHandleMap[Syn_Point]
 		= &CWndSynHandler::OnUpdatePoint;
-	m_synHandleMap[Syn_HisPoint]
-		= &CWndSynHandler::OnHisPoint;
+	m_synHandleMap[Syn_HisRpsPoint]
+		= &CWndSynHandler::OnHisRpsPoint;
 	m_synHandleMap[Syn_RTIndexMarket]
 		= &CWndSynHandler::OnRTIndexMarket;
 	m_synHandleMap[Syn_RTStockMarket]
@@ -426,6 +571,21 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnCloseInfo;
 	m_synHandleMap[Syn_Reinit]
 		= &CWndSynHandler::OnReinit;
+	m_synHandleMap[Syn_HisSecPoint]
+		= &CWndSynHandler::OnHisSecPoint;
+	m_synHandleMap[Syn_RehabInfo]
+		= &CWndSynHandler::OnRehabInfo;
+	m_synHandleMap[Syn_HisCallAction]
+		= &CWndSynHandler::OnHisCallAction;
+	m_synHandleMap[Syn_GetCallAction]
+		= &CWndSynHandler::OnGetCallAction;
+	m_synHandleMap[Syn_HisTFBase]
+		= &CWndSynHandler::OnHisTFBase;
+	m_synHandleMap[Syn_GetHisTFBase]
+		= &CWndSynHandler::OnGetHisTFBase;
+	m_synHandleMap[Syn_TodayTFMarket]
+		= &CWndSynHandler::OnTodayTFMarket;
+
 }
 
 
@@ -452,34 +612,6 @@ bool CWndSynHandler::CheckInfoRecv()
 
 }
 
-void CWndSynHandler::SetPointDataCapacity()
-{
-	for (int i = Group_SWL1; i < Group_Count; ++i)
-	{
-		auto &GroupStock = m_ListStockInfoMap[i];
-		auto &GroupData = m_dataVec[i];
-		for (auto &it : GroupStock.hash)
-		{
-			for (auto &period : m_PeriodVec)
-			{
-				auto &data = GroupData[period][it.first];
-				int nCapatical = period == Period_FenShi ? 240 :
-					(period <= Period_60Min ? 240 / period : 1);
-				data["Point520"].reserve(nCapatical);
-				data["Point2060"].reserve(nCapatical);
-				if (Group_Stock == i)
-				{
-					data["L1Point520"].reserve(nCapatical);
-					data["L1Point2060"].reserve(nCapatical);
-					data["L2Point520"].reserve(nCapatical);
-					data["L2Point2060"].reserve(nCapatical);
-				}
-
-			}
-		}
-
-	}
-}
 
 bool CWndSynHandler::CheckCmdLine()
 {
@@ -488,7 +620,7 @@ bool CWndSynHandler::CheckCmdLine()
 		return true;
 	else
 	{
-		if (!m_NetClinet.OnConnect(m_strIPAddr, m_nIPPort))
+		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
 			return true;
 
 		SStringA strMD5 = "";
@@ -525,22 +657,24 @@ bool CWndSynHandler::CheckCmdLine()
 
 bool CWndSynHandler::GetAutoUpdateFile(SStringA strMD5)
 {
-	SendInfo si = { 0 };
-	si.MsgType = ComSend_UpdateFile;
-	::send(m_NetClinet.GetSocket(), (char*)&si, sizeof(si), 0);
+	SendInfo info = { 0 };
+
+	info.MsgType = ComSend_UpdateFile;
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	ReceiveInfo recvInfo;
-	int nRecv = 0;
-	while (true)
-	{
-		int nRet = ::recv(m_NetClinet.GetSocket(), (char*)&recvInfo + nRecv,
-			sizeof(recvInfo) - nRecv, 0);
-		nRecv += nRet;
-		if (nRecv == sizeof(recvInfo))
-			break;
-	}
+	m_NetClient.ReceiveData((char*)&recvInfo, sizeof(recvInfo));
+	//int nRecv = 0;
+	//while (true)
+	//{
+	//	int nRet = ::recv(m_NetClient.GetSocket(), (char*)&recvInfo + nRecv,
+	//		sizeof(recvInfo) - nRecv, 0);
+	//	nRecv += nRet;
+	//	if (nRecv == sizeof(recvInfo))
+	//		break;
+	//}
 	bool bSuccess = false;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(m_NetClinet.GetSocket(), recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		MD5 md5(buffer, recvInfo.SrcDataSize);
 		if (md5.toString().c_str() == strMD5)
@@ -562,22 +696,23 @@ bool CWndSynHandler::GetAutoUpdateFile(SStringA strMD5)
 
 bool CWndSynHandler::GetAutoUpdateFileVer(SStringA &strMD5)
 {
-	SendInfo si = { 0 };
-	si.MsgType = ComSend_UpdateFileVer;
-	::send(m_NetClinet.GetSocket(), (char*)&si, sizeof(si), 0);
+	SendInfo info = { 0 };
+	info.MsgType = ComSend_UpdateFileVer;
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	ReceiveInfo recvInfo;
-	int nRecv = 0;
-	while (true)
-	{
-		int nRet = ::recv(m_NetClinet.GetSocket(), (char*)&recvInfo + nRecv,
-			sizeof(recvInfo) - nRecv, 0);
-		nRecv += nRet;
-		if (nRecv == sizeof(recvInfo))
-			break;
-	}
+	m_NetClient.ReceiveData((char*)&recvInfo, sizeof(recvInfo));
+	//int nRecv = 0;
+	//while (true)
+	//{
+	//	int nRet = ::recv(m_NetClient.GetSocket(), (char*)&recvInfo + nRecv,
+	//		sizeof(recvInfo) - nRecv, 0);
+	//	nRecv += nRet;
+	//	if (nRecv == sizeof(recvInfo))
+	//		break;
+	//}
 	bool bSuccess = false;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(m_NetClinet.GetSocket(), recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		strMD5 = buffer;
 		bSuccess = true;
@@ -587,33 +722,166 @@ bool CWndSynHandler::GetAutoUpdateFileVer(SStringA &strMD5)
 	return bSuccess;
 }
 
+bool CWndSynHandler::HandleRpsData(string strDataName,
+	sRps& data, vector<double>&filterDataMap)
+{
+	auto &nameVec = m_rpsDataNameMap[strDataName];
+	filterDataMap[nameVec[eRps_MACD520]] = data.fMacd520;
+	filterDataMap[nameVec[eRps_MACD2060]] = data.fMacd2060;
+	filterDataMap[nameVec[eRps_RPS520]] = data.fRps520;
+	filterDataMap[nameVec[eRps_RPS2060]] = data.fRps2060;
+	filterDataMap[nameVec[eRps_RANK520]] = data.nRank520;
+	filterDataMap[nameVec[eRps_RANK2060]] = data.nRank2060;
+	filterDataMap[nameVec[eRps_POINT520]] = data.fPoint520;
+	filterDataMap[nameVec[eRps_POINT2060]] = data.fPoint2060;
+	filterDataMap[nameVec[eRps_RANK520L1]] = data.nL1Rank520;
+	filterDataMap[nameVec[eRps_RANK2060L1]] = data.nL1Rank2060;
+	filterDataMap[nameVec[eRps_POINT520L1]] = data.fL1Point520;
+	filterDataMap[nameVec[eRps_POINT2060L1]] = data.fL1Point2060;
+	filterDataMap[nameVec[eRps_RANK520L2]] = data.nL2Rank520;
+	filterDataMap[nameVec[eRps_RANK2060L2]] = data.nL1Rank2060;
+	filterDataMap[nameVec[eRps_POINT520L2]] = data.fL2Point520;
+	filterDataMap[nameVec[eRps_POINT2060L2]] = data.fL2Point2060;
+
+	//auto &nameVec = m_rpsDataNameMap[strDataName];
+	//filterDataMap[nameVec[eRps_MACD520]] = data.fMacd520;
+	//filterDataMap[nameVec[eRps_MACD2060]] = data.fMacd2060;
+	//filterDataMap[nameVec[eRps_RPS520]] = data.fRps520;
+	//filterDataMap[nameVec[eRps_RPS2060]] = data.fRps2060;
+	//filterDataMap[nameVec[eRps_RANK520]] = data.nRank520;
+	//filterDataMap[nameVec[eRps_RANK2060]] = data.nRank2060;
+	//filterDataMap[nameVec[eRps_POINT520]] = data.fPoint520;
+	//filterDataMap[nameVec[eRps_POINT2060]] = data.fPoint2060;
+	//filterDataMap[nameVec[eRps_RANK520L1]] = data.nL1Rank520;
+	//filterDataMap[nameVec[eRps_RANK2060L1]] = data.nL1Rank2060;
+	//filterDataMap[nameVec[eRps_POINT520L1]] = data.fL1Point520;
+	//filterDataMap[nameVec[eRps_POINT2060L1]] = data.fL1Point2060;
+	//filterDataMap[nameVec[eRps_RANK520L2]] = data.nL2Rank520;
+	//filterDataMap[nameVec[eRps_RANK2060L2]] = data.nL1Rank2060;
+	//filterDataMap[nameVec[eRps_POINT520L2]] = data.fL2Point520;
+	//filterDataMap[nameVec[eRps_POINT2060L2]] = data.fL2Point2060;
+
+	return true;
+}
+
+bool CWndSynHandler::HandleSecData(string strDataName, sSection & data,
+	vector<double>& filterDataMap)
+{
+	auto &nameVec = m_secDataNameMap[strDataName];
+
+	filterDataMap[nameVec[eSec_RANK]] = data.rank;
+	filterDataMap[nameVec[eSec_POINT]] = data.point;
+	filterDataMap[nameVec[eSec_RANKL1]] = data.rankL1;
+	filterDataMap[nameVec[eSec_POINTL1]] = data.pointL1;
+	filterDataMap[nameVec[eSec_RANKL2]] = data.rankL2;
+	filterDataMap[nameVec[eSec_POINTL2]] = data.pointL2;
+
+	return true;
+}
+
+void CWndSynHandler::UpdateRtRpsPointData(vector<RtPointData>& subDataVec,
+	RtPointData & dstData, sRps & rpsData, SStringA strDataName, int nGroup)
+{
+	dstData.data.value = rpsData.fPoint520;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point520");
+	subDataVec.emplace_back(dstData);
+	dstData.data.value = rpsData.fPoint2060;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point2060");
+	subDataVec.emplace_back(dstData);
+	if (nGroup == Group_Stock)
+	{
+		dstData.data.value = rpsData.fL1Point520;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point520L1");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = rpsData.fL1Point2060;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point2060L1");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = rpsData.fL2Point520;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point520L2");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = rpsData.fL2Point2060;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point2060L2");
+		subDataVec.emplace_back(dstData);
+
+	}
+
+}
+
+void CWndSynHandler::UpdateRtSecPointData(vector<RtPointData>& subDataVec,
+	RtPointData & dstData, sSection & secData, SStringA strDataName, int nGroup)
+{
+	dstData.data.value = secData.point;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "Point");
+	subDataVec.emplace_back(dstData);
+	if (nGroup == Group_Stock)
+	{
+		dstData.data.value = secData.pointL1;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "PointL1");
+		subDataVec.emplace_back(dstData);
+		dstData.data.value = secData.pointL2;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, strDataName + "PointL2");
+		subDataVec.emplace_back(dstData);
+	}
+
+}
+
+void CWndSynHandler::UpdateRtSecPointFromCAInfo(vector<RtPointData>& subDataVec,
+	RtPointData & dstData, CAInfo & caInfo, int nGroup)
+{
+	dstData.data.value = caInfo.VolPoint;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, "CaVolPoint");
+	subDataVec.emplace_back(dstData);
+	dstData.data.value = caInfo.AmoPoint;
+	strcpy_s(dstData.dataName, MAX_NAME_LENGTH, "CaAmoPoint");
+	subDataVec.emplace_back(dstData);
+	if (nGroup == Group_Stock)
+	{
+
+		dstData.data.value = caInfo.VolPointL1;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, "CaVolPointL1");
+		subDataVec.emplace_back(dstData);
+
+		dstData.data.value = caInfo.VolPointL2;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, "CaVolPointL2");
+		subDataVec.emplace_back(dstData);
+
+		dstData.data.value = caInfo.AmoPointL1;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, "CaAmoPointL1");
+		subDataVec.emplace_back(dstData);
+
+		dstData.data.value = caInfo.AmoPointL2;
+		strcpy_s(dstData.dataName, MAX_NAME_LENGTH, "CaAmoPointL2");
+		subDataVec.emplace_back(dstData);
+
+	}
+}
+
 bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	int &nOffset, ReceiveInfo &recvInfo)
 {
 	if (bNeedConnect)
 	{
-		if (m_NetClinet.GetExitState())
+		if (m_NetClient.GetExitState())
 			return 0;
-		if (m_NetClinet.OnConnect(m_strIPAddr, m_nIPPort))
+		if (m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
 		{
-			SendIDInfo_t info = { 0 };
+			SendIDInfo info = { 0 };
+			info.ClinetID = m_NetClient.GetClientID();
 			info.MsgType = ComSend_ReConnect;
-			info.ClinetID = m_NetClinet.GetClientID();
-			::send(m_NetClinet.GetSocket(), (char*)&info,
-				sizeof(info), 0);
+			m_NetClient.SendData((char*)&info, sizeof(info));
 			bNeedConnect = false;
 		}
 		else
 			return false;
 	}
 
-	int ret = recv(m_NetClinet.GetSocket(),
+	int ret = recv(m_NetClient.GetSocket(),
 		(char*)&recvInfo + nOffset,
 		sizeof(recvInfo) - nOffset, 0);
 	if (ret == 0)
 	{
 		nOffset = 0;
-		m_NetClinet.OnConnect(NULL, NULL);
+		m_NetClient.OnConnect(NULL, NULL);
 		bNeedConnect = true;
 		TraceLog("与服务器断开连接");
 		return false;
@@ -622,12 +890,12 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	if (SOCKET_ERROR == ret)
 	{
 		//nOffset = 0;
-		if (m_NetClinet.GetExitState())
+		if (m_NetClient.GetExitState())
 			return false;
 		int nError = WSAGetLastError();
 		if (nError == WSAECONNRESET)
 		{
-			m_NetClinet.OnConnect(NULL, NULL);
+			m_NetClient.OnConnect(NULL, NULL);
 			bNeedConnect = true;
 		}
 		return false;
@@ -643,14 +911,14 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	return true;
 }
 
-void CWndSynHandler::OnMsgClientID(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgClientID(ReceiveInfo & recvInfo)
 {
-	m_NetClinet.SetClientID(((ReceiveIDInfo)recvInfo).ClientID);
+	m_NetClient.SetClientID(((ReceiveIDInfo)recvInfo).ClientID);
 	m_NetHandleFlag[RecvMsg_ClientID] = TRUE;
 	TraceLog("接收客户端ID成功");
 }
 
-void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgStockInfo(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	StockInfo stkInfo = { 0 };
@@ -665,21 +933,29 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 	else if (StockInfo_Index == info.InfoType)
 		TraceLog("开始接收重要指数信息");
 
-	if (ReceiveData(netSocket, info.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, info.DataSize, '#'))
 	{
 		int size = info.DataSize / sizeof(stkInfo);
 		switch (info.InfoType)
 		{
 		case StockInfo_Stock:
 		{
+			m_StockPos[Group_Stock].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
 			{
 				auto &data = infoArr[i];
 				m_ListInsVec[Group_Stock].emplace_back(data.SecurityID);
 				m_ListStockInfoMap[Group_Stock].hash[data.SecurityID] = data;
+				m_StockPos[Group_Stock].hash[data.SecurityID] = i;
 				m_ListInfoVec[Group_Stock].emplace_back(data);
 				m_StockName.hash[data.SecurityID] = data.SecurityName;
+			}
+			for (auto period = Period_FenShi; period < Period_End; ++period)
+			{
+				m_FilterDataMap[Group_Stock][period].resize(size);
+				for (auto &it : m_FilterDataMap[Group_Stock][period])
+					it.resize(SFI_Count, 0);
 			}
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[0] = 1;
 			TraceLog("接收股票信息成功");
@@ -687,6 +963,7 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 		break;
 		case StockInfo_SWL1:
 		{
+			m_StockPos[Group_SWL1].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
 			{
@@ -694,6 +971,14 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 				m_ListInsVec[Group_SWL1].emplace_back(data.SecurityID);
 				m_ListInfoVec[Group_SWL1].emplace_back(data);
 				m_StockName.hash[data.SecurityID] = data.SecurityName;
+				m_StockPos[Group_SWL1].hash[data.SecurityID] = i;
+
+			}
+			for (auto period = Period_FenShi; period < Period_End; ++period)
+			{
+				m_FilterDataMap[Group_SWL1][period].resize(size);
+				for (auto &it : m_FilterDataMap[Group_SWL1][period])
+					it.resize(SFI_Count, 0);
 
 			}
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[1] = 1;
@@ -703,6 +988,7 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 		break;
 		case StockInfo_SWL2:
 		{
+			m_StockPos[Group_SWL2].hash.clear();
 			StockInfo *infoArr = (StockInfo *)buffer;
 			for (int i = 0; i < size; ++i)
 			{
@@ -710,7 +996,14 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 				m_ListInsVec[Group_SWL2].emplace_back(data.SecurityID);
 				m_ListInfoVec[Group_SWL2].emplace_back(data);
 				m_StockName.hash[data.SecurityID] = data.SecurityName;
+				m_StockPos[Group_SWL2].hash[data.SecurityID] = i;
 
+			}
+			for (auto period = Period_FenShi; period < Period_End; ++period)
+			{
+				m_FilterDataMap[Group_SWL2][period].resize(size);
+				for (auto &it : m_FilterDataMap[Group_SWL2][period])
+					it.resize(SFI_Count, 0);
 			}
 			TraceLog("接收申万2级行业信息成功");
 			((BYTE*)&m_NetHandleFlag[RecvMsg_StockInfo])[2] = 1;
@@ -743,18 +1036,18 @@ void CWndSynHandler::OnMsgStockInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
-void CWndSynHandler::OnMsgRTTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTTimeLine(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 		SendMsg(m_RpsProcThreadID, UpdateData,
 			buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgTodayTimeLine(ReceiveInfo & recvInfo)
 {
 	m_NetHandleFlag[RecvMsg_TodayTimeLine] = FALSE;
 	TraceLog("开始接收当日历史数据");
@@ -767,8 +1060,8 @@ void CWndSynHandler::OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo
 	todayDataBuffer = new char[todayDataSize];
 	memcpy_s(todayDataBuffer, todayDataSize,
 		&recvInfo.SrcDataSize, sizeof(recvInfo.SrcDataSize));
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#',
-		todayDataBuffer + sizeof(recvInfo.SrcDataSize)))
+	if (m_NetClient.ReceiveData(todayDataBuffer + sizeof(recvInfo.SrcDataSize),
+		recvInfo.DataSize, '#'))
 	{
 		m_NetHandleFlag[RecvMsg_TodayTimeLine] = TRUE;
 		TraceLog("接收当日历史数据成功");
@@ -778,24 +1071,24 @@ void CWndSynHandler::OnMsgTodayTimeLine(SOCKET netSocket, ReceiveInfo & recvInfo
 	SetEvent(g_hEvent);
 }
 
-void CWndSynHandler::OnMsgHisPoint(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisRpsPoint(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
-		SendMsg(m_uMsgThreadID, Syn_HisPoint, buffer, totalSize);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisRpsPoint, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgLastDayEma(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgLastDayEma(ReceiveInfo & recvInfo)
 {
 	TraceLog("开始接收最后的EMA数据");
 	m_NetHandleFlag[RecvMsg_LastDayEma] = FALSE;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		SendMsg(m_RpsProcThreadID, UpdateLastDayEma,
 			buffer, recvInfo.DataSize);
@@ -808,66 +1101,66 @@ void CWndSynHandler::OnMsgLastDayEma(SOCKET netSocket, ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgRTIndexMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTIndexMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_RTIndexMarket, buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgRTStockMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTStockMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_RTStockMarket, buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgHisIndexMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisIndexMarket(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisIndexMarket, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgHisStockMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisStockMarket(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisStockMarket, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgHisKline(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisKline(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
 	int offset = sizeof(recvInfo);
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer, offset))
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisKline, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgCloseInfo(ReceiveInfo & recvInfo)
 {
 	TraceLog("开始接收昨日收盘数据");
 	m_NetHandleFlag[RecvMsg_CloseInfo] = FALSE;
 	char *buffer = new char[recvInfo.DataSize];
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		SendMsg(m_uMsgThreadID, Syn_CloseInfo,
 			buffer, recvInfo.DataSize);
@@ -883,161 +1176,151 @@ void CWndSynHandler::OnMsgCloseInfo(SOCKET netSocket, ReceiveInfo & recvInfo)
 
 }
 
-void CWndSynHandler::OnMsgWait(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgWait(ReceiveInfo & recvInfo)
 {
 	m_bServerReady = false;
 	SetEvent(g_hEvent);
 }
 
-void CWndSynHandler::OnMsgReInit(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgReInit(ReceiveInfo & recvInfo)
 {
 	SendMsg(m_uMsgThreadID, Syn_Reinit,
 		NULL, 0);
 }
 
-void CWndSynHandler::OnMsgRTTFMarket(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRTTFMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
-		SendMsg(m_RpsProcThreadID, UpdateTFMarket,
-			buffer, recvInfo.DataSize);
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_RpsProcThreadID, UpdateTFMarket,
+			(char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnMsgRtRps(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgRtRps(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
 	TimeLineData stkInfo = { 0 };
-	if (ReceiveData(netSocket, recvInfo.DataSize, '#', buffer))
-		SendMsg(m_RpsProcThreadID, UpdateRtRps,
-			buffer, recvInfo.DataSize);
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_RpsProcThreadID, UpdateRtRps,
+			(char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+
+	}
 	delete[]buffer;
 	buffer = nullptr;
 
 }
 
-void CWndSynHandler::OnNoDefineMsg(SOCKET netSocket, ReceiveInfo & recvInfo)
+void CWndSynHandler::OnMsgHisSecPoint(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisSecPoint, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgRehabInfo(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_RehabInfo, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgCallAction(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	ReceiveData(netSocket, recvInfo.DataSize, '#', buffer);
+	TimeLineData stkInfo = { 0 };
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_RpsProcThreadID, UpdateCallAction,
+			(char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgHisCallAction(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisCallAction, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 }
 
-void CWndSynHandler::OnTimeLineUpdate(int nMsgLength, const char * info) {
-	if (!m_bTodayInit)
-		return;
-	int dataCount = nMsgLength / sizeof(TimeLineData);
-	TimeLineData *dataArr = (TimeLineData *)info;
-	for (int i = 0; i < m_PeriodVec.size(); ++i)
-	{
-		int Period = m_PeriodVec[i];
-		auto & periodDataMap = m_commonDataMap[Period];
-		for (int j = 0; j < dataCount; ++j)
-		{
-			if (dataArr[j].data.time == 925)
-			{
-				if (i == 0)
-					m_dataHandler.SetPeriodFenshiOpenEMAData(
-						periodDataMap, dataArr[j]);
-			}
-			else
-				m_dataHandler.UpdateClose(
-					periodDataMap, dataArr[j], m_PeriodVec[i]);
-		}
-		m_dataHandler.CalcRps(periodDataMap);
-		m_dataHandler.RankPoint(periodDataMap,
-			m_dataVec[Group_SWL1][Period], m_ListInsVec[Group_SWL1],
-			m_ListStockInfoMap[Group_SWL1].hash);
-		m_dataHandler.RankPoint(periodDataMap,
-			m_dataVec[Group_SWL2][Period], m_ListInsVec[Group_SWL2],
-			m_ListStockInfoMap[Group_SWL2].hash);
-		m_dataHandler.RankPoint(periodDataMap,
-			m_dataVec[Group_Stock][Period], m_ListInsVec[Group_Stock],
-			m_ListStockInfoMap[Group_Stock].hash);
-		m_dataHandler.UpdateShowData(m_commonDataMap[Period],
-			m_dataVec[Group_SWL1][Period], m_listDataMap[Group_SWL1][Period],
-			m_comDataNameVec, m_uniDataNameVec,
-			m_ListInsVec[Group_SWL1]);
-		m_dataHandler.UpdateShowData(m_commonDataMap[Period],
-			m_dataVec[Group_SWL2][Period], m_listDataMap[Group_SWL2][Period],
-			m_comDataNameVec, m_uniDataNameVec,
-			m_ListInsVec[Group_SWL2]);
-		m_dataHandler.UpdateShowData(m_commonDataMap[Period],
-			m_dataVec[Group_Stock][Period], m_listDataMap[Group_Stock][Period],
-			m_comDataNameVec, m_uniDataNameVec,
-			m_ListInsVec[Group_Stock]);
-
-	}
-	
-	::EnterCriticalSection(&m_csFilterData);
-	::LeaveCriticalSection(&m_csFilterData);
-	SendMsg(m_uMsgThreadID, Syn_Point, nullptr, 0);
-	SendMsg(m_uMsgThreadID, Syn_ListData, nullptr, 0);
-
-}
-
-void CWndSynHandler::OnTodayTimeLineProc(int nMsgLength, const char * info) {
-	//typeof()
-	unsigned long nSize = *(unsigned long*)info;
-	unsigned char* buffer = new unsigned char[nSize];
-	uncompress(buffer, &nSize,
-		(unsigned char*)(info + 4), nMsgLength - 4);
-	int dataCount = nSize / sizeof(TimeLineData);
-	TimeLineData *dataArr = (TimeLineData *)buffer;
-	//WaitForSingleObject(g_hEvent, INFINITE);
-	SetPointDataCapacity();
-	vector<thread> procThreadVec(m_PeriodVec.size());
-	for (int i = 0; i < m_PeriodVec.size(); ++i)
-	{
-		int Period = m_PeriodVec[i];
-		thread t(&CWndSynHandler::CalcHisData, this, dataArr,
-			Period, dataCount);
-		procThreadVec[i].swap(t);
-	}
-	for (auto &it : procThreadVec)
-		if (it.joinable())
-			it.join();
+void CWndSynHandler::OnMsgHisTFBase(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisTFBase, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
-
-	m_bTodayInit = true;
-	SetEvent(g_hLoginEvent);
-	SendMsg(m_uMsgThreadID, Syn_Point, nullptr, 0);
-	SendMsg(m_uMsgThreadID, Syn_ListData, nullptr, 0);
-	for (auto &it : m_commonDataMap)
-	{
-		for (auto &data : it.second)
-		{
-			data.second["RPS520"].clear();
-			data.second["RPS520"].shrink_to_fit();
-			data.second["RPS2060"].clear();
-			data.second["RPS2060"].shrink_to_fit();
-		}
-	}
-
 }
 
-void CWndSynHandler::OnUpdateLastDayEma(int nMsgLength, const char* info) {
-	int dataCount = nMsgLength / sizeof(TimeLineData);
-	TimeLineData* dataArr = (TimeLineData*)info;
-	int preDataCount = dataCount / 6;
-	int offset = 0;
-	for (int i = 1; i < 7; ++i)	//分时图数据不需要设置
-	{
-		int nPeriod = m_PeriodVec[i];
-		auto &comDataMap = m_commonDataMap[nPeriod];
-		for (int j = 0; j < preDataCount; ++j)
-		{
-			auto &data = dataArr[offset];
-			m_dataHandler.SetPreEMAData(comDataMap, data);
-			++offset;
-		}
-	}
-
+void CWndSynHandler::OnMsgTodayTFMarket(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_TodayTFMarket, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
 }
+
+void CWndSynHandler::OnNoDefineMsg(ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#');
+	delete[]buffer;
+	buffer = nullptr;
+}
+
 
 void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
 {
@@ -1052,63 +1335,56 @@ void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
 		for (auto& data : it.second.hash)
 		{
 			//if(data.second.nTime)
-			auto &tfMarket = data.second;
-			auto &dataMap = m_listDataMap[Group_Stock];
-			if (strlen(tfMarket.SecurityID) != 6)
-				++nErrName;
-			CoreData cd = { 0 };
-			cd.time = tfMarket.nTime;
-			cd.value = tfMarket.ABSR;
-			dataMap[it.first][data.first]["ABSR"] = cd;
-			cd.value = tfMarket.A2PBSR;
-			dataMap[it.first][data.first]["A2PBSR"] = cd;
-			cd.value = tfMarket.AABSR;
-			dataMap[it.first][data.first]["AABSR"] = cd;
-			cd.value = tfMarket.POCR;
-			dataMap[it.first][data.first]["POCR"] = cd;
-			cd.value = tfMarket.nVolume;
-			dataMap[it.first][data.first]["VOLUME"] = cd;
-			cd.value = tfMarket.fOpen;
-			dataMap[it.first][data.first]["OPEN"] = cd;
-			cd.value = tfMarket.fHigh;
-			dataMap[it.first][data.first]["HIGH"] = cd;
-			cd.value = tfMarket.fLow;
-			dataMap[it.first][data.first]["LOW"] = cd;
-			cd.value = tfMarket.fAmount;
-			dataMap[it.first][data.first]["AMOUNT"] = cd;
-			cd.value = tfMarket.ActBuyVol;
-			dataMap[it.first][data.first]["ABV"] = cd;
-			cd.value = tfMarket.ActSellVol;
-			dataMap[it.first][data.first]["ASV"] = cd;
-
 			//更新选股器数据
-			auto &filterMap = m_FilterDataMap[Group_Stock][it.first].hash[data.first];
-			if (tfMarket.fOpen == 0 ||tfMarket.fHigh == 0 || tfMarket.fLow == 0 || tfMarket.fClose == 0)
-			{
-				OutputDebugStringFormat("%s 周期%d错误,o:%.02f,h:%.02f,l:%.02f,c:%.02f\n", tfMarket.SecurityID,
-					tfMarket.nPeriod, tfMarket.fOpen, tfMarket.fHigh, tfMarket.fLow, tfMarket.fClose);
-				nCount++;
-			}
-			filterMap["VOL"] = tfMarket.nVolume;
-			filterMap["HIGH"] = tfMarket.fHigh;
-			filterMap["LOW"] = tfMarket.fLow;
-			filterMap["OPEN"] = tfMarket.fOpen;
-			filterMap["CLOSE"] = tfMarket.fClose;
-			filterMap["AMOUNT"] = tfMarket.fAmount;
-			filterMap["POC"] = tfMarket.fPOC;
-			filterMap["ABV"] = tfMarket.ActBuyVol;
-			filterMap["ASV"] = tfMarket.ActSellVol;
-			filterMap["ABO"] = tfMarket.uActBuyOrderCount;
-			filterMap["ASO"] = tfMarket.uActSellOrderCount;
-			filterMap["PBO"] = tfMarket.uPasBuyOrderCount;
-			filterMap["PSO"] = tfMarket.uPasSellOrderCount;
-			filterMap["ABSR"] = tfMarket.ABSR;
-			filterMap["A2PBSR"] = tfMarket.A2PBSR;
-			filterMap["AABSR"] = tfMarket.AABSR;
-			filterMap["POCR"] = tfMarket.POCR;
+			int nDataPos = m_StockPos[Group_Stock].hash.count(data.first) ?
+				m_StockPos[Group_Stock].hash[data.first] : -1;
+
+			if (nDataPos < 0)
+				continue;
+			auto &tfMarket = data.second;
+
+			auto &filterMap = m_FilterDataMap[Group_Stock][it.first][nDataPos];
+			filterMap[SFI_Close] = tfMarket.fClose;
+			filterMap[SFI_Vol] = tfMarket.nVolume;
+			filterMap[SFI_High] = tfMarket.fHigh;
+			filterMap[SFI_Low] = tfMarket.fLow;
+			filterMap[SFI_Open] = tfMarket.fOpen;
+			filterMap[SFI_Amount] = tfMarket.fAmount;
+			filterMap[SFI_ABV] = tfMarket.ActBuyVol;
+			filterMap[SFI_ASV] = tfMarket.ActSellVol;
+			filterMap[SFI_ABO] = tfMarket.uActBuyOrderCount;
+			filterMap[SFI_ASO] = tfMarket.uActSellOrderCount;
+			filterMap[SFI_PBO] = tfMarket.uPasBuyOrderCount;
+			filterMap[SFI_PSO] = tfMarket.uPasSellOrderCount;
+			filterMap[SFI_ABSR] = tfMarket.ABSR;
+			filterMap[SFI_A2PBSR] = tfMarket.A2PBSR;
+			filterMap[SFI_AABSR] = tfMarket.AABSR;
+			filterMap[SFI_POCR] = tfMarket.POCR;
 		}
 	}
-	OutputDebugStringFormat("共有%d个数据计算错误 %d个代码错误\n",nCount,nErrName);
+
+	for (auto &it : m_WndSubMap)
+	{
+		vector<TickFlowMarket> dataVec;
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup != Group_Stock)
+			continue;
+		SStringA StockID = it.second;
+		for (auto &periodDataPair : m_TFMarketHash)
+		{
+			int nPeriod = periodDataPair.first;
+			auto & dataMap = periodDataPair.second;
+			if (dataMap.hash.count(StockID))
+				dataVec.emplace_back(dataMap.hash[StockID]);
+		}
+
+		if (!dataVec.empty())
+			SendMsg(m_hWndMap[hParWnd], Syn_RTTFMarkt, (char*)&dataVec[0],
+				dataVec.size() * sizeof(TickFlowMarket));
+	}
+
 
 	if (m_bFirstData)
 	{
@@ -1123,62 +1399,50 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 {
 	int dataCount = nMsgLength / sizeof(RtRps);
 	RtRps* dataArr = (RtRps*)info;
+	set<int>periodSet;
 	for (int i = 0; i < dataCount; ++i)
-		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
-	for (auto &it : m_RtRpsHash)
 	{
-		for (auto &periodData : it.second)
+		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
+		periodSet.insert(dataArr[i].nPeriod);
+	}
+	size_t datasize = 0;
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		auto &preiodFilterMap = m_FilterDataMap[i];
+		auto &stockPos = m_StockPos[i];
+		for (auto &periodData : m_RtRpsHash[i])
 		{
+			if (periodSet.count(periodData.first) == 0)
+				continue;
+			auto &FilterMap = preiodFilterMap[periodData.first];
+
 			for (auto& data : periodData.second.hash)
 			{
+				int nDataPos = stockPos.hash.count(data.first) ?
+					stockPos.hash[data.first] : -1;
+
+				if (nDataPos < 0)
+					continue;
 				auto& rpsData = data.second;
 				CoreData cd = { 0 };
 				cd.date = rpsData.nDate;
 				cd.time = rpsData.nTime;
-				cd.value = rpsData.fPrice;
-				auto &dataMap = m_listDataMap[it.first];
-				dataMap[periodData.first][data.first]["close"] = cd;
-				cd.value = rpsData.fMacd520;
-				dataMap[periodData.first][data.first]["MACD520"] = cd;
-				cd.value = rpsData.fRps520;
-				dataMap[periodData.first][data.first]["RPS520"] = cd;
-				cd.value = rpsData.fMacd2060;
-				dataMap[periodData.first][data.first]["MACD2060"] = cd;
-				cd.value = rpsData.fRps2060;
-				dataMap[periodData.first][data.first]["RPS2060"] = cd;
-				cd.value = rpsData.fPoint520;
-				dataMap[periodData.first][data.first]["Point520"] = cd;
-				cd.value = rpsData.nRank520;
-				dataMap[periodData.first][data.first]["Rank520"] = cd;
-				cd.value = rpsData.fPoint2060;
-				dataMap[periodData.first][data.first]["Point2060"] = cd;
-				cd.value = rpsData.nRank2060;
-				dataMap[periodData.first][data.first]["Rank2060"] = cd;
-				//更新选股器数据
-				auto &filterMap = m_FilterDataMap[it.first][periodData.first].hash[data.first];
-				filterMap["LASTPX"] = rpsData.fPrice;
+				auto &filter = FilterMap[nDataPos];
+				filter[SFI_LastPx] = rpsData.fPrice;
 				double fPreClose = m_preCloseMap.hash[data.first];
-				filterMap["CHG"] = (rpsData.fPrice - fPreClose) / fPreClose * 100;
-				filterMap["MACD520"] = rpsData.fMacd520;
-				filterMap["MACD2060"] = rpsData.fMacd2060;
-				filterMap["RPS520"] = rpsData.fRps520;
-				filterMap["RPS2060"] = rpsData.fRps2060;
-				filterMap["RANK520"] = rpsData.nRank520;
-				filterMap["RANK2060"] = rpsData.nRank2060;
-				filterMap["POINT520"] = rpsData.fPoint520;
-				filterMap["POINT2060"] = rpsData.fPoint2060;
-				filterMap["RANK520L1"] = rpsData.nL1Rank520;
-				filterMap["RANK2060L1"] = rpsData.nL1Rank2060;
-				filterMap["POINT520L1"] = rpsData.fL1Point520;
-				filterMap["POINT2060L1"] = rpsData.fL1Point2060;
-				filterMap["RANK520L2"] = rpsData.nL2Rank520;
-				filterMap["RANK2060L2"] = rpsData.nL1Rank2060;
-				filterMap["POINT520L2"] = rpsData.fL2Point520;
-				filterMap["POINT2060L2"] = rpsData.fL2Point2060;
+				filter[SFI_ChgPct] = (rpsData.fPrice - fPreClose) / fPreClose * 100;
+
+
+				HandleRpsData("close", rpsData.rpsClose, filter);
+				HandleRpsData("amount", rpsData.rpsAmount, filter);
+				HandleSecData("amount", rpsData.secAmount, filter);
+				if (m_bFirstData && i == Group_Stock)
+					datasize += filter.size();
 			}
 
 		}
 	}
+
 }
 
 void CWndSynHandler::OnClearData(int nMsgLength, const char * info)
@@ -1187,6 +1451,51 @@ void CWndSynHandler::OnClearData(int nMsgLength, const char * info)
 	ClearData();
 	SetVectorSize();
 	SetEvent(g_hLoginEvent);
+}
+
+void CWndSynHandler::OnUpdateCallAction(int nMsgLength, const char * info)
+{
+	int dataCount = nMsgLength / sizeof(CAInfo);
+	CAInfo* dataArr = (CAInfo*)info;
+	int nCount = 0;
+	int nErrName = 0;
+	for (int i = 0; i < dataCount; ++i)
+		m_CallActionHash[dataArr[i].group].hash[dataArr[i].SecurityID] = dataArr[i];
+	m_bCaUpdate = true;
+	for (int i = Group_SWL1; i < Group_Count; ++i)
+	{
+		auto &stockPos = m_StockPos[i];
+		for (auto& data : m_CallActionHash[i].hash)
+		{
+			//if(data.second.nTime)
+			int nDataPos = stockPos.hash.count(data.first) ?
+				stockPos.hash[data.first] : -1;
+
+			if (nDataPos < 0)
+				continue;
+
+			auto &caInfo = data.second;
+			//更新选股器数据
+			auto &filterMap = m_FilterDataMap[i][Period_1Day][nDataPos];
+
+			filterMap[SFI_CAVol] = caInfo.Volume;
+			filterMap[SFI_CAVolPoint] = caInfo.VolPoint;
+			filterMap[SFI_CAVolRank] = caInfo.VolRank;
+			filterMap[SFI_CAVolPointL1] = caInfo.VolPointL1;
+			filterMap[SFI_CAVolRankL1] = caInfo.VolRankL1;
+			filterMap[SFI_CAVolPointL2] = caInfo.VolPointL2;
+			filterMap[SFI_CAVolRankL2] = caInfo.VolRankL2;
+			filterMap[SFI_CAAmo] = caInfo.Amount;
+			filterMap[SFI_CAAmoPoint] = caInfo.AmoPoint;
+			filterMap[SFI_CAAmoRank] = caInfo.AmoRank;
+			filterMap[SFI_CAAmoPointL1] = caInfo.AmoPointL1;
+			filterMap[SFI_CAAmoRankL1] = caInfo.AmoRankL1;
+			filterMap[SFI_CAAmoPointL2] = caInfo.AmoPointL2;
+			filterMap[SFI_CAAmoRankL2] = caInfo.AmoRankL2;
+
+		}
+
+	}
 }
 
 
@@ -1206,33 +1515,30 @@ void CWndSynHandler::OnRemoveWnd(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetMarket(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	m_WndSubMap[pDgInfo->hWnd][pDgInfo->Group] = pDgInfo->StockID;
-	GetMarket(pDgInfo->StockID, pDgInfo->Group);
+	m_WndSubMap[pDgInfo->hWnd] = pDgInfo->StockID;
+	m_WndPointSubMap[pDgInfo->hWnd].clear();
+	int nID = GetMarket(pDgInfo->StockID, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
 void CWndSynHandler::OnGetKline(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	GetHisKline(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	int nID = GetHisKline(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
 void CWndSynHandler::OnGetPoint(int nMsgLength, const char * info)
 {
-	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	::EnterCriticalSection(&m_cs);
-	auto &PointMap = m_dataVec[pDgInfo->Group]\
-		[pDgInfo->Period][pDgInfo->StockID];
-	map<SStringA, vector<CoreData>> *pDataMap
-		= new map<SStringA, vector<CoreData>>(PointMap);
-	::LeaveCriticalSection(&m_cs);
-	char msg[16];
-	memcpy_s(msg, 16, &pDgInfo->Group, 4);
-	memcpy_s(msg + 4, 16, &pDgInfo->Period, 8);
-	memcpy_s(msg + 8, 16, &pDataMap, 8);
-	SendMsg(m_hWndMap[pDgInfo->hWnd], Syn_TodayPoint,
-		msg, 16);
-	//if (Period_FenShi != pDgInfo->Period)
-	GetHisPoint(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	ExDataGetInfo *pDgInfo = (ExDataGetInfo *)info;
+	m_WndPointSubMap[pDgInfo->hWnd].insert(pDgInfo->StockID);
+	int nID = GetHisPoint(m_PointGetMsg[pDgInfo->Type], pDgInfo->StockID,
+		pDgInfo->Period, pDgInfo->Group, pDgInfo->exMsg);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+
 }
 
 void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
@@ -1245,75 +1551,92 @@ void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
 
 void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 {
-	for (auto &wndSub : m_WndSubMap)
+	for (auto &wndSub : m_WndPointSubMap)
 	{
 		HWND hWnd = wndSub.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		::EnterCriticalSection(&m_cs);
+
 		for (auto &subInfo : wndSub.second)
 		{
-			vector<pair<int, pair<char[16], CoreData>>>subDataVec;
-			::EnterCriticalSection(&m_cs);
-			auto &dataMap = m_RtRpsHash[subInfo.first];
-			for (auto &periodDataPair : dataMap)
+			vector<RtPointData>subDataVec;
+			SStringA StockID = subInfo;
+			for (int i = Group_SWL1; i <= nGroup; ++i)
 			{
-				if (periodDataPair.second.hash.count(subInfo.second))
+				auto &dataMap = m_RtRpsHash[i];
+				for (auto &periodDataPair : dataMap)
 				{
-					pair<int, pair<char[16], CoreData>> data;
-					data.first = periodDataPair.first;
-					auto &rpsData = periodDataPair.second.hash[subInfo.second];
-					data.second.second.date = rpsData.nDate;
-					data.second.second.time = rpsData.nTime;
-					data.second.second.value = rpsData.fPoint520;
-					strcpy_s(data.second.first, "Point520");
-					subDataVec.emplace_back(data);
-					data.second.second.value = rpsData.fPoint2060;
-					strcpy_s(data.second.first, "Point2060");
-					subDataVec.emplace_back(data);
-					if (subInfo.first == Group_Stock)
+					if (periodDataPair.second.hash.count(StockID))
 					{
-						data.second.second.value = rpsData.fL1Point520;
-						strcpy_s(data.second.first, "L1Point520");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.fL1Point2060;
-						strcpy_s(data.second.first, "L1Point2060");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.fL2Point520;
-						strcpy_s(data.second.first, "L2Point520");
-						subDataVec.emplace_back(data);
-						data.second.second.value = rpsData.fL2Point2060;
-						strcpy_s(data.second.first, "L2Point2060");
-						subDataVec.emplace_back(data);
+						if (periodDataPair.second.hash.count(StockID))
+						{
+							RtPointData data;
+							strcpy_s(data.stockID, StockID);
+							data.period = periodDataPair.first;
+							auto &rpsData = periodDataPair.second.hash[StockID];
+							data.data.date = rpsData.nDate;
+							data.data.time = rpsData.nTime;
+							UpdateRtRpsPointData(subDataVec, data, rpsData.rpsClose, "close", i);
+							UpdateRtRpsPointData(subDataVec, data, rpsData.rpsAmount, "amount", i);
+							UpdateRtSecPointData(subDataVec, data, rpsData.secAmount, "amount", i);
 
+						}
 					}
 				}
+				//处理集合竞价数据
+				if (i == nGroup && m_bCaUpdate)
+				{
+					auto& caInfo = m_CallActionHash[nGroup].hash[StockID];
+					RtPointData data;
+					strcpy_s(data.stockID, StockID);
+					data.period = Period_1Day;
+					UpdateRtSecPointFromCAInfo(subDataVec, data, caInfo, nGroup);
+				}
+
 			}
+
 			if (!subDataVec.empty())
 			{
 				int length = 4 + subDataVec.size() *
-					sizeof(pair<int, pair<char[16], CoreData>>);
+					sizeof(pair<int, pair<char[MAX_NAME_LENGTH], CoreData>>);
 				char* msg = new char[length];
-				memcpy_s(msg, length, &subInfo.first, 4);
+				memcpy_s(msg, length, &nGroup, 4);
 				memcpy_s(msg + 4, length, &subDataVec[0], length - 4);
-				SendMsg(m_hWndMap[hWnd], Syn_Point, msg, length);
+				SendMsg(m_hWndMap[hParWnd], Syn_Point, msg, length);
 				delete[]msg;
 				msg = nullptr;
 			}
-			::LeaveCriticalSection(&m_cs);
 		}
+
+		::LeaveCriticalSection(&m_cs);
+
 	}
+	m_bCaUpdate = false;
 }
 
-void CWndSynHandler::OnHisPoint(int nMsgLength, const char * info)
+void CWndSynHandler::OnHisRpsPoint(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisPoint,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisRpsPoint,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
 	}
 }
 
@@ -1323,13 +1646,10 @@ void CWndSynHandler::OnRTIndexMarket(int nMsgLength, const char * info)
 	for (auto &it : m_WndSubMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(Group_SWL1)
-			&& it.second[Group_SWL1] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RTIndexMarket,
-				info, nMsgLength);
-		if (it.second.count(Group_SWL2)
-			&& it.second[Group_SWL2] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RTIndexMarket,
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup < Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_RTIndexMarket,
 				info, nMsgLength);
 	}
 
@@ -1341,9 +1661,10 @@ void CWndSynHandler::OnRTStockMarket(int nMsgLength, const char * info)
 	for (auto &it : m_WndSubMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(Group_Stock)
-			&& it.second[Group_Stock] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_RTStockMarket,
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_RTStockMarket,
 				info, nMsgLength);
 	}
 
@@ -1353,14 +1674,23 @@ void CWndSynHandler::OnHisIndexMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisIndexMarket,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisIndexMarket,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
 	}
 }
 
@@ -1368,14 +1698,24 @@ void CWndSynHandler::OnHisStockMarket(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisStockMarket,
-				info, nMsgLength);
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisStockMarket,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+		}
 	}
 
 }
@@ -1383,17 +1723,26 @@ void CWndSynHandler::OnHisStockMarket(int nMsgLength, const char * info)
 void CWndSynHandler::OnHisKline(int nMsgLength, const char * info)
 {
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SStringA strStock = pRecvInfo->InsID;
-	int nGroup = pRecvInfo->Group;
-	for (auto &it : m_WndSubMap)
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
-		if (it.second.count(nGroup)
-			&& it.second[nGroup] == strStock)
-			SendMsg(m_hWndMap[hWnd], Syn_HisKline,
-				info, nMsgLength);
-	}
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisKline,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
 
+		}
+	}
 }
 
 void CWndSynHandler::OnCloseInfo(int nMsgLength, const char * info)
@@ -1401,7 +1750,6 @@ void CWndSynHandler::OnCloseInfo(int nMsgLength, const char * info)
 	pair<char[8], double>preCloseData;
 	int dataCount = nMsgLength / sizeof(preCloseData);
 	pair<char[8], double> * dataArr = (pair<char[8], double> *)info;
-	//::EnterCriticalSection(&m_csClose);
 	m_preCloseMap.hash.clear();
 	for (int i = 0; i < dataCount; ++i)
 		m_preCloseMap.hash[dataArr[i].first] = dataArr[i].second;
@@ -1420,22 +1768,167 @@ void CWndSynHandler::OnReinit(int nMsgLength, const char * info)
 	}
 }
 
+void CWndSynHandler::OnHisSecPoint(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisSecPoint,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+		}
+	}
+
+}
+
+void CWndSynHandler::OnRehabInfo(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_RehabInfo,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+		}
+	}
+
+}
+
+void CWndSynHandler::OnHisCallAction(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisCallAction,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+
+		}
+	}
+
+}
+
+void CWndSynHandler::OnGetCallAction(int nMsgLength, const char * info)
+{
+	DataGetInfo *pDgInfo = (DataGetInfo *)info;
+	int nID = GetHisCallAction(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+}
+
+void CWndSynHandler::OnHisTFBase(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisTFBase,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
+	}
+}
+
+void CWndSynHandler::OnGetHisTFBase(int nMsgLength, const char * info)
+{
+	DataGetInfo *pDgInfo = (DataGetInfo *)info;
+	int nID = GetHisTFBase(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+
+}
+
+void CWndSynHandler::OnTodayTFMarket(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto &it : m_SubWndGetInfoMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_TodayTFMarket,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+		}
+	}
+}
+
+
+
 void CWndSynHandler::SetVectorSize()
 {
-	m_dataVec.resize(Group_Count);
 	m_ListInsVec.resize(Group_Count);
 	m_ListInfoVec.resize(Group_Count);
-	m_listDataMap.resize(Group_Count);
 	m_FilterDataMap.resize(Group_Count);
+	m_RtRpsHash.resize(Group_Count);
+	m_CallActionHash.resize(Group_Count);
+	for (auto period = Period_FenShi; period < Period_End; ++period)
+		m_TFMarketHash[period] = strHash<TickFlowMarket>();
 }
 
 void CWndSynHandler::ClearData()
 {
-	m_dataVec.clear();
 	m_ListInsVec.clear();
-	m_listDataMap.clear();
 	m_ListInfoVec.clear();
-	m_commonDataMap.clear();
 	m_FilterDataMap.clear();
 	m_TFMarketHash.clear();
 	m_RtRpsHash.clear();
@@ -1462,8 +1955,9 @@ void CWndSynHandler::ReInit()
 	m_bFirstData = true;
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
+
 	strcpy(info.str, "StkMarket");
-	send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
 	while (!m_bServerReady)
 	{
@@ -1473,16 +1967,15 @@ void CWndSynHandler::ReInit()
 		WaitForSingleObject(g_hLoginEvent, INFINITE);
 		//ResetEvent(g_hLoginEvent);
 		SendInfo info;
-		info.MsgType = ComSend_Connect;
 		strcpy(info.str, "StkMarket");
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 	while (!CheckInfoRecv())
 	{
 		m_NetHandleFlag.clear();
 		ResetEvent(g_hEvent);
-		send(m_NetClinet.GetSocket(), (char*)&info, sizeof(info), 0);
+		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}
 

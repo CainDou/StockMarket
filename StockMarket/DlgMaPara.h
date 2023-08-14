@@ -5,8 +5,9 @@ namespace SOUI
 	{
 	public:
 		CDlgMaPara();
-		CDlgMaPara(RpsGroup rg, HWND hWnd);
+		CDlgMaPara(RpsGroup rg, HWND hWnd, eMaType maType);
 		~CDlgMaPara();
+		void InitConfigName();
 		void OnClose();
 		void OnClickButtonOk();
 		void OnClickButtonCancel();
@@ -17,17 +18,16 @@ namespace SOUI
 
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);
-		SStringW strPara1;
-		SStringW strPara2;
-		SStringW strPara3;
-		SStringW strPara4;
+		SStringW strPara[MAX_MA_COUNT];
 
+		int nPara[MAX_MA_COUNT];
+		int m_nDefaultPara[MAX_MA_COUNT];
 
-		int nPara[4];
+		map<eMaType, SStringA> m_MaConfigName;
 
 		RpsGroup m_rgGroup;
 		HWND m_hParWnd;
-
+		eMaType m_maType;
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)

@@ -1,0 +1,79 @@
+﻿<?xml version="1.0"?>
+<SOUI name="backTesting" title="公式回测" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1200" height="800" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+	<root cache="1" colorBkgnd="rgb(50,50,50)">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑"   cache="1" colorBorder="#550000" margin="1,1,1,1">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" >公式回测</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
+			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
+			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+
+		</caption>
+		<window pos="0,30,-0,-0"  cache="1" font="face:微软雅黑" colorText="#00ffffff" colorBorder="#550000" margin="1,0,1,1">
+			<text pos="5,5,@100,@25">回测开始时间</text>
+			<dateTimePicker pos="[5,{0" size="120,24" name="dtp_testStart" padding="4,0,4,0" dropWidth="300" timeEnable="0">
+				<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+			</dateTimePicker>
+			<text pos="[20,{0,@100,@25">回测结束时间</text>
+			<dateTimePicker pos="[5,{0" size="120,24" name="dtp_testEnd" padding="4,0,4,0" dropWidth="300" timeEnable="0">
+				<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+			</dateTimePicker>
+		  	<imgbtn name="btn_testStart" skin="skin_ButtonGrayBlack" pos="[5,{0,@100,@25"  animate="1" text="开始测试" />
+		  	<imgbtn name="btn_cancel" skin="skin_ButtonGrayBlack" pos="[5,{0,@100,@25"  animate="1" text="取消" />
+		  	<imgbtn name="btn_export" skin="skin_ButtonGrayBlack" pos="[5,{0,@100,@25" enable="0"  animate="1" text="导出结果" />
+
+			<text pos="5,[5,@100,@25">平均回测结果</text>
+			<color_listctrlex name="lc_avgResult" cache="1" bkgndBlend="0" pos="5,[5,-5,@70" hotTrack="0" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">				
+				<headerex align="center" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack"  sortSkin="skin_lcex_header_arrow" multiLines ="1">
+					<items>
+						<item width="50">数据条数</item>
+						<item width="80">一日收益率</item>
+						<item width="80">三日收益率</item>
+						<item width="80">五日收益率</item>
+						<item width="80">十日收益率</item>
+						<item width="100">相对沪深300一日超额收益率</item>
+						<item width="100">相对沪深300三日超额收益率</item>
+						<item width="100">相对沪深300五日超额收益率</item>
+						<item width="100">相对沪深300十日超额收益率</item>
+						<item width="100">相对一级行业一日超额收益率</item>
+						<item width="100">相对一级行业三日超额收益率</item>
+						<item width="100">相对一级行业五日超额收益率</item>
+						<item width="100">相对一级行业十日超额收益率</item>
+						<item width="100">相对二级行业一日超额收益率</item>
+						<item width="100">相对二级行业三日超额收益率</item>
+						<item width="100">相对二级行业五日超额收益率</item>
+						<item width="100">相对二级行业十日超额收益率</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+			<text pos="5,[5,@150,@25">具体个股回测结果</text>
+			<text name = "text_TestState" pos="[5,{0,-5,@25" />
+			<color_listctrlex name="lc_testResult" cache="1" bkgndBlend="0" pos="5,[5,-5,-5" hotTrack="0" itemHeight="20" headerHeight="40" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120">				
+				<headerex align="center" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow" multiLines ="1">
+					<items>
+						<item width="40">序号</item>
+						<item width="80">股票代码</item>
+						<item width="100">日期</item>
+						<item width="80">一日收益率</item>
+						<item width="80">三日收益率</item>
+						<item width="80">五日收益率</item>
+						<item width="80">十日收益率</item>
+						<item width="100">相对沪深300一日超额收益率</item>
+						<item width="100">相对沪深300三日超额收益率</item>
+						<item width="100">相对沪深300五日超额收益率</item>
+						<item width="100">相对沪深300十日超额收益率</item>
+						<item width="100">相对一级行业一日超额收益率</item>
+						<item width="100">相对一级行业三日超额收益率</item>
+						<item width="100">相对一级行业五日超额收益率</item>
+						<item width="100">相对一级行业十日超额收益率</item>
+						<item width="100">相对二级行业一日超额收益率</item>
+						<item width="100">相对二级行业三日超额收益率</item>
+						<item width="100">相对二级行业五日超额收益率</item>
+						<item width="100">相对二级行业十日超额收益率</item>
+					</items>
+				</headerex>
+			</color_listctrlex>
+		</window>
+	</root>
+</SOUI>

@@ -1,0 +1,5 @@
+﻿<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+  <item id="401">选择截面数据指标</item>
+  <sep/>
+  <item id="400" >关闭当前指标</item>
+</menu>

@@ -64,9 +64,169 @@ int	RecvMsg(int  msgQId, char** buf, int& length, int timeout)
 	return l_msg.message;
 }
 
-bool GetFileKlineData(SStringA InsID, vector<KlineType>& dataVec, bool bIsDay)
+HRESULT OpenFile(LPTSTR FileName)
 {
-	return false;
+	IFileDialog* pfd = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		DWORD dwFlags;
+		if (SUCCEEDED(hr))
+		{
+
+			hr = pfd->GetOptions(&dwFlags);
+			if (SUCCEEDED(hr))
+			{
+				hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST);
+				if (SUCCEEDED(hr))
+				{
+					if (SUCCEEDED(hr))
+					{
+						COMDLG_FILTERSPEC fileType[] =
+						{
+							{ L"配置文件", L"*.ini" },
+							{ L"所有文件",L"*.*" },
+						};
+						hr = pfd->SetFileTypes(ARRAYSIZE(fileType), fileType);
+						if (SUCCEEDED(hr))
+						{
+							hr = pfd->SetFileTypeIndex(1);
+							if (SUCCEEDED(hr))
+							{
+
+								//hr=pfd->SetFolder()
+								hr = pfd->Show(NULL);
+								if (SUCCEEDED(hr))
+								{
+									IShellItem *pSelItem;
+
+									hr = pfd->GetResult(&pSelItem);
+									if (SUCCEEDED(hr))
+									{
+
+										LPWSTR pszFilePath = NULL;
+										hr = pSelItem->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &pszFilePath);
+										if (SUCCEEDED(hr))
+										{
+											wcscpy(FileName, pszFilePath);
+											CoTaskMemFree(pszFilePath);
+										}
+										pSelItem->Release();
+									}
+								}
+							}
+
+						}
+
+					}
+				}
+			}
+		}
+		pfd->Release();
+	}
+	return hr;
+}
+
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName)
+{
+	IFileDialog* pfd = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		DWORD dwFlags;
+		if (SUCCEEDED(hr))
+		{
+
+			hr = pfd->GetOptions(&dwFlags);
+			if (SUCCEEDED(hr))
+			{
+				hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
+				if (SUCCEEDED(hr))
+				{
+					if (SUCCEEDED(hr))
+					{
+
+						COMDLG_FILTERSPEC fileType[] =
+						{
+							{ L"CSV(逗号分隔符)", L"*.csv" },
+							{ L"所有文件",L"*.*" },
+						};
+						hr = pfd->SetFileTypes(ARRAYSIZE(fileType), fileType);
+						if (SUCCEEDED(hr))
+						{
+							hr = pfd->SetFileTypeIndex(1);
+							if (SUCCEEDED(hr))
+							{
+								hr = pfd->SetFileName(DefaultFileName);
+								if (SUCCEEDED(hr))
+								{
+
+									//hr=pfd->SetFolder()
+									hr = pfd->Show(NULL);
+									if (SUCCEEDED(hr))
+									{
+										IShellItem *pSelItem;
+
+										hr = pfd->GetResult(&pSelItem);
+										UINT fileType = 0;
+										pfd->GetFileTypeIndex(&fileType);
+
+										if (SUCCEEDED(hr))
+										{
+
+											LPWSTR pszFilePath = NULL;
+											hr = pSelItem->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &pszFilePath);
+											if (SUCCEEDED(hr))
+											{
+												wcscpy(FileName, pszFilePath);
+												CoTaskMemFree(pszFilePath);
+											}
+											pSelItem->Release();
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			}
+		}
+		pfd->Release();
+	}
+	return hr;
+}
+
+TimePreiod & operator++(TimePreiod & tp)
+{
+
+	{
+		switch (tp)
+		{
+		case Period_FenShi:
+			tp = Period_1Min;
+			break;
+		case Period_1Min:
+			tp = Period_5Min;
+			break;
+		case Period_5Min:
+			tp = Period_15Min;
+			break;
+		case Period_15Min:
+			tp = Period_30Min;
+			break;
+		case Period_30Min:
+			tp = Period_60Min;
+			break;
+		case Period_60Min:
+			tp = Period_1Day;
+			break;
+		default:
+			tp = Period_End;
+			break;
+		}
+		return tp;
+	}
 }
 
 void InitLogFile()
@@ -311,3 +471,227 @@ HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
 	return hr;
 }
 
+void GetInitPara(CIniFile & ini, InitPara & para,SStringA strSection)
+{
+
+	int CloseMAPara[] = { 5,10,20,60,0,0 };
+	int VolAmoMAPara[] = { 5,10,0,0,0,0 };
+
+	SStringA strKey;
+	para.bShowMA =
+		ini.GetIntA(strSection, "ShowMA", 1) == 0 ? false : true;
+	para.bShowBandTarget =
+		ini.GetIntA(strSection, "ShowBand") == 0 ? false : true;
+	para.bShowAverage =
+		ini.GetIntA(strSection, "ShowAvg", 1) == 0 ? false : true;
+	para.bShowEMA =
+		ini.GetIntA(strSection, "ShowEMA", 1) == 0 ? false : true;
+	para.bShowTSCMACD =
+		ini.GetIntA(strSection, "ShowTSCMACD", 1) == 0 ? false : true;
+	para.bShowTSCVolume =
+		ini.GetIntA(strSection, "ShowTSCVolume", 1) == 0 ? false : true;
+	para.bShowKlineVolume =
+		ini.GetIntA(strSection, "ShowKlineVolume", 1) == 0 ? false : true;
+	para.bShowKlineAmount =
+		ini.GetIntA(strSection, "ShowKlineAmount", 0) == 0 ? false : true;
+	para.bShowKlineCAVol =
+		ini.GetIntA(strSection, "ShowKlineCAVol", 0) == 0 ? false : true;
+	para.bShowKlineCAAmo =
+		ini.GetIntA(strSection, "ShowKlineCAAmo", 0) == 0 ? false : true;
+
+	para.bShowKlineMACD =
+		ini.GetIntA(strSection, "ShowKlineMACD", 1) == 0 ? false : true;
+	para.bShowTSCRPS[0] =
+		ini.GetIntA(strSection, "ShowTSCRPS", 1) == 0 ? false : true;
+	para.bShowTSCRPS[1] =
+		ini.GetIntA(strSection, "ShowTSCL1RPS", 1) == 0 ? false : true;
+	para.bShowTSCRPS[2] =
+		ini.GetIntA(strSection, "ShowTSCL2RPS", 1) == 0 ? false : true;
+	para.bShowKlineRPS[0] =
+		ini.GetIntA(strSection, "ShowKlineRPS", 1) == 0 ? false : true;
+	para.bShowKlineRPS[1] =
+		ini.GetIntA(strSection, "ShowKlineL1RPS", 1) == 0 ? false : true;
+	para.bShowKlineRPS[2] =
+		ini.GetIntA(strSection, "ShowKlineL2RPS", 1) == 0 ? false : true;
+
+	para.nWidth = ini.GetIntA(strSection, "Width", 16);
+	para.bShowTSCDeal =
+		ini.GetIntA(strSection, "ShowTSCDeal", 1) == 0 ? false : true;
+	para.bShowKlineDeal =
+		ini.GetIntA(strSection, "ShowKlineDeal", 1) == 0 ? false : true;
+	para.nEMAPara[0] =
+		ini.GetIntA(strSection, "EMAPara1", 12);
+	para.nEMAPara[1] =
+		ini.GetIntA(strSection, "EMAPara2", 26);
+	para.nMACDPara[0] =
+		ini.GetIntA(strSection, "MACDPara1", 12);
+	para.nMACDPara[1] =
+		ini.GetIntA(strSection, "MACDPara2", 26);
+	para.nMACDPara[2] =
+		ini.GetIntA(strSection, "MACDPara3", 9);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		para.nMAPara[i] = ini.GetIntA(strSection,
+			strKey.Format("MAPara%d", i + 1), CloseMAPara[i]);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		para.nVolMaPara[i] = ini.GetIntA(strSection,
+			strKey.Format("VolMAPara%d", i + 1), VolAmoMAPara[i]);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		para.nAmoMaPara[i] = ini.GetIntA(strSection,
+			strKey.Format("AmoMAPara%d", i + 1), VolAmoMAPara[i]);
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		para.nCAVolMaPara[i] = ini.GetIntA(strSection,
+			strKey.Format("CAVolMAPara%d", i + 1), VolAmoMAPara[i]);
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		para.nCAAmoMaPara[i] = ini.GetIntA(strSection,
+			strKey.Format("CAAmoMAPara%d", i + 1), VolAmoMAPara[i]);
+
+	para.nJiange =
+		ini.GetIntA(strSection, "Jiange", 2);
+	para.BandPara.N1 =
+		ini.GetIntA(strSection, "BandN1", 8);
+	para.BandPara.N2 =
+		ini.GetIntA(strSection, "BandN2", 11);
+	para.BandPara.K =
+		ini.GetIntA(strSection, "BandK", 390);
+	para.BandPara.M1 =
+		ini.GetIntA(strSection, "BandM1", 8);
+	para.BandPara.M2 =
+		ini.GetIntA(strSection, "BandM2", 4);
+	para.BandPara.P =
+		ini.GetIntA(strSection, "BandP", 390);
+
+	para.Period = ini.GetIntA(strSection, "Period", Period_1Day);
+	para.Connect1 = ini.GetIntA(strSection, "ListConnent1", 0)
+		== 0 ? false : true;
+	para.Connect2 = ini.GetIntA(strSection, "ListConnent2", 0)
+		== 0 ? false : true;
+	SStringA strStock = ini.GetStringA(strSection, "ShowIndustry", "");
+	strcpy_s(para.ShowIndy, strStock);
+	para.UseStockFilter = ini.GetIntA(strSection, "StockFilter", 0)
+		== 0 ? false : true;
+	para.ListShowST = ini.GetIntA(strSection, "ListShowST", 1)
+		== 0 ? false : true;
+	para.ListShowSBM = ini.GetIntA(strSection, "ListShowSBM", 1)
+		== 0 ? false : true;
+	para.ListShowSTARM = ini.GetIntA(strSection, "ListShowSTARM", 1)
+		== 0 ? false : true;
+	para.ListShowNewStock = ini.GetIntA(strSection, "ListShowNewSotck", 1)
+		== 0 ? false : true;
+	para.nKlineRehabType = ini.GetIntA(strSection, "KlineRehabType", 0);
+	para.nKlineCalcRehabType = ini.GetIntA(strSection, "KlineCalcRehabType", 0);
+	para.nKlineFTRehabDate = ini.GetIntA(strSection, "KlineFTRehabDate", 0);
+	para.strFilterName = ini.GetStringA(strSection, "FilterName", "");
+	para.UseHisStockFilter = ini.GetIntA(strSection, "HisStockFilter", 0);
+	para.bKlineUseTickFlowData = ini.GetIntA(strSection, "KlineUseTickFlowData", 0);
+	para.nKlineTickFlowDataType = ini.GetIntA(strSection, "KlineTickFlowDataType", 0);
+
+}
+
+void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
+{
+	SStringA strKey = "";
+	ini.WriteIntA(strSection, "ShowMA", para.bShowMA);
+	ini.WriteIntA(strSection, "ShowBand", para.bShowBandTarget);
+	ini.WriteIntA(strSection, "ShowAvg", para.bShowAverage);
+	ini.WriteIntA(strSection, "ShowEMA", para.bShowEMA);
+	ini.WriteIntA(strSection, "ShowTSCMACD", para.bShowTSCMACD);
+	ini.WriteIntA(strSection, "ShowTSCVolume", para.bShowTSCVolume);
+	ini.WriteIntA(strSection, "ShowKlineVolume", para.bShowKlineVolume);
+	ini.WriteIntA(strSection, "ShowKlineAmount", para.bShowKlineAmount);
+	ini.WriteIntA(strSection, "ShowKlineCAVol", para.bShowKlineCAVol);
+	ini.WriteIntA(strSection, "ShowKlineCAAmo", para.bShowKlineCAAmo);
+
+	ini.WriteIntA(strSection, "ShowKlineMACD", para.bShowKlineMACD);
+	ini.WriteIntA(strSection, "ShowTSCRPS", para.bShowTSCRPS[0]);
+	ini.WriteIntA(strSection, "ShowTSCL1RPS", para.bShowTSCRPS[0]);
+	ini.WriteIntA(strSection, "ShowTSCL2RPS", para.bShowTSCRPS[0]);
+	ini.WriteIntA(strSection, "ShowKlineRPS", para.bShowKlineRPS[0]);
+	ini.WriteIntA(strSection, "ShowKlineL1RPS", para.bShowKlineRPS[1]);
+	ini.WriteIntA(strSection, "ShowKlineL2RPS", para.bShowKlineRPS[2]);
+	ini.WriteIntA(strSection, "Width", para.nWidth);
+	ini.WriteIntA(strSection, "ShowTSCDeal", para.bShowTSCDeal);
+	ini.WriteIntA(strSection, "ShowKlineDeal", para.bShowKlineDeal);
+	ini.WriteIntA(strSection, "EMAPara1", para.nEMAPara[0]);
+	ini.WriteIntA(strSection, "EMAPara2", para.nEMAPara[1]);
+	ini.WriteIntA(strSection, "MACDPara1", para.nMACDPara[0]);
+	ini.WriteIntA(strSection, "MACDPara2", para.nMACDPara[1]);
+	ini.WriteIntA(strSection, "MACDPara3", para.nMACDPara[2]);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		ini.WriteIntA(strSection, strKey.Format("MAPara%d", i + 1), para.nMAPara[i]);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		ini.WriteIntA(strSection, strKey.Format("VolMAPara%d", i + 1), para.nVolMaPara[i]);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		ini.WriteIntA(strSection, strKey.Format("AmoMAPara%d", i + 1), para.nAmoMaPara[i]);
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		ini.WriteIntA(strSection, strKey.Format("CAVolMAPara%d", i + 1), para.nCAVolMaPara[i]);
+	for (int i = 0; i<MAX_MA_COUNT; ++i)
+		ini.WriteIntA(strSection, strKey.Format("CAAmoMAPara%d", i + 1), para.nCAAmoMaPara[i]);
+
+	ini.WriteIntA(strSection, "Jiange", para.nJiange);
+	ini.WriteIntA(strSection, "BandN1", para.BandPara.N1);
+	ini.WriteIntA(strSection, "BandN2", para.BandPara.N2);
+	ini.WriteIntA(strSection, "BandK", para.BandPara.K);
+	ini.WriteIntA(strSection, "BandM1", para.BandPara.M1);
+	ini.WriteIntA(strSection, "BandM2", para.BandPara.M2);
+	ini.WriteIntA(strSection, "BandP", para.BandPara.P);
+	ini.WriteIntA(strSection, "Period", para.Period);
+	ini.WriteIntA(strSection, "ListConnent1", para.Connect1);
+	ini.WriteIntA(strSection, "ListConnent2", para.Connect2);
+	ini.WriteStringA(strSection, "ShowIndustry", para.ShowIndy);
+	ini.WriteIntA(strSection, "StockFilter", para.UseStockFilter);
+	ini.WriteIntA(strSection, "ListShowST", para.ListShowST);
+	ini.WriteIntA(strSection, "ListShowSBM", para.ListShowSBM);
+	ini.WriteIntA(strSection, "ListShowSTARM", para.ListShowSTARM);
+	ini.WriteIntA(strSection, "ListShowNewSotck", para.ListShowNewStock);
+	ini.WriteIntA(strSection, "KlineRehabType", para.nKlineRehabType);
+	ini.WriteIntA(strSection, "KlineCalcRehabType", para.nKlineCalcRehabType);
+	ini.WriteIntA(strSection, "KlineFTRehabDate", para.nKlineFTRehabDate);
+
+	ini.WriteStringA(strSection, "FilterName", para.strFilterName);
+	ini.WriteIntA(strSection, "HisStockFilter", para.UseHisStockFilter);
+
+	ini.WriteIntA(strSection, "KlineUseTickFlowData", para.bKlineUseTickFlowData);
+	ini.WriteIntA(strSection, "KlineTickFlowDataType", para.nKlineTickFlowDataType);
+
+}
+
+bool _UsedPointInfo::operator<(const _UsedPointInfo & other) const
+{
+	return this->overallType < other.overallType;
+}
+
+bool _UsedPointInfo::operator==(const _UsedPointInfo & other) const
+{
+	return other.overallType == this->overallType;
+}
+
+bool _StockFilterPara::operator<(const _StockFilterPara & other) const
+{
+	if (index1 != other.index1)
+		return index1 < other.index1;
+	if (period1 != other.period1)
+		return period1 < other.period1;
+	if (condition != other.condition)
+		return condition < other.condition;
+	if (index2 != other.index2)
+		return index2 < other.index2;
+	if (period2 != other.period2)
+		return period2 < other.period2;
+	return num < other.num;
+}
+
+bool _StockFilterPara::operator==(const _StockFilterPara & other) const
+{
+	return memcmp(this,&other,sizeof(_StockFilterPara)) == 0;
+}
+
+bool _HisStockFilterPara::operator<(const _HisStockFilterPara & other) const
+{
+	if (sf == other.sf)
+	{
+		if (countDay != other.countDay)
+			return countDay < other.countDay;
+		return type < other.type;
+	}
+	return sf < other.sf;
+}

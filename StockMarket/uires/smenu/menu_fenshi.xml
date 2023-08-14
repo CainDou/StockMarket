@@ -5,8 +5,17 @@
   <sep/>
   <item id="103" check="0">MACD</item>
   <sep/>
-  <item id="104" >RPS</item>
-  <sep/>
+  <item   text="打分数据窗口" id="104" contextHelpId="2">
+    <item id="109"  check="0">0</item>
+    <item id="110"  check="0">1</item>
+    <item id="111"  check="0">2</item>
+    <item id="112"  check="0">3</item>
+    <item id="113"  check="0">4</item>
+    <item id="114"  check="0">5</item>
+    <item id="115"  check="0">6</item>
+    <item id="116"  check="0">7</item>
+    <item id="117"  check="0">8</item>
+  </item>  
   <item id="105" >MACD参数</item>
   <sep/>
   <item id="106" check="0">均线</item>
@@ -14,10 +23,6 @@
   <item id="107" check="0">EMA线</item>
   <sep/>
   <item id="108" >EMA参数</item>
-  <sep/>
-  <item id="109" >申万1级RPS</item>
-  <sep/>
-  <item id="110" >申万2级RPS</item>
   <sep/>
   <item id="100" >返回</item>
 </menu>

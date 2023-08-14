@@ -6,9 +6,10 @@ namespace SOUI
 	class CDlgAddNew : public SHostWnd
 	{
 	public:
-		CDlgAddNew(HWND hParWnd);
+		CDlgAddNew(HWND hParWnd,int nWndType, SStringA strOldName = "");
 		~CDlgAddNew();
 		void OnInit(EventArgs* e);
+		void InitStrings();
 		void OnBtnOK();
 		void OnBtnCancel();
 	protected:
@@ -22,6 +23,13 @@ namespace SOUI
 		set<SStringA> UsedNameSet;
 		HWND m_hParWnd;
 		SEdit *m_pEdit;
+		int m_nWndType;
+		map<int, SStringA> m_WndTypeSection;
+		map<int, SStringW> m_WndTypeDefName;
+		SStringA m_strSection;
+		SStringW m_strDef;
+		SStringA m_strOldName;
+
 	protected:
 		EVENT_MAP_BEGIN()
 			EVENT_HANDLER(EventInit::EventID, OnInit)

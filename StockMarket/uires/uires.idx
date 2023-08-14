@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -25,6 +25,14 @@
 		<file name="dlg_ReadFrmlList" path="xml\dlg_ReadFrmlList.xml" />
 		<file name="dlg_messagebox" path="xml\dlg_messagebox.xml" />
 		<file name="dlg_TradeSimulate" path="xml\dlg_TradeSimulate.xml" />
+		<file name="dlg_targetSelect" path="xml\dlg_targetSelect.xml" />
+		<file name="dlg_comboStockFilter" path="xml\dlg_comboStockFilter.xml" />
+		<file name="dlg_headerSelect" path="xml\dlg_headerSelect.xml" />
+		<file name="dlg_rehabFixedTime" path="xml\dlg_rehabFixedTime.xml" />
+		<file name="dlg_updateLog" path="xml\dlg_updateLog.xml" />
+		<file name="dlg_condBackTesting" path="xml\dlg_condBackTesting.xml" />
+		<file name="dlg_multiFilter" path="xml\dlg_multiFilter.xml" />
+		<file name="dlg_limitUpStat" path="xml\dlg_limitUpStat.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -35,6 +43,10 @@
 		<file name="default_scrollbar_png" path="image\default.scrollbar.png" />
 		<file name="skin_lcex_header_arrow" path="image\lcex_header_arrow.png" />
 		<file name="png_treeicon" path="image\TreeIcon.png" />
+		<file name="btn_help" path="image\btn_help.png" />
+		<file name="png_vscroll" path="image\vscrollbar.png" />
+		<file name="png_hscroll" path="image\hscrollbar.png" />
+		<file name="png_newscroll" path="image\newscroll.png" />
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />
@@ -43,5 +55,8 @@
 		<file name="menu_fenshi" path="smenu\menu_fenshi.xml" />
 		<file name="menu_kline" path="smenu\menu_kline.xml" />
 		<file name="menu_new" path="smenu\menu_new.xml" />
+		<file name="menu_target" path="smenu\menu_target.xml" />
+		<file name="menu_rehab" path="smenu\menu_rehab.xml" />
+		<file name="menu_filterWndNum" path="smenu\menu_filterWndNum.xml" />
 	</smenu>
 </resource>

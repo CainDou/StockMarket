@@ -4,7 +4,6 @@
 #pragma once
 #include <core/swnd.h>
 #include "SKlineTip.h"
-#include "DataProc.h"
 
 namespace SOUI
 {
@@ -22,74 +21,130 @@ namespace SOUI
 
 
 		//数据接口
-		void		InitSubPic(int nNum, vector<SStringA> & picNameVec);
+		void		InitSubPic(int nNum/*, vector<SStringA> & picNameVec*/);
+		void		ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec);
+		vector<ShowPointInfo> GetSubPicDataToGet(int nNum, map<int, ShowPointInfo>& infoMap);
 		void		InitShowPara(InitPara_t para);
 		void		OutPutShowPara(InitPara_t& para);
-		void		SetShowData(SStringA subIns, SStringA StockName, vector<CommonIndexMarket>* pIdxMarketVec,
-					map<int, vector<KlineType>>*pHisKlineMap);
-		void		SetShowData(SStringA subIns, SStringA StockName, vector<CommonStockMarket>* pStkMarketVec,
-					map<int, vector<KlineType>>*pHisKlineMap);
+		void		SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec,
+			map<int, vector<KlineType>>*pHisKlineMap);
+		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec,
+			map<int, vector<KlineType>>*pHisKlineMap,
+			map<int, vector<TickFlowMarket>>* pRtTFMarketVec,
+			map<int, vector<TFBaseMarket>>* pHisTFBaseVec);
+
+
+		void		ChangeShowStock(SStringA subIns, SStringA StockName);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
 		void		SetSubPicShowData(int nDataCount[],
 			vector<vector<vector<CoreData>*>>& data,
 			vector<vector<BOOL>> bRightVec,
-			vector<vector<SStringA>>, SStringA StockID,
+			vector<vector<SStringA>> dataNameVec, SStringA StockID,
+			SStringA StockName, int nStartWnd = 0);
+		void		SetSubPicShowData(int nDataCount,
+			vector<vector<CoreData>*>& data,
+			vector<BOOL> bRightVec,
+			vector<SStringA> dataNameVec, SStringA StockID,
 			SStringA StockName);
 		void		ReSetSubPicData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		void		SetParentHwnd(HWND hParWnd);
 		void		SetTodayMarketState(bool bReady);
 		void		SetHisKlineState(bool bReady);
 		void		SetHisPointState(bool bReady);
+		void		SetHisCAInfoState(bool bReady);
+		void		SetTFMarketState(bool bReady);
+
 		bool		GetDataReadyState();
 		void        ClearTip();
 		//LRESULT		OnMsg(UINT uMsg, WPARAM wp, LPARAM lp);
 		void		SetRpsGroup(RpsGroup rg);
+		void		SetCaInfoData(vector<CAInfo>* pInfoVec);
+
+		void		SetRehabInfo(vector<RehabInfo>& rehabVec);
 		void		DataProc();
 		void		UpdateData();
-		void		ReProcMAData();
+		void		ReProcKlineRehabData(eRehabType rehabType);
+		void		ReProcKlineRehabData(FixedTimeRehab & frt);
+		void		ReProcMAData(eMaType maType);
 		void		ReProcMacdData();
 		void		ReProcBandData();
-		void		ChangePeriod(int nPeriod,BOOL bNeedReCalc);
+		void		ChangePeriod(int nPeriod, BOOL bNeedReCalc); 
 		bool		GetDealState() const;
 		bool		GetVolumeState() const;
+		bool		GetAmountState() const;
+		bool		GetCAVolState() const;
+		bool		GetCAAmoState() const;
 		bool		GetMacdState() const;
-		bool		GetRpsState(int nWndNum) const;
+		//bool		GetRpsState(int nWndNum) const;
 		bool		GetMaState() const;
 		bool		GetBandState() const;
 		void		SetDealState(bool bRevesered = true, bool bState = false);
 		void		SetVolumeState(bool bRevesered = true, bool bState = false);
+		void		SetAmountState(bool bRevesered = true, bool bState = false);
+		void		SetCAVolState(bool bRevesered = true, bool bState = false);
+		void		SetCAAmoState(bool bRevesered = true, bool bState = false);
 		void		SetMacdState(bool bRevesered = true, bool bState = false);
-		void		SetRpsState(int nWndNum,
-					bool bRevesered = true, bool bState = false);
+		//void		SetRpsState(int nWndNum,
+		//			bool bRevesered = true, bool bState = false);
 		void		SetMaState(bool bRevesered = true, bool bState = false);
 		void		SetBandState(bool bRevesered = true, bool bState = false);
 		void		SetBandPara(BandPara_t& bandPara);
-		void		SetMaPara(int maPara[]);
+		void		SetMaPara(int maPara[], eMaType maType);
 		void		SetMacdPara(int MacdPara[]);
-		const int*  GetMaPara();
+		const int*  GetMaPara(eMaType maType);
 		const int*  GetMacdPara();
 		BandPara_t	GetBandPara();
 		void		SetPicUnHandled();
 		int			GetShowSubPicNum() const;
-		void		SetBelongingIndy(vector<SStringA>& strNameVec);
+		eRehabType	GetRehabType();
+		void		SetPriceListHalf(bool bHalf);
+		void		SetBelongingIndy(vector<SStringA>& strNameVec, int nStartWnd = 0);
+		void		GetShowPointInfo(vector<ShowPointInfo> &infoVec);
+		BOOL		CheckTargetSelectIsClicked(CPoint pt);
+		void		CloseSinglePointWnd();
+		void		SetSelPointWndInfo(ShowPointInfo& info, SStringA strTitle);
+		bool		GetIsTFBaseDataUsed() const;
+		void		SetTickFlowDataType(int nTFDataType);
+		int 		GetTickFlowDataType() const;
 
 		// 图形处理绘制
 	protected:
 		//virtual BOOL CreateChildren(pugi::xml_node xmlNode);
 		void		OnPaint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
+		void		DrawVolAmoArrow(IRenderTarget * pRT, CRect& rc, int volAmoType);
+		void		DrawMacdArrow(IRenderTarget * pRT, CRect& rc);
+		void		DrawTickFlowArrow(IRenderTarget * pRT, CRect& rc);
+		void		DrawPrice(IRenderTarget * pRT);
+		void		DrawVolAmoPrice(IRenderTarget * pRT, CRect& rc, int volAmoType);
+		void		DrawMacdPrice(IRenderTarget * pRT, CRect& rc);
+		void		DrawTickFlowPrice(IRenderTarget * pRT, CRect& rc);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
 		void		DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint = FALSE);	//画时间纵轴
 		void		DrawData(IRenderTarget * pRT);
-		void		DrawTickMainData(IRenderTarget * pRT); //画主图tick
-		void		DrawVolData(IRenderTarget * pRT);		//画附图vol
-		void		DrawMainUpperMarket(IRenderTarget *pRT, KlineType& data);
+		void		DrawKline(IRenderTarget * pRT, vector<vector<CPoint>>& MALine, int nPos, int nX);
+		void		DrawBandData(IRenderTarget * pRT, vector<vector<CPoint>>& BandLine, int nPos, int nX, int& nValidNum);
+		void		DrawBandLine(IRenderTarget * pRT, vector<vector<CPoint>>& BandLine, int nValidNum);
+		void		DrawVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
+			double data, bool bAmo, int nX, int nShowPos);		//画附图vol
+		void		DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
+			double data, bool bAmo, int nX, int nShowPos);		//画附图vol
+		void		DrawMacdData(IRenderTarget * pRT, vector<CPoint>&DIFLine,
+			vector<CPoint>&DEALine, int nShowPos, int nX);
+		void		DrawTickFlow(IRenderTarget * pRT, vector<vector<CPoint>>& TFLine, int nShowPos, int nX);
+		void		DrawMALine(IRenderTarget * pRT, vector<vector<CPoint>>& MaLine, int *arrMaPara);
+		void		DrawMainUpperMarket(IRenderTarget *pRT, int nPos);
 		void		DrawMainUpperMA(IRenderTarget *pRT, int nPos);
+		void		DrawVolAmoUpperMA(IRenderTarget *pRT, int nPos);
+		void		DrawCAVolAmoUpperMA(IRenderTarget *pRT, int nPos);
 		void		DrawMacdUpperMarket(IRenderTarget *pRT, int nPos);
+		void		DrawTFDataUpperMarket(IRenderTarget *pRT, int nPos);
 		void		DrawMainUpperBand(IRenderTarget *pRT, int nPos);
-		void		DrawBandData(IRenderTarget * pRT, int nDataPos, KlineType &Data, int x, int nJiange);
 		void		DrawMouseKlineInfo(IRenderTarget * pRT, const KlineType &KlData, CPoint pt, const int &num = 0, const double &fPrePrice = 0);
-		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str, COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE);
+		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str,
+			COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE,
+			DWORD rop = SRCINVERT);
+		CRect		GetTextDrawRect(IRenderTarget * pRT, SStringW str, CRect rc);
 		void		DrawKeyDownLine(IRenderTarget* pRT, bool ClearTip = false);
 		void		DrawMouseLine(IRenderTarget * pRT, CPoint p);
 		void		DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew);
@@ -108,11 +163,18 @@ namespace SOUI
 		int			GetXPos(int nx);
 		int			GetYPos(double fDiff);
 		void		GetFuTuMaxDiff();		//判断副图坐标最大最小值和k线条数
-		int			GetFuTuYPos(double fDiff);	//获得附图y位置
-		SStringW	GetFuTuYPrice(int nY);		//获得附图y位置价格
+		int			GetFuTuYPos(double fDiff, bool bAmo = false);	//获得附图y位置
+		SStringW	GetFuTuYPrice(int nY, bool bAmo = false);		//获得附图y位置价格
 		void		GetMACDMaxDiff();
 		int			GetMACDYPos(double fDiff);	//获得MACD图y位置
 		SStringW	GetMACDYPrice(int nY);		//获得MACD图y位置价格
+		void		GetCallActionMaxDiff();		//判断副图坐标最大最小值和k线条数
+		int			GetCallActionYPos(double fDiff, bool bAmo = false);	//获得附图y位置
+		SStringW	GetCallActionYPrice(int nY, bool bAmo = false);		//获得附图y位置价格
+		void		GetTFDataMaxDiff();
+		int			GetTFDataMaxYPos(double fDiff);	//获得附图y位置
+		SStringW	GetTFDataMaxYPrice(int nY);		//获得附图y位置价格
+
 		BOOL        ptIsInKlineRect(CPoint pt, int nDataCount, KlineType &data);
 		//控制响应
 	protected:
@@ -134,12 +196,10 @@ namespace SOUI
 		// 数据处理
 	protected:
 		void DataInit();
-
-		bool GenerateMultiMinFromOne(int nCount, KlineType & data, int nPeriod);
-
-		void SingleDataProc();
-		void SingleDataWithHis();
-		void SingleDataUpdate();
+		void KlineDataWithHis();
+		void KlineDataUpdate();
+		void CallActionDataUpdate();
+		void TFDataUpdate();
 
 		void StockMarket1MinUpdate();
 		void StockMarketMultMinUpdate(int nPeriod);
@@ -156,11 +216,24 @@ namespace SOUI
 		bool ProcKlineTime(int & time);
 
 		void KlineMAProc(int nCount);
+		void VolMAProc(int nCount);
+		void AmoMAProc(int nCount);
+		void CAVolMAProc(int nCount);
+		void CAAmoMAProc(int nCount);
+
 		void BandDataUpdate();
 		void MACDDataUpdate();
 		int  ProcBandTargetData(int nPos, Band_t *BandData);
 		int	 ProcMACDData(int nPos, MACDData_t  *MacdData);
-		void ReProcKlineData(bool bSingleNeedProc = false);
+
+		void HisTFBaseProc(int nCount, int nDataPos);
+		void RTTFMarketProc(int nCount, int nDataPos);
+
+		//复权处理
+		KlineType FrontRehabCash(KlineType& srcKline, int nDate = 0);
+		KlineType FrontRehabReInv(KlineType& srcKline, int nDate = 0);
+		KlineType BackRehabCash(KlineType& srcKline, int nDate = 0);
+		KlineType BackRehabReInv(KlineType& srcKline, int nDate = 0);
 
 		//波段优化辅助处理函数
 	protected:
@@ -175,31 +248,54 @@ namespace SOUI
 	protected:
 		AllKPIC_INFO *m_pAll;
 		MACDData_t  *m_pMacdData;
+		TFData  *m_pTFData;
 		Band_t		*m_pBandData;
 		size_t			m_nUsedTickCount;
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
+		vector<CAInfo>* m_pCAInfo;
+		vector<vector<double>> m_CAVolMa;
+		vector<vector<double>> m_CAAmoMa;
 		map<int, vector<KlineType>> *m_pHisKlineMap;
+		map<int, vector<TFBaseMarket>>* m_pHisTFMarket;
+		map<int, vector<TickFlowMarket>>* m_pRtTfMarket;
 		SStringA	m_strSubIns;
 		SStringA	m_strStockName;
 		SStringA	m_strL1Indy;
 		SStringA	m_strL2Indy;
 		bool		m_bAddDay;	//添加日线
-
+		vector<RehabInfo> m_RehabInfo;
+		eRehabType m_rehabType;		//用于显示的复权类型
+		eRehabType m_calcRehabType;	//用于计算的复权类型
+		int	 m_nFTRehabTime;
+		double m_fCAVolMax;
+		double m_fCAVolMin;
+		double m_fCAAmoMax;
+		double m_fCAAmoMin;
+		int m_nCACalcCount;
+		int m_nTFCalcCount;
+		map<uint64_t, int>m_DataTimeMap;
+		map<int, int>m_CADataPosMap;
+		set<int>m_TFDataSet;
+		int		m_nTFDataType;
 		//调用类
 	protected:
 		CPriceList* m_pPriceList;
 		CDealList*  m_pDealList;
-		CDataProc	m_dataHandler;
 		SKlineTip*  m_pTip;
 		SSubTargetPic**	m_ppSubPic;
 		int m_nSubPicNum;
+		int	m_nChangeNum;
 
 		//显示和计算参数
 	protected:
 		BandPara_t  m_BandPara;
 		int 		m_nZoomRatio;
-		int			m_nMAPara[4];
+		int			m_nMAPara[MAX_MA_COUNT];
+		int			m_nVolMaPara[MAX_MA_COUNT];
+		int			m_nAmoMaPara[MAX_MA_COUNT];
+		int			m_nCAVolMaPara[MAX_MA_COUNT];
+		int			m_nCAAmoMaPara[MAX_MA_COUNT];
 		int			m_nMACDPara[3];
 		bool		m_bDataInited;
 		int			m_nKWidth;		//两线之间的宽度
@@ -222,34 +318,48 @@ namespace SOUI
 		bool		m_bShowMouseLine;
 		bool		m_bKeyDown;
 		bool		m_bShowVolume;
+		bool		m_bShowAmount;
 		bool		m_bShowMacd;
 		bool		m_bClearTip;
 		bool        m_bShowMA;			//显示MA
 		bool        m_bShowBandTarget;	//显示波段优化交易指标
 		bool		m_bShowDeal;
 		bool		m_bIsStockIndex;
-		BOOL		*m_pbShowSubPic;
+		//BOOL		*m_pbShowSubPic;
 		bool		m_bTodayMarketReady;
 		bool		m_bHisKlineReady;
 		bool		m_bHisPointReady;
+		bool		m_bHisCAInfoReady;
+		bool		m_bHisTFBaseReady;
+		bool		m_bShowCAVol;
+		bool		m_bShowCAAmo;
+		bool		m_bHalfPrice;
+		bool		m_bUseTFBaseData;
+		bool		m_bShowABSRatio;
+
 		//绘图参数
 	protected:
 		CRect       m_rcAll;		//上下框相加
 		CRect		m_rcMain;		//上框坐标,K线
 		CRect		m_rcVolume;		//下框坐标,指标
+		CRect		m_rcCAVol;		//集合竞价图形
 		CRect       m_rcMACD;		//下框2坐标，指标2
+		CRect		m_rcTFData;		//订单流图形
 		CRect		m_rcImage;
 		CPoint		m_preMovePoint;
 		CAutoRefPtr<IFont> m_pFont12;
 		CAutoRefPtr<IPen> m_penRed, m_penGreen, m_penWhite, m_penGrey, m_penPurple,
-			m_penYellow, m_penMAGreen, m_penGray, m_penDotGreen, m_penDotYellow, m_penDotRed;
+			m_penYellow, m_penMAGreen, m_penGray, m_penDotGreen, m_penDotYellow, m_penDotRed,
+			m_penBule;
 		CAutoRefPtr<IBrush> m_bBrushGreen, m_bBrushGrey, m_bBrushBlack, m_bBrushDarkBlue;
 		BOOL    m_bPaintInit;	//绘制项目初始化
-
+		vector<CAutoRefPtr<IPen>> m_MAPenVec;
+		vector<COLORREF> m_MaColorVec;
 	protected:
 		CRITICAL_SECTION m_cs;
 		HWND		m_hParWnd;
 		RpsGroup	m_rgGroup;
+		CRITICAL_SECTION m_csSub;
 
 		SOUI_MSG_MAP_BEGIN()
 			//MESSAGE_HANDLER_EX(WM_KLINE_MSG, OnMsg)
@@ -268,6 +378,17 @@ namespace SOUI
 	{
 		m_rgGroup = rg;
 	}
+
+	inline void SKlinePic::SetCaInfoData(vector<CAInfo>* pInfoVec)
+	{
+		m_pCAInfo = pInfoVec;
+	}
+
+	inline void SKlinePic::SetRehabInfo(vector<RehabInfo>& rehabVec)
+	{
+		m_RehabInfo = rehabVec;
+	}
+
 	inline bool SKlinePic::GetDealState() const
 	{
 		return m_bShowDeal;
@@ -276,14 +397,26 @@ namespace SOUI
 	{
 		return m_bShowVolume;
 	}
+	inline bool SKlinePic::GetAmountState() const
+	{
+		return m_bShowAmount;
+	}
+	inline bool SKlinePic::GetCAVolState() const
+	{
+		return m_bShowCAVol;
+	}
+	inline bool SKlinePic::GetCAAmoState() const
+	{
+		return m_bShowCAAmo;
+	}
 	inline bool SKlinePic::GetMacdState() const
 	{
 		return m_bShowMacd;
 	}
-	inline bool SKlinePic::GetRpsState(int nWndNum) const
-	{
-		return m_pbShowSubPic[nWndNum];
-	}
+	//inline bool SKlinePic::GetRpsState(int nWndNum) const
+	//{
+	//	return m_pbShowSubPic[nWndNum];
+	//}
 	inline bool SKlinePic::GetMaState() const
 	{
 		return m_bShowMA;
@@ -299,19 +432,46 @@ namespace SOUI
 	}
 	inline void SKlinePic::SetVolumeState(bool bRevesered, bool bState)
 	{
+		m_bShowAmount = false;
 		if (bRevesered) m_bShowVolume = !m_bShowVolume;
 		else m_bShowVolume = bState;
+		if (!m_bShowVolume) m_rcVolume.SetRectEmpty();
+
+	}
+	inline void SKlinePic::SetAmountState(bool bRevesered, bool bState)
+	{
+		m_bShowVolume = false;
+		if (bRevesered) m_bShowAmount = !m_bShowAmount;
+		else m_bShowAmount = bState;
+		if (!m_bShowAmount) m_rcVolume.SetRectEmpty();
+	}
+	inline void SKlinePic::SetCAVolState(bool bRevesered, bool bState)
+	{
+		m_bShowCAAmo = false;
+		if (bRevesered) m_bShowCAVol = !m_bShowCAVol;
+		else m_bShowCAVol = bState;
+		if (!m_bShowCAVol) m_rcVolume.SetRectEmpty();
+
+	}
+	inline void SKlinePic::SetCAAmoState(bool bRevesered, bool bState)
+	{
+		m_bShowCAVol = false;
+		if (bRevesered) m_bShowCAAmo = !m_bShowCAAmo;
+		else m_bShowCAAmo = bState;
+		if (!m_bShowCAAmo) m_rcVolume.SetRectEmpty();
+
 	}
 	inline void SKlinePic::SetMacdState(bool bRevesered, bool bState)
 	{
 		if (bRevesered) m_bShowMacd = !m_bShowMacd;
 		else m_bShowMacd = bState;
+		if (!m_bShowMacd) m_rcMACD.SetRectEmpty();
 	}
-	inline void SKlinePic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
-	{
-		if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
-		else m_pbShowSubPic[nWndNum] = bState;
-	}
+	//inline void SKlinePic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
+	//{
+	//	if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
+	//	else m_pbShowSubPic[nWndNum] = bState;
+	//}
 	inline void SKlinePic::SetMaState(bool bRevesered, bool bState)
 	{
 		if (bRevesered) m_bShowMA = !m_bShowMA;
@@ -322,9 +482,14 @@ namespace SOUI
 		if (bRevesered) m_bShowBandTarget = !m_bShowBandTarget;
 		else m_bShowBandTarget = bState;
 	}
-	inline void SKlinePic::SetMaPara(int maPara[])
+	inline void SKlinePic::SetMaPara(int maPara[], eMaType maType)
 	{
-		memcpy_s(m_nMAPara, sizeof(m_nMAPara), maPara, sizeof(m_nMAPara));
+		if (maType == eMa_Close)memcpy_s(m_nMAPara, sizeof(m_nMAPara), maPara, sizeof(m_nMAPara));
+		else if (maType == eMa_Volume)memcpy_s(m_nVolMaPara, sizeof(m_nVolMaPara), maPara, sizeof(m_nVolMaPara));
+		else if (maType == eMa_Amount)memcpy_s(m_nAmoMaPara, sizeof(m_nAmoMaPara), maPara, sizeof(m_nAmoMaPara));
+		else if (maType == eMa_CAVol)memcpy_s(m_nCAVolMaPara, sizeof(m_nVolMaPara), maPara, sizeof(m_nCAVolMaPara));
+		else if (maType == eMa_CAAmo)memcpy_s(m_nCAAmoMaPara, sizeof(m_nAmoMaPara), maPara, sizeof(m_nCAAmoMaPara));
+
 	}
 	inline void SKlinePic::SetMacdPara(int MacdPara[])
 	{
@@ -334,8 +499,12 @@ namespace SOUI
 	{
 		m_BandPara = bandPara;
 	}
-	inline const int * SKlinePic::GetMaPara()
+	inline const int * SKlinePic::GetMaPara(eMaType maType)
 	{
+		if (maType == eMa_Volume)return m_nVolMaPara;
+		if (maType == eMa_Amount)return m_nAmoMaPara;
+		if (maType == eMa_CAVol)return m_nCAVolMaPara;
+		if (maType == eMa_CAAmo)return m_nCAAmoMaPara;
 		return m_nMAPara;
 	}
 
@@ -359,5 +528,27 @@ namespace SOUI
 		return m_nSubPicNum;
 	}
 
+	inline eRehabType SKlinePic::GetRehabType()
+	{
+		return m_rehabType;
+	}
+
+	inline bool SKlinePic::GetIsTFBaseDataUsed() const
+	{
+		return m_bUseTFBaseData;
+	}
+	inline void SKlinePic::SetTickFlowDataType(int nTFDataType)
+	{
+		if (m_bUseTFBaseData && m_nTFDataType == nTFDataType) m_bUseTFBaseData = false;
+		else
+		{
+			m_bUseTFBaseData = true;
+			m_nTFDataType = nTFDataType;
+		}
+	}
+	inline int SKlinePic::GetTickFlowDataType() const
+	{
+		return m_nTFDataType;
+	}
 }
 #endif // !_SKLINE_PIC

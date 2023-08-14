@@ -23,21 +23,28 @@ CDealList::~CDealList()
 
 
 
-void CDealList::SetShowData(SStringA StockID, vector<CommonStockMarket>* pStkMarketVec)
+void CDealList::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec)
 {
-	m_strSubID = StockID;
 	m_pStkMarketVec = pStkMarketVec;
 	m_pIdxMarketVec = nullptr;
 	m_bIsStockIndex = false;
+
 }
 
-void CDealList::SetShowData(SStringA StockID, vector<CommonIndexMarket>* pIdxMarketVec)
+void CDealList::SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec)
 {
-	m_strSubID = StockID;
 	m_pIdxMarketVec = pIdxMarketVec;
 	m_pStkMarketVec = nullptr;
 	m_bIsStockIndex = true;
+
 }
+
+
+void CDealList::ChangeShowData(SStringA StockID)
+{
+	m_strSubID = StockID;
+}
+
 
 void CDealList::Paint(IRenderTarget * pRT)
 {

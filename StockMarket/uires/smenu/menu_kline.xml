@@ -5,20 +5,46 @@
   <sep/>
   <item id="203" check="0">波段优化</item>
   <sep/>
+  <item   text="成交量/额" id="219" check="0"  contextHelpId="2">
     <item id="204" check="0">成交量</item>
+    <item id="220" check="0">成交额</item>
+  </item>
+  <sep/>
+  <item   text="集竞成交量/额" id="223" check="0"  contextHelpId="2">
+    <item id="224" check="0">集竞成交量</item>
+    <item id="225" check="0">集竞成交额</item>
+  </item>
+  <sep/>
+  <item   text="订单流数据" id="228" check="0"  contextHelpId="2">
+    <item id="229" check="0">主被动成交量比</item>
+    <item id="230" check="0">主动成交量</item>
+    <item id="231" check="0">主动挂单数</item>
+    <item id="232" check="0">主动单数平均手数</item>
+  </item>
   <sep/>
   <item id="205" check="0">MACD</item>
   <sep/>
-    <item id="206" check="0">RPS</item>
+  <item   text="打分数据窗口" id="206"  contextHelpId="2">
+    <item id="210"  check="0">0</item>
+    <item id="211"  check="0">1</item>
+    <item id="212"  check="0">2</item>
+    <item id="213"  check="0">3</item>
+    <item id="214"  check="0">4</item>
+    <item id="215"  check="0">5</item>
+    <item id="216"  check="0">6</item>
+    <item id="217"  check="0">7</item>
+    <item id="218"  check="0">8</item>
+  </item>  
   <sep/>
   <item   text="修改参数"  contextHelpId="2">
     <item id="207">MACD参数</item>
     <item id="208">波段优化参数</item>
     <item id="209">MA参数</item>
+    <item id="221">成交量MA参数</item>
+    <item id="222">成交额MA参数</item>
+    <item id="226">集竞成交量MA参数</item>
+    <item id="227">集竞成交额MA参数</item>
   </item>
-  <item id="210" >申万1级RPS</item>
-  <sep/>
-  <item id="211" >申万2级RPS</item>
   <sep/>
   <item id="200" >返回</item>
 </menu>

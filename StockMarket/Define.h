@@ -7,19 +7,26 @@
 #include<string>
 #include<vector>
 #include<map>
+#include<set>
+#include "IniFile.h"
 
 using std::unordered_map;
 using std::hash;
 using std::string;
 using std::vector;
 using std::map;
+using std::set;
+using std::pair;
 
 
 typedef char SecurityID[8];
 
 #define MAX_BAR_COUNT		10500
 #define MAX_DATA_COUNT		10500
-#define MAX_MA_COUNT		4
+#define MAX_MA_COUNT		6
+
+#define MAX_NAME_LENGTH		32
+
 
 struct hash_SStringA
 {
@@ -36,7 +43,25 @@ public:
 	unordered_map<SStringA, type, hash_SStringA> hash;
 };
 
+template<typename type>
+struct strVecHash
+{
+	unordered_map<SStringA, vector<type>,
+		hash_SStringA> vecHash;
+};
 
+
+template<typename type>
+struct strMapHash
+{
+	unordered_map<SStringA, map<SStringA, type>, hash_SStringA> mapHash;
+};
+
+template<typename type>
+struct strMapVecHash
+{
+	unordered_map<SStringA, map<SStringA, vector<type>>, hash_SStringA> mapVecHash;
+};
 
 
 //typedef struct _TimeLineData
@@ -63,8 +88,8 @@ typedef struct  _TimeLineData
 }TimeLineData;
 
 
-typedef unordered_map<SStringA, map<SStringA, CoreData>, hash_SStringA> TimeLineMap;
-typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> TimeLineArrMap;
+//typedef unordered_map<SStringA, map<SStringA, CoreData>, hash_SStringA> TimeLineMap;
+//typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> TimeLineArrMap;
 
 
 enum RecvMsgType
@@ -73,7 +98,7 @@ enum RecvMsgType
 	RecvMsg_RTTimeLine,
 	RecvMsg_TodayTimeLine,
 	RecvMsg_NoUse,
-	RecvMsg_HisPoint,
+	RecvMsg_HisRpsPoint,
 	RecvMsg_LastDayEma,
 	RecvMsg_RTIndexMarket,
 	RecvMsg_RTStockMarket,
@@ -85,17 +110,31 @@ enum RecvMsgType
 	RecvMsg_Reinit,
 	RecvMsg_RTTFMarket,
 	RecvMsg_RTRps,
+	RecvMsg_HisSecPoint,
+	RecvMsg_RehabInfo,
+	RecvMsg_CallAction,
+	RecvMsg_HisCallAction,
+	RecvMsg_HisMultiData,
+	RecvMsg_HisIndexKline,
+	RecvMsg_HisMultiDataForHSF,
+	RecvMsg_HisTFBase,
+	RecvMsg_TodayTFMarket,
+
 };
 
 enum SendMsgType
 {
 	SendType_MsgNoUse = 100,
-	SendType_GetHisPoint,
+	SendType_GetHisRpsPoint,
 	SendType_IndexMarket,
 	SendType_StockMarket,
 	SendType_HisPeriodKline,
 	SendType_SubIns,
-
+	SendType_GetHisSecPoint,
+	SendType_HisCallAction,
+	SendType_HisMultiData,
+	SendType_IndexHisDayKline,
+	SendType_HisTFBase,
 };
 
 enum ComSendMsgType
@@ -107,6 +146,26 @@ enum ComSendMsgType
 	ComSend_UpdateFile,
 	ComSend_UpdateFileVer,
 };
+
+enum BackTestingMsgType
+{
+	BTM_UpdateList = 0,
+	BTM_GetData,
+	BTM_SingleCalcFinish,
+	BTM_AllFinish,
+	BTM_GetHisData,
+	BTM_SingleHisCalcFinish,
+	BTM_AllHisFinish,
+
+};
+
+enum LimitUpMsgType
+{
+	LUM_UpdatePlate = 0,
+	LUM_UpdateToday,
+	LUM_UpdateShowPlate,
+};
+
 
 typedef struct _SortPara
 {
@@ -196,7 +255,7 @@ typedef struct _ReceivePointInfo
 			&ri, sizeof(ri));
 	}
 	int MsgType;
-	char InsID[10];
+	char Message[10];
 	int Group;
 	int Period;
 	unsigned long TotalDataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
@@ -211,14 +270,30 @@ enum SListHead
 	SHead_Name,
 	SHead_LastPx,
 	SHead_ChangePct,
-	SHead_RPS520,
-	SHead_MACD520,
-	SHead_Point520,
-	SHead_Rank520,
-	SHead_RPS2060,
-	SHead_MACD2060,
-	SHead_Point2060,
-	SHead_Rank2060,
+	SHead_CloseRPS520,
+	SHead_CloseMACD520,
+	SHead_ClosePoint520,
+	SHead_CloseRank520,
+	SHead_CloseRPS2060,
+	SHead_CloseMACD2060,
+	SHead_ClosePoint2060,
+	SHead_CloseRank2060,
+	SHead_AmountRPS520,
+	SHead_AmountMACD520,
+	SHead_AmountPoint520,
+	SHead_AmountRank520,
+	SHead_AmountRPS2060,
+	SHead_AmountMACD2060,
+	SHead_AmountPoint2060,
+	SHead_AmountRank2060,
+	SHead_AmountPoint,
+	SHead_AmountRank,
+	SHead_CAVol,
+	SHead_CAVolPoint,
+	SHead_CAVolRank,
+	SHead_CAAmo,
+	SHead_CAAmoPoint,
+	SHead_CAAmoRank,
 	SHead_CommonItmeCount,
 	SHead_TickFlowStart = SHead_CommonItmeCount,
 	SHead_ActBuySellRatio = SHead_TickFlowStart,
@@ -232,10 +307,65 @@ enum SListHead
 	SHead_High,
 	SHead_Low,
 	SHead_Amount,
+	SHead_ActBuyOrder,
+	SHead_ActSellOrder,
+	SHead_AvgActBuyNum,
+	SHead_AvgActSellNum,
 	SHead_StockItemCount,
 };
 
-typedef struct SendInfo
+enum SBackTestingListHead
+{
+	SBTH_Num = 0,
+	SBTH_ID,
+	SBTH_Date,
+	SBTH_ROR1,
+	SBTH_ROR3,
+	SBTH_ROR5,
+	SBTH_ROR10,
+	SBTH_ROR1Over300,
+	SBTH_ROR3Over300,
+	SBTH_ROR5Over300,
+	SBTH_ROR10Over300,
+	SBTH_ROR1OverIndy1,
+	SBTH_ROR3OverIndy1,
+	SBTH_ROR5OverIndy1,
+	SBTH_ROR10OverIndy1,
+	SBTH_ROR1OverIndy2,
+	SBTH_ROR3OverIndy2,
+	SBTH_ROR5OverIndy2,
+	SBTH_ROR10OverIndy2,
+	SBTH_ItemCount,
+};
+
+enum SBackTestingAvgListHead
+{
+	SBTAH_DataCount = 0,
+	SBTAH_ROR1,
+	SBTAH_ROR3,
+	SBTAH_ROR5,
+	SBTAH_ROR10,
+	SBTAH_ROR1Over300,
+	SBTAH_ROR3Over300,
+	SBTAH_ROR5Over300,
+	SBTAH_ROR10Over300,
+	SBTAH_ROR1OverIndy1,
+	SBTAH_ROR3OverIndy1,
+	SBTAH_ROR5OverIndy1,
+	SBTAH_ROR10OverIndy1,
+	SBTAH_ROR1OverIndy2,
+	SBTAH_ROR3OverIndy2,
+	SBTAH_ROR5OverIndy2,
+	SBTAH_ROR10OverIndy2,
+	SBTAH_ItemCount,
+};
+
+
+const int g_nListNewItemStart = SHead_CAVol;
+const int g_nListNewItemEnd = SHead_CAAmoRank;
+
+
+typedef struct _SendInfo
 {
 	int MsgType;
 	char str[10];
@@ -243,13 +373,21 @@ typedef struct SendInfo
 	int  Period;
 }SendInfo;
 
-typedef struct SendIDInfo
+typedef struct _SendIDInfo
 {
 	int MsgType;
 	char NoUse1[10];
 	int  ClinetID;
 	int  NoUse2;
-}SendIDInfo_t;
+}SendIDInfo;
+
+typedef struct _SendInfoWithDate
+{
+	int MsgType;
+	char StockID[10];
+	int  StartDate;
+	int  EndDate;
+}SendInfoWithDate;
 
 
 
@@ -257,32 +395,43 @@ SStringW StrA2StrW(const SStringA &sstrSrcA);
 
 SStringA StrW2StrA(const SStringW &cstrSrcW);
 
-int SendMsg(unsigned uThreadId, unsigned MsgType,const char *SendBuf, unsigned BufLen);
+int SendMsg(unsigned uThreadId, unsigned MsgType, const char *SendBuf, unsigned BufLen);
 int	RecvMsg(int  msgQId, char** buf, int& length, int timeout);
+
+HRESULT OpenFile(LPTSTR FileName);
+HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName);
+
 
 enum DataProcType
 {
-	UpdateData=10000,
+	UpdateData = 10000,
 	UpdateTodayData,
 	UpdateLastDayEma,
 	ClearOldData,
 	UpdateTFMarket,
 	UpdateRtRps,
-	Msg_ReInit=77777,
+	UpdateCallAction,
+	BackTesting,
+	GetTodayLimitUp,
+	GetPlateLimitUp,
+	ReInitLimitUp,
+	limitUpReconnect,
+	CheckHisFilterPass,
+	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };
 
 enum SynMsg
 {
-	Syn_AddWnd=20000,
+	Syn_AddWnd = 20000,
 	Syn_RemoveWnd,
 	Syn_ListData,
 	Syn_GetMarket,
 	Syn_GetKline,
 	Syn_GetPoint,
 	Syn_Point,
-	Syn_TodayPoint,
-	Syn_HisPoint,
+	Syn_NoUse,
+	Syn_HisRpsPoint,
 	Syn_RTIndexMarket,
 	Syn_RTStockMarket,
 	Syn_HisIndexMarket,
@@ -291,7 +440,15 @@ enum SynMsg
 	Syn_CloseInfo,
 	Syn_Reinit,
 	Syn_FilterData,
-
+	Syn_GetSecPoint,
+	Syn_HisSecPoint,
+	Syn_RehabInfo,
+	Syn_HisCallAction,
+	Syn_GetCallAction,
+	Syn_HisTFBase,
+	Syn_GetHisTFBase,
+	Syn_TodayTFMarket,
+	Syn_RTTFMarkt,
 };
 
 enum WorkWndMsg
@@ -301,8 +458,8 @@ enum WorkWndMsg
 	WW_GetKline,
 	WW_GetPoint,
 	WW_Point,
-	WW_TodayPoint,
-	WW_HisPoint,
+	WW_NoUse,
+	WW_HisRpsPoint,
 	WW_RTIndexMarket,
 	WW_RTStockMarket,
 	WW_HisIndexMarket,
@@ -320,6 +477,20 @@ enum WorkWndMsg
 	WW_InnerMsgEnd,
 	WW_ChangeStockFilter,
 	WW_SaveStockFilter,
+	WW_HisSecPoint,
+	WW_RehabInfo,
+	WW_ChangeRehab,
+	WW_FixedTimeRehab,
+	WW_HisCallAction,
+	WW_GetCallAction,
+	WW_ChangeHisFiterState,
+	WW_HisFilterStartCalc,
+	WW_HisFilterEndCalc,
+	WW_HisTFBase,
+	WW_GetHisTFBase,
+	WW_TodayTFMarket,
+	WW_RTTFMarket,
+
 };
 
 
@@ -334,7 +505,7 @@ enum StockInfoType
 
 enum WDMSG
 {
-	WDMsg_UpdateList,
+	WDMsg_UpdateListData,
 	WDMsg_UpdatePic,
 	WDMsg_SubIns,
 	WDMsg_HideWindow,
@@ -346,6 +517,15 @@ enum WDMSG
 	WDMsg_OpenWindow,
 	WDMsg_ChangeStockFilter,
 	WDMsg_SaveStockFilter,
+	WDMsg_ChangePointTarget,
+	WDMsg_ChangeShowTilte,
+	WDMsg_SaveListConfig,
+	WDMsg_UpdateList,
+	WDMsg_SetFilterName,
+	WDMsg_ChangeHisStockFilter,
+	WDMsg_HisFilterStartCalc,
+	WDMsg_HisFilterEndCalc,
+
 	WDMsg_Exit,
 
 };
@@ -426,16 +606,17 @@ typedef struct CommonIndexMarket
 };
 
 
-typedef struct KlineType
+typedef struct _KlineWithAmount
 {
+	int date;		//日期
+	int time;		//时间
 	double open;	//开
 	double high;	//高
 	double low;		//低
 	double close;	//收
 	double vol;		//量
-	int date;		//日期
-	int time;		//时间
-};
+	double amount;	//金额
+}KlineType;
 
 typedef struct MACDType
 {
@@ -502,6 +683,28 @@ typedef struct MACDDataType
 	double fMax;
 	double fMin;
 }MACDData_t;
+
+typedef struct _TFDataType
+{
+	double	ABSR[MAX_BAR_COUNT];
+	double	A2PBSR[MAX_BAR_COUNT];
+	double	AABSR[MAX_BAR_COUNT];
+	int		ActBuyVol[MAX_BAR_COUNT];
+	int		ActSellVol[MAX_BAR_COUNT];
+	double	AvgActBuyVol[MAX_BAR_COUNT];
+	double	AvgActSellVol[MAX_BAR_COUNT];
+	int		ActBuyOrder[MAX_BAR_COUNT];
+	int		ActSellOrder[MAX_BAR_COUNT];
+	double	fMaxRatio;
+	double	fMinRatio;
+	int		nMaxActVol;
+	int		nMinActVol;
+	int		nMaxActOrder;
+	int		nMinActOrder;
+	double	fMaxAvgVol;
+	double	fMinAvgVol;
+
+}TFData;
 
 
 
@@ -584,12 +787,18 @@ typedef struct _FENSHI_ALLINFO
 }FENSHI_INFO;
 
 typedef struct _AllKPIC_INFO {
-	KlineType		data[MAX_DATA_COUNT];	//data信息
+	KlineType		srcData[MAX_DATA_COUNT]; //原始未复权数据
+	KlineType		data[MAX_DATA_COUNT];	//复权后的K线
 	double			fMa[MAX_MA_COUNT][MAX_DATA_COUNT];
+	double			fVolMa[MAX_MA_COUNT][MAX_DATA_COUNT];
+	double			fAmoMa[MAX_MA_COUNT][MAX_DATA_COUNT];
 	double			fMax;
 	double			fMin;
-	double			fSubMax;
-	double			fSubMin;
+	double			fVolMax;
+	double			fVolMin;
+	double			fAmountMax;
+	double			fAmountMin;
+	double			fLastAmount;
 	int				nLast1MinTime;		//最新更新所用的1MinK线的时间
 	int				nLastVolume;		//最后使用K线更新时累计的区间内成交量
 	int				nLastTradingDay;	//最后使用K线更新的交易日
@@ -605,8 +814,8 @@ typedef struct _AllKPIC_INFO {
 		ZeroMemory(fMa, sizeof(fMa));
 		fMax = 0;
 		fMin = 0;
-		fSubMax = 0;
-		fSubMin = 0;
+		fVolMax = 0;
+		fVolMin = 0;
 		nTotal = 0;
 		nLast1MinTime = 0;
 		nLastVolume = 0;
@@ -633,7 +842,6 @@ typedef struct EMAType
 	double EMA2;
 };
 
-bool GetFileKlineData(SStringA InsID, vector<KlineType> &dataVec, bool bIsDay = false);
 
 typedef struct _PARAM_TICK_INFO {
 	int			id;				//证券内部编号
@@ -683,6 +891,8 @@ enum TimePreiod
 	Period_End = 65535,
 };
 
+TimePreiod& operator ++(TimePreiod &tp);
+
 void InitLogFile();
 void TraceLog(char* log, ...);
 
@@ -705,7 +915,7 @@ typedef struct LoginInfo
 
 enum FSMSG
 {
-	FSMSG_UPDATE=0,
+	FSMSG_UPDATE = 0,
 	FSMSG_EMA,
 	FSMSG_MACD,
 	FSMSG_COUNT,
@@ -717,13 +927,7 @@ enum KLINEMSG
 	KLINEMSG_MA,
 	KLINEMSG_MACD,
 	KLINEMSG_BAND,
-};
-
-enum DATAMSG
-{
-	DM_MARKET = 0,
-	DM_HISKLINE,
-	DM_HISPOINT,
+	KLINEMSG_REHAB,
 };
 
 enum FSMenu
@@ -732,13 +936,23 @@ enum FSMenu
 	FM_Deal,
 	FM_Volume,
 	FM_MACD,
-	FM_RPS,
+	//FM_RPS,
+	FM_PonitWndNum,
 	FM_MacdPara,
 	FM_Avg,
 	FM_EMA,
 	FM_EmaPara,
-	FM_L1RPS,
-	FM_L2RPS,
+	//FM_L1RPS,
+	//FM_L2RPS,
+	FM_PointWnd0,
+	FM_PointWnd1,
+	FM_PointWnd2,
+	FM_PointWnd3,
+	FM_PointWnd4,
+	FM_PointWnd5,
+	FM_PointWnd6,
+	FM_PointWnd7,
+	FM_PointWnd8,
 	FM_End,
 };
 
@@ -750,12 +964,36 @@ enum KlineMenu
 	KM_Band,
 	KM_Volume,
 	KM_MACD,
-	KM_RPS,
+	//KM_RPS,
+	KM_PonitWndNum,
 	KM_MacdPara,
 	KM_BandPara,
 	KM_MaPara,
-	KM_L1RPS,
-	KM_L2RPS,
+	//KM_L1RPS,
+	//KM_L2RPS,
+	KM_PointWnd0,
+	KM_PointWnd1,
+	KM_PointWnd2,
+	KM_PointWnd3,
+	KM_PointWnd4,
+	KM_PointWnd5,
+	KM_PointWnd6,
+	KM_PointWnd7,
+	KM_PointWnd8,
+	KM_VolOrAmo,
+	KM_Amount,
+	KM_VolMaPara,
+	KM_AmoMaPara,
+	KM_CAVolOrAmo,
+	KM_CAVol,
+	KM_CAAmo,
+	KM_CAVolMaPara,
+	KM_CAAmoMaPara,
+	KM_TickFlow,
+	KM_TFRatio,
+	KM_TFVol,
+	KM_TFOrder,
+	KM_TFAvgVol,
 	KM_End,
 };
 
@@ -765,6 +1003,14 @@ enum WDMenu
 	WDM_New,
 	WDM_Open,
 	WDM_End,
+};
+
+//指标选择
+enum TSMenu
+{
+	TSM_Close = 400,
+	TSM_Select,
+	TSM_End,
 };
 
 enum ReceiveCommonMsgType
@@ -793,63 +1039,28 @@ typedef struct _DataGetInfo
 	int Period;
 }DataGetInfo;
 
-enum 
+
+enum
 {
-	DT_ListData=0,
+	DT_ListData = 0,
 	DT_TFMarket,
 	DT_FilterData,
 	DT_IndexMarket,
 	DT_StockMarket,
 	DT_Kline,
 	DT_Point,
+	DT_L1IndyFilterData,
+	DT_L2IndyFilterData,
+	DT_CallAction,
+	DT_StockPos,
+	DT_L1IndyIndexPos,
+	DT_L2IndyIndexPos,
 };
 
-typedef struct InitPara
-{
-	bool bShowMA;
-	bool bShowBandTarget;
-	bool bShowAverage;
-	bool bShowEMA;
-	bool bShowTSCMACD;
-	bool bShowTSCVolume;
-	bool bShowKlineVolume;
-	bool bShowKlineMACD;
-	bool bShowTSCRPS[3];
-	bool bShowKlineRPS[3];
-	int  nWidth;
-	bool bShowTSCDeal;
-	bool bShowKlineDeal;
-	int  nEMAPara[2];
-	int  nMACDPara[3];
-	int	 nMAPara[4];
-	int	 nJiange;
-	BandPara_t  BandPara;
-	int Period;
-	bool Connect1;
-	bool Connect2;
-	char ShowIndy[8];
-	bool UseStockFilter;
-	bool ListShowST;
-	bool ListShowSBM;
-	bool ListShowSTARM;
-	bool ListShowNewStock;
-	InitPara() :bShowMA(true), bShowBandTarget(false),
-		bShowAverage(true), bShowEMA(true),
-		bShowTSCMACD(true), bShowTSCVolume(false),
-		bShowKlineVolume(false), bShowTSCRPS{ false,false,false },
-		bShowKlineRPS{ false ,false,false }, nWidth(9),
-		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
-		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
-		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
-		Connect1(false), Connect2(false), ShowIndy(""),UseStockFilter(false),
-		ListShowST(true), ListShowSBM(true),
-		ListShowSTARM(true), ListShowNewStock(true)
-	{}
-}InitPara_t;
 
 enum SF_FUNC
 {
-	SFF_Add=0,
+	SFF_Add = 0,
 	SFF_Change,
 	SFF_Delete,
 	SFF_Count,
@@ -858,7 +1069,7 @@ enum SF_FUNC
 enum SF_PERIOD
 {
 	SFP_Null = -1,
-	SFP_D1=0,
+	SFP_D1 = 0,
 	SFP_FS,
 	SFP_M1,
 	SFP_M5,
@@ -870,26 +1081,157 @@ enum SF_PERIOD
 
 enum SF_INDEX
 {
-	SFI_ChgPct =0,
-	SFI_Rps520,
-	SFI_Macd520,
-	SFI_Point520,
-	SFI_Rank520,
-	SFI_Rps2060,
-	SFI_Macd2060,
-	SFI_Point2060,
-	SFI_Rank2060,
+	SFI_Start = 0,
+	SFI_ChgPct = SFI_Start,
+	SFI_CloseRps520,
+	SFI_CloseMacd520,
+	SFI_ClosePoint520,
+	SFI_CloseRank520,
+	SFI_CloseRps2060,
+	SFI_CloseMacd2060,
+	SFI_ClosePoint2060,
+	SFI_CloseRank2060,
 	SFI_Num,
 	SFI_ABSR,
 	SFI_A2PBSR,
 	SFI_AABSR,
 	SFI_POCR,
+	SFI_Vol,
+	SFI_Amount,
+	SFI_AmountRps520,
+	SFI_AmountMacd520,
+	SFI_AmountPoint520,
+	SFI_AmountRank520,
+	SFI_AmountRps2060,
+	SFI_AmountMacd2060,
+	SFI_AmountPoint2060,
+	SFI_AmountRank2060,
+	SFI_AmountPoint,
+	SFI_AmountRank,
+	//在一级行业和二级行业中的计算数据
+	SFI_CloseRps520L1,
+	SFI_CloseMacd520L1,
+	SFI_ClosePoint520L1,
+	SFI_CloseRank520L1,
+	SFI_CloseRps2060L1,
+	SFI_CloseMacd2060L1,
+	SFI_ClosePoint2060L1,
+	SFI_CloseRank2060L1,
+	SFI_AmountRps520L1,
+	SFI_AmountMacd520L1,
+	SFI_AmountPoint520L1,
+	SFI_AmountRank520L1,
+	SFI_AmountRps2060L1,
+	SFI_AmountMacd2060L1,
+	SFI_AmountPoint2060L1,
+	SFI_AmountRank2060L1,
+	SFI_AmountPointL1,
+	SFI_AmountRankL1,
+	SFI_CloseRps520L2,
+	SFI_CloseMacd520L2,
+	SFI_ClosePoint520L2,
+	SFI_CloseRank520L2,
+	SFI_CloseRps2060L2,
+	SFI_CloseMacd2060L2,
+	SFI_ClosePoint2060L2,
+	SFI_CloseRank2060L2,
+	SFI_AmountRps520L2,
+	SFI_AmountMacd520L2,
+	SFI_AmountPoint520L2,
+	SFI_AmountRank520L2,
+	SFI_AmountRps2060L2,
+	SFI_AmountMacd2060L2,
+	SFI_AmountPoint2060L2,
+	SFI_AmountRank2060L2,
+	SFI_AmountPointL2,
+	SFI_AmountRankL2,
+	SFI_ABV,
+	SFI_ASV,
+	SFI_ABO,
+	SFI_ASO,
+	SFI_PBO,
+	SFI_PSO,
+
+	SFI_Open,
+	SFI_High,
+	SFI_Low,
+	SFI_Close,
+
+	SFI_CAVol,
+	SFI_CAVolPoint,
+	SFI_CAVolRank,
+	SFI_CAVolPointL1,
+	SFI_CAVolRankL1,
+	SFI_CAVolPointL2,
+	SFI_CAVolRankL2,
+
+	SFI_CAAmo,
+	SFI_CAAmoPoint,
+	SFI_CAAmoRank,
+	SFI_CAAmoPointL1,
+	SFI_CAAmoRankL1,
+	SFI_CAAmoPointL2,
+	SFI_CAAmoRankL2,
+
+	//对应一级行业和二级行业的数据
+
+	SFI_LastPx,
+
 	SFI_Count,
+
+};
+enum SF_L1INDYINDEX
+{
+	SFI_L1IndyStart = 1000,
+	SFI_L1IndyCloseRps520 = SFI_L1IndyStart,
+	SFI_L1IndyCloseMacd520,
+	SFI_L1IndyClosePoint520,
+	SFI_L1IndyCloseRank520,
+	SFI_L1IndyCloseRps2060,
+	SFI_L1IndyCloseMacd2060,
+	SFI_L1IndyClosePoint2060,
+	SFI_L1IndyCloseRank2060,
+	SFI_L1IndyAmountRps520,
+	SFI_L1IndyAmountMacd520,
+	SFI_L1IndyAmountPoint520,
+	SFI_L1IndyAmountRank520,
+	SFI_L1IndyAmountRps2060,
+	SFI_L1IndyAmountMacd2060,
+	SFI_L1IndyAmountPoint2060,
+	SFI_L1IndyAmountRank2060,
+	SFI_L1IndyAmountPoint,
+	SFI_L1IndyAmountRank,
+	SFI_L1IndyCount,
+
+};
+
+enum SF_L2INDYINDEX
+{
+	SFI_L2IndyStart = 2000,
+	SFI_L2IndyCloseRps520 = SFI_L2IndyStart,
+	SFI_L2IndyCloseMacd520,
+	SFI_L2IndyClosePoint520,
+	SFI_L2IndyCloseRank520,
+	SFI_L2IndyCloseRps2060,
+	SFI_L2IndyCloseMacd2060,
+	SFI_L2IndyClosePoint2060,
+	SFI_L2IndyCloseRank2060,
+	SFI_L2IndyAmountRps520,
+	SFI_L2IndyAmountMacd520,
+	SFI_L2IndyAmountPoint520,
+	SFI_L2IndyAmountRank520,
+	SFI_L2IndyAmountRps2060,
+	SFI_L2IndyAmountMacd2060,
+	SFI_L2IndyAmountPoint2060,
+	SFI_L2IndyAmountRank2060,
+	SFI_L2IndyAmountPoint,
+	SFI_L2IndyAmountRank,
+	SFI_L2IndyCount,
 };
 
 enum SF_CONDITION
 {
-	SFC_Greater=0,
+	SFC_Greater = 0,
 	SFC_EqualOrGreater,
 	SFC_Equal,
 	SFC_EqualOrLess,
@@ -906,7 +1248,7 @@ typedef struct _StockFilterCondition
 
 enum ConditionsState
 {
-	CS_And=0,
+	CS_And = 0,
 	CS_Or,
 };
 
@@ -924,11 +1266,13 @@ enum SF_LISTHEAD
 	SFLH_Condition,
 	SFLH_Index2,
 	SFLH_Period2OrNum,
+	SFLH_CountDay,
+	SFLH_JudgeType,
 };
 
 enum SF_DOMAIN
 {
-	SFD_ST=0,
+	SFD_ST = 0,
 	SFD_SBM,
 	SFD_STARM,
 	SFD_NewStock,
@@ -965,7 +1309,7 @@ void OutputDebugStringFormat(char *fmt, ...);
 
 enum FUNCMSG
 {
-	FNCMsg_InsertFunc=0,
+	FNCMsg_InsertFunc = 0,
 };
 
 
@@ -977,7 +1321,7 @@ enum FORMULAMSG
 
 enum FILTERMSG
 {
-	FilterMsg_ReinitFrml=0,
+	FilterMsg_ReinitFrml = 0,
 	FilterMsg_Search,
 	FilterMsg_UpdateFrml,
 	FilterMsg_SaveFrmlList,
@@ -987,22 +1331,16 @@ enum FILTERMSG
 
 enum SerachDir
 {
-	SD_Up=0,
+	SD_Up = 0,
 	SD_Down
 };
 
-HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[],size_t arrySize,LPCTSTR filePath);
+HRESULT OpenFile(LPTSTR FileName, COMDLG_FILTERSPEC fileType[], size_t arrySize, LPCTSTR filePath);
 HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
-	COMDLG_FILTERSPEC fileType[], size_t arrySize,LPCTSTR filePath);
+	COMDLG_FILTERSPEC fileType[], size_t arrySize, LPCTSTR filePath);
 
-typedef struct _RtRpsData
+typedef struct _rpsdata
 {
-	SecurityID SecurityID;
-	int nGroup;
-	double fPrice;
-	int nDate;
-	int nTime;
-	int nPeriod;
 	double fMacd520;
 	double fMacd2060;
 	double fRps520;
@@ -1019,4 +1357,413 @@ typedef struct _RtRpsData
 	double fL2Point2060;
 	int	nL2Rank520;
 	int nL2Rank2060;
+}sRps;
+
+typedef struct _sectionData
+{
+	double point;
+	double pointL1;
+	double pointL2;
+	int rank;
+	int rankL1;
+	int rankL2;
+}sSection;
+
+typedef struct _RtRpsData
+{
+	SecurityID SecurityID;
+	int nGroup;
+	double fPrice;
+	int nDate;
+	int nTime;
+	int nPeriod;
+	sRps rpsClose;
+	sRps rpsAmount;
+	sSection secAmount;
 }RtRps;
+
+inline double EMA(int nCount, double preEMA, double data)
+{
+	return preEMA*(nCount - 1) / (nCount + 1) + data * 2 / (nCount + 1);
+}
+
+enum ePointType
+{
+	eRpsPoint = 0,
+	eSecPoint,
+};
+
+typedef struct _UsedPointInfo
+{
+	int overallType;
+	ePointType type;
+	SStringA srcDataName;
+	SStringA dataInRange;		//打分数据所在的范围
+	SStringA IndyRange;			//行业范围
+	SStringA showName;
+	bool operator <(const _UsedPointInfo& other) const;
+	bool operator ==(const _UsedPointInfo& other) const;
+}ShowPointInfo;
+
+
+
+// 具体的打分数据类型
+enum ePointDataType
+{
+	ePointStart,
+	eFullMarketPointStart = ePointStart,
+	eRpsPoint_Close = eFullMarketPointStart,
+	eRpsPoint_Amount,
+	eSecPoint_Amount,
+	eFullMarketPointEnd,
+	eIndyMarketPointStart = eFullMarketPointEnd,
+	eRpsPoint_L1_Close = eIndyMarketPointStart,
+	eRpsPoint_L2_Close,
+	eRpsPoint_L1_Amount,
+	eRpsPoint_L2_Amount,
+	eSecPoint_L1_Amount,
+	eSecPoint_L2_Amount,
+	eIndyMarketPointEnd,
+	ePointEnd = eIndyMarketPointEnd,
+};
+
+enum eL1IndyPointDataType
+{
+	eL1IndyPointStart = 100,
+	eL1Indy_RpsPoint_Close = eL1IndyPointStart,
+	eL1Indy_RpsPoint_Amount,
+	eL1Indy_SecPoint_Amount,
+	eL1IndyPointEnd,
+};
+
+enum eL2IndyPointDataType
+{
+	eL2IndyPointStart = 200,
+	eL2Indy_RpsPoint_Close = eL2IndyPointStart,
+	eL2Indy_RpsPoint_Amount,
+	eL2Indy_SecPoint_Amount,
+	eL2IndyPointEnd,
+};
+
+enum eCAPointDataType
+{
+	eCAPointStart = 300,
+	eCAFullMarketPointStart = eCAPointStart,
+	eCAPoint_Volume = eCAFullMarketPointStart,
+	eCAPoint_Amount,
+	eCAPointFullMarketEnd,
+	eCAIndyMarketPointStart = eCAPointFullMarketEnd,
+	eCAPoint_L1_Volume = eCAIndyMarketPointStart,
+	eCAPoint_L2_Volume,
+	eCAPoint_L1_Amount,
+	eCAPoint_L2_Amount,
+	eCAIndyMarketPointEnd,
+	eCAPointEnd = eCAIndyMarketPointEnd,
+};
+
+
+typedef struct _ExDataDetInfo :public DataGetInfo
+{
+	int nAskGroup;	//请求的窗口周期
+	ePointType Type;
+	char* exMsg;
+}ExDataGetInfo;
+
+
+typedef struct InitPara
+{
+	bool bShowMA;
+	bool bShowBandTarget;
+	bool bShowAverage;
+	bool bShowEMA;
+	bool bShowTSCMACD;
+	bool bShowTSCVolume;
+	bool bShowKlineVolume;
+	bool bShowKlineAmount;
+	bool bShowKlineCAVol;
+	bool bShowKlineCAAmo;
+	bool bShowKlineMACD;
+	bool bShowTSCRPS[3];
+	bool bShowKlineRPS[3];
+	int  nWidth;
+	bool bShowTSCDeal;
+	bool bShowKlineDeal;
+	int  nEMAPara[2];
+	int  nMACDPara[3];
+	int	 nMAPara[MAX_MA_COUNT];
+	int	 nVolMaPara[MAX_MA_COUNT];
+	int  nAmoMaPara[MAX_MA_COUNT];
+	int	 nCAVolMaPara[MAX_MA_COUNT];
+	int	 nCAAmoMaPara[MAX_MA_COUNT];
+	int	 nJiange;
+	BandPara_t  BandPara;
+	int Period;
+	bool Connect1;
+	bool Connect2;
+	char ShowIndy[8];
+	bool UseStockFilter;
+	bool ListShowST;
+	bool ListShowSBM;
+	bool ListShowSTARM;
+	bool ListShowNewStock;
+	int nTSCPointWndNum;
+	int nKlinePointWndNum;
+	int nKlineRehabType;		//用于显示的复权类型
+	int nKlineCalcRehabType;	//用于内部计算的复权类型
+	int nKlineFTRehabDate;
+	bool UseHisStockFilter;
+	bool bKlineUseTickFlowData;
+	int	 nKlineTickFlowDataType;
+	vector<ShowPointInfo> TSCPonitWndInfo;
+	vector<ShowPointInfo> KlinePonitWndInfo;
+	SStringA strFilterName;
+
+	InitPara() :bShowMA(true), bShowBandTarget(false),
+		bShowAverage(true), bShowEMA(true),
+		bShowTSCMACD(true), bShowTSCVolume(false),
+		bShowKlineVolume(false), bShowKlineAmount(false),
+		bShowKlineCAVol(false), bShowKlineCAAmo(false),
+		bShowTSCRPS{ false,false,false },
+		bShowKlineRPS{ false ,false,false }, nWidth(9),
+		bShowKlineMACD(true), bShowTSCDeal(true), bShowKlineDeal(false),
+		nEMAPara{ 12,26 }, nMACDPara{ 12,26,9 },
+		nMAPara{ 5,10,20,60 }, nJiange(2), Period(Period_1Day),
+		Connect1(false), Connect2(false), ShowIndy(""), UseStockFilter(false),
+		ListShowST(true), ListShowSBM(true),
+		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
+		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), 
+		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName("")
+	{}
+}InitPara_t;
+
+enum eSortDataType
+{
+	eSDT_Double = 0,
+	eSDT_Int,
+	eSDT_String,
+	eSDT_BigDouble,
+	eSDT_Uint64,
+};
+
+typedef struct _StockFilterPara
+{
+	bool operator <(const _StockFilterPara& other) const;
+	bool operator ==(const _StockFilterPara& other) const;
+	double num;
+	int index1;
+	int period1;
+	int condition;
+	int index2;
+	int period2;
+}StockFilter;
+
+typedef struct _HisStockFilterPara
+{
+	bool operator <(const _HisStockFilterPara& other) const;
+
+	StockFilter sf;
+	int countDay;
+	int type;
+}HisStockFilter;
+
+enum eJudgeType
+{
+	eJT_Exist = 0,
+	eJT_Forall,
+};
+
+enum eMaType
+{
+	eMa_Close = 0,
+	eMa_Volume,
+	eMa_Amount,
+	eMa_CAVol,
+	eMa_CAAmo,
+};
+
+typedef struct _sReHab
+{
+	int exDivDate;
+	double perCashDiv;			//每股现金分红
+	double perShareDivRatio;	//每股送股
+	double perShareTransRatio;	//每股转增股
+	double allotmentRatio;		//每股配股比例
+	double allotmentPrice;		//配股价
+	double adjFactor;			//后复权因子
+	double accumAdjFactor;		//累计后复权因子
+}RehabInfo;
+
+enum eRehabType
+{
+	eRT_NoRehab = 0,
+	eRT_FrontRehab_Cash,
+	eRT_BackRehab_Cash,
+	eRT_Rehab_Cash_FixedTime,
+	eRT_FrontRehab_ReInv,
+	eRT_BackRehab_ReInv,
+	eRT_Rehab_ReInv_FixedTime,
+
+};
+
+enum RehabMenu
+{
+	RM_NoRehab = 500,
+	RM_FrontRehab_Cash,
+	RM_BackRehab_Cash,
+	RM_Rehab_Cash_FixedTime,
+	RM_FrontRehab_ReInv,
+	RM_BackRehab_ReInv,
+	RM_Rehab_ReInv_FixedTime,
+	RM_End,
+
+};
+
+enum FilterWndMenu
+{
+	FWM_Start = 600,
+	FWM_WndNum1 = FWM_Start,
+	FWM_WndNum2,
+	FWM_WndNum3,
+	FWM_WndNum4,
+	FWM_WndNum5,
+	FWM_WndNum6,
+	FWM_End,
+};
+
+typedef struct _sFixedTimeRehab
+{
+	int nDate;
+	BOOL bFrontRehab;
+	eRehabType Type;
+}FixedTimeRehab;
+
+
+typedef struct _RtPointData
+{
+	char dataName[MAX_NAME_LENGTH];
+	CoreData data;
+	char stockID[8];
+	int period;
+}RtPointData;
+
+typedef struct _CAInfo
+{
+	SecurityID SecurityID;
+	int date;
+	int group;
+	double Volume;
+	double VolPoint;
+	double VolPointL1;
+	double VolPointL2;
+	double Amount;
+	double AmoPoint;
+	double AmoPointL1;
+	double AmoPointL2;
+	int VolRank;
+	int VolRankL1;
+	int VolRankL2;
+	int AmoRank;
+	int AmoRankL1;
+	int AmoRankL2;
+}CAInfo;
+
+enum _volAmoType
+{
+	VAT_Volume,
+	VAT_Amount,
+	VAT_CAVol,
+	VAT_CAAmo,
+};
+
+enum _WndType
+{
+	WT_SubWindow,
+	WT_FilterWindow,
+	WT_SetFliterName,
+};
+
+enum SortDirect
+{
+	SD_Greater = 0,
+	SD_Less,
+};
+
+enum eRpsData
+{
+	eRps_RPS520 = 0,
+	eRps_MACD520,
+	eRps_POINT520,
+	eRps_RANK520,
+	eRps_RPS2060,
+	eRps_MACD2060,
+	eRps_POINT2060,
+	eRps_RANK2060,
+	eRps_POINT520L1,
+	eRps_RANK520L1,
+	eRps_POINT2060L1,
+	eRps_RANK2060L1,
+	eRps_RANK520L2,
+	eRps_RANK2060L2,
+	eRps_POINT520L2,
+	eRps_POINT2060L2,
+	eRps_DataCount,
+};
+
+enum eSecData
+{
+	eSec_POINT,
+	eSec_RANK,
+	eSec_POINTL1,
+	eSec_RANKL1,
+	eSec_POINTL2,
+	eSec_RANKL2,
+	eSec_DataCount,
+
+};
+
+enum eComboFilterMsg
+{
+	CFMsg_FinishHis = 0,
+};
+
+void GetInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
+void SaveInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
+
+typedef struct _TickFlowBaseMarket
+{
+	SecurityID SecurityID;
+	int nDate;
+	int nTime;						//时间
+	int nPeriod;
+	double fPrice;
+	double fPOC;						//POC价格
+	uint64_t ActBuyVol;
+	uint64_t ActSellVol;
+	uint32_t uActBuyOrderCount;	//股票主动买入订单数 或 期货多开量
+	uint32_t uActSellOrderCount;	//股票主动卖出订单数 或 期货空开量
+	uint32_t uPasBuyOrderCount;	//股票被动买入订单数 或 期货空平量
+	uint32_t uPasSellOrderCount;	//股票被动卖出订单数 或 期货多平量
+
+}TFBaseMarket;
+
+enum eDataFigureType
+{
+	eDFT_SolidLine=0,
+	eDFT_DotLine,
+	eDFT_Rect,
+};
+
+enum eFigureColorType
+{
+	eFCT_Appoint,//指定颜色
+	eFCT_Default,//默认颜色
+	eFCT_PriceJudge,//根据价格判定
+};
+
+enum eTFDataType
+{
+	eTFDT_Ratio,
+	eTFDT_Vol,
+	eTFDT_Order,
+	eTFDT_AvgVol,
+};

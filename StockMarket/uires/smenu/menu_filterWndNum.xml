@@ -1,0 +1,13 @@
+<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+  <item id="600">1个窗口</item>
+  <sep/>
+  <item id="601" >2个窗口</item>
+    <sep/>
+  <item id="602" >3个窗口</item>
+  <sep/>
+  <item id="603" >4个窗口</item>
+  <sep/>
+  <item id="604" >5个窗口</item>
+  <sep/>
+  <item id="605" >6个窗口</item>
+</menu>

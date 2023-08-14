@@ -1,0 +1,20 @@
+﻿<?xml version="1.0"?>
+<SOUI name="TargetSelect" title="定点复权" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="250" height="170" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+	<root cache="1" colorBkgnd="rgb(50,50,50)">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑"  cache="1" margin="1,1,1,1"  colorBorder="#c0c0c0ff" >
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" >定点复权</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1"  />
+		</caption>
+		<window pos="0,30,-0,-25"  cache="1" font="face:微软雅黑,size:15" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="1,0,1,1"  >
+		<text pos="25,10,@60,@24">开始时间</text>
+		<dateTimePicker pos="[20,{0" size="120,24" name="dtp_rehab" padding="4,0,4,0" dropWidth="300" timeEnable="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<radio name = "radio_FrontRehab" pos="50,[10,@65,@24"  checked="1" text="前复权"/>
+		<radio name = "radio_BackRehab" pos="[20,{0,@65,@24" text="后复权"/>
+		<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="50,[10,@50,@24" animate="1" text="确定" colorText="#ffffff" />
+		<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[50,{0,@50,@24" animate="1" text="取消" colorText="#ffffff" />
+		</window>
+	</root>
+</SOUI>
