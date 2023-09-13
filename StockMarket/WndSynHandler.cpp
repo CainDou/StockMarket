@@ -720,8 +720,11 @@ bool CWndSynHandler::CheckCmdLine()
 		return true;
 	else
 	{
-		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
-			return true;
+		//if (!m_NetClient.GetState())
+		//{
+		//	if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
+		//		return true;
+		//}
 
 		SStringA strMD5 = "";
 		SStringA strFileMD5 = "";
