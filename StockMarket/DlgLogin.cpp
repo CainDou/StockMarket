@@ -28,7 +28,7 @@ CDlgLogin::~CDlgLogin()
 
 void CDlgLogin::OnClickButtonLogin()
 {
-	if (!m_pNetClient->GetState())
+	if (!m_pNetClient->GetConnectState())
 	{
 		if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
 		{
@@ -74,7 +74,7 @@ void CDlgLogin::OnClickButtonLogin()
 void CDlgLogin::OnClickButtonMarket()
 {
 
-	if (!m_pNetClient->GetState())
+	if (!m_pNetClient->GetConnectState())
 	{
 		if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
 		{
@@ -143,8 +143,9 @@ void CDlgLogin::OnInit(EventArgs * e)
 
 	m_pNetClient->SetWndHandle(m_hParWnd);
 	//m_pNetClient->m_socket = INVALID_SOCKET;
-	if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
-		m_pLoginTxt->SetWindowTextW(L"服务器连接失败...");
+	if (!m_pNetClient->GetConnectState())
+		if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
+			m_pLoginTxt->SetWindowTextW(L"服务器连接失败...");
 	if (m_bAutoLogin)
 		OnClickButtonLogin();
 

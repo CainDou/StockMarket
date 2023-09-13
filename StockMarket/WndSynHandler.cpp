@@ -71,10 +71,15 @@ void CWndSynHandler::Run()
 	m_uTradeMsgThreadID = *(unsigned*)&tTradeMsgSyn.get_id();
 	m_NetClient.SetWndHandle(m_hMain);
 	m_NetClient.RegisterHandle(NetHandle);
-	m_NetClient.Start(m_uNetThreadID, this);
 
 	if (!CheckCmdLine())
+	{
+		TraceLog("检查cmdLine时退出");
 		exit(0);
+	}
+
+	m_NetClient.Start(m_uNetThreadID, this);
+
 	tLogin = thread(&CWndSynHandler::Login, this);
 	WaitForSingleObject(g_hLoginEvent, INFINITE);
 	if (bExit)	exit(0);
@@ -720,11 +725,8 @@ bool CWndSynHandler::CheckCmdLine()
 		return true;
 	else
 	{
-		//if (!m_NetClient.GetState())
-		//{
-		//	if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
-		//		return true;
-		//}
+		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
+			return true;
 
 		SStringA strMD5 = "";
 		SStringA strFileMD5 = "";
@@ -754,6 +756,7 @@ bool CWndSynHandler::CheckCmdLine()
 		::CloseHandle(pi.hProcess);
 		::CloseHandle(pi.hThread);
 	}
+	TraceLog("打开AutoUpdate");
 	return false;
 }
 
@@ -2217,7 +2220,7 @@ void CWndSynHandler::OnAccountInfo(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	int nOffset = sizeof(*pRecvInfo);
-	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnAccountInfo, 
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnAccountInfo,
 		(char*)info + nOffset, nMsgLength - nOffset);
 
 }

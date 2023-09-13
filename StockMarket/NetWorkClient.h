@@ -22,6 +22,7 @@ public:
 	BOOL   Stop();
 	SOCKET GetSocket() const;
 	BOOL   GetState() const;
+	BOOL   GetConnectState() const;
 	BOOL   SetState(BOOL bState);
 	BOOL   SetClientID(SOCKET s);
 	SOCKET GetClientID() const;
@@ -59,6 +60,11 @@ inline SOCKET CNetWorkClient::GetSocket() const
 inline BOOL CNetWorkClient::GetState() const
 {
 	return m_bConnected && m_bRun;
+}
+
+inline BOOL CNetWorkClient::GetConnectState() const
+{
+	return m_bConnected;
 }
 
 inline BOOL CNetWorkClient::SetState(BOOL bState)
