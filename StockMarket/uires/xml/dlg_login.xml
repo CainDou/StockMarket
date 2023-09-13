@@ -1,18 +1,28 @@
-<?xml version="1.0"?>
-<SOUI name="dlg_login" title="登陆" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,5,5,5" wndType="normal" appWnd="0">
+﻿<?xml version="1.0"?>
+<SOUI name="dlg_login" title="登陆" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="450" height="300" margin="1,5,5,5" wndType="normal" appWnd="0">
 	<root cache="1">
-		<window pos="0,0,-0,-0" colorBkgnd="rgb(220,220,210)" colorText="#000000ff">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(220,220,210)" colorText="#000000ff" font="face:微软雅黑">
 			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
 				<icon pos="10,8" src="ICON_LOGO:16" />
 				<text pos="29,9" name="txt_title">登陆</text>
+				<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 			</caption>
-			<edit name="login_ID" pos="148,56" size="144, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" maxBuf="16" />
-			<text pos="100,56" size="32, 24">账号</text>
-			<edit name="login_PassWord" pos="148,90" size="144, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" password="1" maxBuf="16" />
-			<text pos="100,90" size="32, 24">密码</text>
-			<imgbtn name="btn_login" pos="128,160" size="56, 24" tip="" animate="1">登陆</imgbtn>
-			<imgbtn name="btn_quit" pos="220,160" size="56, 24" tip="" animate="1">取消</imgbtn>
-			<text name="txt_login" pos="64,224" size="304, 64" multiLines="1" valign="top">欢迎使用</text>
+			<text pos="50,56" size="32, 24">账号</text>
+			<edit name="edit_ID" pos="[0,56" size="152, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" maxBuf="16"   notifyChange="1" />
+			<imgbtn name="btn_IDList" pos="[-20,{2,@20,@20" skin="skin_open_menu_png" />
+			<text pos="50,90" size="32, 24">密码</text>
+			<edit name="edit_Psd" pos="[0,90" size="152, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" password="1"  maxBuf="16" notifyChange="1"  />
+			<check name="chk_rember" pos="50,[10" text="记住密码" />
+			<check name="chk_autoLogin" pos="[10,{0" text="自动登录" />
+			<listbox name="lb_IDList" pos="82,80,@152,@80" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="0" sbSkin="skin_new_scrollbar" />
+			<imgbtn name="btn_login" pos="85,160" size="120, 30" tip="" animate="1" skin="skin_ButtonRed" colorText="#FFFFFFFF">登陆</imgbtn>
+			<window pos="300,40,-5,200" colorText="#000000ff" margin="2,0,0,0" colorBorder="#A0A0A0FF">
+				<imgbtn name="btn_market" pos="20,15" size="100, 24" tip="" animate="1" skin="skin_ButtonWhite">不登陆交易</imgbtn>
+				<imgbtn name="btn_quit" pos="20,[10" size="100, 24" tip="" animate="1" skin="skin_ButtonWhite">取消登陆</imgbtn>
+				<imgbtn name="btn_register" pos="20,[10" size="100, 24" tip="" animate="1" skin="skin_ButtonWhite">注册账号</imgbtn>
+				<imgbtn name="btn_changePsd" pos="20,[10" size="100, 24" tip="" animate="1" skin="skin_ButtonWhite">修改密码</imgbtn>
+			</window>
+			<text name="txt_login" pos="50,224" size="304, 64" multiLines="1" valign="top" wordWrap="1">欢迎使用</text>
 		</window>
 	</root>
 </SOUI>

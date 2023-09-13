@@ -207,12 +207,14 @@
     <ClCompile Include="DlgMultiFilter.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
+    <ClCompile Include="DlgRegister.cpp" />
     <ClCompile Include="DlgRehabFixedTime.cpp" />
     <ClCompile Include="DlgSaveFrmlList.cpp" />
     <ClCompile Include="DlgSelTarget.cpp" />
     <ClCompile Include="DlgStkFilterEditor.cpp" />
     <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
+    <ClCompile Include="DlgTradeInfo.cpp" />
     <ClCompile Include="DlgUpdateLog.cpp" />
     <ClCompile Include="DragWnd.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -250,6 +252,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StockMarket.cpp" />
+    <ClCompile Include="STradeInfoPic.cpp" />
+    <ClCompile Include="TradeSimulator.cpp" />
     <ClCompile Include="WndSynHandler.cpp" />
     <ClCompile Include="WorkWnd.cpp" />
   </ItemGroup>
@@ -277,12 +281,14 @@
     <ClInclude Include="DlgMultiFilter.h" />
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
+    <ClInclude Include="DlgRegister.h" />
     <ClInclude Include="DlgRehabFixedTime.h" />
     <ClInclude Include="DlgSaveFrmlList.h" />
     <ClInclude Include="DlgSelTarget.h" />
     <ClInclude Include="DlgStkFilterEditor.h" />
     <ClInclude Include="DlgStockFilter.h" />
     <ClInclude Include="DlgSub.h" />
+    <ClInclude Include="DlgTradeInfo.h" />
     <ClInclude Include="DlgUpdateLog.h" />
     <ClInclude Include="FrmlCompiler.h" />
     <ClInclude Include="FrmlManager.h" />
@@ -301,6 +307,8 @@
     <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="STradeInfoPic.h" />
+    <ClInclude Include="TradeSimulator.h" />
     <ClInclude Include="WndSynHandler.h" />
     <ClInclude Include="WorkWnd.h" />
   </ItemGroup>

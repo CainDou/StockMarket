@@ -773,27 +773,27 @@ namespace SOUI
 			}
 			//if (nNoMoveCol > 0)
 			//{
-				if (nCol < nNoMoveCol)
-				{
-					rcNoMove.left = rcNoMove.right;
-					rcNoMove.right = rcNoMove.left + hdi.cx.toPixelSize(GetScale());
-					CRect rcTmp(rcCol);
-					rcCol = rcNoMove;
-					rcNoMove = rcTmp;
-					right = rcCol.right;
-				}
-				else if (rcCol.left < right) continue;
-				else if (rcCol.left >= right && bFirst)
-				{
-					int  diff = rcCol.left - right;
-					rcCol.left = right;
-					rcCol.right -= diff;
-					bFirst = false;
-				}
+			if (nCol < nNoMoveCol)
+			{
+				rcNoMove.left = rcNoMove.right;
+				rcNoMove.right = rcNoMove.left + hdi.cx.toPixelSize(GetScale());
+				CRect rcTmp(rcCol);
+				rcCol = rcNoMove;
+				rcNoMove = rcTmp;
+				right = rcCol.right;
+			}
+			else if (rcCol.left < right) continue;
+			else if (rcCol.left >= right && bFirst)
+			{
+				int  diff = rcCol.left - right;
+				rcCol.left = right;
+				rcCol.right -= diff;
+				bFirst = false;
+			}
 			//}
 
 			rcVisiblePart.IntersectRect(rcItem, rcCol);
-			if (rcCol.right  > rcClient.right + ITEM_MARGIN) break;
+			if (rcCol.right > rcClient.right + ITEM_MARGIN) break;
 
 			if (rcVisiblePart.IsRectEmpty())
 				continue;

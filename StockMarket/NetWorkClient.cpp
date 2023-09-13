@@ -60,22 +60,41 @@ BOOL CNetWorkClient::ConnectInit(LPCSTR pszRemoteAddr, u_short nPort, HWND hWnd)
 
 BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 {
-	if (m_socket == INVALID_SOCKET)
+	if (lpIP == NULL)
 	{
-
-		if (!ConnectInit(lpIP, uPort, m_hWnd))
+		if (m_socket == INVALID_SOCKET)
 		{
-			m_socket = INVALID_SOCKET;
-			return FALSE;
+			m_bConnected = TRUE;
 		}
-		m_bConnected = TRUE;
+		else
+		{
+			::shutdown(m_socket, SD_BOTH);
+			::closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+			m_bConnected = FALSE;
+		}
+
 	}
 	else
 	{
-		::shutdown(m_socket, SD_BOTH);
-		::closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
-		m_bConnected = FALSE;
+		if (m_socket == INVALID_SOCKET)
+		{
+
+			if (!ConnectInit(lpIP, uPort, m_hWnd))
+			{
+				m_socket = INVALID_SOCKET;
+				return FALSE;
+			}
+			m_bConnected = TRUE;
+		}
+		else
+		{
+			::shutdown(m_socket, SD_BOTH);
+			::closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
+			m_bConnected = FALSE;
+		}
+
 	}
 	return TRUE;
 }

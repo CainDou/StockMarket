@@ -1,158 +1,156 @@
-﻿<?xml version="1.0"?>
-<SOUI name="filterWindow" title="条件公式编辑器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="700" height="600" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0" >
+<?xml version="1.0"?>
+<SOUI name="filterWindow" title="条件公式编辑器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="700" height="600" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0">
 	<root cache="1" colorBkgnd="rgb(50,50,50)">
-		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff"  cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" cache="1">
 			<icon pos="10,8" src="ICON_LOGO:16" />
-			<text pos="29,9" colorText="#00FFFF" >条件选股公式编辑器</text>
+			<text pos="29,9" colorText="#00FFFF">条件选股公式编辑器</text>
 			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 		</caption>
-		<window pos="0,30,-0,-0"  cache="1" font="face:微软雅黑" colorText="#00ffffff">
+		<window pos="0,30,-0,-0" cache="1" font="face:微软雅黑" colorText="#00ffffff">
 			<group pos="5,5,-5,@215" align="left" headerHeight="0">
-				<text  pos="0,[5" text="公式名称" />
-				<capsedit pos="[5,{0,@100,@20" name="edit_name" colorBkgnd="#ffffffff" colorText = "#000000ff"/>
-				<text  pos="0,[5" text="公式描述" />
-				<capsedit pos="[5,{0,@200,@20" name="edit_dscp" colorBkgnd="#ffffffff" colorText = "#000000ff"/>
+				<text pos="0,[5" text="公式名称" />
+				<capsedit pos="[5,{0,@100,@20" name="edit_name" colorBkgnd="#ffffffff" colorText="#000000ff" />
+				<text pos="0,[5" text="公式描述" />
+				<capsedit pos="[5,{0,@200,@20" name="edit_dscp" colorBkgnd="#ffffffff" colorText="#000000ff" />
 				<tabctrl pos="0,[5" size="310,150" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="75" tabHeight="20" colorText="#00FFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
-					<page title="参数1-4" >
-					<text text="参数" pos="25,5,@60,@18" align = "left" />
-					<text text="最小" pos="[10,5,@60,@18" align = "left"/>
-					<text text="最大" pos="[10,5,@60,@18" align = "left"/>
-					<text text="缺省" pos="[10,5,@60,@18" align = "left"/>
-					<text text="1" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para1name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" />
-					<capsedit name="edit_para1min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para1max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para1def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="2" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para2name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff"/>
-					<capsedit name="edit_para2min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para2max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para2def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="3" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para3name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff"/>
-					<capsedit name="edit_para3min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para3max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para3def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="4" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para4name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff"/>
-					<capsedit name="edit_para4min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para4max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para4def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
+					<page title="参数1-4">
+						<text text="参数" pos="25,5,@60,@18" align="left" />
+						<text text="最小" pos="[10,5,@60,@18" align="left" />
+						<text text="最大" pos="[10,5,@60,@18" align="left" />
+						<text text="缺省" pos="[10,5,@60,@18" align="left" />
+						<text text="1" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para1name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" />
+						<capsedit name="edit_para1min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para1max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para1def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="2" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para2name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" />
+						<capsedit name="edit_para2min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para2max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para2def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="3" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para3name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" />
+						<capsedit name="edit_para3min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para3max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para3def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="4" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para4name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" />
+						<capsedit name="edit_para4min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para4max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para4def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
 					</page>
-					<page title="参数5-8" >
-					<text text="参数" pos="25,5,@60,@18" align = "left" />
-					<text text="最小" pos="[10,5,@60,@18" align = "left"/>
-					<text text="最大" pos="[10,5,@60,@18" align = "left"/>
-					<text text="缺省" pos="[10,5,@60,@18" align = "left"/>
-					<text text="5" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para5name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para5min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para5max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para5def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="6" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para6name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para6min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para6max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para6def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="7" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para7name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para7min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para7max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para7def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="8" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para8name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para8min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para8max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para8def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
+					<page title="参数5-8">
+						<text text="参数" pos="25,5,@60,@18" align="left" />
+						<text text="最小" pos="[10,5,@60,@18" align="left" />
+						<text text="最大" pos="[10,5,@60,@18" align="left" />
+						<text text="缺省" pos="[10,5,@60,@18" align="left" />
+						<text text="5" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para5name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para5min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para5max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para5def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="6" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para6name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para6min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para6max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para6def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="7" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para7name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para7min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para7max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para7def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="8" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para8name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para8min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para8max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para8def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
 					</page>
 					<page title="参数9-12">
-					<text text="参数" pos="25,5,@60,@18" align = "left" />
-					<text text="最小" pos="[10,5,@60,@18" align = "left"/>
-					<text text="最大" pos="[10,5,@60,@18" align = "left"/>
-					<text text="缺省" pos="[10,5,@60,@18" align = "left"/>
-					<text text="9" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para9name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para9min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para9max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para9def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="10" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para10name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para10min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para10max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para10def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="11" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para11name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para11min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para11max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para11def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="12" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para12name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para12min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para12max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para12def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
+						<text text="参数" pos="25,5,@60,@18" align="left" />
+						<text text="最小" pos="[10,5,@60,@18" align="left" />
+						<text text="最大" pos="[10,5,@60,@18" align="left" />
+						<text text="缺省" pos="[10,5,@60,@18" align="left" />
+						<text text="9" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para9name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para9min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para9max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para9def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="10" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para10name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para10min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para10max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para10def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="11" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para11name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para11min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para11max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para11def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="12" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para12name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para12min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para12max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para12def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
 					</page>
 					<page title="参数13-16">
-					<text text="参数" pos="25,5,@60,@18" align = "left" />
-					<text text="最小" pos="[10,5,@60,@18" align = "left"/>
-					<text text="最大" pos="[10,5,@60,@18" align = "left"/>
-					<text text="缺省" pos="[10,5,@60,@18" align = "left"/>
-					<text text="13" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para13name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para13min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para13max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para13def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="14" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para14name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para14min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para14max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para14def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="15" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para15name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para15min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para15max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para15def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<text text="16" pos="0,[5,@20,@20" align = "right"/>
-					<capsedit name="edit_para16name" pos ="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para16min" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para16max" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
-					<capsedit name="edit_para16def" pos ="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText = "#000000ff" number = "1"/>
+						<text text="参数" pos="25,5,@60,@18" align="left" />
+						<text text="最小" pos="[10,5,@60,@18" align="left" />
+						<text text="最大" pos="[10,5,@60,@18" align="left" />
+						<text text="缺省" pos="[10,5,@60,@18" align="left" />
+						<text text="13" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para13name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para13min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para13max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para13def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="14" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para14name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para14min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para14max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para14def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="15" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para15name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para15min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para15max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para15def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<text text="16" pos="0,[5,@20,@20" align="right" />
+						<capsedit name="edit_para16name" pos="25,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para16min" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para16max" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
+						<capsedit name="edit_para16def" pos="[10,{0,@60,@20" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" />
 					</page>
 				</tabctrl>
-					<text  pos="%50,5" text="公式类型" />
-					<combobox name="cbx_type" class="cls_edit" pos="[5,5,@100,@20" dropDown="1" dropHeight="200" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0" colorBorder="#ff0000ff" margin="1,1,1,1">
-						<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
-						<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
-							<items>
-								<item text="指标条件"/>
-								<item text="基本面" />
-								<item text="即时盘中"/>
-								<item text="走势特征" />
-								<item text="形态特征" />
-								<item text="其他类型" />
-							</items>
-					</combobox>					
-					<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="[30,5,@60,@20" animate="1" text="确定" />
-					<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[20,5,@60,@20" animate="1" text="取消" />
-					<imgbtn name="btn_Insert" skin="skin_ButtonGrayBlack" pos="%50,[5,@120,@20" animate="1" text="插入函数" />
-					<imgbtn name="btn_Test" skin="skin_ButtonGrayBlack" pos="[10,{0,@120,@20" animate="1" text="测试公式" />
-					<tabctrl name="tab_ctrl" pos="%50,[5" size="340,150" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="85" tabHeight="20" colorText="#00FFFF" focusable="0" show="1" curSel="0"  interpolator="Decelerate">
-						<page title="动态翻译">
-							<capsedit name="edit_trans" pos = "0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="1" hscrollBar="1" vscrollbar="1" wordWrap ="1"/>
-						</page>
-						<page title="测试结果">
-							<capsedit name="edit_result" pos = "0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="1" hscrollBar="1" vscrollbar="1"/>
-						</page>
-
-						<page title="参数精灵">
-							<capsedit name="edit_param" pos = "0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" wantReturn="1"  hscrollBar="1" vscrollbar="1"/>
-						</page>
-						<page title="用法注释">
-							<capsedit name="edit_explain" pos = "0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" wantReturn="1" hscrollBar="1" vscrollbar="1"/>
-						</page>
-					</tabctrl>
+				<text pos="%50,5" text="公式类型" />
+				<combobox name="cbx_type" class="cls_edit" pos="[5,5,@100,@20" dropDown="1" dropHeight="200" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0" colorBorder="#ff0000ff" margin="1,1,1,1">
+					<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
+					<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
+					<items>
+						<item text="指标条件" />
+						<item text="基本面" />
+						<item text="即时盘中" />
+						<item text="走势特征" />
+						<item text="形态特征" />
+						<item text="其他类型" />
+					</items>
+				</combobox>
+				<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="[30,5,@60,@20" animate="1" text="确定" />
+				<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[20,5,@60,@20" animate="1" text="取消" />
+				<imgbtn name="btn_Insert" skin="skin_ButtonGrayBlack" pos="%50,[5,@120,@20" animate="1" text="插入函数" />
+				<imgbtn name="btn_Test" skin="skin_ButtonGrayBlack" pos="[10,{0,@120,@20" animate="1" text="测试公式" />
+				<tabctrl name="tab_ctrl" pos="%50,[5" size="340,150" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="85" tabHeight="20" colorText="#00FFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
+					<page title="动态翻译">
+						<capsedit name="edit_trans" pos="0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="1" hscrollBar="1" vscrollbar="1" wordWrap="1" />
+					</page>
+					<page title="测试结果">
+						<capsedit name="edit_result" pos="0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="1" hscrollBar="1" vscrollbar="1" />
+					</page>
+					<page title="参数精灵">
+						<capsedit name="edit_param" pos="0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" wantReturn="1" hscrollBar="1" vscrollbar="1" />
+					</page>
+					<page title="用法注释">
+						<capsedit name="edit_explain" pos="0,0,-0,-0" multiLines="1" colorBkgnd="#ffffffff" colorText="#000000ff" wantReturn="1" hscrollBar="1" vscrollbar="1" />
+					</page>
+				</tabctrl>
 			</group>
-		<capsrichedit pos="5,[5,-5,-5" multilines="1" autoHscroll="1" autoVscroll="1" wordWrap="0" margin-x="2" margin-y="2" cueText=""  name="re_frml" notifyChange="1" wantReturn="1" transparent="0" colorBkgnd="#ffffffff" colorText = "#000000ff" hscrollBar="1" vscrollbar="1" sbSkin="skin_default_scrollbar_png"/>
-
+			<capsrichedit pos="5,[5,-5,-5" multilines="1" autoHscroll="1" autoVscroll="1" wordWrap="0" margin-x="2" margin-y="2" cueText="" name="re_frml" notifyChange="1" wantReturn="1" transparent="0" colorBkgnd="#ffffffff" colorText="#000000ff" hscrollBar="1" vscrollbar="1" sbSkin="skin_default_scrollbar_png" />
 		</window>
 	</root>
 </SOUI>

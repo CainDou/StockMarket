@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <SOUI name="multiFiilterWindow" title="多窗口选股" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="normal" appWnd="1" translucent="0" colorBkgnd="#000000ff">
 	<root cache="1">
 		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
@@ -13,10 +13,10 @@
 		<window pos="0,30,-0,-0" colorBkgnd="#000000ff" cache="1">
 			<realwnd name="wnd1" pos="5,5,%33,%50" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
 			<realwnd name="wnd2" pos="%33,5,%67,%50" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
-			<realwnd name="wnd3" pos="%67,5,-5,%50" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />		
+			<realwnd name="wnd3" pos="%67,5,-5,%50" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
 			<realwnd name="wnd4" pos="5,%50,%33,-5" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
 			<realwnd name="wnd5" pos="%33,%50,%67,-5" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
-			<realwnd name="wnd6" pos="%67,%50,-5,-5" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />		
+			<realwnd name="wnd6" pos="%67,%50,-5,-5" wndclass="workwnd" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" />
 		</window>
 	</root>
 </SOUI>

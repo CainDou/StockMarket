@@ -34,10 +34,15 @@ CWndSynHandler::~CWndSynHandler()
 	m_NetClient.Stop();
 	SendMsg(m_RpsProcThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
+	SendMsg(m_uTradeMsgThreadID, Msg_Exit, NULL, 0);
+
 	if (tRpsCalc.joinable())
 		tRpsCalc.join();
 	if (tMsgSyn.joinable())
 		tMsgSyn.join();
+	if (tTradeMsgSyn.joinable())
+		tTradeMsgSyn.join();
+
 	if (tLogin.joinable())
 		tLogin.join();
 
@@ -56,12 +61,18 @@ void CWndSynHandler::Run()
 	InitNetHandleMap();
 	InitSynHandleMap();
 	InitDataNameMap();
+	InitTradeSynMap();
 	CFrmlManager::InitFrmlManage();
 	tRpsCalc = thread(&CWndSynHandler::DataProc, this);
 	m_RpsProcThreadID = *(unsigned*)&tRpsCalc.get_id();
 	tMsgSyn = thread(&CWndSynHandler::MsgProc, this);
 	m_uMsgThreadID = *(unsigned*)&tMsgSyn.get_id();
+	tTradeMsgSyn = thread(&CWndSynHandler::TradeMsgProc, this);
+	m_uTradeMsgThreadID = *(unsigned*)&tTradeMsgSyn.get_id();
 	m_NetClient.SetWndHandle(m_hMain);
+	m_NetClient.RegisterHandle(NetHandle);
+	m_NetClient.Start(m_uNetThreadID, this);
+
 	if (!CheckCmdLine())
 		exit(0);
 	tLogin = thread(&CWndSynHandler::Login, this);
@@ -69,8 +80,6 @@ void CWndSynHandler::Run()
 	if (bExit)	exit(0);
 	//ResetEvent(g_hLoginEvent);
 	m_NetHandleFlag.clear();
-	m_NetClient.RegisterHandle(NetHandle);
-	m_NetClient.Start(m_uNetThreadID, this);
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
 	strcpy(info.str, "StkMarket");
@@ -412,6 +421,35 @@ void CWndSynHandler::MsgProc()
 	}
 }
 
+void CWndSynHandler::TradeMsgProc()
+{
+	int MsgId;
+	char *info;
+	int msgLength;
+	while (true)
+	{
+		MsgId = RecvMsg(0, &info, msgLength, 0);
+		if (MsgId == Msg_Exit)
+		{
+			delete[]info;
+			info = nullptr;
+			break;
+		}
+		if (m_tradeSynMap.count(MsgId))
+			PostTradeSendMsg(m_tradeSynMap[MsgId], msgLength, info);
+		else if (m_tradeSynHandleMap.count(MsgId))
+		{
+			auto pFuc = m_tradeSynHandleMap[MsgId];
+			if (pFuc)
+				(this->*pFuc)(msgLength, info);
+
+		}
+
+		delete[]info;
+		info = nullptr;
+	}
+}
+
 
 int CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo)
 {
@@ -539,6 +577,29 @@ void CWndSynHandler::InitNetHandleMap()
 	m_netHandleMap[RecvMsg_TodayTFMarket]
 		= &CWndSynHandler::OnMsgTodayTFMarket;
 
+	m_netHandleMap[TradeRecvMsg_Register]
+		= &CWndSynHandler::OnMsgAccountRegister;
+	m_netHandleMap[TradeRecvMsg_ChangePsd]
+		= &CWndSynHandler::OnMsgChangePsd;
+	m_netHandleMap[TradeRecvMsg_Login]
+		= &CWndSynHandler::OnMsgLogin;
+	m_netHandleMap[TradeRecvMsg_Logout]
+		= &CWndSynHandler::OnMsgLogout;
+	m_netHandleMap[TradeRecvMsg_AccountInfo]
+		= &CWndSynHandler::OnMsgAccountInfo;
+	m_netHandleMap[TradeRecvMsg_Position]
+		= &CWndSynHandler::OnMsgPosition;
+	m_netHandleMap[TradeRecvMsg_Trust]
+		= &CWndSynHandler::OnMsgTrust;
+	m_netHandleMap[TradeRecvMsg_Deal]
+		= &CWndSynHandler::OnMsgDeal;
+	m_netHandleMap[TradeRecvMsg_HisTrust]
+		= &CWndSynHandler::OnMsgHisTrust;
+	m_netHandleMap[TradeRecvMsg_HisDeal]
+		= &CWndSynHandler::OnMsgHisDeal;
+	m_netHandleMap[TradeRecvMsg_SubmitFeedback]
+		= &CWndSynHandler::OnMsgSubmitFeedback;
+
 }
 
 void CWndSynHandler::InitSynHandleMap()
@@ -585,6 +646,45 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnGetHisTFBase;
 	m_synHandleMap[Syn_TodayTFMarket]
 		= &CWndSynHandler::OnTodayTFMarket;
+	m_synHandleMap[Syn_ReLogin]
+		= &CWndSynHandler::OnReLogin;
+
+}
+
+void CWndSynHandler::InitTradeSynMap()
+{
+	m_tradeSynMap[TradeSyn_Register] = TradeSendMsg_Register;
+	m_tradeSynMap[TradeSyn_ChangePsd] = TradeSendMsg_ChangePsd;
+	m_tradeSynMap[TradeSyn_Login] = TradeSendMsg_Login;
+	m_tradeSynMap[TradeSyn_Logout] = TradeSendMsg_Logout;
+	m_tradeSynMap[TradeSyn_QueryAccountInfo] = TradeSendMsg_QueryAccountInfo;
+	m_tradeSynMap[TradeSyn_QueryPosition] = TradeSendMsg_QueryPostion;
+	m_tradeSynMap[TradeSyn_QueryHisTrust] = TradeSendMsg_QueryHisTrust;
+	m_tradeSynMap[TradeSyn_QueryHisDeal] = TradeSendMsg_QueryHisDeal;
+	m_tradeSynMap[TradeSyn_SubmitTrade] = TradeSendMsg_SubmitTrade;
+
+	m_tradeSynHandleMap[TradeSyn_OnRegister]
+		= &CWndSynHandler::OnAccountRegister;
+	m_tradeSynHandleMap[TradeSyn_OnChangePsd]
+		= &CWndSynHandler::OnChangePsd;
+	m_tradeSynHandleMap[TradeSyn_OnLogin]
+		= &CWndSynHandler::OnTradeLogin;
+	m_tradeSynHandleMap[TradeSyn_OnLogout]
+		= &CWndSynHandler::OnTradeLogout;
+	m_tradeSynHandleMap[TradeSyn_OnAccountInfo]
+		= &CWndSynHandler::OnAccountInfo;
+	m_tradeSynHandleMap[TradeSyn_OnPosition]
+		= &CWndSynHandler::OnPosition;
+	m_tradeSynHandleMap[TradeSyn_OnTrust]
+		= &CWndSynHandler::OnTrust;
+	m_tradeSynHandleMap[TradeSyn_OnDeal]
+		= &CWndSynHandler::OnDeal;
+	m_tradeSynHandleMap[TradeSyn_OnHisTrust]
+		= &CWndSynHandler::OnHisTrust;
+	m_tradeSynHandleMap[TradeSyn_OnHisDeal]
+		= &CWndSynHandler::OnHisDeal;
+	m_tradeSynHandleMap[TradeSyn_OnSubmitFeedback]
+		= &CWndSynHandler::OnSubmitFeedBack;
 
 }
 
@@ -1313,6 +1413,149 @@ void CWndSynHandler::OnMsgTodayTFMarket(ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
+void CWndSynHandler::OnMsgAccountRegister(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnRegister, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgChangePsd(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnChangePsd, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgLogin(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnLogin, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgLogout(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnLogout, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgAccountInfo(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnAccountInfo, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgPosition(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnPosition, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgTrust(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnTrust, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgDeal(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnDeal, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgHisTrust(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnHisTrust, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgHisDeal(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnHisDeal, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgSubmitFeedback(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnSubmitFeedback, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnNoDefineMsg(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
@@ -1910,6 +2153,123 @@ void CWndSynHandler::OnTodayTFMarket(int nMsgLength, const char * info)
 			break;
 		}
 	}
+}
+
+void CWndSynHandler::OnReLogin(int nMsgLength, const char * info)
+{
+	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
+		NULL, LoginMsg_ReLogin);
+}
+
+void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char * info)
+{
+	SendInfo sendInfo = { 0 };
+	sendInfo.MsgType = nMsgType;
+	int attSize = nMsgLength;
+	int nSize = sizeof(sendInfo) + attSize + sizeof(attSize);
+	char *msg = new char[nSize];
+	memcpy_s(msg, nSize, &sendInfo, sizeof(sendInfo));
+	int nOffset = sizeof(sendInfo);
+	memcpy_s(msg + nOffset, nSize, &attSize, sizeof(attSize));
+	nOffset += sizeof(attSize);
+	memcpy_s(msg + nOffset, nSize, info, attSize);
+	m_NetClient.SendData(msg, nSize);
+}
+
+void CWndSynHandler::OnAccountRegister(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nFeedback = *(int*)(info + nOffset);
+	::SendMessage(m_hAccWnd, WM_ACCOUNT_MSG, nFeedback, TAMsg_Register);
+}
+
+void CWndSynHandler::OnChangePsd(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nFeedback = *(int*)(info + nOffset);
+	::SendMessage(m_hAccWnd, WM_ACCOUNT_MSG, nFeedback, TAMsg_ChangePsd);
+}
+
+void CWndSynHandler::OnTradeLogin(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nFeedback = *(int*)(info + nOffset);
+	::SendMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG, nFeedback, LoginMsg_TradeLoginFeedBack);
+	if (nFeedback == AFB_RegisterSuccess)
+	{
+		SendMsg(m_uTradeDlgThreadID, TradeSyn_OnLogin, NULL, 0);
+	}
+}
+
+void CWndSynHandler::OnTradeLogout(int nMsgLength, const char * info)
+{
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnLogout, NULL, 0);
+
+}
+
+void CWndSynHandler::OnAccountInfo(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnAccountInfo, 
+		(char*)info + nOffset, nMsgLength - nOffset);
+
+}
+
+void CWndSynHandler::OnPosition(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnPosition,
+		(char*)info + nOffset, nMsgLength - nOffset);
+
+}
+
+void CWndSynHandler::OnTrust(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnTrust,
+		(char*)info + nOffset, nMsgLength - nOffset);
+
+}
+
+void CWndSynHandler::OnDeal(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnDeal,
+		(char*)info + nOffset, nMsgLength - nOffset);
+}
+
+void CWndSynHandler::OnHisTrust(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnHisTrust,
+		(char*)info + nOffset, nMsgLength - nOffset);
+
+}
+
+void CWndSynHandler::OnHisDeal(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnHisDeal,
+		(char*)info + nOffset, nMsgLength - nOffset);
+
+}
+
+void CWndSynHandler::OnSubmitFeedBack(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_OnSubmitFeedback,
+		(char*)info + nOffset, nMsgLength - nOffset);
+
 }
 
 

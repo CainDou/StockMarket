@@ -381,6 +381,16 @@ typedef struct _SendIDInfo
 	int  NoUse2;
 }SendIDInfo;
 
+
+typedef struct _SendTradeInfo
+{
+	int MsgType;
+	char Acc[10];
+	int  ClinetID;
+	int  NoUse2;
+}SendTradeInfo;
+
+
 typedef struct _SendInfoWithDate
 {
 	int MsgType;
@@ -449,7 +459,11 @@ enum SynMsg
 	Syn_GetHisTFBase,
 	Syn_TodayTFMarket,
 	Syn_RTTFMarkt,
+	Syn_ReLogin,
+
 };
+
+
 
 enum WorkWndMsg
 {
@@ -903,6 +917,9 @@ enum LoginMsg
 	LoginMsg_WaitAndTry,
 	LoginMsg_Exit,
 	LoginMsg_Reinit,
+	LoginMsg_TradeLoginFeedBack,
+	LoginMsg_ReLogin,
+
 };
 
 typedef struct LoginInfo
@@ -1766,4 +1783,348 @@ enum eTFDataType
 	eTFDT_Vol,
 	eTFDT_Order,
 	eTFDT_AvgVol,
+};
+
+typedef struct _TradeDouble
+{
+	_TradeDouble();
+	_TradeDouble(long long llData, long long llDigital);
+	long long data;
+	long long digital;
+	double GetDouble() const;
+	_TradeDouble operator +(const _TradeDouble& other);
+	_TradeDouble operator -(const _TradeDouble& other);
+	_TradeDouble operator *(const _TradeDouble& other);
+	_TradeDouble operator /(const _TradeDouble& other);
+
+}TradeDouble;
+
+typedef struct _tradeAccInfo
+{
+	char ID[16];
+	TradeDouble totalCaptical;
+	TradeDouble marketValue;
+	TradeDouble marketCost;
+	TradeDouble usableCaptical;
+	TradeDouble freezedCaptical;
+	int AccountID;
+}AccInfo;
+
+
+typedef struct _PositionInfo
+{
+	char SecurityID[8];
+	char SecurityName[16];
+	TradeDouble YestdayPos;
+	TradeDouble TotalPos;
+	TradeDouble UsablePos;
+	TradeDouble Cost;
+	TradeDouble InTransitPos;
+	TradeDouble FreezedPos;
+	int AccountID;
+	char Account[16];
+}PositionInfo;
+
+typedef struct _TrustInfo
+{
+	char SecurityID[8];
+	char SecurityName[16];
+	int Date;
+	int Time;
+	int TrustID;
+	int ApplyID;
+	int Direct;
+	int State;
+	TradeDouble TrustVol;
+	TradeDouble TrustPrice;
+	TradeDouble DealVol;
+	TradeDouble DealPrice;
+	TradeDouble DealAmo;
+	TradeDouble CancelVol;
+	int CancelSign;
+	int AccountID;
+	char Account[16];
+}TrustInfo;
+
+typedef struct _DealInfo
+{
+	char SecurityID[8];
+	char SecurityName[16];
+	int Date;
+	int Time;
+	int TrustID;
+	int ApplyID;
+	int Direct;
+	int State;
+	TradeDouble DealVol;
+	TradeDouble DealPrice;
+	TradeDouble DealAmo;
+	TradeDouble SettleAmo;
+	int AccountID;
+	char Account[16];
+}DealInfo;
+
+enum SPostionHead
+{
+	SPH_SecurityID=0,
+	SPH_SecurityName,
+	SPH_YesterdayPos,
+	SPH_TotalPos,
+	SPH_UsablePos,
+	SPH_CostPrice,
+	SPH_LastPrice,
+	SPH_Cost,
+	SPH_MarketValue,
+	SPH_FloatingPL,
+	SPH_FloatingPLPct,
+	SPH_FreezedPos,
+	SPH_InTransitPos,
+	SPH_Account,
+	SPH_Count,
+};
+
+enum STrustHead
+{
+	STH_TrustDate,
+	STH_TrustTime,
+	STH_ApplyID,
+	STH_SecurityID,
+	STH_SecurityName,
+	STH_Direct,
+	STH_TrustState,
+	STH_TrustVol,
+	STH_TrustPrice,
+	STH_DealVol,
+	STH_DealPrice,
+	STH_DealAmo,
+	STH_CancelVol,
+	STH_CancelSign,
+	STH_TrustID,
+	STH_Account,
+	STH_Count,
+};
+
+enum SCancelHead
+{
+	SCH_TrustTime,
+	SCH_ApplyID,
+	SCH_SecurityID,
+	SCH_SecurityName,
+	SCH_Direct,
+	SCH_TrustState,
+	SCH_TrustPrice,
+	SCH_TrustVol,
+	SCH_DealPrice,
+	SCH_DealVol,
+	SCH_DealAmo,
+	SCH_CancellableVol,
+	SCH_CancelSign,
+	SCH_TrustID,
+	SCH_Account,
+	SCH_Count,
+};
+
+enum SDealHead
+{
+	SDH_DealTime,
+	SDH_ApplyID,
+	SDH_SecurityID,
+	SDH_SecurityName,
+	SDH_Direct,
+	SDH_DealPrice,
+	SDH_DealVol,
+	SDH_DealAmo,
+	SDH_TrustID,
+	SDH_Account,
+	SDH_Count,
+};
+
+enum SHisTrustHead
+{
+	SHTH_TrustDate,
+	SHTH_TrustTime,
+	SHTH_ApplyID,
+	SHTH_SecurityID,
+	SHTH_SecurityName,
+	SHTH_Direct,
+	SHTH_TrustState,
+	SHTH_TrustPrice,
+	SHTH_TrustVol,
+	SHTH_DealPrice,
+	SHTH_DealVol,
+	SHTH_DealAmo,
+	SHTH_CancelVol,
+	SHTH_CancelSign,
+	SHTH_TrustID,
+	SHTH_Account,
+	SHTH_Count,
+};
+
+enum SHisDealHead
+{
+	SHDH_DealDate,
+	SHDH_DealTime,
+	SHDH_ApplyID,
+	SHDH_SecurityID,
+	SHDH_SecurityName,
+	SHDH_Direct,
+	SHDH_DealPrice,
+	SHDH_DealVol,
+	SHDH_DealAmo,
+	SHDH_SettleAmp,
+	SHDH_TrustID,
+	SHDH_Account,
+	SHDH_Count,
+};
+
+enum eTradeDircect
+{
+	eTD_Buy = 0,
+	eTD_Sell,
+	eTD_CancelBuy,
+	eTD_CancelSell,
+};
+
+enum eTrustState
+{
+	eTS_NotSubmit = 0,
+	eTS_Submitted,
+	eTS_DealPart,
+	eTS_DealAll,
+	eTS_Canceled,
+	eTS_Discarded,
+};
+
+enum eCancelSign
+{
+	eCS_Normal,
+	eCS_Canceled,
+};
+
+enum TradeSimulatorMsg
+{
+	TSMsg_SetTradeStock,
+	TSMsg_UpdateTradeInfo,
+	TSMsg_UpdateAccountInfo,
+	TSMsg_UpdatePosInfo,
+	TSMsg_UpdateTrustAndCancelInfo,
+	TSMsg_UpdateDealInfo,
+	TSMsg_UpdateHisTrust,
+	TSMsg_UpdateHisDeal,
+	TSMsg_UpdateSubmitFeedback,
+	TSMsg_ShowWindow,
+
+};
+
+enum TradeAccountMsg
+{
+	TAMsg_Register = 0,
+	TAMsg_ChangePsd,
+};
+
+enum AccountFeedBack
+{
+	AFB_RegisterSuccess=0,
+	AFB_AccountExist,
+	AFB_ChangePsdSuccess,
+	AFB_NotPair,
+};
+
+enum TradeLoginFeedBack
+{
+	TLFB_Success,
+	TLFB_Unsuccess,
+};
+
+
+enum eAccountOpt
+{
+	eAO_Register,
+	eAO_ChangePsd,
+};
+
+enum TradeSendMsgType
+{
+	TradeSendMsg_Start = 200,
+	TradeSendMsg_Register,
+	TradeSendMsg_ChangePsd,
+	TradeSendMsg_Login,
+	TradeSendMsg_Logout,
+	TradeSendMsg_QueryAccountInfo,
+	TradeSendMsg_QueryPostion,
+	TradeSendMsg_QueryHisTrust,
+	TradeSendMsg_QueryHisDeal,
+	TradeSendMsg_SubmitTrade,
+	TradeSendMsg_End,
+};
+
+enum TradeReceiveMsgType
+{
+	TradeRecvMsg_Register = 190000,
+	TradeRecvMsg_ChangePsd,
+	TradeRecvMsg_Login,
+	TradeRecvMsg_Logout,
+	TradeRecvMsg_AccountInfo,
+	TradeRecvMsg_Position,
+	TradeRecvMsg_Trust,
+	TradeRecvMsg_Deal,
+	TradeRecvMsg_HisTrust,
+	TradeRecvMsg_HisDeal,
+	TradeRecvMsg_SubmitFeedback,
+
+};
+
+
+enum TradeSynMsg
+{
+	TradeSyn_Register = 30000,
+	TradeSyn_ChangePsd,
+	TradeSyn_Login,
+	TradeSyn_Logout,
+	TradeSyn_QueryAccountInfo,
+	TradeSyn_QueryPosition,
+	TradeSyn_QueryHisTrust,
+	TradeSyn_QueryHisDeal,
+	TradeSyn_SubmitTrade,
+
+	TradeSyn_OnRegister,
+	TradeSyn_OnChangePsd,
+	TradeSyn_OnLogin,
+	TradeSyn_OnLogout,
+	TradeSyn_OnAccountInfo,
+	TradeSyn_OnPosition,
+	TradeSyn_OnTrust,
+	TradeSyn_OnDeal,
+	TradeSyn_OnHisTrust,
+	TradeSyn_OnHisDeal,
+	TradeSyn_OnSubmitFeedback,
+};
+
+enum TradeMsg
+{
+	TradeMsg_Login,
+	TradeMsg_Logout,
+	TradeMsg_AccountInfo,
+	TradeMsg_Position,
+	TradeMsg_Trust,
+	TradeMsg_Deal,
+	TradeMsg_HisTrust,
+	TradeMsg_HisDeal,
+};
+
+typedef struct _SubmitFeedback
+{
+	char Account[16];
+	int TrustID;
+	int Feedback;
+	int ApplyID;
+}SubmitFeedback;
+
+enum eSubmitFeedback
+{
+	eSF_SubmitSucc,
+	eSF_SubmitFail,
+	eSF_SubmitTimeErr,
+	eSF_CancelSucc,
+	eSF_CancelFail,
 };

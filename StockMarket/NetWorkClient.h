@@ -29,6 +29,7 @@ public:
 	BOOL	SendData(char* msg, int size);
 	BOOL   ReceiveData(char * buffer, int size, char end = 0);
 	int   SendDataWithID(char* msg, int size);
+
 protected:
 	SOCKET m_socket;
 	SOCKET m_ClientID;

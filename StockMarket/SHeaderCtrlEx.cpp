@@ -118,13 +118,12 @@ void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
 	CRect rcItem(rcClient.left, rcClient.top, rcClient.left, rcClient.bottom);
 	CRect rcNoMove(rcClient.left, rcClient.top, rcClient.left, rcClient.bottom);
 	rcItem.right = rcItem.left;
+	int right = rcItem.left;
 	rcItem.OffsetRect(nOffset, 0);
 	rcNoMove.right = rcNoMove.left;
 	bool bFirst = true;
-	int right = rcItem.left;
 	//if (!m_bInitText)
 	//	InitText();
-
 	for (UINT i = 0; i < m_arrItems.GetCount(); i++)
 	{
 		if (!m_arrVisble[i])continue;

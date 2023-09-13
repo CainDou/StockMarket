@@ -1242,6 +1242,7 @@ bool CDlgBackTesting::CheckHisDataPass(HisStockFilter & hsf, map<int, map<int, m
 		return false;
 	else if (hsf.type == eJT_Forall)
 		return true;
+	return false;
 }
 
 bool CDlgBackTesting::ProcFitDataRes(SStringA StockID, vector<int>& dataPassDate,
