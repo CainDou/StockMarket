@@ -94,6 +94,7 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"btn_setFilterName", OnBtnSetFliterName)
 			EVENT_NAME_COMMAND(L"btn_rtFilter", OnBtnRtFitler)
 			EVENT_NAME_COMMAND(L"btn_hisFilter", OnBtnHisFitler)
+			EVENT_NAME_COMMAND(L"btn_backTesting", OnBtnBackTesting)
 
 			EVENT_MAP_END()
 

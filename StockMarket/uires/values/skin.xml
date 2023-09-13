@@ -7,14 +7,20 @@
 	<scrollbar name="skin_default_scrollbar_png" src="IMG:png_newscroll" margin="2" />
 	<Button name="skin_ButtonClass" src="" colorBorder="#000000ff" colorBorderHover="#000000ff" colorBorderPush="#000000ff" colorBorderDisable="#000000ff" colorUp="#000000ff" colorDown="#000000ff" colorUpHover="#000000ff" colorDownHover="#000000ff" colorUpPush="#000000ff" colorDownPush="#000000ff" colorUpDisable="#7d9ec0ff" colorDownDisable="#7d9ec0ff" />
 	<Button name="skin_ButtonPureBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpHover="#000000ff" colorDownHover="#000000ff" colorUpPush="#000000ff" colorDownPush="#000000ff" colorUpDisable="#000000ff" colorDownDisable="#000000ff" colorBorder="#ff0000ff" colorBorderPush="#ffffffff" />
-	<Button name="skin_ButtonGrayBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpDisable="#505050ff" colorDownDisable="#505050ff" colorUpHover="#505050ff" colorDownHover="#505050ff" colorUpPush="#505050ff" colorDownPush="#505050ff"   colorUpDisable="#505050ff" colorDownDisable="#505050ff"/>
+	<Button name="skin_ButtonGrayBlack" src="" colorUp="#000000ff" colorDown="#000000ff" colorUpDisable="#505050ff" colorDownDisable="#505050ff" colorUpHover="#505050ff" colorDownHover="#505050ff" colorUpPush="#505050ff" colorDownPush="#505050ff" colorUpDisable="#505050ff" colorDownDisable="#505050ff" />
 	<imgframe name="skin_lcex_header_arrow" src="img:skin_lcex_header_arrow" states="2" />
 	<imglist name="skin_tree_icon" src="img:png_treeicon" states="3" />
+	<Button name="skin_ButtonTransparent" src="" />
+	<Button name="skin_ButtonRed" src="" colorUp="#ff3000ff" colorDown="#ff0000ff" colorUpHover="#900000ff" colorDownHover="#900000ff" colorUpPush="#900000ff" colorDownPush="#900000ff" colorUpDisable="#505050ff" colorDownDisable="#505050ff" />
+	<Button name="skin_ButtonBlue" src="" colorUp="#0050ffff" colorDown="#0030ffff" colorUpHover="#003090ff" colorDownHover="#003090ff" colorUpPush="#003090ff" colorDownPush="#003090ff" colorUpDisable="#505050ff" colorDownDisable="#505050ff" />
 	<imglist name="skin_btn_help" src="img:btn_help" states="3" />
 	<!--<newScrollbar name="skin_new_scrollbar" srcVert="img:png_vscroll" srcHorz="img:png_hscroll" states="3" margin="4" /> -->
 	<hscrollbar name="skin_hscrollbar" src="img:png_hscroll" states="3" margin="4" />
 	<vscrollbar name="skin_vscrollbar" src="img:png_vscroll" states="3" margin="4" />
 	<!--<newScrollbar name="skin_new_scrollbar" srcVert="IMG:png_vscroll" srcHorz="IMG:png_hscroll" states="3" margin="4" /> -->
 	<scrollbar name="skin_new_scrollbar" src="IMG:png_newscroll" margin="2" />
+	<imglist name="skin_open_menu_png" src="IMG:open_menu_png" states="4" tile="1" />
+	<Button name="skin_ButtonWhite" src="" colorUp="#ffffffff" colorDown="#ffffffff" colorUpHover="#c0c0c0ff" colorDownHover="#c0c0c0ff" colorUpPush="#7f7f7fff" colorDownPush="#666666ff" />
+	<imglist name="skin_btn_download" src="IMG:download_png" states="4" tile="1" />
 
 </skin>

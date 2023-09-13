@@ -695,3 +695,64 @@ bool _HisStockFilterPara::operator<(const _HisStockFilterPara & other) const
 	}
 	return sf < other.sf;
 }
+_TradeDouble::_TradeDouble()
+{
+	data = 0;
+	digital = 0;
+}
+
+_TradeDouble::_TradeDouble(long long llData, long long llDigital)
+{
+	data = llData;
+	digital = llDigital;
+}
+
+double _TradeDouble::GetDouble() const
+{
+	return data / pow(10,digital);
+}
+
+_TradeDouble _TradeDouble::operator+(const _TradeDouble & other)
+{
+	_TradeDouble res;
+	res.digital = max(digital, other.digital);
+	auto nDiff1 = res.digital - digital;
+	auto nDiff2 = res.digital - other.digital;
+	res.data = data *  (long long)pow(10, nDiff1) +
+		other.data *  (long long)pow(10, nDiff2);
+	return res;
+}
+
+_TradeDouble _TradeDouble::operator-(const _TradeDouble & other)
+{
+	_TradeDouble res;
+	res.digital = max(digital, other.digital);
+	auto nDiff1 = res.digital - digital;
+	auto nDiff2 = res.digital - other.digital;
+	res.data = data *  (long long)pow(10, nDiff1) -
+		other.data *  (long long)pow(10, nDiff2);
+	return res;
+}
+
+_TradeDouble _TradeDouble::operator*(const _TradeDouble & other)
+{
+	_TradeDouble res;
+	res.digital = digital + other.digital;
+	res.data = data * other.data;
+	return res;
+}
+
+_TradeDouble _TradeDouble::operator/(const _TradeDouble & other)
+{
+	_TradeDouble res;
+	res.digital = digital - other.digital;
+	if (data % other.data == 0)
+		res.data = data / other.data;
+	else
+	{
+		double tmpData = GetDouble() / other.GetDouble();
+		res.digital = max(digital, other.digital + 1);
+		res.data = tmpData * pow(10, res.digital);
+	}
+	return res;
+}

@@ -1,0 +1,25 @@
+﻿<?xml version="1.0"?>
+<SOUI name="dlg_register" title="账号" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="240" margin="1,5,5,5" wndType="normal" appWnd="0" >
+	<root cache="1">
+		<window pos="0,0,-0,-0" colorBkgnd="rgb(220,220,210)" colorText="#000000ff" font="face:微软雅黑">
+			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
+				<icon pos="10,8" src="ICON_LOGO:16" />
+				<text pos="29,9" name="txt_title">账号注册</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			</caption>
+			<text pos="10,56" size="64, 24" align="right">账号</text>
+			<edit name="edit_ID" pos="[5,{0,@150,@24"  colorBkgnd="#FFFFFF" cueText="" colorText="#000000" maxBuf="16" notifyChange="1" />
+			<text pos="[5,{0,-10,@24" name="txt_IDInfo" text="8-16位字母或数字"  font="size:12,face:微软雅黑"/>
+			<text pos="10,[10" size="64, 24" name="txt_srcPsd" align="right">原密码</text>
+			<edit name="edit_SrcPsd" pos="[5,{0,@150,@24"  colorBkgnd="#FFFFFF" cueText="" colorText="#000000" maxBuf="16"  notifyChange="1" />
+			<text pos="[5,{0,-10,@24" name="txt_SrcPsdInfo"  text="请输入原有密码"  font="size:12,face:微软雅黑"/>
+			<text pos="10,[10" size="64, 24" name="txt_psd" align="right">密码</text>
+			<edit name="edit_Psd" pos="[5,{0,@150,@24"  colorBkgnd="#FFFFFF" cueText="" colorText="#000000" password="1" maxBuf="16" notifyChange="1" />
+			<text pos="[5,{0,-10,@24" name="txt_PsdInfo" text="8-16位字母、数字、符号" font="size:12,face:微软雅黑"/>
+			<text pos="10,[10" size="64, 24" align="right">密码确认</text>
+			<edit name="edit_PsdConfirm" pos="[5,{0,@150,@24"  colorBkgnd="#FFFFFF" cueText="" colorText="#000000" password="1" maxBuf="16" notifyChange="1" />
+			<text pos="[5,{0,-10,@24" name="txt_PsdCfmInfo" text="重复输入密码" font="size:12,face:微软雅黑"/>
+			<imgbtn name="btn_OK" pos="140,200" size="120, 30" tip="" animate="1" skin="skin_ButtonRed"  colorText="#FFFFFFFF" >确定</imgbtn>
+		</window>
+	</root>
+</SOUI>

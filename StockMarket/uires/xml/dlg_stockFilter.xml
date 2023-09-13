@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <SOUI name="filterWindow" title="条件选股" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="700" height="450" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0">
 	<root cache="1" colorBkgnd="rgb(50,50,50)">
 		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" cache="1">
@@ -9,33 +9,32 @@
 		<window pos="0,30,-0,-0" cache="1" font="face:微软雅黑" colorText="#00ffffff">
 			<text pos="5,5">条件选股公式</text>
 			<combobox name="cbx_frml" class="cls_edit" pos="[5,5,@360,@20" dropDown="1" dropHeight="200" animateTime="200" curSel="0" autoFitDropBtn="1" focusable="0" colorBorder="#ff0000ff" margin="1,1,1,1">
-					<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
-					<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
+				<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
+				<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
 			</combobox>
 			<imgbtn name="btn_Find" skin="skin_ButtonGrayBlack" pos="[5,5,@60,@20" animate="1" text="查找" />
 			<imgbtn name="btn_Usage" skin="skin_ButtonGrayBlack" pos="[5,5,@80,@20" animate="1" text="用法注释" />
 			<imgbtn name="btn_Edit" skin="skin_ButtonGrayBlack" pos="[5,5,@80,@20" animate="1" text="查看公式" />
-			<group pos="5,30,@300,-5" align="left" headerHeight="0" text="计算参数" >
-				<text pos = "5,20,-5,-30" name = "text_paratitle" multiLines="1"  valign="top"   wordWrap="1" readOnly="1" font="size:13,face:微软雅黑" interHeight="2">参数设置</text>
+			<group pos="5,30,@300,-5" align="left" headerHeight="0" text="计算参数">
+				<text pos="5,20,-5,-30" name="text_paratitle" multiLines="1" valign="top" wordWrap="1" readOnly="1" font="size:13,face:微软雅黑" interHeight="2">参数设置</text>
 				<!--<edit pos = "5,[4,-5,-30" name = "text_p1start" multiLines="1"  valign="top"   wordWrap="1">
 				</edit>-->
-				<edit pos = "5,40,@60,@16" name = "edit_para1" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para2" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para3" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para4" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para5" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para6" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para7" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para8" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para9" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para10" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para11" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para12" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para13" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para14" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para15" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-				<edit pos = "5,[4,@60,@16" name = "edit_para16" number="1" colorBkgnd="#FFFFFF"  visible="0" colorText="#000000FF"/>
-
+				<edit pos="5,40,@60,@16" name="edit_para1" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para2" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para3" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para4" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para5" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para6" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para7" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para8" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para9" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para10" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para11" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para12" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para13" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para14" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para15" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
+				<edit pos="5,[4,@60,@16" name="edit_para16" number="1" colorBkgnd="#FFFFFF" visible="0" colorText="#000000FF" />
 				<!--<text pos = "[0,{0" name = "text_p1end">参数结束</text>
 				<text pos = "5,[4" name = "text_p2start">参数开始:</text>
 				<edit pos = "[0,{0,@60,@16" name = "edit_para2" number="1" colorBkgnd="#FFFFFF"/>
@@ -94,18 +93,18 @@
 			<imgbtn name="btn_Read" skin="skin_ButtonGrayBlack" pos="{0,[100,@80,@20" animate="1" text="引入方案" />
 			<imgbtn name="btn_Save" skin="skin_ButtonGrayBlack" pos="{0,[20,@80,@20" animate="1" text="保存方案" />
 			<text pos="[10,30">选股条件列表</text>
-			<color_listctrlex name="lc_cond" pos="{0,[5,@290,%85"  hotTrack="1" itemHeight="20" headerHeight="0"  sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#FFFFFFFF" colorItemBkgnd2="#FFFFFFFF"  colorText="#000000FF"  cache="1" colorBkgnd="#FFFFFFFF">
+			<color_listctrlex name="lc_cond" pos="{0,[5,@290,%85" hotTrack="1" itemHeight="20" headerHeight="0" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#FFFFFFFF" colorItemBkgnd2="#FFFFFFFF" colorText="#000000FF" cache="1" colorBkgnd="#FFFFFFFF">
 				<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 					<items>
 						<item width="270">公式</item>
 					</items>
 				</headerex>
 			</color_listctrlex>
-		<radio  name="rdb_and" pos="{0,[5" size="120,20" skin="_skin.sys.radio" checked="1"  focusable="0">全部条件相与</radio>
-		<radio  name="rdb_or" pos="[50,{0" size="120,20" skin="_skin.sys.radio" focusable="0">全部条件相或</radio>
-		<check name="chk_use"  pos="400,[10,@80,@20" animate="1" text="执行选股" />
-		<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="500,{0,@80,@20" animate="1" text="确定" />
-		<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[20,{0,@80,@20" animate="1" text="关闭" />
+			<radio name="rdb_and" pos="{0,[5" size="120,20" skin="_skin.sys.radio" checked="1" focusable="0">全部条件相与</radio>
+			<radio name="rdb_or" pos="[50,{0" size="120,20" skin="_skin.sys.radio" focusable="0">全部条件相或</radio>
+			<check name="chk_use" pos="400,[10,@80,@20" animate="1" text="执行选股" />
+			<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="500,{0,@80,@20" animate="1" text="确定" />
+			<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="[20,{0,@80,@20" animate="1" text="关闭" />
 		</window>
 	</root>
 </SOUI>

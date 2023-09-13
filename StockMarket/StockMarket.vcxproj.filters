@@ -173,6 +173,18 @@
     <ClCompile Include="json_writer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="STradeInfoPic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TradeSimulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgRegister.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgTradeInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -316,6 +328,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgLimitUpStat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="STradeInfoPic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TradeSimulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgRegister.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgTradeInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

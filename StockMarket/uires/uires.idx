@@ -24,6 +24,7 @@
 		<file name="dlg_SaveFrmlList" path="xml\dlg_SaveFrmlList.xml" />
 		<file name="dlg_ReadFrmlList" path="xml\dlg_ReadFrmlList.xml" />
 		<file name="dlg_messagebox" path="xml\dlg_messagebox.xml" />
+		<file name="dlg_TradeSimulate" path="xml\dlg_TradeSimulate.xml" />
 		<file name="dlg_targetSelect" path="xml\dlg_targetSelect.xml" />
 		<file name="dlg_comboStockFilter" path="xml\dlg_comboStockFilter.xml" />
 		<file name="dlg_headerSelect" path="xml\dlg_headerSelect.xml" />
@@ -32,6 +33,8 @@
 		<file name="dlg_condBackTesting" path="xml\dlg_condBackTesting.xml" />
 		<file name="dlg_multiFilter" path="xml\dlg_multiFilter.xml" />
 		<file name="dlg_limitUpStat" path="xml\dlg_limitUpStat.xml" />
+		<file name="dlg_register" path="xml\dlg_register.xml" />
+		<file name="dlg_tradeConfirm" path="xml\dlg_tradeConfirm.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -46,6 +49,8 @@
 		<file name="png_vscroll" path="image\vscrollbar.png" />
 		<file name="png_hscroll" path="image\hscrollbar.png" />
 		<file name="png_newscroll" path="image\newscroll.png" />
+		<file name="open_menu_png" path="image\open_menu.png" />
+		<file name="download_png" path="image\download.png" />
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />

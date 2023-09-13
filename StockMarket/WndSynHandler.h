@@ -36,10 +36,15 @@ public:
 	map<int, strHash<int>>* GetStockPos();
 	void GetSubPicShowNameVec(vector<vector<SStringA>>& SubPicShowNameVec);
 	UINT GetThreadID() const;
+	UINT GetTradeThreadID() const;
+
 	strHash<double> GetCloseMap() const;
 	void SetCmdLine(LPCTSTR lpstrCmdLine);
 	map<int, ShowPointInfo> GetPointInfo();
 	void SetSubWndInfo(HWND hSubWnd,HWND hWnd,int nGroup);
+	void SetAccountWnd(HWND hwnd);
+	void SetTradeWnd(HWND hWnd);
+	void SetTradeDlgThreadID(unsigned threadID);
 	//初始化函数
 protected:
 	void InitCommonSetting();
@@ -60,6 +65,7 @@ protected:
 	void InitDataHandleMap();
 	void InitNetHandleMap();
 	void InitSynHandleMap();
+	void InitTradeSynMap();
 	bool CheckInfoRecv();
 	bool CheckCmdLine();
 	bool GetAutoUpdateFile(SStringA strMD5);
@@ -81,6 +87,7 @@ protected:
 	void Login();
 	void DataProc();
 	void MsgProc();
+	void TradeMsgProc();
 	void SetVectorSize();
 	void ClearData();
 	void ReInit();
@@ -109,6 +116,17 @@ protected:
 	void OnMsgHisCallAction( ReceiveInfo &recvInfo);
 	void OnMsgHisTFBase(ReceiveInfo &recvInfo);
 	void OnMsgTodayTFMarket(ReceiveInfo &recvInfo);
+	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
+	void OnMsgChangePsd(ReceiveInfo &recvInfo);
+	void OnMsgLogin(ReceiveInfo &recvInfo);
+	void OnMsgLogout(ReceiveInfo &recvInfo);
+	void OnMsgAccountInfo(ReceiveInfo &recvInfo);
+	void OnMsgPosition(ReceiveInfo &recvInfo);
+	void OnMsgTrust(ReceiveInfo &recvInfo);
+	void OnMsgDeal(ReceiveInfo &recvInfo);
+	void OnMsgHisTrust(ReceiveInfo &recvInfo);
+	void OnMsgHisDeal(ReceiveInfo &recvInfo);
+	void OnMsgSubmitFeedback(ReceiveInfo &recvInfo);
 	void OnNoDefineMsg( ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -141,6 +159,23 @@ protected:
 	void OnHisTFBase(int nMsgLength, const char* info);
 	void OnGetHisTFBase(int nMsgLength, const char* info);
 	void OnTodayTFMarket(int nMsgLength, const char* info);
+	void OnReLogin(int nMsgLength, const char* info);
+
+	//交易信息处理
+protected:
+	void PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info);
+	void OnAccountRegister(int nMsgLength, const char* info);
+	void OnChangePsd(int nMsgLength, const char* info);
+	void OnTradeLogin(int nMsgLength, const char* info);
+	void OnTradeLogout(int nMsgLength, const char* info);
+	void OnAccountInfo(int nMsgLength, const char* info);
+	void OnPosition(int nMsgLength, const char* info);
+	void OnTrust(int nMsgLength, const char* info);
+	void OnDeal(int nMsgLength, const char* info);
+	void OnHisTrust(int nMsgLength, const char* info);
+	void OnHisDeal(int nMsgLength, const char* info);
+	void OnSubmitFeedBack(int nMsgLength, const char* info);
+
 public:
 	vector<SStringA> m_dataNameVec;
 	//vector<SStringA> m_comDataNameVec;
@@ -176,14 +211,20 @@ protected:
 	thread tLogin;
 	thread tRpsCalc;
 	thread tMsgSyn;
+	thread tTradeMsgSyn;
+
 	UINT m_uNetThreadID;
 	UINT m_RpsProcThreadID;
 	UINT m_uMsgThreadID;
+	UINT m_uTradeMsgThreadID;
+	UINT m_uTradeDlgThreadID;
+
 	//处理函数哈希表
 protected:
 	unordered_map<int, PDATAHANDLEFUNC>m_dataHandleMap;
 	unordered_map<int, PNETHANDLEFUNC>m_netHandleMap;
 	unordered_map<int, PDATAHANDLEFUNC>m_synHandleMap;
+	unordered_map<int, PDATAHANDLEFUNC>m_tradeSynHandleMap;
 
 public:
 	strHash<double>m_preCloseMap;
@@ -211,6 +252,9 @@ protected:
 	CRITICAL_SECTION m_cs;
 	CRITICAL_SECTION m_csFilterData;
 	SStringW m_strCmdLine;
+	unordered_map<int, int>m_tradeSynMap;
+	HWND m_hAccWnd;
+	HWND m_hTradeWnd;
 };
 
 inline void CWndSynHandler::SetMainWnd(HWND hWnd)
@@ -273,6 +317,11 @@ inline UINT CWndSynHandler::GetThreadID() const
 	return m_uMsgThreadID;
 }
 
+inline UINT CWndSynHandler::GetTradeThreadID() const
+{
+	return m_uTradeMsgThreadID;
+}
+
 inline strHash<double> CWndSynHandler::GetCloseMap() const
 {
 	return m_preCloseMap;
@@ -292,5 +341,20 @@ inline void CWndSynHandler::SetSubWndInfo(HWND hSubWnd, HWND hWnd, int nGroup)
 {
 	m_hSubWndMap[hSubWnd]= hWnd;
 	m_SubWndGroup[hSubWnd] = nGroup;
+}
+
+inline void CWndSynHandler::SetAccountWnd(HWND hwnd)
+{
+	m_hAccWnd = hwnd;
+}
+
+inline void CWndSynHandler::SetTradeWnd(HWND hWnd)
+{
+	m_hTradeWnd = hWnd;
+}
+
+inline void CWndSynHandler::SetTradeDlgThreadID(unsigned threadID)
+{
+	m_uTradeDlgThreadID = threadID;
 }
 
