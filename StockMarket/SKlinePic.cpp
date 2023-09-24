@@ -443,6 +443,7 @@ void SKlinePic::SetHisCAInfoState(bool bReady)
 void SKlinePic::SetTFMarketState(bool bReady)
 {
 	m_bHisTFBaseReady = bReady;
+	OutputDebugStringFormat("tfMarket״̬:%d\n", m_bHisTFBaseReady);
 
 }
 

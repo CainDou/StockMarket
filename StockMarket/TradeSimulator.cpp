@@ -4,6 +4,8 @@
 #include "STradeInfoPic.h"
 #include "WndSynHandler.h"
 #include <algorithm>
+#include "SSpinButtonCtrlEx.h"
+#include <locale>
 
 #define MAX_NUM_LENGTH 9
 #define MAX_TICK 6000
@@ -13,6 +15,10 @@ extern CWndSynHandler g_WndSyn;
 const wchar_t* strNumOfDigital[] = { L"亿",L"仟",L"佰",L"拾",L"万",L"仟",L"佰",L"拾",L"" };
 const wchar_t* strBigNum[] = { L"零",L"壹",L"贰",L"叁",L"肆",L"伍",L"陆",L"柒",L"捌",L"玖" };
 
+const long long llShMainMaxTrade = 1'000'000;
+const long long llSzMainMaxTrade = 1'000'000;
+const long long llSbmMaxTrade = 300'000;
+const long long llStramMaxTrade = 100'000;
 CTradeSimulator::CTradeSimulator() :SHostWnd(_T("LAYOUT:dlg_TradeSimulate"))
 {
 	m_bLogin = FALSE;
@@ -55,12 +61,19 @@ BOOL CTradeSimulator::OnInitDialog(EventArgs * e)
 	return 0;
 }
 
-void SOUI::CTradeSimulator::InitControls()
+void CTradeSimulator::InitControls()
 {
+	m_pTabTrade = FindChildByName2<STabCtrl>(L"tab_ctrl");
+
 	m_pEditBuyID = FindChildByName2<SEdit>(L"edit_buyId");
 	m_pEditBuyID->GetEventSet()->subscribeEvent(
 		EventRENotify::EventID,
 		Subscriber(&CTradeSimulator::OnEditTradeIDChange, this));
+	m_pEditBuyPrice = FindChildByName2<SEdit>(L"edit_buyPrice");
+	m_pEditBuyPrice->GetEventSet()->subscribeEvent(
+		EventRENotify::EventID,
+		Subscriber(&CTradeSimulator::OnEditPriceChange, this));
+
 	m_pEditBuyVol = FindChildByName2<SEdit>(L"edit_buyVol");
 	m_pEditBuyVol->GetEventSet()->subscribeEvent(
 		EventRENotify::EventID,
@@ -75,6 +88,11 @@ void SOUI::CTradeSimulator::InitControls()
 	m_pEditSellID->GetEventSet()->subscribeEvent(
 		EventRENotify::EventID,
 		Subscriber(&CTradeSimulator::OnEditTradeIDChange, this));
+	m_pEditSellPrice = FindChildByName2<SEdit>(L"edit_sellPrice");
+	m_pEditSellPrice->GetEventSet()->subscribeEvent(
+		EventRENotify::EventID,
+		Subscriber(&CTradeSimulator::OnEditPriceChange, this));
+
 	m_pEditSellVol = FindChildByName2<SEdit>(L"edit_sellVol");
 	m_pEditSellVol->GetEventSet()->subscribeEvent(
 		EventRENotify::EventID,
@@ -113,6 +131,10 @@ void SOUI::CTradeSimulator::InitControls()
 		Subscriber(&CTradeSimulator::OnEditSearchChange, this));
 	m_pTxtPosCount = FindChildByName2<SStatic>(L"text_posCount");
 	m_editListMap[m_pEditPosIDSearch] = m_pLsPosition;
+	m_StockIdInListMap[m_pLsPosition] = SPH_SecurityID;
+	m_pLsPosition->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
 
 	m_pTxtTrustCount = FindChildByName2<SStatic>(L"text_trustCount");
 	m_pEditTrustIDSearch = FindChildByName2<SEdit>(L"edit_trustIDSearch");
@@ -121,11 +143,20 @@ void SOUI::CTradeSimulator::InitControls()
 		Subscriber(&CTradeSimulator::OnEditSearchChange, this));
 	m_pLsTrust = FindChildByName2<SColorListCtrlEx>(L"ls_trust");
 	m_editListMap[m_pEditTrustIDSearch] = m_pLsTrust;
+	m_StockIdInListMap[m_pLsTrust] = STH_SecurityID;
+	m_pLsTrust->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
 
 
 	m_pTxtCancelCount = FindChildByName2<SStatic>(L"text_cancelCount");
 	m_pLsCancel = FindChildByName2<SColorListCtrlEx>(L"ls_cancel");
 	m_pChkSelectAll = FindChildByName2<SCheckBox>(L"chk_cancelAll");
+	m_StockIdInListMap[m_pLsCancel] = SCH_SecurityID;
+	m_pLsCancel->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
+
 
 	m_pTxtDealCount = FindChildByName2<SStatic>(L"text_dealCount");
 	m_pEditDealIDSearch = FindChildByName2<SEdit>(L"edit_dealIDSearch");
@@ -134,6 +165,22 @@ void SOUI::CTradeSimulator::InitControls()
 		Subscriber(&CTradeSimulator::OnEditSearchChange, this));
 	m_pLsDeal = FindChildByName2<SColorListCtrlEx>(L"ls_deal");
 	m_editListMap[m_pEditDealIDSearch] = m_pLsDeal;
+	m_StockIdInListMap[m_pLsDeal] = SDH_SecurityID;
+	m_pLsDeal->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
+
+	m_pTxtDealSumCount = FindChildByName2<SStatic>(L"text_dealSumCount");
+	m_pEditDealSumSearch = FindChildByName2<SEdit>(L"edit_dealSumSearch");
+	m_pEditDealSumSearch->GetEventSet()->subscribeEvent(
+		EventRENotify::EventID,
+		Subscriber(&CTradeSimulator::OnEditSearchChange, this));
+	m_pLsDealSum = FindChildByName2<SColorListCtrlEx>(L"ls_dealSummary");
+	m_editListMap[m_pEditDealSumSearch] = m_pLsDealSum;
+	m_StockIdInListMap[m_pLsDealSum] = SDSH_SecurityID;
+	m_pLsDealSum->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
 
 	m_pDtpHisTrustStart = FindChildByName2<SDateTimePicker>(L"dtp_hisTrustStart");
 	m_pDtpHisTrustEnd = FindChildByName2<SDateTimePicker>(L"dtp_hisTrustEnd");
@@ -144,6 +191,10 @@ void SOUI::CTradeSimulator::InitControls()
 	m_pTxtHisTrustCount = FindChildByName2<SStatic>(L"text_hisTrustCount");
 	m_pLsHisTrust = FindChildByName2<SColorListCtrlEx>(L"ls_hisTrust");
 	m_editListMap[m_pEditHisTrustSearch] = m_pLsHisTrust;
+	m_StockIdInListMap[m_pLsHisTrust] = SHTH_SecurityID;
+	m_pLsHisTrust->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
 
 	m_pDtpHisDealStart = FindChildByName2<SDateTimePicker>(L"dtp_hisDealStart");
 	m_pDtpHisDealEnd = FindChildByName2<SDateTimePicker>(L"dtp_hisDealEnd");
@@ -154,6 +205,10 @@ void SOUI::CTradeSimulator::InitControls()
 	m_pTxtHisDealCount = FindChildByName2<SStatic>(L"text_hisDealCount");
 	m_pLsHisDeal = FindChildByName2<SColorListCtrlEx>(L"ls_hisDeal");
 	m_editListMap[m_pEditHisDealSearch] = m_pLsHisDeal;
+	m_StockIdInListMap[m_pLsHisDeal] = SHDH_SecurityID;
+	m_pLsHisDeal->GetEventSet()->subscribeEvent(
+		EventLCDbClick::EventID,
+		Subscriber(&CTradeSimulator::OnListLDoubleClicked, this));
 
 	m_pLsCancel->GetEventSet()->subscribeEvent(EventLCSelChanged::EventID,
 		Subscriber(&CTradeSimulator::OnListCancelLBClicked, this));
@@ -162,7 +217,7 @@ void SOUI::CTradeSimulator::InitControls()
 	m_pEditSellVol->SetWindowTextW(L"");
 }
 
-void SOUI::CTradeSimulator::InitStrings()
+void CTradeSimulator::InitStrings()
 {
 	m_tradeDirectStrMap[eTD_Buy] = L"买入";
 	m_tradeDirectStrMap[eTD_Sell] = L"卖出";
@@ -179,7 +234,7 @@ void SOUI::CTradeSimulator::InitStrings()
 	m_cancelSignStrMap[eCS_Canceled] = L"撤单";
 }
 
-void SOUI::CTradeSimulator::InitColors()
+void CTradeSimulator::InitColors()
 {
 	m_tradeDirectColorMap[eTD_Buy] = RGBA(255, 0, 0, 255);
 	m_tradeDirectColorMap[eTD_Sell] = RGBA(0, 150, 255, 255);
@@ -188,7 +243,7 @@ void SOUI::CTradeSimulator::InitColors()
 
 }
 
-void SOUI::CTradeSimulator::InitDatas()
+void CTradeSimulator::InitDatas()
 {
 	m_SynThreadID = g_WndSyn.GetThreadID();
 	m_tradeSynThreadID = g_WndSyn.GetTradeThreadID();
@@ -238,7 +293,6 @@ void CTradeSimulator::InitDataHandleMap()
 		= &CTradeSimulator::OnHisDeal;
 	m_DataHandleMap[TradeSyn_OnSubmitFeedback]
 		= &CTradeSimulator::OnSubmitFeedback;
-
 }
 
 
@@ -298,6 +352,26 @@ void CTradeSimulator::OnBtnBuy()
 		m_pEditBuyID->SetFocus();
 		return;
 	}
+	SStringW strPrice = m_pEditBuyPrice->GetWindowTextW();
+	int nDotPos = strPrice.Find('.');
+	if (nDotPos < 0)
+	{
+		nDotPos = strPrice.GetLength();
+		strPrice += '.';
+	}
+	int nFloatCount = strPrice.GetLength() - nDotPos - 1;
+	for (int i = nFloatCount; i < 2;++i)
+		strPrice += '0';
+
+	long long llIntPart = _wtoi64(strPrice.Left(nDotPos));
+	long long llFloatPart = _wtoi64(strPrice.Right(2));
+	long long llPrice = llIntPart * 100 + llFloatPart;
+	if (llPrice == 0)
+	{
+		SMessageBox(m_hWnd, L"请输入价格!", L"错误", MB_OK | MB_ICONERROR);
+		m_pEditBuyPrice->SetFocus();
+		return;
+	}
 
 	int nCount = _wtoi(m_pEditBuyVol->GetWindowTextW());
 	BOOL bVolLeagl = TRUE;
@@ -306,6 +380,11 @@ void CTradeSimulator::OnBtnBuy()
 	if (str.Left(3) == "688")
 	{
 		if (nCount < 200)
+			bVolLeagl = FALSE;
+	}
+	else
+	{
+		if (nCount % 100 != 0)
 			bVolLeagl = FALSE;
 	}
 
@@ -324,6 +403,7 @@ void CTradeSimulator::OnBtnBuy()
 	strcpy_s(info.Account, m_accInfo.ID);
 	strcpy_s(info.SecurityID, str);
 	strcpy_s(info.SecurityName, m_stockHash.hash[str].SecurityName);
+	info.TrustPrice = TradeDouble(llPrice, 2);
 	info.TrustVol = TradeDouble(nCount, 0);
 	info.Direct = eTD_Buy;
 	SendMsg(m_tradeSynThreadID, TradeSyn_SubmitTrade,
@@ -359,17 +439,55 @@ void CTradeSimulator::OnBtnSell()
 		m_pEditSellID->SetFocus();
 		return;
 	}
+
+	SStringW strPrice = m_pEditSellPrice->GetWindowTextW();
+	int nDotPos = strPrice.Find('.');
+	if (nDotPos < 0)
+	{
+		nDotPos = strPrice.GetLength();
+		strPrice += '.';
+	}
+	int nFloatCount = strPrice.GetLength() - nDotPos - 1;
+	for (int i = nFloatCount; i < 2; ++i)
+		strPrice += '0';
+
+	long long llIntPart = _wtoi64(strPrice.Left(nDotPos));
+	long long llFloatPart = _wtoi64(strPrice.Right(2));
+	long long llPrice = llIntPart * 100 + llFloatPart;
+	if (llPrice == 0)
+	{
+		SMessageBox(m_hWnd, L"请输入价格!", L"错误", MB_OK | MB_ICONERROR);
+		m_pEditSellPrice->SetFocus();
+		return;
+	}
+
+
 	int nCount = _wtoi(m_pEditSellVol->GetWindowTextW());
 	BOOL bVolLeagl = TRUE;
-	if (nCount <= 100)
-		bVolLeagl = FALSE;
-	if (str.Left(3) != "688")
+	if (str.Left(3) == "688")
 	{
-		if (nCount % 100 != 0)
+		if (nCount < 200)
+		{
+			::EnterCriticalSection(&m_csPosition);
+			int nTotal = m_PosInfoMap[str].UsablePos.data;
+			::LeaveCriticalSection(&m_csPosition);
+			int nLeft = nTotal % 200;
+
+			if (nCount != nLeft)
+				bVolLeagl = FALSE;
+		}
+	}
+	else
+	{
+		::EnterCriticalSection(&m_csPosition);
+		int nTotal = m_PosInfoMap[str].UsablePos.data;
+		::LeaveCriticalSection(&m_csPosition);
+		int nLeft = nTotal % 100;
+		if (nCount == 0)
+			bVolLeagl = FALSE;
+		else if (nCount % 100 != 0 && nCount % 100 != nLeft)
 			bVolLeagl = FALSE;
 	}
-	else if (nCount < 200)
-		bVolLeagl = FALSE;
 	if (nCount > m_llMaxSell)
 		bVolLeagl = FALSE;
 
@@ -383,6 +501,7 @@ void CTradeSimulator::OnBtnSell()
 	strcpy_s(info.Account, m_accInfo.ID);
 	strcpy_s(info.SecurityID, str);
 	strcpy_s(info.SecurityName, m_stockHash.hash[str].SecurityName);
+	info.TrustPrice = TradeDouble(llPrice, 2);
 	info.TrustVol = TradeDouble(nCount, 0);
 	info.Direct = eTD_Sell;
 	SendMsg(m_tradeSynThreadID, TradeSyn_SubmitTrade,
@@ -409,7 +528,7 @@ void CTradeSimulator::OnBtnSellUnCon()
 void CTradeSimulator::OnBtnRefreshAcc()
 {
 	SStringA str;
-	str = m_accInfo.ID;
+	str.Format("ID:%s;", m_accInfo.ID);
 	SendMsg(m_tradeSynThreadID, TradeSyn_QueryAccountInfo,
 		str.GetBuffer(0), str.GetLength() + 1);
 
@@ -511,6 +630,38 @@ void CTradeSimulator::OnBtnDealDownload()
 	}
 }
 
+void CTradeSimulator::OnBtnDealSumSearch()
+{
+	SStringW str = m_pEditDealSumSearch->GetWindowTextW();
+	UpdateListData(m_pLsDealSum, str);
+}
+
+void CTradeSimulator::OnBtnDealSumDownload()
+{
+	SYSTEMTIME st;
+	::GetLocalTime(&st);
+	int nDate = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
+	TCHAR szBuffer[MAX_PATH] = { 0 };
+	SStringW FileName;
+	FileName.Format(L"%d_成交汇总_%d.csv", m_accInfo.AccountID, nDate);
+	HRESULT hr = SaveFile(FileName, szBuffer);
+	if (SUCCEEDED(hr))
+	{
+		FileName = szBuffer;
+		if (FileName.Find(L".csv") == -1)
+			FileName += L".csv";
+		std::ofstream ofile(FileName);
+		if (ofile.is_open())
+		{
+			SaveListData(m_pLsDealSum, ofile);
+			ofile.close();
+			SMessageBox(m_hWnd, L"文件导出成功！", L"提示", MB_OK | MB_ICONINFORMATION);
+		}
+		else
+			SMessageBox(m_hWnd, L"文件已经打开，导出失败！", L"提示", MB_OK | MB_ICONINFORMATION);
+	}
+}
+
 void CTradeSimulator::OnChkCancelAll()
 {
 	BOOL bChceck = m_pChkSelectAll->IsChecked();
@@ -533,6 +684,8 @@ void CTradeSimulator::OnBtnCancelMulti()
 		TrustInfo info = { 0 };
 		strcpy_s(info.Account, m_accInfo.ID);
 		strcpy_s(info.SecurityID, strStockID);
+		strcpy_s(info.SecurityName, m_stockHash.hash[info.SecurityID].SecurityName);
+
 		info.ApplyID = nID;
 		if (strDirect == L"买入")
 			info.Direct = eTD_CancelBuy;
@@ -554,6 +707,7 @@ void CTradeSimulator::OnBtnCancelAll()
 		TrustInfo info = { 0 };
 		strcpy_s(info.Account, m_accInfo.ID);
 		strcpy_s(info.SecurityID, strStockID);
+		strcpy_s(info.SecurityName, m_stockHash.hash[info.SecurityID].SecurityName);
 		info.ApplyID = nID;
 		if (strDirect == L"买入")
 			info.Direct = eTD_CancelBuy;
@@ -714,6 +868,30 @@ void CTradeSimulator::OnBtnHisDealDownload()
 	}
 }
 
+bool CTradeSimulator::OnListLDoubleClicked(EventArgs * e)
+{
+	EventLCDbClick* pEvt = (EventLCDbClick*)e;
+	SColorListCtrlEx* pList = (SColorListCtrlEx*)pEvt->sender;
+	int nSel = pEvt->nCurSel;
+	SStringW wstrStockID = pList->GetSubItemText(nSel, m_StockIdInListMap[pList]);
+	SStringA strStockID = StrW2StrA(wstrStockID);
+	int nTabSel = m_pTabTrade->GetCurSel();
+	if (nTabSel == 0)
+	{
+		m_pEditBuyID->SetWindowTextW(wstrStockID);
+		m_pLbBuyID->SetVisible(FALSE, TRUE);
+		m_pEditBuyPrice->SetFocus();
+	}
+	else
+	{
+		m_pEditSellID->SetWindowTextW(wstrStockID);
+		m_pLbSellID->SetVisible(FALSE, TRUE);
+		m_pEditSellPrice->SetFocus();
+	}
+	::SendMessage(m_hWnd, WM_TRADE_MSG, (WPARAM)&strStockID, TSMsg_SetTradeStock);
+	return true;
+}
+
 bool CTradeSimulator::OnListCancelLBClicked(EventArgs * e)
 {
 	EventLCSelChanged* pEvt = (EventLCSelChanged*)e;
@@ -813,15 +991,6 @@ bool CTradeSimulator::OnEditVolChange(EventArgs * e)
 	SEdit* pEdit = (SEdit*)pEvt->sender;
 	SStringW str = pEdit->GetWindowTextW();
 	SStatic* pText = m_volTextMap[pEdit];
-	if (str.GetLength() > MAX_NUM_LENGTH)
-	{
-		SStringW dstStr = L"";
-		for (int i = 0; i < MAX_NUM_LENGTH; ++i)
-			dstStr += str[i];
-		str = dstStr;
-		pEdit->SetWindowTextW(str);
-		pEdit->SetSel(-1);
-	}
 	int nLength = str.GetLength();
 	if (!isdigit(str[nLength - 1]))
 	{
@@ -830,10 +999,42 @@ bool CTradeSimulator::OnEditVolChange(EventArgs * e)
 			dstStr += str[i];
 		str = dstStr;
 		pEdit->SetWindowTextW(str);
+		pEdit->SetSel(-1);
 	}
 
 	SStringW strBigNum = str.IsEmpty() ? L"" : NumToBig(str);
 	pText->SetWindowTextW(strBigNum);
+	return true;
+}
+
+bool SOUI::CTradeSimulator::OnEditPriceChange(EventArgs * e)
+{
+	EventRENotify* pEvt = (EventRENotify*)e;
+	SEdit* pEdit = (SEdit*)pEvt->sender;
+
+	if (pEvt->iNotify == EN_KILLFOCUS)
+	{
+		SetMaxTradeVol(pEdit);
+		return true;
+	}
+	if (pEvt->iNotify != EN_CHANGE)
+		return true;
+	SStringW str = pEdit->GetWindowTextW();
+
+	int nLength = str.GetLength();
+	int nPos = str.Find('.');
+	if (nPos >= 0)
+	{
+		if (nLength - nPos - 1 > 2)
+		{
+			SStringW dstStr = L"";
+			for (int i = 0; i < nPos +3; ++i)
+				dstStr += str[i];
+			str = dstStr;
+			pEdit->SetWindowTextW(str);
+			pEdit->SetSel(-1);
+		}
+	}
 	return true;
 }
 
@@ -848,13 +1049,13 @@ bool CTradeSimulator::OnLbIDLButtonDown(EventArgs * e)
 	{
 		m_pEditBuyID->SetWindowTextW(str.Left(6));
 		pList->SetVisible(FALSE, TRUE);
-		m_pEditBuyVol->SetFocus();
+		m_pEditBuyPrice->SetFocus();
 	}
 	else
 	{
 		m_pEditSellID->SetWindowTextW(str.Left(6));
 		pList->SetVisible(FALSE, TRUE);
-		m_pEditSellVol->SetFocus();
+		m_pEditSellPrice->SetFocus();
 
 	}
 	::SendMessage(m_hWnd, WM_TRADE_MSG, (WPARAM)&strStockID, TSMsg_SetTradeStock);
@@ -885,15 +1086,6 @@ void CTradeSimulator::UpdateTradeInfo()
 	auto market = m_marketVec.empty() ? CommonStockMarket() : m_marketVec.back();
 	::LeaveCriticalSection(&m_csMarket);
 
-	double fLastPrice = market.LastPrice;
-	m_llMaxBuy = fLastPrice == 0 ?
-		m_accInfo.usableCaptical.GetDouble() / m_preCloseMap.hash[market.SecurityID]
-		: m_accInfo.usableCaptical.GetDouble() / fLastPrice;
-	m_llMaxBuy -= m_llMaxBuy % 100;
-	m_llMaxSell = m_PosInfoMap.count(market.SecurityID) ? m_PosInfoMap[market.SecurityID].UsablePos.data : 0;
-	SStringW str;
-	m_pTxtMaxBuy->SetWindowTextW(str.Format(L"最大可买:%lld", m_llMaxBuy));
-	m_pTxtMaxSell->SetWindowTextW(str.Format(L"最大可卖:%lld", m_llMaxSell));
 
 }
 
@@ -914,6 +1106,11 @@ void CTradeSimulator::UpdateSubmitFeedback(SubmitFeedback sfb)
 		SStringW str;
 		SMessageBox(m_hWnd, str.Format(L"报单错误,委托编号:%d,非法的时间！", sfb.TrustID), L"提示", MB_OK);
 	}
+	else if (sfb.Feedback == eSF_InvalidPrice)
+	{
+		SStringW str;
+		SMessageBox(m_hWnd, str.Format(L"报单错误,委托编号:%d,非法的价格！", sfb.TrustID), L"提示", MB_OK);
+	}
 	else if (sfb.Feedback == eSF_CancelSucc)
 	{
 		SStringW str;
@@ -930,6 +1127,51 @@ void CTradeSimulator::LogOut()
 {
 	SendMsg(m_tradeSynThreadID, TradeSyn_Logout,
 		m_accInfo.ID, sizeof(m_accInfo.ID));
+}
+
+void SOUI::CTradeSimulator::OnSpinBuyPrice()
+{
+	SSpinButtonCtrlEx * pSpin = FindChildByName2<SSpinButtonCtrlEx>(L"spin_buyPrice");
+	int nAction = pSpin->GetAction();
+	SStringW str = m_pEditBuyPrice->GetWindowTextW();
+	double fPrice = _wtof(str);
+	if (nAction == 1)
+	{
+		fPrice -= 0.01;
+		if (fPrice < 0)
+			fPrice = 0;
+	}
+	else
+	{
+		fPrice += 0.01;
+		if (fPrice > 99999.99)
+			fPrice = 99999.99;
+	}
+	m_pEditBuyPrice->SetWindowTextW(str.Format(L"%0.2f", fPrice));
+	m_pEditBuyPrice->SetSel(-1);
+}
+
+void SOUI::CTradeSimulator::OnSpinSellPrice()
+{
+	SSpinButtonCtrlEx * pSpin = FindChildByName2<SSpinButtonCtrlEx>(L"spin_sellPrice");
+	int nAction = pSpin->GetAction();
+	SStringW str = m_pEditSellPrice->GetWindowTextW();
+	double fPrice = _wtof(str);
+	if (nAction == 1)
+	{
+		fPrice -= 0.01;
+		if (fPrice < 0)
+			fPrice = 0;
+	}
+	else
+	{
+		fPrice += 0.01;
+		if (fPrice > 99999.99)
+			fPrice = 99999.99;
+	}
+	m_pEditSellPrice->SetWindowTextW(str.Format(L"%0.2f",fPrice));	
+	m_pEditBuyPrice->SetSel(-1);
+
 }
 
 
@@ -956,6 +1198,7 @@ LRESULT CTradeSimulator::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		break;
 	case TSMsg_UpdateDealInfo:
 		UpdateDealList(StrA2StrW(m_strDealSearch));
+		UpdateDealSummary(StrA2StrW(m_strDealSumSearch));
 		break;
 	case TSMsg_UpdateHisTrust:
 		UpdateHisTrustList(StrA2StrW(m_strHisTrustSearch));
@@ -994,8 +1237,10 @@ void CTradeSimulator::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
 				m_pEditBuyID->SetWindowTextW(str.Left(6));
 				::SendMessage(m_hWnd, WM_TRADE_MSG, (WPARAM)&strStockID, TSMsg_SetTradeStock);
 			}
-			m_pEditBuyVol->SetFocus();
+			m_pEditBuyPrice->SetFocus();
 		}
+		else if (m_pEditBuyPrice->IsFocused())
+			m_pEditBuyVol->SetFocus();
 		else if (m_pEditBuyVol->IsFocused())
 			OnBtnBuy();
 
@@ -1009,8 +1254,10 @@ void CTradeSimulator::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
 				m_pEditSellID->SetWindowTextW(str.Left(6));
 				::SendMessage(m_hWnd, WM_TRADE_MSG, (WPARAM)&strStockID, TSMsg_SetTradeStock);
 			}
-			m_pEditSellVol->SetFocus();
+			m_pEditSellPrice->SetFocus();
 		}
+		else if (m_pEditSellPrice->IsFocused())
+			m_pEditSellVol->SetFocus();
 		else if (m_pEditSellVol->IsFocused())
 			OnBtnSell();
 
@@ -1037,7 +1284,7 @@ void CTradeSimulator::OnMouseMove(UINT nFlags, CPoint pt)
 	}
 }
 
-void SOUI::CTradeSimulator::OnSize(UINT nType, CSize size)
+void CTradeSimulator::OnSize(UINT nType, CSize size)
 {
 	SetMsgHandled(FALSE);
 	if (!m_bLayoutInited) return;
@@ -1113,7 +1360,7 @@ void CTradeSimulator::OnUpdateHisStockMarket(int nMsgLength, const char * info)
 	::PostMessage(m_hWnd, WM_TRADE_MSG, NULL, TSMsg_UpdateTradeInfo);
 }
 
-void SOUI::CTradeSimulator::OnUpdateStockMarket(int nMsgLength, const char * info)
+void CTradeSimulator::OnUpdateStockMarket(int nMsgLength, const char * info)
 {
 	CommonStockMarket* pStockData = (CommonStockMarket*)info;
 	SStringA SecurityID = pStockData->SecurityID;
@@ -1124,7 +1371,7 @@ void SOUI::CTradeSimulator::OnUpdateStockMarket(int nMsgLength, const char * inf
 
 }
 
-void SOUI::CTradeSimulator::OnUpdateCloseInfo(int nMsgLength, const char * info)
+void CTradeSimulator::OnUpdateCloseInfo(int nMsgLength, const char * info)
 {
 	pair<char[8], double>preCloseData;
 	int dataCount = nMsgLength / sizeof(preCloseData);
@@ -1187,8 +1434,20 @@ void CTradeSimulator::OnDeal(int nMsgLength, const char * info)
 	DealInfo* pData = (DealInfo*)info;
 	::EnterCriticalSection(&m_csDeal);
 	for (int i = 0; i < nDealCount; ++i)
+	{
 		m_DealVec.emplace_back(pData[i]);
-	::EnterCriticalSection(&m_csDeal);
+		auto &dealMap = m_DealSumMap[pData[i].SecurityID];
+		if (dealMap.count(pData[i].Direct) == 0)
+			dealMap[pData[i].Direct] = pData[i];
+		else
+		{
+			auto &dealSum = dealMap[pData[i].Direct];
+			dealSum.DealVol = dealSum.DealVol + pData[i].DealVol;
+			dealSum.DealAmo = dealSum.DealAmo + pData[i].DealAmo;
+			dealSum.DealPrice = dealSum.DealAmo / dealSum.DealVol;
+		}
+	}
+	::LeaveCriticalSection(&m_csDeal);
 
 	::SendMessage(m_hWnd, WM_TRADE_MSG, NULL, TSMsg_UpdateDealInfo);
 
@@ -1261,6 +1520,22 @@ void CTradeSimulator::SaveListData(SColorListCtrlEx * pList, std::ofstream & ofi
 	}
 }
 
+SStringW SOUI::CTradeSimulator::NumberWithSeparator(SStringW str)
+{
+	SStringW res;
+	int nDotPos = str.Find('.');
+	if (nDotPos == -1)
+		nDotPos = str.GetLength();
+	for (int i = 0; i < str.GetLength(); ++i)
+	{
+		res += str[i];
+		int nPos = nDotPos - i;
+		if (nPos > 3 && nPos % 3 == 1)
+			res += ',';
+	}
+	return res;
+}
+
 
 void CTradeSimulator::SetEditVol(SEdit * pEdit, int nDivisor)
 {
@@ -1288,6 +1563,8 @@ void CTradeSimulator::UpdateListData(SColorListCtrlEx * pList, SStringW str)
 		UpdateCancelList();
 	else if (pList == m_pLsDeal)
 		UpdateDealList(str);
+	else if (pList == m_pLsDealSum)
+		UpdateDealSummary(str);
 	else if (pList == m_pLsHisTrust)
 		UpdateHisTrustList(str);
 	else if (pList == m_pLsHisDeal)
@@ -1350,6 +1627,7 @@ void CTradeSimulator::UpdatePositionList(SStringW str)
 			m_pLsPosition->SetSubItemText(nPos, SPH_Account, str.Format(L"%d", posInfo.AccountID));
 		}
 	}
+	m_pLsPosition->Invalidate();
 	m_pTxtPosCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsPosition->GetItemCount()));
 }
 
@@ -1374,10 +1652,7 @@ void CTradeSimulator::UpdateTrustList(SStringW str)
 			if (m_TrustInfoPosMap.count(TrustInfo.TrustID) == 0)
 			{
 				int nPos = m_pLsTrust->InsertItem(0, str.Format(L"%d", TrustInfo.Date));
-				m_pLsTrust->SetSubItemText(nPos, STH_TrustTime, str.Format(L"%02d:%02d:%02d",
-					TrustInfo.Time / 10000, TrustInfo.Time / 100 % 100, TrustInfo.Time % 100));
 				m_pLsTrust->SetSubItemText(nPos, STH_ApplyID, str.Format(L"%d", TrustInfo.ApplyID));
-
 				m_pLsTrust->SetSubItemText(nPos, STH_SecurityID, StrA2StrW(TrustInfo.SecurityID));
 				m_pLsTrust->SetSubItemText(nPos, STH_SecurityName, StrA2StrW(TrustInfo.SecurityName));
 				m_pLsTrust->SetSubItemText(nPos, STH_Direct,
@@ -1387,6 +1662,8 @@ void CTradeSimulator::UpdateTrustList(SStringW str)
 				m_TrustInfoPosMap[TrustInfo.TrustID] = nPos;
 			}
 			int nPos = m_TrustInfoPosMap[TrustInfo.TrustID];
+			m_pLsTrust->SetSubItemText(nPos, STH_TrustTime, str.Format(L"%02d:%02d:%02d",
+				TrustInfo.Time / 10000, TrustInfo.Time / 100 % 100, TrustInfo.Time % 100));
 			m_pLsTrust->SetSubItemText(nPos, STH_TrustState, m_trustStateStrMap[TrustInfo.State]);
 			m_pLsTrust->SetSubItemText(nPos, STH_TrustPrice, str.Format(L"%.02f", TrustInfo.TrustPrice.GetDouble()));
 			m_pLsTrust->SetSubItemText(nPos, STH_TrustVol, str.Format(L"%.0f", TrustInfo.TrustVol.GetDouble()));
@@ -1399,7 +1676,7 @@ void CTradeSimulator::UpdateTrustList(SStringW str)
 			m_pLsTrust->SetSubItemText(nPos, STH_Account, str.Format(L"%d", TrustInfo.AccountID));
 		}
 	}
-
+	m_pLsTrust->Invalidate();
 	m_pTxtTrustCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsTrust->GetItemCount()));
 
 }
@@ -1429,6 +1706,9 @@ void CTradeSimulator::UpdateCancelList()
 		{
 			m_pLsCancel->DeleteItem(nNowRow);
 			m_CancelInfoPosMap.erase(nApplyID);
+			for (auto &it : m_CancelInfoPosMap)
+				if (it.second >= nNowRow)
+					--it.second;
 		}
 		else
 			++nNowRow;
@@ -1467,6 +1747,7 @@ void CTradeSimulator::UpdateCancelList()
 			m_pLsCancel->SetSubItemText(nPos, SCH_Account, str.Format(L"%d", TrustInfo.AccountID));
 		}
 	}
+	m_pLsCancel->Invalidate();
 	m_pTxtCancelCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsCancel->GetItemCount()));
 
 }
@@ -1476,9 +1757,9 @@ void CTradeSimulator::UpdateDealList(SStringW str)
 	SStringA strNew = StrW2StrA(str);
 	m_pLsDeal->DeleteAllItems();
 	m_strDealSearch = strNew;
-	::EnterCriticalSection(&m_csTrust);
+	::EnterCriticalSection(&m_csDeal);
 	auto DealVec = m_DealVec;
-	::LeaveCriticalSection(&m_csTrust);
+	::LeaveCriticalSection(&m_csDeal);
 
 	for (int i = 0; i < DealVec.size(); ++i)
 	{
@@ -1500,7 +1781,61 @@ void CTradeSimulator::UpdateDealList(SStringW str)
 			m_pLsDeal->SetSubItemText(nPos, SDH_Account, str.Format(L"%d", DealInfo.AccountID));
 		}
 	}
+	m_pLsDeal->Invalidate();
 	m_pTxtDealCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsDeal->GetItemCount()));
+
+}
+
+void CTradeSimulator::UpdateDealSummary(SStringW str)
+{
+	SStringA strNew = StrW2StrA(str);
+	if (m_strDealSumSearch != strNew)
+	{
+		m_pLsDealSum->DeleteAllItems();
+		m_DealSumPosMap.clear();
+		m_strDealSumSearch = strNew;
+	}
+	::EnterCriticalSection(&m_csDeal);
+	auto DealSumMap = m_DealSumMap;
+	::LeaveCriticalSection(&m_csDeal);
+
+	for (auto &IDMap : DealSumMap)
+	{
+		SStringA SecurityID = IDMap.first;
+		for (auto &DirectMap : IDMap.second)
+		{
+			int nDirect = DirectMap.first;
+			auto &DealSum = DirectMap.second;
+			if (str.IsEmpty() || strstr(DealSum.SecurityID, m_strDealSumSearch)
+				|| strstr(DealSum.SecurityName, m_strDealSumSearch))
+			{
+				auto &dealPos = m_DealSumPosMap[DealSum.SecurityID];
+				if (dealPos.count(DealSum.Direct) == 0)
+				{
+					int nPos = m_pLsDealSum->InsertItem(0, StrA2StrW(DealSum.SecurityID));
+					m_pLsDealSum->SetSubItemText(nPos, SDSH_SecurityName, StrA2StrW(DealSum.SecurityName));
+					m_pLsDealSum->SetSubItemText(nPos, SDSH_Direct,
+						m_tradeDirectStrMap[DealSum.Direct], m_tradeDirectColorMap[DealSum.Direct]);
+					for (auto &it : m_DealSumPosMap)
+					{
+						for (auto &posMap : it.second)
+							posMap.second++;
+					}
+					m_DealSumPosMap[SecurityID][DealSum.Direct] = nPos;
+				}
+				int nPos = dealPos[DealSum.Direct];
+				m_pLsDealSum->SetSubItemText(nPos, SDSH_DealVol, str.Format(L"%.0f", DealSum.DealVol.GetDouble()));
+				m_pLsDealSum->SetSubItemText(nPos, SDSH_DealAvgPrice, 
+					str.Format(L"%.03f", DealSum.DealAmo.GetDouble()/DealSum.DealVol.GetDouble()));
+				m_pLsDealSum->SetSubItemText(nPos, SDSH_DealAmo, str.Format(L"%.03f", DealSum.DealAmo.GetDouble()));
+				m_pLsDealSum->SetSubItemText(nPos, SDSH_Account, str.Format(L"%d", DealSum.AccountID));
+			}
+
+		}
+	}
+
+	m_pLsDealSum->Invalidate();
+	m_pTxtDealSumCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsDealSum->GetItemCount()));
 
 }
 
@@ -1550,6 +1885,7 @@ void CTradeSimulator::UpdateHisTrustList(SStringW str)
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_Account, str.Format(L"%d", TrustInfo.AccountID));
 		}
 	}
+	m_pLsHisTrust->Invalidate();
 	m_pTxtHisTrustCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsHisTrust->GetItemCount()));
 }
 
@@ -1588,6 +1924,7 @@ void CTradeSimulator::UpdateHisDealList(SStringW str)
 			m_pLsHisDeal->SetSubItemText(nPos, SHDH_Account, str.Format(L"%d", DealInfo.AccountID));
 		}
 	}
+	m_pLsHisDeal->Invalidate();
 	m_pTxtHisDealCount->SetWindowTextW(str.Format(L"共%d条记录", m_pLsHisDeal->GetItemCount()));
 
 }
@@ -1615,8 +1952,10 @@ void CTradeSimulator::UpdateAccountInfo()
 	}
 	acc.totalCaptical = acc.usableCaptical + acc.marketValue + acc.freezedCaptical;
 
-	m_pTxtTotalCapital->SetWindowTextW(str.Format(L"%.02f", acc.totalCaptical.GetDouble()));
-	m_pTxtMarketValue->SetWindowTextW(str.Format(L"%.02f", acc.marketValue.GetDouble()));
+	str.Format(L"%.02f", acc.totalCaptical.GetDouble());
+
+	m_pTxtTotalCapital->SetWindowTextW(NumberWithSeparator(str.Format(L"%.02f", acc.totalCaptical.GetDouble())));
+	m_pTxtMarketValue->SetWindowTextW(NumberWithSeparator(str.Format(L"%.02f", acc.marketValue.GetDouble())));
 	double fProfit = (acc.marketValue - acc.marketCost).GetDouble();
 	if (fProfit > 0)
 	{
@@ -1634,12 +1973,68 @@ void CTradeSimulator::UpdateAccountInfo()
 		m_pTxtProfitChg->SetAttribute(L"colorText", L"#FFFFFFFF");
 	}
 
-	m_pTxtProfit->SetWindowTextW(str.Format(L"%.02f", fProfit));
+	m_pTxtProfit->SetWindowTextW(NumberWithSeparator(str.Format(L"%.02f", fProfit)));
 
 	double fProfitChg = fProfit / (acc.marketCost + acc.usableCaptical + acc.freezedCaptical).GetDouble() * 100;
-	m_pTxtProfitChg->SetWindowTextW(str.Format(L"%.02f", fProfitChg));
-	m_pTxtAvaliableFunds->SetWindowTextW(str.Format(L"%.02f", acc.usableCaptical.GetDouble()));
+	m_pTxtProfitChg->SetWindowTextW(NumberWithSeparator(str.Format(L"%.02f", fProfitChg)));
+	m_pTxtAvaliableFunds->SetWindowTextW(NumberWithSeparator(str.Format(L"%.02f", acc.usableCaptical.GetDouble())));
 
+}
+
+void CTradeSimulator::SetMaxTradeVol(SEdit * pEdit)
+{
+	SStringW str = pEdit->GetWindowTextW();
+	double fPrice = _wtof(str);
+	if (pEdit == m_pEditBuyPrice)
+	{
+		if (fPrice != 0)
+		{
+			SStringA SecurityID = StrW2StrA(m_pEditBuyID->GetWindowTextW());
+
+			m_llMaxBuy = m_accInfo.usableCaptical.GetDouble() / fPrice;
+			if (SecurityID.Left(3) != "688")
+			{
+				m_llMaxBuy -= m_llMaxBuy % 100;
+				if (SecurityID[0] == '6')
+					m_llMaxBuy = min(m_llMaxBuy, llShMainMaxTrade);
+				else if(SecurityID[0] == '0')
+					m_llMaxBuy = min(m_llMaxBuy, llSzMainMaxTrade);
+				else if (SecurityID[0] == '3')
+					m_llMaxBuy = min(m_llMaxBuy, llSbmMaxTrade);
+			}
+			else
+				m_llMaxBuy = min(m_llMaxBuy, llStramMaxTrade);
+
+			str.Format(L"最大可买:%lld", m_llMaxBuy);
+		}
+		else
+		{
+			m_llMaxBuy = 0;
+			str.Format(L"最大可买:--");
+		}
+		m_pTxtMaxBuy->SetWindowTextW(str);
+
+	}
+	else if (pEdit == m_pEditSellPrice)
+	{
+		SStringA SecurityID= StrW2StrA(m_pEditSellID->GetWindowTextW());
+		m_llMaxSell = m_PosInfoMap.count(SecurityID) ? m_PosInfoMap[SecurityID].UsablePos.data : 0;
+		if (SecurityID.Left(3) != "688")
+		{
+			if (SecurityID[0] == '6')
+				m_llMaxBuy = min(m_llMaxSell, llShMainMaxTrade);
+			else if (SecurityID[0] == '0')
+				m_llMaxBuy = min(m_llMaxSell, llSzMainMaxTrade);
+			else if (SecurityID[0] == '3')
+				m_llMaxBuy = min(m_llMaxSell, llSbmMaxTrade);
+		}
+		else
+			m_llMaxBuy = min(m_llMaxBuy, llStramMaxTrade);
+
+		str.Format(L"最大可卖:%lld", m_llMaxSell);
+		m_pTxtMaxSell->SetWindowTextW(str);
+
+	}
 }
 
 
@@ -1697,7 +2092,7 @@ SStringW CTradeSimulator::NumToBig(SStringW strNum)
 	return strRes;
 }
 
-void SOUI::CTradeSimulator::ClearData()
+void CTradeSimulator::ClearData()
 {
 	m_PosInfoMap.clear();
 	m_PosInfoPosMap.clear();

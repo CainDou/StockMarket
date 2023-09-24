@@ -3628,7 +3628,7 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 			m_pKlinePic->SetHisKlineState(true);
 		if (m_pKlinePic->GetIsTFBaseDataUsed())
 		{
-			if (m_TFBaseGetMap.count(nPeriod) == 0)
+			if (m_TFBaseGetMap[nPeriod] == 0)
 			{
 				m_pKlinePic->SetTFMarketState(false);
 				DataGetInfo GetInfo;

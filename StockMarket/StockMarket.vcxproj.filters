@@ -182,7 +182,7 @@
     <ClCompile Include="DlgRegister.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DlgTradeInfo.cpp">
+    <ClCompile Include="SSpinButtonCtrlEx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -339,7 +339,7 @@
     <ClInclude Include="DlgRegister.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DlgTradeInfo.h">
+    <ClInclude Include="SSpinButtonCtrlEx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

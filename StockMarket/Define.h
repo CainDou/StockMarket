@@ -1939,6 +1939,19 @@ enum SDealHead
 	SDH_Count,
 };
 
+enum SDealSumHead
+{
+	SDSH_SecurityID,
+	SDSH_SecurityName,
+	SDSH_Direct,
+	SDSH_DealVol,
+	SDSH_DealAvgPrice,
+	SDSH_DealAmo,
+	SDSH_Account,
+	SDSH_Count,
+};
+
+
 enum SHisTrustHead
 {
 	SHTH_TrustDate,
@@ -2125,6 +2138,7 @@ enum eSubmitFeedback
 	eSF_SubmitSucc,
 	eSF_SubmitFail,
 	eSF_SubmitTimeErr,
+	eSF_InvalidPrice,
 	eSF_CancelSucc,
 	eSF_CancelFail,
 };

@@ -43,6 +43,8 @@ namespace SOUI
 		void	OnBtnTrustDownload();
 		void	OnBtnDealIDSearch();
 		void	OnBtnDealDownload();
+		void	OnBtnDealSumSearch();
+		void	OnBtnDealSumDownload();
 		void	OnChkCancelAll();
 		void	OnBtnCancelMulti();
 		void	OnBtnCancelAll();
@@ -51,16 +53,20 @@ namespace SOUI
 		void	OnBtnHisTrustDownload();
 		void	OnBtnHisDealSearch();
 		void	OnBtnHisDealDownload();
+		bool	OnListLDoubleClicked(EventArgs* e);
 		bool	OnListCancelLBClicked(EventArgs* e);
 		bool	OnEditSearchChange(EventArgs *e);
 		bool	OnEditTradeIDChange(EventArgs *e);
 		bool	OnEditVolChange(EventArgs *e);
+		bool	OnEditPriceChange(EventArgs *e);
 		bool	OnLbIDLButtonDown(EventArgs *e);
 		void	SetTradeStock(SStringA strStock);
 		void	UpdateTradeInfo();
 		void	UpdateSubmitFeedback(SubmitFeedback sfb);
 		BOOL	IsLogin();
 		void	LogOut();
+		void	OnSpinBuyPrice();
+		void	OnSpinSellPrice();
 
 	protected:
 		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
@@ -84,6 +90,7 @@ namespace SOUI
 		void OnHisDeal(int nMsgLength, const char* info);
 		void OnSubmitFeedback(int nMsgLength, const char* info);
 		void SaveListData(SColorListCtrlEx* pList,std::ofstream &ofile);
+		SStringW NumberWithSeparator(SStringW str);
 	protected:
 		void SetEditVol(SEdit* pEdit, int nDivisor);
 		void UpdateListData(SColorListCtrlEx* pList, SStringW str);
@@ -91,9 +98,11 @@ namespace SOUI
 		void UpdateTrustList(SStringW str);
 		void UpdateCancelList();
 		void UpdateDealList(SStringW str);
+		void UpdateDealSummary(SStringW str);
 		void UpdateHisTrustList(SStringW str);
 		void UpdateHisDealList(SStringW str);
 		void UpdateAccountInfo();
+		void SetMaxTradeVol(SEdit* pEdit);
 		SStringW NumToBig(SStringW strNum);
 		void ClearData();
 	protected:
@@ -128,10 +137,14 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"chk_cancelAll", OnChkCancelAll)
 			EVENT_NAME_COMMAND(L"btn_dealIDSearch", OnBtnDealIDSearch)
 			EVENT_NAME_COMMAND(L"btn_dealDownload", OnBtnDealDownload)
+			EVENT_NAME_COMMAND(L"btn_dealSumSearch", OnBtnDealSumSearch)
+			EVENT_NAME_COMMAND(L"btn_dealSumDownload", OnBtnDealSumDownload)
 			EVENT_NAME_COMMAND(L"btn_hisTrustIDSearch", OnBtnHisTrustSearch)
 			EVENT_NAME_COMMAND(L"btn_hisTrustDownload", OnBtnHisTrustDownload)
 			EVENT_NAME_COMMAND(L"btn_hisDealIDSearch", OnBtnHisDealSearch)
 			EVENT_NAME_COMMAND(L"btn_hisDealDownload", OnBtnHisDealDownload)
+			EVENT_NAME_COMMAND(L"spin_buyPrice", OnSpinBuyPrice)
+			EVENT_NAME_COMMAND(L"spin_sellPrice", OnSpinSellPrice)
 
 			EVENT_MAP_END()
 
@@ -146,9 +159,14 @@ namespace SOUI
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()
 	protected:
+
+		STabCtrl* m_pTabTrade;
+
 		SEdit* m_pEditBuyID;
+		SEdit* m_pEditBuyPrice;
 		SEdit* m_pEditBuyVol;
 		SEdit* m_pEditSellID;
+		SEdit* m_pEditSellPrice;
 		SEdit* m_pEditSellVol;
 		SStatic* m_pTxtMaxBuy;
 		SStatic* m_pTxtMaxSell;
@@ -181,6 +199,11 @@ namespace SOUI
 		SEdit* m_pEditDealIDSearch;
 		SColorListCtrlEx* m_pLsDeal;
 
+		SStatic* m_pTxtDealSumCount;
+		SEdit* m_pEditDealSumSearch;
+		SColorListCtrlEx* m_pLsDealSum;
+
+
 		SDateTimePicker* m_pDtpHisTrustStart;
 		SDateTimePicker* m_pDtpHisTrustEnd;
 		SEdit* m_pEditHisTrustSearch;
@@ -196,6 +219,7 @@ namespace SOUI
 		map<SEdit*, SColorListCtrlEx*>m_editListMap;
 		map<SEdit*, SListBox*>m_IDListMap;
 		map<SEdit*, SStatic*>m_volTextMap;
+		map<SColorListCtrlEx*, int>m_StockIdInListMap;
 
 		//市场行情数据
 	protected:
@@ -219,17 +243,20 @@ namespace SOUI
 		map<SStringA,PositionInfo> m_PosInfoMap;
 		vector<TrustInfo> m_TrustVec;
 		vector<DealInfo> m_DealVec;
+		map<SStringA, map<int, DealInfo>> m_DealSumMap;
 		vector<TrustInfo> m_HisTrustVec;
 		vector<DealInfo> m_HisDealVec;
 
 		SStringA m_strPosSearch;
 		SStringA m_strTrustSearch;
 		SStringA m_strDealSearch;
+		SStringA m_strDealSumSearch;
 		SStringA m_strHisTrustSearch;
 		SStringA m_strHisDealSearch;
 
 		map<SStringA, int>m_PosInfoPosMap;
 		map<int, int>m_TrustInfoPosMap;
+		map<SStringA, map<int, int>>m_DealSumPosMap;
 		map<int, int>m_CancelInfoPosMap;
 		map<int, int>m_HisTrustPosMap;
 

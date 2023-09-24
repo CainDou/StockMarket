@@ -17,6 +17,11 @@
 						<edit name="edit_buyId" number="1" pos="[5,{0,@130,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="6" />
 						<imgbtn name="btn_buyCon" skin="skin_ButtonTransparent" pos="[5,{0,@30,@20" animate="1"  visible="0"/>
 						<imgbtn name="btn_buyUnCon" skin="skin_ButtonTransparent" pos="{0,{0,@30,@20" animate="1"  visible="0"/>
+						<text pos="10,[20,@50,@20">价格</text>
+						<edit name="edit_buyPrice" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" notifyChange="1" align="center" maxBuf="8"/>
+						<spinButtonEx name="spin_buyPrice" pos="[0,{0,@20,@20" min="0" value="" step="1" max="999999999" buddy="" />
+						<text pos="[5,{0,@30,@20">元</text>
+
 						<text pos="10,[20,@50,@20">数量</text>
 						<edit name="edit_buyVol" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" notifyChange="1" align="center" maxBuf="9"/>
 						<spinButton name="spin_buy" pos="[0,{0,@20,@20" min="0" value="" step="100" max="999999999" buddy="edit_buyVol" />
@@ -28,13 +33,18 @@
 						<imgbtn pos="[10,{0,@48,@20" name="btn_buyQuarter" skin="skin_ButtonGrayBlack" text="1/4仓" />
 						<text pos="10,[5,-10,@50" name="txt_buyVolInBig" multiLines="1" wordWrap="1" />
 						<imgbtn pos="70,[20,@100,@25" name="btn_buy" skin="skin_ButtonRed" text="买入" colorText="#ffffff" />
-						<listbox name="lb_buyID" pos="65,45,@130,@180" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="1" />
+						<listbox name="lb_buyID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="1" />
 					</page>
 					<page title="卖出">
 						<text pos="10,20,@50,@20">证券</text>
 						<edit name="edit_sellId" pos="[5,{0,@130,@20" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="0" number="1" notifyChange="1" align="center"  maxBuf="6" />
 						<imgbtn name="btn_sellCon" skin="skin_ButtonTransparent" pos="[5,{0,@30,@20" animate="1"  visible="0"/>
 						<imgbtn name="btn_sellUnCon" skin="skin_ButtonTransparent" pos="{0,{0,@30,@20" animate="1" visible="0" />
+						<text pos="10,[20,@50,@20">价格</text>
+						<edit name="edit_sellPrice" number="1" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="8" />
+						<spinButtonEx name="spin_sellPrice" pos="[0,{0,@20,@20" min="0" value="" step="1" max="999999999" buddy="" />
+						<text pos="[5,{0,@30,@20">元</text>
+
 						<text pos="10,[20,@50,@20">数量</text>
 						<edit name="edit_sellVol" number="1" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="9" />
 						<spinButton name="spin_sell" pos="[0,{0,@20,@20" min="0" value="" step="100" max="999999999" buddy="edit_sellVol" />
@@ -46,7 +56,7 @@
 						<imgbtn pos="[10,{0,@48,@20" name="btn_sellQuarter" skin="skin_ButtonGrayBlack" text="1/4仓" />
 						<text pos="10,[5,-10,@50" name="txt_sellVolInBig" multiLines="1" wordWrap="1" />
 						<imgbtn pos="70,[20,@100,@25" name="btn_sell" skin="skin_ButtonBlue" text="卖出" colorText="#ffffff" />
-						<listbox name="lb_sellID" pos="65,45,@130,@180" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="1" />
+						<listbox name="lb_sellID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="1" />
 					</page>
 				</tabctrl>
 			</group>
@@ -66,10 +76,10 @@
 			<group pos="[1,0,@228,-5" align="left" headerHeight="20" text="简易行情">
 				<tradeinfo name="tradeInfo" pos="1,0,-1,-0" colorBkgnd="#000000ff" />
 			</group>
-			<group pos="[1,0,-5,%50" align="left" headerHeight="20" text="持仓信息">
-				<text pos="5,5">代码或名称</text>
+			<group pos="[1,0,-5,%50" align="left" headerHeight="20" text="持仓信息" colorText="#FFFFFFFF">
+				<text pos="5,5" colorText="#FFFFFFFF">代码或名称</text>
 				<edit pos="[5,5,@120,@20" name="edit_posIDSearch" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center" />
-				<imgbtn pos="[5,5,@80,@20" name="btn_posIDSearch" skin="skin_ButtonGrayBlack" text="查询" />
+				<imgbtn pos="[5,5,@80,@20" name="btn_posIDSearch" skin="skin_ButtonGrayBlack" text="查询" colorText="#FFFFFFFF" />
 				<text pos="-150,5,@100,@20" align="right" name="text_posCount">共0条记录</text>
 				<imgbtn name="btn_posDownload" skin="skin_btn_download" pos="[5,{-4,@25,@24" animate="1" />
 				<color_listctrlex name="ls_position" cache="1" bkgndBlend="0" pos="5,[5,-5,-5" hotTrack="1" itemHeight="20" headerHeight="20" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFFFFFF" align="right" valign="middle" scrollSpeed="120">
@@ -93,7 +103,7 @@
 					</headerex>
 				</color_listctrlex>
 			</group>
-			<group pos="{0,%50,-5,-0" align="left" headerHeight="20" text="交易信息">
+			<group pos="{0,%50,-5,-0" align="left" headerHeight="20" text="交易信息" colorText="#FFFFFFFF">
 				<tabctrl name="tab_ctrl" pos="5,5,-5,-5" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="145" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
 					<page title="当日委托">
 						<text pos="5,5">代码或名称</text>
@@ -170,6 +180,26 @@
 									<item width="100">成交数量</item>
 									<item width="100">成交金额</item>
 									<item width="65">委托编号</item>
+									<item width="100">账户</item>
+								</items>
+							</headerex>
+						</color_listctrlex>
+					</page>
+					<page title="成交汇总">
+						<text pos="5,5">代码或名称</text>
+						<edit pos="[5,5,@120,@20" name="edit_dealSumSearch" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center" />
+						<imgbtn pos="[5,5,@80,@20" name="btn_dealSumSearch" skin="skin_ButtonGrayBlack" text="查询" />
+						<text pos="-150,5,@100,@20" align="right" name="text_dealSumCount">共0条记录</text>
+						<imgbtn name="btn_dealSumDownload" skin="skin_btn_download" pos="[5,{-4,@25,@24" animate="1" />
+						<color_listctrlex name="ls_dealSummary" cache="1" bkgndBlend="0" pos="5,[5,-5,-5" hotTrack="1" itemHeight="20" headerHeight="20" font="size:15,underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorBkgnd="#000000ff" colorText="#FFFFFFFF" align="right" valign="middle" scrollSpeed="120">
+							<headerex align="right" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+								<items>
+									<item width="65">证券代码</item>
+									<item width="110">证券名称</item>
+									<item width="50">买卖</item>
+									<item width="100">成交数量</item>
+									<item width="100">成交均价</item>
+									<item width="150">成交金额</item>
 									<item width="100">账户</item>
 								</items>
 							</headerex>
