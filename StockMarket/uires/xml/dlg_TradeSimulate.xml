@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <SOUI name="tradeSimulate" title="模拟交易" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="800" margin="1,1,1,1" resizable="0" wndType="normal" appWnd="0" translucent="0" colorBorder="#A00000FF">
 	<root cache="1" colorBkgnd="rgb(50,50,50)">
-		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" cache="1" margin="0,0,0,1" colorBorder="#A00000FF">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑"  cache="1" margin="0,0,0,1" colorBorder="#A00000FF">
 			<icon pos="10,8" src="ICON_LOGO:16" />
 			<text pos="29,9" colorText="#00FFFF">模拟交易</text>
 			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
@@ -11,7 +11,7 @@
 		</caption>
 		<window pos="0,30,-0,-0" cache="1" font="face:微软雅黑,font:15" colorText="#ffffffff">
 			<group pos="0,0,@250,%50" align="left" headerHeight="20" text="下单">
-				<tabctrl name="tab_ctrl" pos="5,5,-5,-5" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="120" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
+				<tabctrl name="tab_ctrl" pos="5,5,-5,-5" tabAlign="top" tabSkin="skin_TabRect" tabInterSize="2" tabWidth="120" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
 					<page title="买入">
 						<text pos="10,20,@50,@20">证券</text>
 						<edit name="edit_buyId" number="1" pos="[5,{0,@130,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="6" />
@@ -32,8 +32,9 @@
 						<imgbtn pos="[10,{0,@48,@20" name="btn_buyThird" skin="skin_ButtonGrayBlack" text="1/3仓" />
 						<imgbtn pos="[10,{0,@48,@20" name="btn_buyQuarter" skin="skin_ButtonGrayBlack" text="1/4仓" />
 						<text pos="10,[5,-10,@50" name="txt_buyVolInBig" multiLines="1" wordWrap="1" />
-						<imgbtn pos="70,[20,@100,@25" name="btn_buy" skin="skin_ButtonRed" text="买入" colorText="#ffffff" />
-						<listbox name="lb_buyID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="1" />
+						<imgbtn pos="10,[22,@50,@20" name="btn_buySetting" skin="skin_ButtonTrans" text="设置" colorText="#5070F0FF" transparent="1"/>
+						<imgbtn pos="70,{-2,@100,@25" name="btn_buy" skin="skin_ButtonRed" text="买入" colorText="#ffffff" />
+						<listbox name="lb_buyID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" />
 					</page>
 					<page title="卖出">
 						<text pos="10,20,@50,@20">证券</text>
@@ -55,8 +56,9 @@
 						<imgbtn pos="[10,{0,@48,@20" name="btn_sellThird" skin="skin_ButtonGrayBlack" text="1/3仓" />
 						<imgbtn pos="[10,{0,@48,@20" name="btn_sellQuarter" skin="skin_ButtonGrayBlack" text="1/4仓" />
 						<text pos="10,[5,-10,@50" name="txt_sellVolInBig" multiLines="1" wordWrap="1" />
-						<imgbtn pos="70,[20,@100,@25" name="btn_sell" skin="skin_ButtonBlue" text="卖出" colorText="#ffffff" />
-						<listbox name="lb_sellID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="1" />
+						<imgbtn pos="10,[22,@50,@20" name="btn_sellSetting" skin="skin_ButtonTrans" text="设置" colorText="#5070F0FF" />
+						<imgbtn pos="70,{-2,@100,@25" name="btn_sell" skin="skin_ButtonBlue" text="卖出" colorText="#ffffff" />
+						<listbox name="lb_sellID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0"  />
 					</page>
 				</tabctrl>
 			</group>

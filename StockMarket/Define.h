@@ -2026,6 +2026,8 @@ enum TradeSimulatorMsg
 	TSMsg_UpdateHisDeal,
 	TSMsg_UpdateSubmitFeedback,
 	TSMsg_ShowWindow,
+	TSMsg_ChangeSetting,
+	TSMsg_ShowDeal,
 
 };
 
@@ -2141,4 +2143,86 @@ enum eSubmitFeedback
 	eSF_InvalidPrice,
 	eSF_CancelSucc,
 	eSF_CancelFail,
+};
+
+typedef struct _tradeSetting
+{
+	double buyAmo;
+	int buyPriceType;
+	int buyVolType;
+	int sellPriceType;
+	int sellVolType;
+	int maxVol;
+	int buyVolFix;
+	int afterTradeType;
+	int windowTime;
+	bool remindLimitPrice;
+	bool remindCagePrice;
+	bool clickVol;
+	bool showDeal;
+	bool cancelConfirm;
+	bool trustConfirm;
+	bool showTrust;
+	bool changePageClean;
+	_tradeSetting() :buyAmo(0),buyPriceType(0),buyVolType(0),
+		sellPriceType(0), sellVolType(0), maxVol(1'000'000),
+		buyVolFix(0), afterTradeType(0), windowTime(5),
+		remindLimitPrice(1), remindCagePrice(1), clickVol(false),
+		showDeal(false), cancelConfirm(false), trustConfirm(true),
+		showTrust(true), changePageClean(false)
+	{
+
+	}
+}TradeSetting;
+
+enum eBuyPriceType
+{
+	eBPT_Ask1 = 0,
+	eBPT_Ask2,
+	eBPT_Ask3,
+	eBPT_Ask4,
+	eBPT_Ask5,
+	eBPT_LastPrice,
+	eBPT_Empty,
+};
+
+enum eBuyVolType
+{
+	eBVT_Empty = 0,
+	eBVT_All,
+	eBVT_Half,
+	eBVT_OneThird,
+	eBVT_Quarter,
+	eBVT_OneFifth,
+	eBVT_OneSixth,
+};
+
+enum eSellPriceType
+{
+	eSPT_Bid1 = 0,
+	eSPT_Bid2,
+	eSPT_Bid3,
+	eSPT_Bid4,
+	eSPT_Bid5,
+	eSPT_LastPrice,
+	eSPT_Empty,
+};
+
+enum eSellVolType
+{
+	eSVT_Empty = 0,
+	eSVT_All,
+	eSVT_Half,
+	eSVT_OneThird,
+	eSVT_Quarter,
+	eSVT_OneFifth,
+	eSVT_OneSixth,
+};
+
+enum eAfterTradeType
+{
+	eATT_Clear,
+	eATT_Id,
+	eATT_IdPrice,
+	eATT_IdPriceVol,
 };

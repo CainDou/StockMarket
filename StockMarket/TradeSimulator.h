@@ -61,13 +61,17 @@ namespace SOUI
 		bool	OnEditPriceChange(EventArgs *e);
 		bool	OnLbIDLButtonDown(EventArgs *e);
 		void	SetTradeStock(SStringA strStock);
-		void	UpdateTradeInfo();
+		void	UpdateTradeInfo(BOOL bFirst);
 		void	UpdateSubmitFeedback(SubmitFeedback sfb);
+		void	UpdateDealInfo(int nCount);
+		void	SaveTradeSetting();
+		void	GetTradeSetting();
 		BOOL	IsLogin();
 		void	LogOut();
 		void	OnSpinBuyPrice();
 		void	OnSpinSellPrice();
-
+		void	OnBtnTradeSetting();
+		void	OnTab();
 	protected:
 		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 		void OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags);
@@ -91,6 +95,7 @@ namespace SOUI
 		void OnSubmitFeedback(int nMsgLength, const char* info);
 		void SaveListData(SColorListCtrlEx* pList,std::ofstream &ofile);
 		SStringW NumberWithSeparator(SStringW str);
+		bool CheckPriceIsLeagal(int nDirect, long long llPrice);
 	protected:
 		void SetEditVol(SEdit* pEdit, int nDivisor);
 		void UpdateListData(SColorListCtrlEx* pList, SStringW str);
@@ -145,6 +150,9 @@ namespace SOUI
 			EVENT_NAME_COMMAND(L"btn_hisDealDownload", OnBtnHisDealDownload)
 			EVENT_NAME_COMMAND(L"spin_buyPrice", OnSpinBuyPrice)
 			EVENT_NAME_COMMAND(L"spin_sellPrice", OnSpinSellPrice)
+			EVENT_NAME_COMMAND(L"btn_buySetting", OnBtnTradeSetting)
+			EVENT_NAME_COMMAND(L"btn_sellSetting", OnBtnTradeSetting)
+			EVENT_NAME_COMMAND(L"tab_ctrl", OnTab)
 
 			EVENT_MAP_END()
 
@@ -236,7 +244,7 @@ namespace SOUI
 		map<int, COLORREF>m_tradeDirectColorMap;
 		map<int, SStringW>m_trustStateStrMap;
 		map<int, SStringW>m_cancelSignStrMap;
-
+		TradeSetting m_setting;
 		//交易数据
 	protected:
 		AccInfo m_accInfo;

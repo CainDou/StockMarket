@@ -1,0 +1,83 @@
+﻿<?xml version="1.0"?>
+<SOUI name="TradeSetting" title="交易系统设置" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="600" height="400" margin="1,5,5,5" resizable="0" wndType="normal" appWnd="0" translucent="0">
+	<root cache="1" colorBkgnd="rgb(50,50,50)">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" cache="1" margin="1,1,1,1" colorBorder="#c0c0c0ff">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF">交易系统设置</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+		</caption>
+		<window pos="0,30,-0,-0" cache="1" font="face:微软雅黑,size:16" colorText="#FFffffff" colorBorder="#c0c0c0ff" margin="1,0,1,1" >
+	<tabctrl name="tab_ctrl" pos="5,5,-5,-35" tabAlign="top" tabSkin="skin_ButtonTab" tabInterSize="2" tabWidth="120" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" 	curSel="0" interpolator="Decelerate">
+			<page title="交易设置">
+			<text name = "txt_buyPrice" text = "默认买入价格" pos = "5,5,@270,@25" colorText="#000000FF" margin="1,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_buyPrice"  pos = "[0,5,-5,@25" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_buyVol" text = "默认买入数量" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_buyVol"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_sellPrice" text = "默认卖出价格" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_sellPrice"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_sellVol" text = "默认卖出数量" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_sellVol"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_maxVol" text = "委托数量单笔上限(股)" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<edit name = "edit_maxVol"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" number="1" maxBuf="9"/>
+			<text name = "txt_limitPrice" text = "委托价格超出涨跌停是否提示" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_limitPrice"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_cagePrice" text = "委托价格超出连续委托上限是否提示" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_cagePrice"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_buyVolFix" text = "默认买入数量(固定值)" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<edit name = "edit_buyVolFix"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" number="1"/>
+			<text name = "txt_buyAmo" text = "默认买入金额" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<edit name = "edit_buyAmo"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" number="1" maxBuf="10"/>
+			</page>
+			<page title="快速交易">
+			<text name = "txt_aftreTrade" text = "买卖后界面设置" pos = "5,5,@270,@25" colorText="#000000FF" margin="1,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_aftreTrade"  pos = "[0,5,-5,@25" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<!--<text name = "txt_clickVol" text = "响应点击买卖盘数量" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" />
+			<combobox name = "cbx_clickVol"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" display="0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_windowTime" text = "自动弹出窗口停留时间(秒)" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" display="0"/>
+			<edit name = "edit_windowTime"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" number="1" maxBuf="9" display="0"/>
+			-->
+			<text name = "txt_showDeal" text = "是否弹出成交回报提示窗口" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_showDeal"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_cancelConfirm" text = "撤单前是否需要确认" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_cancelConfirm"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<!--<text name = "txt_trustConfirm" text = "委托前是否需要确认" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" display="0"/>
+			<combobox name = "cbx_trustConfirm"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" display="0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			-->
+			<text name = "txt_trustInfo" text = "委托成功是否弹出提示对话框" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_showTrust"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text name = "txt_changePage" text = "切换买卖是否清空页面" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
+			<combobox name = "cbx_changePage"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			</page>
+		</tabctrl>
+		<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="150,[5,@100,@25" animate="1" text="确定" />
+		<imgbtn name="btn_cancel" skin="skin_ButtonGrayBlack" pos="350,{0,@100,@25" animate="1" text="取消" />
+
+		</window>
+	</root>
+</SOUI>
