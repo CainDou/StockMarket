@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -35,6 +35,7 @@
 		<file name="dlg_limitUpStat" path="xml\dlg_limitUpStat.xml" />
 		<file name="dlg_register" path="xml\dlg_register.xml" />
 		<file name="dlg_tradeConfirm" path="xml\dlg_tradeConfirm.xml" />
+		<file name="dlg_tradeSetting" path="xml\dlg_tradeSetting.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />

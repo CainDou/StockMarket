@@ -185,6 +185,9 @@
     <ClCompile Include="SSpinButtonCtrlEx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgTradeSetting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -340,6 +343,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SSpinButtonCtrlEx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgTradeSetting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,7 +14,7 @@
 			<edit name="edit_Psd" pos="[0,90" size="152, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" password="1"  maxBuf="16" notifyChange="1"  />
 			<check name="chk_rember" pos="50,[10" text="记住密码" />
 			<check name="chk_autoLogin" pos="[10,{0" text="自动登录" />
-			<listbox name="lb_IDList" pos="82,80,@152,@80" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" hotTrack="0" sbSkin="skin_new_scrollbar" />
+			<listbox name="lb_IDList" pos="82,80,@152,@80" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)"  text-x="0" colorBkgnd="#FFFFFFFF" visible="0"  sbSkin="skin_new_scrollbar" />
 			<imgbtn name="btn_login" pos="85,160" size="120, 30" tip="" animate="1" skin="skin_ButtonRed" colorText="#FFFFFFFF">登陆</imgbtn>
 			<window pos="300,40,-5,200" colorText="#000000ff" margin="2,0,0,0" colorBorder="#A0A0A0FF">
 				<imgbtn name="btn_market" pos="20,15" size="100, 24" tip="" animate="1" skin="skin_ButtonWhite">不登陆交易</imgbtn>
