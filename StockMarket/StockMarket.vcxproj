@@ -215,6 +215,7 @@
     <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
     <ClCompile Include="DlgTradeSetting.cpp" />
+    <ClCompile Include="DlgTrustConfirm.cpp" />
     <ClCompile Include="DlgUpdateLog.cpp" />
     <ClCompile Include="DragWnd.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -241,6 +242,7 @@
     <ClCompile Include="SColorListCtrlEx.cpp" />
     <ClCompile Include="SFenShiPic.cpp" />
     <ClCompile Include="SKlinePic.cpp" />
+    <ClCompile Include="SMessageBoxTimer.cpp" />
     <ClCompile Include="SouiRealWndHandler.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
     <ClCompile Include="SKlineTip.cpp" />
@@ -290,6 +292,7 @@
     <ClInclude Include="DlgStockFilter.h" />
     <ClInclude Include="DlgSub.h" />
     <ClInclude Include="DlgTradeSetting.h" />
+    <ClInclude Include="DlgTrustConfirm.h" />
     <ClInclude Include="DlgUpdateLog.h" />
     <ClInclude Include="FrmlCompiler.h" />
     <ClInclude Include="FrmlManager.h" />
@@ -303,6 +306,7 @@
     <ClInclude Include="SColorListCtrlEx.h" />
     <ClInclude Include="SFenShiPic.h" />
     <ClInclude Include="SKlinePic.h" />
+    <ClInclude Include="SMessageBoxTimer.h" />
     <ClInclude Include="SouiRealWndHandler.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
     <ClInclude Include="SKlineTip.h" />

@@ -7,6 +7,8 @@
 #include "SSpinButtonCtrlEx.h"
 #include <locale>
 #include "DlgTradeSetting.h"
+#include "SMessageBoxTimer.h"
+#include "DlgTrustConfirm.h"
 
 #define MAX_NUM_LENGTH 9
 #define MAX_TICK 6000
@@ -418,6 +420,12 @@ void CTradeSimulator::OnBtnBuy()
 	info.TrustPrice = TradeDouble(llPrice, 2);
 	info.TrustVol = TradeDouble(nCount, 0);
 	info.Direct = eTD_Buy;
+	if (m_setting.trustConfirm)
+	{
+		CDlgTrustConfirm dlg(info);
+		if (dlg.DoModal(m_hWnd) != IDOK)
+			return;
+	}
 	SendMsg(m_tradeSynThreadID, TradeSyn_SubmitTrade,
 		(char*)&info, sizeof(info));
 }
@@ -525,6 +533,13 @@ void CTradeSimulator::OnBtnSell()
 	info.TrustPrice = TradeDouble(llPrice, 2);
 	info.TrustVol = TradeDouble(nCount, 0);
 	info.Direct = eTD_Sell;
+	if (m_setting.trustConfirm)
+	{
+		CDlgTrustConfirm dlg(info);
+		if (dlg.DoModal(m_hWnd) != IDOK)
+			return;
+	}
+
 	SendMsg(m_tradeSynThreadID, TradeSyn_SubmitTrade,
 		(char*)&info, sizeof(info));
 
@@ -685,11 +700,6 @@ void CTradeSimulator::OnBtnDealSumDownload()
 
 void CTradeSimulator::OnChkCancelAll()
 {
-	if (m_setting.cancelConfirm)
-	{
-		if (SMessageBox(m_hWnd, L"是否要撤销所有委托？", L"提示", MB_OKCANCEL) != IDOK)
-			return;
-	}
 
 	BOOL bChceck = m_pChkSelectAll->IsChecked();
 	int nTotalItem = m_pLsCancel->GetItemCount();
@@ -731,6 +741,12 @@ void CTradeSimulator::OnBtnCancelMulti()
 
 void CTradeSimulator::OnBtnCancelAll()
 {
+	if (m_setting.cancelConfirm)
+	{
+		if (SMessageBox(m_hWnd, L"是否要撤销所有委托？", L"提示", MB_OKCANCEL) != IDOK)
+			return;
+	}
+
 	for (int i = 0; i < m_pLsCancel->GetItemCount(); ++i)
 	{
 		SStringA strStockID = StrW2StrA(m_pLsCancel->GetSubItemText(i, SCH_SecurityID));
@@ -1125,7 +1141,7 @@ void CTradeSimulator::UpdateTradeInfo(BOOL bFirst)
 		{
 			double fPrice = 0;
 			if (m_setting.buyPriceType < eBPT_LastPrice)
-				fPrice = market.AskPrice[m_setting.afterTradeType];
+				fPrice = market.AskPrice[m_setting.buyPriceType];
 			else if (m_setting.buyPriceType == eBPT_LastPrice)
 				fPrice = market.LastPrice;
 			if (fPrice != 0)
@@ -1165,7 +1181,7 @@ void CTradeSimulator::UpdateTradeInfo(BOOL bFirst)
 		{
 			double fPrice = 0;
 			if (m_setting.sellPriceType < eSPT_LastPrice)
-				fPrice = market.AskPrice[m_setting.afterTradeType];
+				fPrice = market.BidPrice[m_setting.sellPriceType];
 			else if (m_setting.sellPriceType == eSPT_LastPrice)
 				fPrice = market.LastPrice;
 			if (fPrice != 0)
@@ -1226,33 +1242,33 @@ void CTradeSimulator::UpdateSubmitFeedback(SubmitFeedback sfb)
 		if (m_setting.showTrust)
 		{
 			SStringW str;
-			SMessageBox(NULL, str.Format(L"报单成功,委托编号:%d", sfb.TrustID), L"提示", MB_OK);
+			SMessageBoxWithTimer(NULL, str.Format(L"报单成功,委托编号:%d", sfb.TrustID), L"提示", MB_OK, m_setting.windowTime);
 		}
 	}
 	else if (sfb.Feedback == eSF_SubmitFail)
 	{
 		SStringW str;
-		SMessageBox(NULL, str.Format(L"报单错误,委托编号:%d,请检查数量！", sfb.TrustID), L"提示", MB_OK);
+		SMessageBoxWithTimer(NULL, str.Format(L"报单错误,委托编号:%d,请检查数量！", sfb.TrustID), L"提示", MB_OK, m_setting.windowTime);
 	}
 	else if (sfb.Feedback == eSF_SubmitTimeErr)
 	{
 		SStringW str;
-		SMessageBox(NULL, str.Format(L"报单错误,委托编号:%d,非法的时间！", sfb.TrustID), L"提示", MB_OK);
+		SMessageBoxWithTimer(NULL, str.Format(L"报单错误,委托编号:%d,非法的时间！", sfb.TrustID), L"提示", MB_OK, m_setting.windowTime);
 	}
 	else if (sfb.Feedback == eSF_InvalidPrice)
 	{
 		SStringW str;
-		SMessageBox(NULL, str.Format(L"报单错误,委托编号:%d,非法的价格！", sfb.TrustID), L"提示", MB_OK);
+		SMessageBoxWithTimer(NULL, str.Format(L"报单错误,委托编号:%d,非法的价格！", sfb.TrustID), L"提示", MB_OK, m_setting.windowTime);
 	}
 	else if (sfb.Feedback == eSF_CancelSucc)
 	{
 		SStringW str;
-		SMessageBox(NULL, str.Format(L"撤单成功,委托编号:%d,撤销单号:%d", sfb.TrustID, sfb.ApplyID), L"提示", MB_OK);
+		SMessageBoxWithTimer(NULL, str.Format(L"撤单成功,委托编号:%d,撤销单号:%d", sfb.TrustID, sfb.ApplyID), L"提示", MB_OK, m_setting.windowTime);
 	}
 	else if (sfb.Feedback == eSF_CancelFail)
 	{
 		SStringW str;
-		SMessageBox(NULL, str.Format(L"撤单失败,委托编号:%d,报单已经成交或撤销", sfb.TrustID), L"提示", MB_OK);
+		SMessageBoxWithTimer(NULL, str.Format(L"撤单失败,委托编号:%d,报单已经成交或撤销", sfb.TrustID), L"提示", MB_OK, m_setting.windowTime);
 	}
 
 }
@@ -1264,12 +1280,12 @@ void SOUI::CTradeSimulator::UpdateDealInfo(int nCount)
 		for (int i = nCount; i < m_DealVec.size(); ++i)
 		{
 			SStringW str;
-			SMessageBox(NULL, str.Format(L"委托%d成交,代码:%s,方向:%s,成交数量:%lld",
+			SMessageBoxWithTimer(NULL, str.Format(L"委托%d成交,代码:%s,方向:%s,成交数量:%lld",
 				m_DealVec[i].ApplyID,
 				StrA2StrW(m_DealVec[i].SecurityID),
 				m_tradeDirectStrMap[m_DealVec[i].Direct],
 				m_DealVec[i].DealVol.data),
-				L"成交提示", MB_OK);
+				L"成交提示", MB_OK, m_setting.windowTime);
 		}
 		::LeaveCriticalSection(&m_csDeal);
 	}
@@ -1820,9 +1836,9 @@ bool SOUI::CTradeSimulator::CheckPriceIsLeagal(int nDirect, long long llPrice)
 				return false;
 
 		}
-		return true;
 
 	}
+	return true;
 
 }
 

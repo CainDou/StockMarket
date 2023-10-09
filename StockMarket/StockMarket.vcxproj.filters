@@ -188,6 +188,12 @@
     <ClCompile Include="DlgTradeSetting.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SMessageBoxTimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgTrustConfirm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -346,6 +352,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgTradeSetting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SMessageBoxTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgTrustConfirm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

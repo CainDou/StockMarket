@@ -48,10 +48,9 @@
 			<!--<text name = "txt_clickVol" text = "响应点击买卖盘数量" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" />
 			<combobox name = "cbx_clickVol"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" display="0">
 				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
-			</combobox>
+			</combobox> -->
 			<text name = "txt_windowTime" text = "自动弹出窗口停留时间(秒)" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" display="0"/>
 			<edit name = "edit_windowTime"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" number="1" maxBuf="9" display="0"/>
-			-->
 			<text name = "txt_showDeal" text = "是否弹出成交回报提示窗口" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
 			<combobox name = "cbx_showDeal"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
 				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
@@ -60,11 +59,10 @@
 			<combobox name = "cbx_cancelConfirm"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
 				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
 			</combobox>
-			<!--<text name = "txt_trustConfirm" text = "委托前是否需要确认" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" display="0"/>
+			<text name = "txt_trustConfirm" text = "委托前是否需要确认" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF" display="0"/>
 			<combobox name = "cbx_trustConfirm"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" display="0">
 				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
 			</combobox>
-			-->
 			<text name = "txt_trustInfo" text = "委托成功是否弹出提示对话框" pos = "5,[0,@270,@25" colorText="#000000FF" margin="1,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#F0F0FFFF"/>
 			<combobox name = "cbx_showTrust"  pos = "[0,{0,-5,@25" colorText="#000000FF" margin="0,0,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF" class="cls_edit" >
 				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
