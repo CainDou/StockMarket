@@ -376,9 +376,9 @@ void CTradeSimulator::OnBtnBuy()
 		return;
 	}
 
-	if(m_setting.remindLimitPrice || m_setting.remindCagePrice)
+	if (m_setting.remindLimitPrice || m_setting.remindCagePrice)
 	{
-		if (!CheckPriceIsLeagal(eTD_Buy,llPrice))
+		if (!CheckPriceIsLeagal(eTD_Buy, llPrice))
 		{
 			SMessageBox(m_hWnd, L"委托价格超出价格限制!", L"提示", MB_OK | MB_ICONWARNING);
 			m_pEditBuyPrice->SetFocus();
@@ -1196,7 +1196,7 @@ void CTradeSimulator::UpdateSubmitFeedback(SubmitFeedback sfb)
 				m_pEditBuyID->SetWindowTextW(L"");
 				m_pEditBuyPrice->SetWindowTextW(L"");
 				m_pEditBuyVol->SetWindowTextW(L"");
-			}			
+			}
 			else if (m_setting.afterTradeType == eATT_Id)
 			{
 				m_pEditBuyPrice->SetWindowTextW(L"");
@@ -1264,10 +1264,11 @@ void SOUI::CTradeSimulator::UpdateDealInfo(int nCount)
 		for (int i = nCount; i < m_DealVec.size(); ++i)
 		{
 			SStringW str;
-			SMessageBox(NULL, str.Format(L"委托%d成交,代码:%s方向:%s,成交数量:%lld",
+			SMessageBox(NULL, str.Format(L"委托%d成交,代码:%s,方向:%s,成交数量:%lld",
 				m_DealVec[i].ApplyID,
+				StrA2StrW(m_DealVec[i].SecurityID),
 				m_tradeDirectStrMap[m_DealVec[i].Direct],
-				StrA2StrW(m_DealVec[i].SecurityID), m_DealVec[i].DealVol),
+				m_DealVec[i].DealVol.data),
 				L"成交提示", MB_OK);
 		}
 		::LeaveCriticalSection(&m_csDeal);
@@ -1681,7 +1682,8 @@ void CTradeSimulator::OnDeal(int nMsgLength, const char * info)
 	::LeaveCriticalSection(&m_csDeal);
 
 	::SendMessage(m_hWnd, WM_TRADE_MSG, NULL, TSMsg_UpdateDealInfo);
-	::SendMessage(m_hWnd, WM_TRADE_MSG, nShowCount, TSMsg_ShowDeal);
+	if (m_bLogin)
+		::SendMessage(m_hWnd, WM_TRADE_MSG, nShowCount, TSMsg_ShowDeal);
 
 }
 
@@ -1793,7 +1795,7 @@ bool SOUI::CTradeSimulator::CheckPriceIsLeagal(int nDirect, long long llPrice)
 		SYSTEMTIME st;
 		::GetLocalTime(&st);
 		int nTime = st.wHour * 10000 + st.wMinute * 100 + st.wSecond;
-		if (nTime<92500 || nTime >= 145700 && nTime <150000)
+		if (nTime < 92500 || nTime >= 145700 && nTime < 150000)
 			return true;
 
 		if (eTD_Buy == nDirect)

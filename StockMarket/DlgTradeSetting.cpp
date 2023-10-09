@@ -42,14 +42,14 @@ void CDlgTradeSetting::OnBtnOK()
 		m_setting.buyAmo = 0;
 
 	m_setting.afterTradeType = m_pCbxAfterTrade->GetCurSel();
-	m_setting.clickVol = m_pCbxClickVol->GetCurSel() == 0 ? true : false;
-	m_setting.windowTime = _wtoi(m_pEditWindowTime->GetWindowTextW());
-	if (m_setting.windowTime < 0)
-		m_setting.windowTime = 0;
+	//m_setting.clickVol = m_pCbxClickVol->GetCurSel() == 0 ? true : false;
+	//m_setting.windowTime = _wtoi(m_pEditWindowTime->GetWindowTextW());
+	//if (m_setting.windowTime < 0)
+	//	m_setting.windowTime = 0;
 
 	m_setting.showDeal = m_pCbxShowDeal->GetCurSel() == 0 ? true : false;
 	m_setting.cancelConfirm = m_pCbxCancelConfirm->GetCurSel() == 0 ? true : false;
-	m_setting.trustConfirm = m_pCbxTrustConfirm->GetCurSel() == 0 ? true : false;
+	//m_setting.trustConfirm = m_pCbxTrustConfirm->GetCurSel() == 0 ? true : false;
 	m_setting.showTrust = m_pCbxShowTrust->GetCurSel() == 0 ? true : false;
 	m_setting.changePageClean = m_pCbxShowTrust->GetCurSel() == 0 ? true : false;
 

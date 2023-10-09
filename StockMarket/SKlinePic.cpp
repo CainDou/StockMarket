@@ -2753,11 +2753,14 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			if (m_CADataPosMap.count(nOffset))
 			{
 				int nCADataPos = m_CADataPosMap[nOffset];
-				if (m_bShowCAVol)
-					DrawCAVolOrAmoData(pRT, CAVolAmtMALine, m_pCAInfo->at(nCADataPos).Volume, false, x, i);
+				if (m_pCAInfo->size() > nCADataPos)
+				{
+					if (m_bShowCAVol)
+						DrawCAVolOrAmoData(pRT, CAVolAmtMALine, m_pCAInfo->at(nCADataPos).Volume, false, x, i);
 
-				if (m_bShowCAAmo)
-					DrawCAVolOrAmoData(pRT, CAVolAmtMALine, m_pCAInfo->at(nCADataPos).Amount, true, x, i);
+					if (m_bShowCAAmo)
+						DrawCAVolOrAmoData(pRT, CAVolAmtMALine, m_pCAInfo->at(nCADataPos).Amount, true, x, i);
+				}
 
 			}
 		}
