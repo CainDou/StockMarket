@@ -49,7 +49,7 @@ void CDlgTradeSetting::OnBtnOK()
 
 	m_setting.showDeal = m_pCbxShowDeal->GetCurSel() == 0 ? true : false;
 	m_setting.cancelConfirm = m_pCbxCancelConfirm->GetCurSel() == 0 ? true : false;
-	//m_setting.trustConfirm = m_pCbxTrustConfirm->GetCurSel() == 0 ? true : false;
+	m_setting.trustConfirm = m_pCbxTrustConfirm->GetCurSel() == 0 ? true : false;
 	m_setting.showTrust = m_pCbxShowTrust->GetCurSel() == 0 ? true : false;
 	m_setting.changePageClean = m_pCbxShowTrust->GetCurSel() == 0 ? true : false;
 
