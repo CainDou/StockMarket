@@ -9,7 +9,7 @@
 			<text name="txt_trade" pos="5,5,-5,-5"  multiLines="1"  colorText="#FFFFFFFF" align="left" valign="top"/>
 		</window>
 		<window pos="0,-30,-0,-0" cache="1" font="face:微软雅黑,size:13" colorText="#00ffffff" colorBorder="#c0c0c0ff" margin="1,0,1,1">
-			<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="50,3,@100,@25" animate="1" text="确定" colorText="#ffffff" />
+			<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="50,3,@100,@25" animate="1" text="确定" colorText="#ffffff"  />
 			<imgbtn name="btn_Cancel" skin="skin_ButtonGrayBlack" pos="200,3,@100,@25" animate="1" text="取消" colorText="#ffffff" />
 		</window>
 	</root>

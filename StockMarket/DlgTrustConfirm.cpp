@@ -38,3 +38,13 @@ void CDlgTrustConfirm::OnBtnCancel()
 	EndDialog(IDCANCEL);
 }
 
+void CDlgTrustConfirm::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
+{
+	SetMsgHandled(FALSE);
+	if (nChar == VK_RETURN)
+		OnBtnOK();
+	else if (nChar == VK_ESCAPE)
+		OnBtnCancel();
+
+}
+

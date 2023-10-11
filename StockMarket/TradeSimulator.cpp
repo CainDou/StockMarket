@@ -1212,14 +1212,20 @@ void CTradeSimulator::UpdateSubmitFeedback(SubmitFeedback sfb)
 				m_pEditBuyID->SetWindowTextW(L"");
 				m_pEditBuyPrice->SetWindowTextW(L"");
 				m_pEditBuyVol->SetWindowTextW(L"");
+				m_pEditBuyID->SetFocus();
 			}
 			else if (m_setting.afterTradeType == eATT_Id)
 			{
 				m_pEditBuyPrice->SetWindowTextW(L"");
 				m_pEditBuyVol->SetWindowTextW(L"");
+				m_pEditBuyPrice->SetFocus();
+
 			}
 			else if (m_setting.afterTradeType == eATT_IdPrice)
+			{
 				m_pEditBuyVol->SetWindowTextW(L"");
+				m_pEditBuyVol->SetFocus();
+			}
 
 		}
 		else
