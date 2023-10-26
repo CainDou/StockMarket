@@ -51,7 +51,7 @@ void CDlgTradeSetting::OnBtnOK()
 	m_setting.cancelConfirm = m_pCbxCancelConfirm->GetCurSel() == 0 ? true : false;
 	m_setting.trustConfirm = m_pCbxTrustConfirm->GetCurSel() == 0 ? true : false;
 	m_setting.showTrust = m_pCbxShowTrust->GetCurSel() == 0 ? true : false;
-	m_setting.changePageClean = m_pCbxShowTrust->GetCurSel() == 0 ? true : false;
+	m_setting.changePageClean = m_pCbxChangePage->GetCurSel() == 0 ? true : false;
 
 	::SendMessage(m_hParWnd, WM_TRADE_MSG, (WPARAM)&m_setting, TSMsg_ChangeSetting);
 	CSimpleWnd::DestroyWindow();

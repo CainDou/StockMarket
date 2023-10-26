@@ -106,7 +106,7 @@
 				</color_listctrlex>
 			</group>
 			<group pos="{0,%50,-5,-0" align="left" headerHeight="20" text="交易信息" colorText="#FFFFFFFF">
-				<tabctrl name="tab_ctrl" pos="5,5,-5,-5" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="145" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
+				<tabctrl name="tab_info" pos="5,5,-5,-5" tabAlign="top" tabSkin="skin_ButtonPureBlack" tabInterSize="2" tabWidth="145" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
 					<page title="当日委托">
 						<text pos="5,5">代码或名称</text>
 						<edit pos="[5,5,@120,@20" name="edit_trustIDSearch" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center" />

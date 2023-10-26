@@ -297,6 +297,7 @@ namespace SOUI
 		unordered_map<int, PDATAHANDLEFUNC>m_DataHandleMap;
 		std::thread tDataProc;
 		UINT m_DataThreadID;
+		int m_nTabPage;
 	protected:
 		BOOL m_bLayoutInited;
 		BOOL m_bSetFirst;

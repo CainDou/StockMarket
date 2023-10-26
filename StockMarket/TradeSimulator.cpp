@@ -32,6 +32,7 @@ CTradeSimulator::CTradeSimulator() :SHostWnd(_T("LAYOUT:dlg_TradeSimulate"))
 	m_nHisDealEndDate = 0;
 	m_bLayoutInited = FALSE;
 	m_bDataInited = FALSE;
+	m_nTabPage = 0;
 }
 
 
@@ -1337,6 +1338,13 @@ void CTradeSimulator::GetTradeSetting()
 	m_setting.trustConfirm = ini.GetIntA("Setting", "trustConfirm", 1);
 	m_setting.showTrust = ini.GetIntA("Setting", "showTrust", 1);
 	m_setting.changePageClean = ini.GetIntA("Setting", "changePageClean", 0);
+	if (ini.GetIntA("Reset", "changePageClean", 0) == 0)
+	{
+		m_setting.changePageClean = false;
+		ini.WriteIntA("Reset", "changePageClean", 1);
+		ini.WriteIntA("Setting", "changePageClean", 0);
+
+	}
 }
 void CTradeSimulator::LogOut()
 {
@@ -1402,9 +1410,10 @@ void CTradeSimulator::OnBtnTradeSetting()
 
 void SOUI::CTradeSimulator::OnTab()
 {
-	if (m_setting.changePageClean)
+	int nCurSel = m_pTabTrade->GetCurSel();
+
+	if (m_setting.changePageClean && m_nTabPage != nCurSel)
 	{
-		int nCurSel = m_pTabTrade->GetCurSel();
 		if (nCurSel == 0)
 		{
 			m_pEditBuyID->SetWindowTextW(L"");
@@ -1418,6 +1427,8 @@ void SOUI::CTradeSimulator::OnTab()
 			m_pEditSellVol->SetWindowTextW(L"");
 		}
 	}
+
+	m_nTabPage = nCurSel;
 }
 
 
@@ -1785,6 +1796,8 @@ SStringW SOUI::CTradeSimulator::NumberWithSeparator(SStringW str)
 	for (int i = 0; i < str.GetLength(); ++i)
 	{
 		res += str[i];
+		if (str[i] == '-')
+			continue;
 		int nPos = nDotPos - i;
 		if (nPos > 3 && nPos % 3 == 1)
 			res += ',';
