@@ -459,6 +459,12 @@ enum SynMsg
 	Syn_GetHisTFBase,
 	Syn_TodayTFMarket,
 	Syn_RTTFMarkt,
+	Syn_GetTradeMarket,
+	Syn_RTBuyStockMarket,
+	Syn_RTSellStockMarket,
+	Syn_HisBuyStockMarket,
+	Syn_HisSellStockMarket,
+
 	Syn_ReLogin,
 
 };
@@ -2017,7 +2023,8 @@ enum eCancelSign
 enum TradeSimulatorMsg
 {
 	TSMsg_SetTradeStock,
-	TSMsg_UpdateTradeInfo,
+	TSMsg_UpdateBuyTradeInfo,
+	TSMsg_UpdateSellTradeInfo,
 	TSMsg_UpdateAccountInfo,
 	TSMsg_UpdatePosInfo,
 	TSMsg_UpdateTrustAndCancelInfo,

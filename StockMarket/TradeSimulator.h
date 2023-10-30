@@ -61,7 +61,7 @@ namespace SOUI
 		bool	OnEditPriceChange(EventArgs *e);
 		bool	OnLbIDLButtonDown(EventArgs *e);
 		void	SetTradeStock(SStringA strStock);
-		void	UpdateTradeInfo(BOOL bFirst);
+		void	UpdateTradeInfo(BOOL bFirst,BOOL bBuy);
 		void	UpdateSubmitFeedback(SubmitFeedback sfb);
 		void	UpdateDealInfo(int nCount);
 		void	SaveTradeSetting();
@@ -81,8 +81,11 @@ namespace SOUI
 
 	protected:
 		void DataMsgProc();
-		void OnUpdateHisStockMarket(int nMsgLength, const char* info);
-		void OnUpdateStockMarket(int nMsgLength, const char* info);
+		void OnUpdateHisBuyStockMarket(int nMsgLength, const char* info);
+		void OnUpdateBuyStockMarket(int nMsgLength, const char* info);
+		void OnUpdateHisSellStockMarket(int nMsgLength, const char* info);
+		void OnUpdateSellStockMarket(int nMsgLength, const char* info);
+
 		void OnUpdateCloseInfo(int nMsgLength, const char* info);
 		void OnTradeLogin(int nMsgLength, const char* info);
 		void OnTradeLogout(int nMsgLength, const char* info);
@@ -189,7 +192,8 @@ namespace SOUI
 		SStatic* m_pTxtProfitChg;
 		SStatic* m_pTxtAvaliableFunds;
 
-		STradeInfoPic* m_pTradeInfo;
+		STradeInfoPic* m_pBuyTradeInfo;
+		STradeInfoPic* m_pSellTradeInfo;
 
 		SColorListCtrlEx* m_pLsPosition;
 		SEdit* m_pEditPosIDSearch;
@@ -231,9 +235,14 @@ namespace SOUI
 
 		//市场行情数据
 	protected:
-		SStringA m_strStock;
-		SStringA m_strStockName;
-		vector<CommonStockMarket> m_marketVec;
+		SStringA m_strBuyStock;
+		SStringA m_strBuyStockName;
+		SStringA m_strSellStock;
+		SStringA m_strSellStockName;
+
+		vector<CommonStockMarket> m_buyMarketVec;
+		vector<CommonStockMarket> m_sellMarketVec;
+
 		vector<StockInfo> m_stockVec;
 		strHash<StockInfo> m_stockHash;
 		map<int, strHash<RtRps>> *m_pListDataMap;
@@ -282,6 +291,7 @@ namespace SOUI
 
 		long long m_llMaxBuy;
 		long long m_llMaxSell;
+
 	protected:
 		BOOL m_bLogin;
 		UINT m_SynThreadID;

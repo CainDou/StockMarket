@@ -159,6 +159,7 @@ protected:
 	void OnHisTFBase(int nMsgLength, const char* info);
 	void OnGetHisTFBase(int nMsgLength, const char* info);
 	void OnTodayTFMarket(int nMsgLength, const char* info);
+	void OnGetTradeMarket(int nMsgLength, const char* info);
 	void OnReLogin(int nMsgLength, const char* info);
 
 	//交易信息处理
@@ -241,6 +242,8 @@ protected:
 	HWND m_hMain;
 	map<HWND,UINT> m_hWndMap;	//一级窗口的工作线程号
 	map<HWND, SStringA> m_WndSubMap;
+	map<HWND, SStringA> m_TradeSubMap;
+	map<int, HWND> m_TradeGetID;
 	map<HWND, HWND> m_hSubWndMap; //工作窗口的窗口句柄与之对应的一级窗口句柄
 	map<HWND, set<SStringA>> m_WndPointSubMap; //窗口的打分数据信息
 	map<HWND, int> m_SubWndGroup; //工作窗口的分组

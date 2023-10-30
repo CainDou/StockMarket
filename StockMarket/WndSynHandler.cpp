@@ -651,6 +651,8 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnGetHisTFBase;
 	m_synHandleMap[Syn_TodayTFMarket]
 		= &CWndSynHandler::OnTodayTFMarket;
+	m_synHandleMap[Syn_GetTradeMarket]
+		= &CWndSynHandler::OnGetTradeMarket;
 	m_synHandleMap[Syn_ReLogin]
 		= &CWndSynHandler::OnReLogin;
 
@@ -1907,6 +1909,19 @@ void CWndSynHandler::OnRTIndexMarket(int nMsgLength, const char * info)
 void CWndSynHandler::OnRTStockMarket(int nMsgLength, const char * info)
 {
 	SStringA strStock = ((CommonIndexMarket*)info)->SecurityID;
+	for (auto &it : m_TradeSubMap)
+	{
+		if (it.second == strStock)
+		{
+			if (it.first == (HWND)0)
+				SendMsg(m_uTradeDlgThreadID, Syn_RTBuyStockMarket,
+					info, nMsgLength);
+			else if (it.first == (HWND)1)
+				SendMsg(m_uTradeDlgThreadID, Syn_RTSellStockMarket,
+					info, nMsgLength);
+
+		}
+	}
 	for (auto &it : m_WndSubMap)
 	{
 		auto &hWnd = it.first;
@@ -1948,6 +1963,23 @@ void CWndSynHandler::OnHisStockMarket(int nMsgLength, const char * info)
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
 	SStringA strStock = pRecvInfo->InsID;
 	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	if (m_TradeGetID.count(nMsgID))
+	{
+		int nNewSize = sizeof(HWND) + nMsgLength;
+		char* msgWithHandle = new char[nNewSize];
+		memcpy_s(msgWithHandle, nNewSize, &m_hTradeWnd, sizeof(HWND));
+		int nOffset = sizeof(HWND);
+		memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+		if (m_TradeGetID[nMsgID] == (HWND)0)
+			SendMsg(m_uTradeDlgThreadID, Syn_HisBuyStockMarket,
+				msgWithHandle, nNewSize);
+		else if (m_TradeGetID[nMsgID] == (HWND)1)
+			SendMsg(m_uTradeDlgThreadID, Syn_HisSellStockMarket,
+				msgWithHandle, nNewSize);
+		delete[]msgWithHandle;
+
+	}
+
 	for (auto &it : m_SubWndGetInfoMap)
 	{
 		auto &hWnd = it.first;
@@ -2159,6 +2191,17 @@ void CWndSynHandler::OnTodayTFMarket(int nMsgLength, const char * info)
 			break;
 		}
 	}
+}
+
+void CWndSynHandler::OnGetTradeMarket(int nMsgLength, const char * info)
+{
+	DataGetInfo *pDgInfo = (DataGetInfo *)info;
+	m_TradeSubMap[pDgInfo->hWnd] = pDgInfo->StockID;
+	int nID = GetMarket(pDgInfo->StockID, pDgInfo->Group);
+	if (nID != -1)
+		//m_SubWndGetInfoMap[m_hTradeWnd].insert(nID);
+		m_TradeGetID[nID] = pDgInfo->hWnd;
+
 }
 
 void CWndSynHandler::OnReLogin(int nMsgLength, const char * info)

@@ -76,7 +76,8 @@
 				<imgbtn pos="75,[20,@100,@20" name="btn_refreshAcc" skin="skin_ButtonGrayBlack" text="刷新" />
 			</group>
 			<group pos="[1,0,@228,-5" align="left" headerHeight="20" text="简易行情">
-				<tradeinfo name="tradeInfo" pos="1,0,-1,-0" colorBkgnd="#000000ff" />
+				<tradeinfo name="tradeInfo_buy" pos="1,0,-1,-0" colorBkgnd="#000000ff" />
+				<tradeinfo name="tradeInfo_sell" pos="1,0,-1,-0" colorBkgnd="#000000ff" visible="0" />
 			</group>
 			<group pos="[1,0,-5,%50" align="left" headerHeight="20" text="持仓信息" colorText="#FFFFFFFF">
 				<text pos="5,5" colorText="#FFFFFFFF">代码或名称</text>

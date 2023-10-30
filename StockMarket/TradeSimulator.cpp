@@ -125,8 +125,11 @@ void CTradeSimulator::InitControls()
 	m_pTxtProfitChg = FindChildByName2<SStatic>(L"text_profitChg");
 	m_pTxtAvaliableFunds = FindChildByName2<SStatic>(L"text_availaleFunds");
 
-	m_pTradeInfo = FindChildByName2<STradeInfoPic>(L"tradeInfo");
-	m_pTradeInfo->SetDataPoint(&m_marketVec);
+	m_pBuyTradeInfo = FindChildByName2<STradeInfoPic>(L"tradeInfo_buy");
+	m_pBuyTradeInfo->SetDataPoint(&m_buyMarketVec);
+
+	m_pSellTradeInfo = FindChildByName2<STradeInfoPic>(L"tradeInfo_sell");
+	m_pSellTradeInfo->SetDataPoint(&m_sellMarketVec);
 
 	m_pLsPosition = FindChildByName2<SColorListCtrlEx>(L"ls_position");
 	SHeaderCtrlEx *pHeader = (SHeaderCtrlEx *)m_pLsPosition->GetWindow(GSW_FIRSTCHILD);
@@ -275,10 +278,15 @@ void CTradeSimulator::InitDatas()
 
 void CTradeSimulator::InitDataHandleMap()
 {
-	m_DataHandleMap[Syn_HisStockMarket] =
-		&CTradeSimulator::OnUpdateHisStockMarket;
-	m_DataHandleMap[Syn_RTStockMarket] =
-		&CTradeSimulator::OnUpdateStockMarket;
+	m_DataHandleMap[Syn_RTBuyStockMarket] =
+		&CTradeSimulator::OnUpdateBuyStockMarket;
+	m_DataHandleMap[Syn_RTSellStockMarket] =
+		&CTradeSimulator::OnUpdateSellStockMarket;
+	m_DataHandleMap[Syn_HisBuyStockMarket] =
+		&CTradeSimulator::OnUpdateHisBuyStockMarket;
+	m_DataHandleMap[Syn_HisSellStockMarket] =
+		&CTradeSimulator::OnUpdateHisSellStockMarket;
+
 	m_DataHandleMap[Syn_CloseInfo] =
 		&CTradeSimulator::OnUpdateCloseInfo;
 	m_DataHandleMap[TradeSyn_OnLogin]
@@ -1113,33 +1121,56 @@ bool CTradeSimulator::OnLbIDLButtonDown(EventArgs * e)
 
 void CTradeSimulator::SetTradeStock(SStringA strStock)
 {
-	if (strStock == m_strStock)
-		return;
-	if (m_stockHash.hash.count(strStock) == 0)
-		return;
-	m_strStock = strStock;
-	m_strStockName = m_stockHash.hash[m_strStock].SecurityName;
 	DataGetInfo GetInfo;
-	GetInfo.hWnd = m_hWnd;
+
+	if (m_nTabPage == 0)
+	{
+		if (strStock == m_strBuyStock)
+			return;
+		if (m_stockHash.hash.count(strStock) == 0)
+			return;
+		m_strBuyStock = strStock;
+		m_strBuyStockName = m_stockHash.hash[m_strBuyStock].SecurityName;
+		GetInfo.hWnd = (HWND)0;
+
+	}
+	else
+	{
+		if (strStock == m_strSellStock)
+			return;
+		if (m_stockHash.hash.count(strStock) == 0)
+			return;
+		m_strSellStock = strStock;
+		m_strSellStockName = m_stockHash.hash[m_strSellStock].SecurityName;
+		GetInfo.hWnd = (HWND)1;
+	}
 	strcpy_s(GetInfo.StockID, strStock);
 	GetInfo.Period = Period_FenShi;
 	GetInfo.Group = Group_Stock;
-	SendMsg(m_SynThreadID, Syn_GetMarket, (char*)&GetInfo, sizeof(GetInfo));
+	SendMsg(m_SynThreadID, Syn_GetTradeMarket, (char*)&GetInfo, sizeof(GetInfo));
 
 }
 
-void CTradeSimulator::UpdateTradeInfo(BOOL bFirst)
+void CTradeSimulator::UpdateTradeInfo(BOOL bFirst, BOOL bBuy)
 {
-	m_pTradeInfo->Invalidate();
-	::EnterCriticalSection(&m_csMarket);
-	auto market = m_marketVec.empty() ? CommonStockMarket() : m_marketVec.back();
-	::LeaveCriticalSection(&m_csMarket);
+	STradeInfoPic *pTradeInfo = nullptr;
+
+	CommonStockMarket market = { 0 };
+	if (bBuy)
+		m_pBuyTradeInfo->Invalidate();
+	else
+		m_pSellTradeInfo->Invalidate();
+
+
 	if (bFirst)
 	{
 		SStringW str;
-		int nSel = m_pTabTrade->GetCurSel();
-		if (nSel == 0)
+		if (bBuy)
 		{
+			::EnterCriticalSection(&m_csMarket);
+			market = m_buyMarketVec.back();
+			::LeaveCriticalSection(&m_csMarket);
+
 			double fPrice = 0;
 			if (m_setting.buyPriceType < eBPT_LastPrice)
 				fPrice = market.AskPrice[m_setting.buyPriceType];
@@ -1180,6 +1211,10 @@ void CTradeSimulator::UpdateTradeInfo(BOOL bFirst)
 		}
 		else
 		{
+			::EnterCriticalSection(&m_csMarket);
+			market = m_sellMarketVec.back();
+			::LeaveCriticalSection(&m_csMarket);
+
 			double fPrice = 0;
 			if (m_setting.sellPriceType < eSPT_LastPrice)
 				fPrice = market.BidPrice[m_setting.sellPriceType];
@@ -1411,6 +1446,17 @@ void CTradeSimulator::OnBtnTradeSetting()
 void SOUI::CTradeSimulator::OnTab()
 {
 	int nCurSel = m_pTabTrade->GetCurSel();
+	if (nCurSel == 0)
+	{
+		m_pBuyTradeInfo->SetVisible(TRUE, TRUE);
+		m_pSellTradeInfo->SetVisible(FALSE, TRUE);
+	}
+	else
+	{
+		m_pSellTradeInfo->SetVisible(TRUE, TRUE);
+		m_pBuyTradeInfo->SetVisible(FALSE, TRUE);
+
+	}
 
 	if (m_setting.changePageClean && m_nTabPage != nCurSel)
 	{
@@ -1440,8 +1486,11 @@ LRESULT CTradeSimulator::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	case TSMsg_SetTradeStock:
 		SetTradeStock(*(SStringA*)wp);
 		break;
-	case TSMsg_UpdateTradeInfo:
-		UpdateTradeInfo((BOOL)wp);
+	case TSMsg_UpdateBuyTradeInfo:
+		UpdateTradeInfo((BOOL)wp, TRUE);
+		break;
+	case TSMsg_UpdateSellTradeInfo:
+		UpdateTradeInfo((BOOL)wp, FALSE);
 		break;
 	case TSMsg_UpdateAccountInfo:
 		UpdateAccountInfo();
@@ -1604,7 +1653,7 @@ void CTradeSimulator::DataMsgProc()
 
 }
 
-void CTradeSimulator::OnUpdateHisStockMarket(int nMsgLength, const char * info)
+void CTradeSimulator::OnUpdateHisBuyStockMarket(int nMsgLength, const char * info)
 {
 	int nOffset = sizeof(HWND);
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)(info + nOffset);
@@ -1614,26 +1663,62 @@ void CTradeSimulator::OnUpdateHisStockMarket(int nMsgLength, const char * info)
 	int dataCount = pRecvInfo->SrcDataSize / sizeof(CommonStockMarket);
 	CommonStockMarket * dataArr = (CommonStockMarket *)(info + nOffset);
 	::EnterCriticalSection(&m_csMarket);
-	m_marketVec.reserve(MAX_TICK);
-	m_marketVec.resize(dataCount);
-	memcpy_s(&m_marketVec[0], pRecvInfo->SrcDataSize,
+	m_buyMarketVec.reserve(MAX_TICK);
+	m_buyMarketVec.resize(dataCount);
+	memcpy_s(&m_buyMarketVec[0], pRecvInfo->SrcDataSize,
 		dataArr, pRecvInfo->SrcDataSize);
 	::LeaveCriticalSection(&m_csMarket);
+	m_pBuyTradeInfo->ChangeShowStock(m_strBuyStock, m_strBuyStockName);
+	::PostMessage(m_hWnd, WM_TRADE_MSG, TRUE, TSMsg_UpdateBuyTradeInfo);
 
-	m_pTradeInfo->ChangeShowStock(m_strStock, m_strStockName);
-	::PostMessage(m_hWnd, WM_TRADE_MSG, TRUE, TSMsg_UpdateTradeInfo);
 }
 
-void CTradeSimulator::OnUpdateStockMarket(int nMsgLength, const char * info)
+void CTradeSimulator::OnUpdateBuyStockMarket(int nMsgLength, const char * info)
 {
 	CommonStockMarket* pStockData = (CommonStockMarket*)info;
 	SStringA SecurityID = pStockData->SecurityID;
+
 	::EnterCriticalSection(&m_csMarket);
-	m_marketVec.emplace_back(*pStockData);
+	m_buyMarketVec.emplace_back(*pStockData);
 	::LeaveCriticalSection(&m_csMarket);
-	::PostMessage(m_hWnd, WM_TRADE_MSG, FALSE, TSMsg_UpdateTradeInfo);
+	::PostMessage(m_hWnd, WM_TRADE_MSG, FALSE, TSMsg_UpdateBuyTradeInfo);
+
 
 }
+
+void CTradeSimulator::OnUpdateHisSellStockMarket(int nMsgLength, const char * info)
+{
+	int nOffset = sizeof(HWND);
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)(info + nOffset);
+	nOffset += sizeof(*pRecvInfo);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	int dataCount = pRecvInfo->SrcDataSize / sizeof(CommonStockMarket);
+	CommonStockMarket * dataArr = (CommonStockMarket *)(info + nOffset);
+	::EnterCriticalSection(&m_csMarket);
+	m_sellMarketVec.reserve(MAX_TICK);
+	m_sellMarketVec.resize(dataCount);
+	memcpy_s(&m_sellMarketVec[0], pRecvInfo->SrcDataSize,
+		dataArr, pRecvInfo->SrcDataSize);
+	::LeaveCriticalSection(&m_csMarket);
+	m_pSellTradeInfo->ChangeShowStock(m_strSellStock, m_strSellStockName);
+	::PostMessage(m_hWnd, WM_TRADE_MSG, TRUE, TSMsg_UpdateSellTradeInfo);
+
+}
+
+void CTradeSimulator::OnUpdateSellStockMarket(int nMsgLength, const char * info)
+{
+	CommonStockMarket* pStockData = (CommonStockMarket*)info;
+	SStringA SecurityID = pStockData->SecurityID;
+
+	::EnterCriticalSection(&m_csMarket);
+	m_sellMarketVec.emplace_back(*pStockData);
+	::LeaveCriticalSection(&m_csMarket);
+	::PostMessage(m_hWnd, WM_TRADE_MSG, FALSE, TSMsg_UpdateSellTradeInfo);
+
+
+}
+
 
 void CTradeSimulator::OnUpdateCloseInfo(int nMsgLength, const char * info)
 {
@@ -1807,8 +1892,10 @@ SStringW SOUI::CTradeSimulator::NumberWithSeparator(SStringW str)
 
 bool SOUI::CTradeSimulator::CheckPriceIsLeagal(int nDirect, long long llPrice)
 {
+	vector<CommonStockMarket>* pMarketVec = eTD_Buy == nDirect ?
+		&m_buyMarketVec : &m_sellMarketVec;
 	::EnterCriticalSection(&m_csMarket);
-	auto market = m_marketVec.back();
+	auto market = pMarketVec->back();
 	::LeaveCriticalSection(&m_csMarket);
 
 	double fLimitRatio = 0.1;
