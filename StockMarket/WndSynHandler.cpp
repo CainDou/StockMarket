@@ -530,6 +530,8 @@ void CWndSynHandler::InitDataHandleMap()
 		&CWndSynHandler::OnUpdateTFMarket;
 	m_dataHandleMap[UpdateRtRps] =
 		&CWndSynHandler::OnUpdateRtRps;
+	m_dataHandleMap[UpdateFilterData] =
+		&CWndSynHandler::OnUpdateFilterData;
 	m_dataHandleMap[UpdateCallAction] =
 		&CWndSynHandler::OnUpdateCallAction;
 
@@ -581,6 +583,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgHisTFBase;
 	m_netHandleMap[RecvMsg_TodayTFMarket]
 		= &CWndSynHandler::OnMsgTodayTFMarket;
+	m_netHandleMap[RecvMsg_RTFilter]
+		= &CWndSynHandler::OnMsgRTFilterData;
 
 	m_netHandleMap[TradeRecvMsg_Register]
 		= &CWndSynHandler::OnMsgAccountRegister;
@@ -1299,7 +1303,6 @@ void CWndSynHandler::OnMsgReInit(ReceiveInfo & recvInfo)
 void CWndSynHandler::OnMsgRTTFMarket(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	TimeLineData stkInfo = { 0 };
 	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		unsigned long  ulSize = recvInfo.DataSize;
@@ -1319,7 +1322,6 @@ void CWndSynHandler::OnMsgRTTFMarket(ReceiveInfo & recvInfo)
 void CWndSynHandler::OnMsgRtRps(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	TimeLineData stkInfo = { 0 };
 	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		unsigned long  ulSize = recvInfo.DataSize;
@@ -1419,6 +1421,27 @@ void CWndSynHandler::OnMsgTodayTFMarket(ReceiveInfo & recvInfo)
 		SendMsg(m_uMsgThreadID, Syn_TodayTFMarket, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
+}
+
+void CWndSynHandler::OnMsgRTFilterData(ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	TimeLineData stkInfo = { 0 };
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_RpsProcThreadID, UpdateFilterData,
+			(char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
+	delete[]buffer;
+	buffer = nullptr;
+
 }
 
 void CWndSynHandler::OnMsgAccountRegister(ReceiveInfo & recvInfo)
@@ -1694,6 +1717,41 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 		}
 	}
 
+}
+
+void CWndSynHandler::OnUpdateFilterData(int nMsgLength, const char * info)
+{
+	int dataCount = nMsgLength / sizeof(FilterData);
+	FilterData* dataArr = (FilterData*)info;
+	int nCount = 0;
+	int nErrName = 0;
+	for (int i = 0; i < dataCount; ++i)
+		m_FilterHash[dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
+	for (auto &it : m_FilterHash)
+	{
+		for (auto& data : it.second.hash)
+		{
+			//if(data.second.nTime)
+			//更新选股器数据
+			int nDataPos = m_StockPos[Group_Stock].hash.count(data.first) ?
+				m_StockPos[Group_Stock].hash[data.first] : -1;
+
+			if (nDataPos < 0)
+				continue;
+			auto &filterData = data.second;
+
+			auto &filterMap = m_FilterDataMap[Group_Stock][it.first][nDataPos];
+			filterMap[SFI_VolMome] = filterData.bVolMomentum;
+			filterMap[SFI_AbsMome] = filterData.bAbsMomentum;
+			filterMap[SFI_StructState] = filterData.bStructState;
+			filterMap[SFI_StrengthFilter] = filterData.bStrengthFilter;
+			filterMap[SFI_AbsStrength] = filterData.bAbsStrengthFilter;
+			filterMap[SFI_FlatBoard] = filterData.bFlatBoard;
+			filterMap[SFI_PeriBottom] = filterData.bPeriscopeBottom;
+			filterMap[SFI_BottomStart] = filterData.bBottomStart;
+			filterMap[SFI_JumpOver] = filterData.bJumpOver;
+		}
+	}
 }
 
 void CWndSynHandler::OnClearData(int nMsgLength, const char * info)

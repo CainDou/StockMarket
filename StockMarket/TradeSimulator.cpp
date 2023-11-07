@@ -2318,8 +2318,7 @@ void CTradeSimulator::UpdateHisDealList(SStringW str)
 		if (str.IsEmpty() || strstr(DealInfo.SecurityID, m_strHisDealSearch)
 			|| strstr(DealInfo.SecurityName, m_strHisDealSearch))
 		{
-			int nPos = m_pLsHisDeal->InsertItem(0, str.Format(L"%02d:%02d:%02d",
-				DealInfo.Time / 10000, DealInfo.Time / 100 % 100, DealInfo.Time % 100));
+			int nPos = m_pLsHisDeal->InsertItem(0, str.Format(L"%d", DealInfo.Date));
 			m_pLsHisDeal->SetSubItemText(nPos, SHDH_DealTime, str.Format(L"%02d:%02d:%02d",
 				DealInfo.Time / 10000, DealInfo.Time / 100 % 100, DealInfo.Time % 100));
 			m_pLsHisDeal->SetSubItemText(nPos, SHDH_ApplyID, str.Format(L"%d", DealInfo.ApplyID));

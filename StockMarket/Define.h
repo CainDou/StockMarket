@@ -119,7 +119,7 @@ enum RecvMsgType
 	RecvMsg_HisMultiDataForHSF,
 	RecvMsg_HisTFBase,
 	RecvMsg_TodayTFMarket,
-
+	RecvMsg_RTFilter,
 };
 
 enum SendMsgType
@@ -427,6 +427,8 @@ enum DataProcType
 	ReInitLimitUp,
 	limitUpReconnect,
 	CheckHisFilterPass,
+	UpdateFilterData,
+
 	Msg_ReInit = 77777,
 	Msg_Exit = 88888,
 };
@@ -1200,6 +1202,16 @@ enum SF_INDEX
 
 	SFI_LastPx,
 
+	//选股公式数据
+	SFI_VolMome,
+	SFI_AbsMome,
+	SFI_StructState,
+	SFI_StrengthFilter,
+	SFI_AbsStrength,
+	SFI_FlatBoard,
+	SFI_PeriBottom,
+	SFI_BottomStart,
+	SFI_JumpOver,
 	SFI_Count,
 
 };
@@ -2182,6 +2194,7 @@ typedef struct _tradeSetting
 	}
 }TradeSetting;
 
+//默认买入价格
 enum eBuyPriceType
 {
 	eBPT_Ask1 = 0,
@@ -2193,6 +2206,7 @@ enum eBuyPriceType
 	eBPT_Empty,
 };
 
+//默认买入数量
 enum eBuyVolType
 {
 	eBVT_Empty = 0,
@@ -2204,6 +2218,7 @@ enum eBuyVolType
 	eBVT_OneSixth,
 };
 
+//默认卖出价格
 enum eSellPriceType
 {
 	eSPT_Bid1 = 0,
@@ -2215,6 +2230,7 @@ enum eSellPriceType
 	eSPT_Empty,
 };
 
+//默认卖出数量
 enum eSellVolType
 {
 	eSVT_Empty = 0,
@@ -2226,6 +2242,7 @@ enum eSellVolType
 	eSVT_OneSixth,
 };
 
+//交易后界面设置
 enum eAfterTradeType
 {
 	eATT_Clear,
@@ -2233,3 +2250,19 @@ enum eAfterTradeType
 	eATT_IdPrice,
 	eATT_IdPriceVol,
 };
+
+typedef struct _FilterDataType
+{
+	SecurityID SecurityID;
+	int nTime;
+	int nPeriod;
+	BOOL bVolMomentum;
+	BOOL bAbsMomentum;
+	BOOL bStructState;
+	BOOL bStrengthFilter;
+	BOOL bAbsStrengthFilter;
+	BOOL bFlatBoard;
+	BOOL bPeriscopeBottom;
+	BOOL bBottomStart;
+	BOOL bJumpOver;
+}FilterData;

@@ -278,7 +278,7 @@ void CDlgComboStockFilter::InitComboBox()
 	int nCount = 0;
 	for (int i = SFI_Start; i < SFI_Count; ++i)
 	{
-		if (m_IndexMap.count(i) && i != SFI_Num)
+		if (m_IndexMap.count(i) )
 		{
 			m_pCbxIndex1->InsertItem(nCount, m_IndexMap[i], NULL, 0);
 			m_Index1PosMap[nCount] = i;
@@ -307,7 +307,7 @@ void CDlgComboStockFilter::InitComboBox()
 	nCount = 0;
 	for (int i = SFI_CloseRps520; i < SFI_Count; ++i)
 	{
-		if (m_IndexMap.count(i))
+		if (m_IndexMap.count(i) && !m_bIndexOnlyIn1[i])
 		{
 			m_pCbxIndex2->InsertItem(nCount, m_IndexMap[i], NULL, 0);
 			m_Index2PosMap[nCount] = i;
@@ -538,6 +538,7 @@ void CDlgComboStockFilter::InitStringMap()
 
 
 	m_IndexMap[SFI_ChgPct] = L"涨跌幅";
+	m_bOnlyInDay[SFI_ChgPct] = TRUE;
 	m_IndexMap[SFI_CloseRps520] = L"收盘价RPS520";
 	m_IndexMap[SFI_CloseMacd520] = L"收盘价Macd520";
 	m_IndexMap[SFI_ClosePoint520] = L"收盘价520分数";
@@ -653,6 +654,45 @@ void CDlgComboStockFilter::InitStringMap()
 	m_IndexMap[SFI_L2IndyAmountRank2060] = L"所在二级行业的成交额2060排名";
 	m_IndexMap[SFI_L2IndyAmountPoint] = L"所在二级行业的成交额截面分数";
 	m_IndexMap[SFI_L2IndyAmountRank] = L"所在二级行业的成交额截面排名";
+
+	m_IndexMap[SFI_VolMome] = L"成交动量";
+	m_IndexMap[SFI_AbsMome] = L"绝对动量";
+	m_IndexMap[SFI_StructState] = L"结构状态";
+	m_IndexMap[SFI_StrengthFilter] = L"强度选股";
+	m_IndexMap[SFI_AbsStrength] = L"绝对强度";
+	m_IndexMap[SFI_FlatBoard] = L"一字板";
+	m_IndexMap[SFI_PeriBottom] = L"潜望底";
+	m_IndexMap[SFI_BottomStart] = L"底部启动";
+	m_IndexMap[SFI_JumpOver] = L"突破回踩";
+
+	m_bIndexOnlyIn1[SFI_VolMome] = TRUE;
+	m_bIndexOnlyIn1[SFI_AbsMome] = TRUE;
+	m_bIndexOnlyIn1[SFI_StructState] = TRUE;
+	m_bIndexOnlyIn1[SFI_StrengthFilter] = TRUE;
+	m_bIndexOnlyIn1[SFI_AbsStrength] = TRUE;
+	m_bIndexOnlyIn1[SFI_FlatBoard] = TRUE;
+	m_bIndexOnlyIn1[SFI_PeriBottom] = TRUE;
+	m_bIndexOnlyIn1[SFI_BottomStart] = TRUE;
+	m_bIndexOnlyIn1[SFI_JumpOver] = TRUE;
+
+	m_bOnlyInDay[SFI_StrengthFilter] = TRUE;
+	m_bOnlyInDay[SFI_AbsStrength] = TRUE;
+	m_bOnlyInDay[SFI_FlatBoard] = TRUE;
+	m_bOnlyInDay[SFI_PeriBottom] = TRUE;
+	m_bOnlyInDay[SFI_BottomStart] = TRUE;
+	m_bOnlyInDay[SFI_JumpOver] = TRUE;
+
+	m_bOnlyBool[SFI_VolMome] = TRUE;
+	m_bOnlyBool[SFI_AbsMome] = TRUE;
+	m_bOnlyBool[SFI_StructState] = TRUE;
+	m_bOnlyBool[SFI_StrengthFilter] = TRUE;
+	m_bOnlyBool[SFI_AbsStrength] = TRUE;
+	m_bOnlyBool[SFI_FlatBoard] = TRUE;
+	m_bOnlyBool[SFI_PeriBottom] = TRUE;
+	m_bOnlyBool[SFI_BottomStart] = TRUE;
+	m_bOnlyBool[SFI_JumpOver] = TRUE;
+
+
 
 	m_ReverseIndexMap[L"涨跌幅"] = SFI_ChgPct;
 	m_ReverseIndexMap[L"收盘价RPS520"] = SFI_CloseRps520;
@@ -790,6 +830,17 @@ void CDlgComboStockFilter::InitStringMap()
 	m_ReverseIndexMap[L"所在二级行业的成交额截面分数"] = SFI_L2IndyAmountPoint;
 	m_ReverseIndexMap[L"所在二级行业的成交额截面排名"] = SFI_L2IndyAmountRank;
 
+	m_ReverseIndexMap[L"成交动量"] = SFI_VolMome;
+	m_ReverseIndexMap[L"绝对动量"] = SFI_AbsMome;
+	m_ReverseIndexMap[L"结构状态"] = SFI_StructState;
+	m_ReverseIndexMap[L"强度选股"] = SFI_StrengthFilter;
+	m_ReverseIndexMap[L"绝对强度"] = SFI_AbsStrength;
+	m_ReverseIndexMap[L"一字板"] = SFI_FlatBoard;
+	m_ReverseIndexMap[L"潜望底"] = SFI_PeriBottom;
+	m_ReverseIndexMap[L"底部启动"] = SFI_BottomStart;
+	m_ReverseIndexMap[L"突破回踩"] = SFI_JumpOver;
+
+
 	m_ConditionMap[SFC_Greater] = L"大于";
 	m_ConditionMap[SFC_EqualOrGreater] = L"大于等于";
 	m_ConditionMap[SFC_Equal] = L"等于";
@@ -857,6 +908,16 @@ void CDlgComboStockFilter::InitStringMap()
 	m_NumUint[SFI_CAAmoRankL1] = L"(> 0)";
 	m_NumUint[SFI_CAAmoPointL2] = L"(0 ~ 100)";
 	m_NumUint[SFI_CAAmoRankL2] = L"(> 0)";
+
+	m_NumUint[SFI_VolMome] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_AbsMome] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_StructState] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_StrengthFilter] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_AbsStrength] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_FlatBoard] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_PeriBottom] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_BottomStart] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_JumpOver] = L"（0或1，1符合 0不符条件）";;
 
 
 
@@ -1207,6 +1268,32 @@ bool CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 		m_pCbxIndex2->SetCurSel(nNumPos);
 		m_pCbxIndex2->EnableWindow(FALSE, TRUE);
 	}
+	else if (m_bOnlyBool[m_Index1PosMap[nSel]])
+	{
+		m_pTextNum->SetVisible(TRUE, TRUE);
+		m_pEditNum->SetVisible(TRUE, TRUE);
+		m_pTextPeriod1->SetVisible(TRUE, TRUE);
+		m_pCbxPeriod1->SetVisible(TRUE, TRUE);
+		m_pTextPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
+		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
+		m_pTextPeriod2->SetVisible(FALSE, TRUE);
+		m_pCbxPeriod2->SetVisible(FALSE, TRUE);
+		int nNumPos = SFI_Num;
+		for (auto &it : m_Index2PosMap)
+		{
+			if (it.second == SFI_Num)
+			{
+				nNumPos = it.first;
+				break;
+			}
+		}
+
+		m_pCbxIndex2->SetCurSel(nNumPos);
+		m_pCbxIndex2->EnableWindow(FALSE, TRUE);
+		m_pCbxCondition->SetCurSel(SFC_Equal);
+		m_pCbxCondition->EnableWindow(FALSE, TRUE);
+
+	}
 	else
 	{
 		m_pTextPeriod1->SetVisible(TRUE, TRUE);
@@ -1214,7 +1301,19 @@ bool CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 		m_pTextPeriod1->SetAttribute(L"pos", L"5,[5");
 		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[5,-5,@20");
 		m_pCbxIndex2->EnableWindow(TRUE, TRUE);
+		m_pCbxCondition->EnableWindow(TRUE, TRUE);
 	}
+
+	if (m_bOnlyInDay[m_Index1PosMap[nSel]])
+	{
+		m_pCbxPeriod1->SetCurSel(SFP_D1);
+		m_pCbxPeriod1->EnableWindow(FALSE, TRUE);
+	}
+	else
+		m_pCbxPeriod1->EnableWindow(TRUE, TRUE);
+
+
+
 	int nIndex2Sel = m_pCbxIndex2->GetCurSel();
 	if (m_Index2PosMap[nIndex2Sel] == SFI_Num)
 	{

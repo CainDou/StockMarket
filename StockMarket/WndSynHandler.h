@@ -116,6 +116,7 @@ protected:
 	void OnMsgHisCallAction( ReceiveInfo &recvInfo);
 	void OnMsgHisTFBase(ReceiveInfo &recvInfo);
 	void OnMsgTodayTFMarket(ReceiveInfo &recvInfo);
+	void OnMsgRTFilterData(ReceiveInfo &recvInfo);
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
 	void OnMsgLogin(ReceiveInfo &recvInfo);
@@ -133,6 +134,7 @@ protected:
 protected:
 	void OnUpdateTFMarket(int nMsgLength, const char* info);
 	void OnUpdateRtRps(int nMsgLength, const char* info);
+	void OnUpdateFilterData(int nMsgLength, const char* info);
 	void OnClearData(int nMsgLength, const char* info);
 	void OnUpdateCallAction(int nMsgLength, const char* info);
 	//同步窗口数据处理
@@ -189,6 +191,8 @@ public:
 	strHash<SStringA> m_StockName;
 	vector<int> m_PeriodVec;
 	map<int, strHash<TickFlowMarket>> m_TFMarketHash;
+	map<int, strHash<FilterData>> m_FilterHash;
+
 	vector<map<int, strHash<RtRps>>> m_RtRpsHash;
 	vector<map<int,vector<vector<double>>>> m_FilterDataMap;
 	//分组 - 周期 -股票Index 日期序列 数据ID 数据序列

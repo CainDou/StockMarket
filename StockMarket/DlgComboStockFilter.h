@@ -161,10 +161,13 @@ namespace SOUI
 		map<int, SStringW> m_FuncMap;
 		map<int, SStringW> m_PeriodMap;
 		map<int, SStringW> m_IndexMap;
+		map<int, BOOL> m_bIndexOnlyIn1;
 		map<int, int>m_Index1PosMap;
 		map<int, int>m_Index2PosMap;
 		map<int, SStringW> m_ConditionMap;
 		map<int, SStringW> m_NumUint;
+		map<int, BOOL> m_bOnlyInDay;
+		map<int, BOOL> m_bOnlyBool;
 		map<SStringW, int> m_ReverseFuncMap;
 		map<SStringW, int> m_ReversePeriodMap;
 		map<SStringW, int> m_ReverseIndexMap;
