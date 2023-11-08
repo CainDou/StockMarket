@@ -1274,8 +1274,8 @@ bool CDlgComboStockFilter::OnCbxIndex1Change(EventArgs * e)
 		m_pEditNum->SetVisible(TRUE, TRUE);
 		m_pTextPeriod1->SetVisible(TRUE, TRUE);
 		m_pCbxPeriod1->SetVisible(TRUE, TRUE);
-		m_pTextPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
-		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[0,5,[0");
+		m_pTextPeriod1->SetAttribute(L"pos", L"5,[5");
+		m_pCbxPeriod1->SetAttribute(L"pos", L"5,[5,-5,@20");
 		m_pTextPeriod2->SetVisible(FALSE, TRUE);
 		m_pCbxPeriod2->SetVisible(FALSE, TRUE);
 		int nNumPos = SFI_Num;
