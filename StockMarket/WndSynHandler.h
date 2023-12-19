@@ -57,7 +57,7 @@ protected:
 	//¸¨Öúº¯Êý
 protected:
 	int GetHisPoint(int nMsgType,SStringA stockID, int nPeriod, int nGroup,SStringA attInfo);
-	int GetMarket(SStringA stockID, int nGroup);
+	int GetMarket(SStringA stockID,SStringA oldStockID, int nGroup);
 	int GetHisKline(SStringA stockID, int nPeriod, int nGroup);
 	int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
 	int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
@@ -117,6 +117,8 @@ protected:
 	void OnMsgHisTFBase(ReceiveInfo &recvInfo);
 	void OnMsgTodayTFMarket(ReceiveInfo &recvInfo);
 	void OnMsgRTFilterData(ReceiveInfo &recvInfo);
+	void OnMsgRTPriceVol(ReceiveInfo &recvInfo);
+
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
 	void OnMsgLogin(ReceiveInfo &recvInfo);
@@ -161,6 +163,7 @@ protected:
 	void OnHisTFBase(int nMsgLength, const char* info);
 	void OnGetHisTFBase(int nMsgLength, const char* info);
 	void OnTodayTFMarket(int nMsgLength, const char* info);
+	void OnRTPriceVol(int nMsgLength, const char* info);
 	void OnGetTradeMarket(int nMsgLength, const char* info);
 	void OnReLogin(int nMsgLength, const char* info);
 

@@ -1,7 +1,7 @@
 #pragma once
 #include<thread>
 #include"WorkWnd.h"
-
+#include "DlgMsgHandler.h"
 class CIniFile;
 namespace SOUI
 {
@@ -45,33 +45,7 @@ namespace SOUI
 		void ReInitList();
 		void ReInitWorkWnd();
 
-	protected:
-		void InitMsgHandleMap();
-		void MsgProc();
-		void OnUpdateList(int nMsgLength, const char* info);
-		void OnGetMarket(int nMsgLength, const char* info);
-		void OnGetKline(int nMsgLength, const char* info);
-		void OnGetPoint(int nMsgLength, const char* info);
-		void OnUpdatePoint(int nMsgLength, const char* info);
-		//void OnTodayPoint(int nMsgLength, const char* info);
-		void OnHisRpsPoint(int nMsgLength, const char* info);
-		void OnRTIndexMarket(int nMsgLength, const char* info);
-		void OnRTStockMarket(int nMsgLength, const char* info);
-		void OnHisIndexMarket(int nMsgLength, const char* info);
-		void OnHisStockMarket(int nMsgLength, const char* info);
-		void OnHisKline(int nMsgLength, const char* info);
-		void OnCloseInfo(int nMsgLength, const char* info);
-		void OnChangeIndy(int nMsgLength, const char* info);
-		void OnHisSecPoint(int nMsgLength, const char* info);
-		void OnRehabInfo(int nMsgLength, const char* info);
-		void OnHisCallAction(int nMsgLength, const char* info);
-		void OnGetCallAction(int nMsgLength, const char* info);
-		void OnHisTFBase(int nMsgLength, const char* info);
-		void OnGetHisTFBase(int nMsgLength, const char* info);
-		void OnTodayTFMarket(int nMsgLength, const char* info);
-		void OnRTTFMarket(int nMsgLength, const char* info);
-
-
+	
 	protected:
 		virtual void OnFinalMessage(HWND hWnd);
 
@@ -105,12 +79,9 @@ namespace SOUI
 
 		//×ÓÏß³Ì
 	protected:
-		thread tDataProc;
-		UINT m_DataThreadID;
-		map<int, CWorkWnd*>m_WndMap;
-		map<HWND, int> m_WndHandleMap;
-		map<int, SStringA> m_WndSubMap;
+		vector<CWorkWnd*>m_WndVec;
 		UINT m_SynThreadID;
+		CDlgMsgHandler m_MsgHandler;
 		BOOL m_bIsValid;
 	};
 	inline BOOL CDlgSub::WindowIsValid()

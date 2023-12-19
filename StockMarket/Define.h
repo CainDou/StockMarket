@@ -120,6 +120,7 @@ enum RecvMsgType
 	RecvMsg_HisTFBase,
 	RecvMsg_TodayTFMarket,
 	RecvMsg_RTFilter,
+	RecvMsg_RTPriceVol,
 };
 
 enum SendMsgType
@@ -134,7 +135,8 @@ enum SendMsgType
 	SendType_HisCallAction,
 	SendType_HisMultiData,
 	SendType_IndexHisDayKline,
-	SendType_HisTFBase,
+	SendType_HisTFBase, 
+	SendType_UnSubIns,
 };
 
 enum ComSendMsgType
@@ -461,12 +463,14 @@ enum SynMsg
 	Syn_GetHisTFBase,
 	Syn_TodayTFMarket,
 	Syn_RTTFMarkt,
+	Syn_RTPriceVol,
+
+	//交易的同步信息
 	Syn_GetTradeMarket,
 	Syn_RTBuyStockMarket,
 	Syn_RTSellStockMarket,
 	Syn_HisBuyStockMarket,
 	Syn_HisSellStockMarket,
-
 	Syn_ReLogin,
 
 };
@@ -512,6 +516,7 @@ enum WorkWndMsg
 	WW_GetHisTFBase,
 	WW_TodayTFMarket,
 	WW_RTTFMarket,
+	WW_RTPriceVol,
 
 };
 
@@ -1059,6 +1064,7 @@ enum eSubPic
 typedef struct _DataGetInfo
 {
 	HWND hWnd;
+	char oldStockID[8];
 	char StockID[8];
 	int	 Group;
 	int Period;
@@ -2266,3 +2272,33 @@ typedef struct _FilterDataType
 	BOOL bBottomStart;
 	BOOL bJumpOver;
 }FilterData;
+
+typedef struct _priceVol
+{
+	SecurityID SecurityID;
+	int nPriceMulti100;
+	int nActBigBuyVol;
+	int nActBigBuyOrder;
+	int nActMidBuyVol;
+	int nActMidBuyOrder;
+	int nActSmallBuyVol;
+	int nActSmallBuyOrder;
+	int nActBigSellVol;
+	int nActBigSellOrder;
+	int nActMidSellVol;
+	int nActMidSellOrder;
+	int nActSmallSellVol;
+	int nActSmallSellOrder;
+	int nPasBigBuyVol;
+	int nPasBigBuyOrder;
+	int nPasMidBuyVol;
+	int nPasMidBuyOrder;
+	int nPasSmallBuyVol;
+	int nPasSmallBuyOrder;
+	int nPasBigSellVol;
+	int nPasBigSellOrder;
+	int nPasMidSellVol;
+	int nPasMidSellOrder;
+	int nPasSmallSellVol;
+	int nPasSmallSellOrder;
+}PriceVolInfo;

@@ -194,6 +194,12 @@
     <ClCompile Include="DlgTrustConfirm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SPriceVolPic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgMsgHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -358,6 +364,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgTrustConfirm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SPriceVolPic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgMsgHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

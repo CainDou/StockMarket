@@ -17,6 +17,7 @@
 #include "DlgComboStockFilter.h"
 #include "DlgHeaderSelect.h"
 #include "DlgRehabFixedTime.h"
+#include "SPriceVolPic.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
@@ -69,7 +70,7 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 		m_pCheckSTARM->SetVisible(FALSE, TRUE);
 		m_pCheckNewStock->SetVisible(FALSE, TRUE);
 		m_pFenShiPic->SetDataPoint(&m_IndexMarketVec);
-		m_pKlinePic->SetDataPoint(&m_IndexMarketVec,&m_KlineMap);
+		m_pKlinePic->SetDataPoint(&m_IndexMarketVec, &m_KlineMap);
 
 	}
 	else if (Group_SWL2 == m_Group)
@@ -111,7 +112,8 @@ void CWorkWnd::SetGroup(RpsGroup Group, HWND hParWnd)
 		}
 		m_pFenShiPic->SetDataPoint(&m_StockMarketVec, &m_RtTFMarketVec[Period_FenShi]);
 		m_pKlinePic->SetDataPoint(&m_StockMarketVec, &m_KlineMap,
-			&m_RtTFMarketVec,&m_TFBaseMap);
+			&m_RtTFMarketVec, &m_TFBaseMap);
+		//m_pPriceVolPic->SetDataPoint(&m_PriceVolMap);
 
 	}
 
@@ -401,6 +403,7 @@ void CWorkWnd::CloseWnd()
 	m_IndexMarketVec.shrink_to_fit();
 	m_StockMarketVec.clear();
 	m_StockMarketVec.shrink_to_fit();
+	//m_PriceVolMap.clear();
 	m_KlineMap.clear();
 	m_TFBaseMap.clear();
 	m_preCloseMap.hash.clear();
@@ -518,6 +521,8 @@ void CWorkWnd::OnInit(EventArgs * e)
 	m_pBtnTitleSel = FindChildByID2<SImageButton>(R.id.btn_TitleSel);
 	m_pTextCalcInfo = FindChildByID2<SStatic>(R.id.txt_hisFilterCalc);
 
+	m_pPriceVolPic = FindChildByID2<SPriceVolPic>(R.id.priceVolPic);
+
 	InitProcFucMap();
 	InitNameVec();
 	InitStockFilterFunc();
@@ -549,6 +554,8 @@ LRESULT CWorkWnd::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			m_pFenShiPic->Invalidate();
 		if (m_pKlinePic->IsVisible())
 			m_pKlinePic->Invalidate();
+		if (m_pPriceVolPic->IsVisible())
+			m_pPriceVolPic->Invalidate();
 		break;
 	case WDMsg_SubIns:
 		if (m_pDlgKbElf->GetShowPicInfo() != m_strSubStock)
@@ -1216,7 +1223,10 @@ void CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	SetMsgHandled(FALSE);
 	if (nChar == VK_ESCAPE)
 	{
-		OnBtnShowTypeChange(true);
+		if (m_pPriceVolPic->IsVisible())
+			OnBtnShowTypeChange(false);
+		else
+			OnBtnShowTypeChange(true);
 	}
 	else if (nChar == 229)
 	{
@@ -1304,6 +1314,9 @@ void CWorkWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 				OnBtnDayClicked();
 		}
 	}
+	else if (nChar == VK_F2)
+		if (m_Group == Group_Stock)
+			SwitchList2Pic(m_PicPeriod, TRUE);
 }
 void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 {
@@ -1462,6 +1475,7 @@ void CWorkWnd::SwitchPic2List()
 {
 	m_pFenShiPic->SetVisible(FALSE, TRUE);
 	m_pKlinePic->SetVisible(FALSE, TRUE);
+	m_pPriceVolPic->SetVisible(FALSE, TRUE);
 	m_pKlinePic->ClearTip();
 	m_pList->SetVisible(TRUE, TRUE);
 	m_pTextIndy->SetVisible(TRUE, TRUE);
@@ -1483,11 +1497,12 @@ void CWorkWnd::SwitchPic2List()
 
 
 }
-void CWorkWnd::SwitchList2Pic(int nPeriod)
+void CWorkWnd::SwitchList2Pic(int nPeriod, BOOL bPriceVol)
 {
 	m_pList->SetVisible(FALSE, TRUE);
-	m_pFenShiPic->SetVisible(FALSE, FALSE);
-	m_pKlinePic->SetVisible(FALSE, FALSE);
+	m_pFenShiPic->SetVisible(FALSE, TRUE);
+	m_pKlinePic->SetVisible(FALSE, TRUE);
+	m_pPriceVolPic->SetVisible(FALSE, TRUE);
 	m_pTextIndy->SetVisible(FALSE, TRUE);
 	m_pBtnTitleSel->SetVisible(FALSE, TRUE);
 
@@ -1495,18 +1510,40 @@ void CWorkWnd::SwitchList2Pic(int nPeriod)
 	{
 		if (m_Group == Group_Stock)
 			m_pBtnRehab->SetVisible(FALSE, TRUE);
-		m_pFenShiPic->SetVisible(TRUE, TRUE);
-		m_pFenShiPic->SetFocus();
-		m_pFenShiPic->RequestRelayout();
+		if (!bPriceVol)
+		{
+			m_pFenShiPic->SetVisible(TRUE, TRUE);
+			m_pFenShiPic->SetFocus();
+			m_pFenShiPic->RequestRelayout();
+		}
+		else
+		{
+			m_pPriceVolPic->SetVisible(TRUE, TRUE);
+			m_pPriceVolPic->SetFocus();
+			m_pPriceVolPic->RequestRelayout();
+
+		}
 
 	}
 	else
 	{
-		m_pBtnRehab->SetVisible(TRUE, TRUE);
-		if (m_Group == Group_Stock);
-		m_pKlinePic->SetVisible(TRUE, TRUE);
-		m_pKlinePic->SetFocus();
-		m_pKlinePic->RequestRelayout();
+		if (m_Group == Group_Stock)
+			m_pBtnRehab->SetVisible(TRUE, TRUE);
+		if (!bPriceVol)
+		{
+			m_pKlinePic->SetVisible(TRUE, TRUE);
+			m_pKlinePic->SetFocus();
+			m_pKlinePic->RequestRelayout();
+
+		}
+		else
+		{
+			m_pPriceVolPic->SetVisible(TRUE, TRUE);
+			m_pPriceVolPic->SetFocus();
+			m_pPriceVolPic->RequestRelayout();
+
+		}
+
 	}
 	m_bShowList = false;
 	m_pBtnMarket->SetWindowTextW(L"个股");
@@ -1600,6 +1637,8 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnUpdateTodayTFMarket;
 	m_dataHandleMap[WW_RTTFMarket] =
 		&CWorkWnd::OnUpdateRTTFMarket;
+	m_dataHandleMap[WW_RTPriceVol] =
+		&CWorkWnd::OnUpdateRTPriceVol;
 
 }
 void CWorkWnd::InitNameVec()
@@ -3436,7 +3475,10 @@ void CWorkWnd::OnBtnPeriedChange(int nPeriod)
 {
 	SImageButton * pBtn = m_pPeriodBtnMap[nPeriod];
 	if (pBtn == m_pPreSelBtn)
+	{
+		SwitchList2Pic(nPeriod, FALSE);
 		return;
+	}
 	SetBtnState(pBtn, &m_pPreSelBtn);
 	if (m_bShowList)
 	{
@@ -3588,7 +3630,7 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 	if (m_PicPeriod == nPeriod
 		&&m_strSubStock != "")
 	{
-		SwitchList2Pic(nPeriod);
+		SwitchList2Pic(nPeriod, FALSE);
 		return;
 	}
 	m_PicPeriod = nPeriod;
@@ -3651,17 +3693,18 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 
 		SetKlineShowData(infoVec, nPeriod, TRUE);
 	}
-	SwitchList2Pic(nPeriod);
+	SwitchList2Pic(nPeriod, FALSE);
 }
 
 void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 {
 	if (!bForce && m_strSubStock == StockID)
 		return;
+
+
 	SetDataFlagFalse();
 	m_PicPeriod = m_bShowList ?
 		m_ListPeriod : m_PicPeriod;
-	m_strSubStock = StockID;
 
 	SStringA StockName = m_StockName.hash[StockID];
 	if (m_Group != Group_Stock)
@@ -3674,12 +3717,15 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 		m_pFenShiPic->ChangeShowStock(StockID, StockName);
 		m_pKlinePic->ChangeShowStock(StockID, StockName);
 	}
+	m_pPriceVolPic->ChangeShowStock(StockID, StockName);
 	//获取分时数据
 	DataGetInfo GetInfo;
 	GetInfo.hWnd = m_hWnd;
+	strcpy_s(GetInfo.oldStockID, m_strSubStock);
 	strcpy_s(GetInfo.StockID, StockID);
 	GetInfo.Group = m_Group;
 	GetInfo.Period = Period_FenShi;
+	m_strSubStock = StockID;
 	SendMsg(m_uParWndThreadID, WW_GetMarket,
 		(char*)&GetInfo, sizeof(GetInfo));
 	vector<ShowPointInfo>infoVec;
@@ -3718,7 +3764,7 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 
 		SetKlineShowData(infoVec, m_PicPeriod, FALSE);
 	}
-	SwitchList2Pic(m_PicPeriod);
+	SwitchList2Pic(m_PicPeriod, m_pPriceVolPic->IsVisible());
 }
 
 void CWorkWnd::SetDataFlagFalse()
@@ -3972,6 +4018,7 @@ void CWorkWnd::OnUpdateStockMarket(int nMsgLength, const char * info)
 	CommonStockMarket* pStockData = (CommonStockMarket*)info;
 	SStringA SecurityID = pStockData->SecurityID;
 	m_StockMarketVec.emplace_back(*pStockData);
+	m_pPriceVolPic->UpdateMarket(*pStockData);
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
@@ -4149,11 +4196,11 @@ void CWorkWnd::OnUpdateRTTFMarket(int nMsgLength, const char * info)
 		int nPeriod = pTickFlow[i].nPeriod;
 		if (m_TFBaseGetMap[nPeriod])
 		{
-			if(m_RtTFMarketVec[nPeriod].empty())
+			if (m_RtTFMarketVec[nPeriod].empty())
 				m_RtTFMarketVec[nPeriod].emplace_back(pTickFlow[i]);
 			else
 			{
-				if(m_RtTFMarketVec[nPeriod].back().nTime != pTickFlow[i].nTime)
+				if (m_RtTFMarketVec[nPeriod].back().nTime != pTickFlow[i].nTime)
 					m_RtTFMarketVec[nPeriod].emplace_back(pTickFlow[i]);
 				else
 					m_RtTFMarketVec[nPeriod].back() = pTickFlow[i];
@@ -4162,6 +4209,16 @@ void CWorkWnd::OnUpdateRTTFMarket(int nMsgLength, const char * info)
 		}
 
 	}
+}
+
+void CWorkWnd::OnUpdateRTPriceVol(int nMsgLength, const char * info)
+{
+	PriceVolInfo* pPriceVol = (PriceVolInfo*)(info);
+	int nDataCount = nMsgLength/ sizeof(PriceVolInfo);
+	map<int, PriceVolInfo> priceVol;
+	for (int i = 0; i < nDataCount; ++i)
+		priceVol[pPriceVol[i].nPriceMulti100] = pPriceVol[i];
+	m_pPriceVolPic->UpdateData(priceVol);
 }
 
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)

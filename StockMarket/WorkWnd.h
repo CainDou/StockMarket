@@ -9,6 +9,7 @@ namespace SOUI
 	class CDlgKbElf;
 	class CDlgStockFilter;
 	class CDlgComboStockFilter;
+	class SPriceVolPic;
 
 	class CWorkWnd : public SHostWnd
 	{
@@ -65,7 +66,7 @@ namespace SOUI
 		void	OnLButtonUp(UINT nFlags, CPoint point);
 		BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 		void	SwitchPic2List();
-		void	SwitchList2Pic(int nPeriod);
+		void	SwitchList2Pic(int nPeriod,BOOL bPriceVol);
 		void	DataProc();
 		void	InitProcFucMap();
 		void	InitNameVec();
@@ -193,6 +194,7 @@ namespace SOUI
 		void OnUpdateHisTFBase(int nMsgLength, const char* info);
 		void OnUpdateTodayTFMarket(int nMsgLength, const char* info);
 		void OnUpdateRTTFMarket(int nMsgLength, const char* info);
+		void OnUpdateRTPriceVol(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -272,6 +274,7 @@ namespace SOUI
 		SColorListCtrlEx* m_pList;
 		SFenShiPic* m_pFenShiPic;
 		SKlinePic* m_pKlinePic;
+		SPriceVolPic* m_pPriceVolPic;
 		SImageButton* m_pPreSelBtn;
 		CDlgKbElf* m_pDlgKbElf;
 		CDlgStockFilter *m_pDlgStockFilter;
@@ -367,6 +370,7 @@ namespace SOUI
 		map<int, map<SStringA, vector<CoreData>>> m_L2IndyPointData;
 		vector<CommonIndexMarket>m_IndexMarketVec;
 		vector<CommonStockMarket>m_StockMarketVec;
+		//map<int, PriceVolInfo>m_PriceVolMap;
 		map<int, vector<KlineType>>m_KlineMap;
 		map<int, vector<TFBaseMarket>>m_TFBaseMap;
 		map<int, vector<TickFlowMarket>>m_RtTFMarketVec;

@@ -3,6 +3,7 @@
 #include"WorkWnd.h"
 #include "IniFile.h"
 #include <queue>
+#include "DlgMsgHandler.h"
 
 namespace SOUI
 {
@@ -45,28 +46,7 @@ namespace SOUI
 		void ReInitList();
 		void ReInitWorkWnd();
 
-	protected:
-		void InitMsgHandleMap();
-		void MsgProc();
-		void OnUpdateList(int nMsgLength, const char* info);
-		void OnGetMarket(int nMsgLength, const char* info);
-		void OnGetKline(int nMsgLength, const char* info);
-		void OnGetPoint(int nMsgLength, const char* info);
-		void OnUpdatePoint(int nMsgLength, const char* info);
-		//void OnTodayPoint(int nMsgLength, const char* info);
-		void OnHisRpsPoint(int nMsgLength, const char* info);
-		void OnRTStockMarket(int nMsgLength, const char* info);
-		void OnHisStockMarket(int nMsgLength, const char* info);
-		void OnHisKline(int nMsgLength, const char* info);
-		void OnCloseInfo(int nMsgLength, const char* info);
-		void OnHisSecPoint(int nMsgLength, const char* info);
-		void OnRehabInfo(int nMsgLength, const char* info);
-		void OnHisCallAction(int nMsgLength, const char* info);
-		void OnGetCallAction(int nMsgLength, const char* info);
-		void OnHisTFBase(int nMsgLength, const char* info);
-		void OnGetHisTFBase(int nMsgLength, const char* info);
-		void OnTodayTFMarket(int nMsgLength, const char* info);
-		void OnRTTFMarket(int nMsgLength, const char* info);
+
 
 	protected:
 		void OnMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
@@ -105,15 +85,11 @@ namespace SOUI
 
 		//×ÓÏß³Ì
 	protected:
-		thread tDataProc;
-		UINT m_DataThreadID;
 		vector<CWorkWnd*>m_WndVec;
 		vector<SRealWnd*>m_SrcWndVec;
-		map<HWND, int> m_WndHandleMap;
-		map<int, SStringA> m_WndSubMap;
-		map<int, vector<DataGetInfo>> m_WndGetInfoMap;
 		UINT m_SynThreadID;
 		BOOL m_bIsValid;
+		CDlgMsgHandler m_MsgHandler;
 	};
 	inline BOOL CDlgMultiFilter::WindowIsValid()
 	{

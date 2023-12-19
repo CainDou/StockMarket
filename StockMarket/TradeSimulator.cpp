@@ -1129,6 +1129,7 @@ void CTradeSimulator::SetTradeStock(SStringA strStock)
 			return;
 		if (m_stockHash.hash.count(strStock) == 0)
 			return;
+		strcpy_s(GetInfo.oldStockID, m_strBuyStock);
 		m_strBuyStock = strStock;
 		m_strBuyStockName = m_stockHash.hash[m_strBuyStock].SecurityName;
 		GetInfo.hWnd = (HWND)0;
@@ -1140,6 +1141,7 @@ void CTradeSimulator::SetTradeStock(SStringA strStock)
 			return;
 		if (m_stockHash.hash.count(strStock) == 0)
 			return;
+		strcpy_s(GetInfo.oldStockID, m_strSellStock);
 		m_strSellStock = strStock;
 		m_strSellStockName = m_stockHash.hash[m_strSellStock].SecurityName;
 		GetInfo.hWnd = (HWND)1;

@@ -25,10 +25,6 @@ CDlgSub::CDlgSub(SStringA strWndName) :SHostWnd(_T("LAYOUT:dlg_subWindow"))
 
 CDlgSub::~CDlgSub()
 {
-	if (INVALID_THREADID != m_DataThreadID)
-		SendMsg(m_DataThreadID, Msg_Exit, NULL, 0);
-	if (tDataProc.joinable())
-		tDataProc.join();
 }
 
 void CDlgSub::OnClose()
@@ -56,12 +52,10 @@ BOOL CDlgSub::OnInitDialog(EventArgs* e)
 	pTitl->SetWindowTextW(StrA2StrW(m_strWindowName));
 	CSimpleWnd::SetWindowTextW(StrA2StrW(m_strWindowName));
 	m_SynThreadID = g_WndSyn.GetThreadID();
-	tDataProc = thread(&CDlgSub::MsgProc, this);
-	m_DataThreadID = *(unsigned*)&tDataProc.get_id();
 	//InitWindowPos();
-	InitMsgHandleMap();
 	InitWorkWnd();
-	g_WndSyn.AddWnd(m_hWnd, m_DataThreadID);
+	UINT uMsgThreadID = m_MsgHandler.Init(m_hWnd, m_WndVec, m_SynThreadID,FALSE);
+	g_WndSyn.AddWnd(m_hWnd, uMsgThreadID);
 	SetTimer(TIMER_AUTOSAVE, 5000);
 	return 0;
 }
@@ -143,15 +137,16 @@ void CDlgSub::InitWindowPos()
 
 void CDlgSub::InitWorkWnd()
 {
+	m_WndVec.resize(Group_Count);
 	SRealWnd * pRealWnd = FindChildByName2<SRealWnd>(L"wnd_SWL1");
-	m_WndMap[Group_SWL1] = (CWorkWnd *)pRealWnd->GetData();
-	m_WndMap[Group_SWL1]->SetGroup(Group_SWL1, m_hWnd);
+	m_WndVec[Group_SWL1] = (CWorkWnd *)pRealWnd->GetData();
+	m_WndVec[Group_SWL1]->SetGroup(Group_SWL1, m_hWnd);
 	pRealWnd = FindChildByName2<SRealWnd>(L"wnd_SWL2");
-	m_WndMap[Group_SWL2] = (CWorkWnd *)pRealWnd->GetData();
-	m_WndMap[Group_SWL2]->SetGroup(Group_SWL2, m_hWnd);
+	m_WndVec[Group_SWL2] = (CWorkWnd *)pRealWnd->GetData();
+	m_WndVec[Group_SWL2]->SetGroup(Group_SWL2, m_hWnd);
 	pRealWnd = FindChildByName2<SRealWnd>(L"wnd_Stock");
-	m_WndMap[Group_Stock] = (CWorkWnd *)pRealWnd->GetData();
-	m_WndMap[Group_Stock]->SetGroup(Group_Stock, m_hWnd);
+	m_WndVec[Group_Stock] = (CWorkWnd *)pRealWnd->GetData();
+	m_WndVec[Group_Stock]->SetGroup(Group_Stock, m_hWnd);
 	vector<vector<StockInfo>> ListInsVec;
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
@@ -167,29 +162,27 @@ void CDlgSub::InitWorkWnd()
 	InitComboStockFilter();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
-		m_WndHandleMap[m_WndMap[i]->m_hWnd] = i;
-		g_WndSyn.SetSubWndInfo(m_WndMap[i]->m_hWnd, m_hWnd, i);
-		m_WndMap[i]->SetParThreadID(m_DataThreadID);
-		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
-		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
-		m_WndMap[i]->SetDataPoint(&pFilterData->at(i), DT_FilterData);
-		m_WndMap[i]->SetPointInfo(infoMap);
-		m_WndMap[i]->SetDataPoint(&pCallAction->at(i), DT_CallAction);
-		m_WndMap[i]->SetDataPoint(&pStockPos->at(i), DT_StockPos);
+		g_WndSyn.SetSubWndInfo(m_WndVec[i]->m_hWnd, m_hWnd, i);
+		m_WndVec[i]->SetListInfo(ListInsVec[i], StockName);
+		m_WndVec[i]->SetDataPoint(&pListData->at(i), DT_ListData);
+		m_WndVec[i]->SetDataPoint(&pFilterData->at(i), DT_FilterData);
+		m_WndVec[i]->SetPointInfo(infoMap);
+		m_WndVec[i]->SetDataPoint(&pCallAction->at(i), DT_CallAction);
+		m_WndVec[i]->SetDataPoint(&pStockPos->at(i), DT_StockPos);
 
 		//添加上级行业的选股器数据
 		for (int j = Group_SWL1; j < i; ++j)
-			m_WndMap[i]->SetDataPoint(&pFilterData->at(j), DT_L1IndyFilterData + j);
+			m_WndVec[i]->SetDataPoint(&pFilterData->at(j), DT_L1IndyFilterData + j);
 
 		for (int j = Group_SWL1; j < i; ++j)
-			m_WndMap[i]->SetDataPoint(&pStockPos->at(j), DT_L1IndyIndexPos + j);
+			m_WndVec[i]->SetDataPoint(&pStockPos->at(j), DT_L1IndyIndexPos + j);
 		if (i == Group_Stock)
 		{
 			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
-			m_WndMap[i]->SetDataPoint(pTFMarket, DT_TFMarket);
+			m_WndVec[i]->SetDataPoint(pTFMarket, DT_TFMarket);
 		}
-		m_WndMap[i]->SetPreClose(preCloseMap);
-		m_WndMap[i]->InitList();
+		m_WndVec[i]->SetPreClose(preCloseMap);
+		m_WndVec[i]->InitList();
 	}
 	InitListConfig();
 }
@@ -205,7 +198,7 @@ void CDlgSub::InitStockFilter()
 		if (ifile.is_open())
 		{
 			CDlgStockFilter::ReadConditonsList(ifile, sfPlan);
-			m_WndMap[i]->InitStockFilterPara(sfPlan);
+			m_WndVec[i]->InitStockFilterPara(sfPlan);
 			ifile.close();
 		}
 
@@ -228,7 +221,7 @@ void CDlgSub::InitComboStockFilter()
 			StockFilter sfPara = { 0 };
 			while (ifile.read((char*)&sfPara, nSFParaSize))
 				sfVec.emplace_back(sfPara);
-			m_WndMap[i]->InitComboStockFilterPara(sfVec);
+			m_WndVec[i]->InitComboStockFilterPara(sfVec);
 			ifile.close();
 
 		}
@@ -242,7 +235,7 @@ void CDlgSub::InitComboStockFilter()
 			HisStockFilter hsfPara = { 0 };
 			while (ifile.read((char*)&hsfPara, nSFParaSize))
 				hsfVec.emplace_back(hsfPara);
-			m_WndMap[i]->InitComboHisStockFilterPara(hsfVec);
+			m_WndVec[i]->InitComboHisStockFilterPara(hsfVec);
 			ifile.close();
 		}
 
@@ -370,7 +363,7 @@ void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
 		GetInitPara(ini, initPara, strSection);
 		InitPointWndInfo(ini, initPara, strSection, pointMap);
 
-		m_WndMap[i]->InitShowConfig(initPara);
+		m_WndVec[i]->InitShowConfig(initPara);
 	}
 
 
@@ -453,7 +446,7 @@ void CDlgSub::InitListConfig()
 			}
 		}
 
-		m_WndMap[i]->InitListConfig(showTitleMap, titleOrderMap);
+		m_WndVec[i]->InitListConfig(showTitleMap, titleOrderMap);
 	}
 
 }
@@ -486,7 +479,7 @@ void CDlgSub::SavePicConfig()
 	CIniFile ini(strPosFile);
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
-		auto initPara = m_WndMap[i]->OutPutInitPara();
+		auto initPara = m_WndVec[i]->OutPutInitPara();
 		SStringA strSection;
 		strSection.Format("Group%d", i);
 		SaveInitPara(ini, initPara, strSection);
@@ -503,8 +496,8 @@ void CDlgSub::SaveListConfig()
 
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
-		map<int, BOOL>showTitleMap = m_WndMap[i]->GetListShowTitle();
-		map<int, int>titleOrderMap = m_WndMap[i]->GetListTitleOrder();
+		map<int, BOOL>showTitleMap = m_WndVec[i]->GetListShowTitle();
+		map<int, int>titleOrderMap = m_WndVec[i]->GetListTitleOrder();
 		SStringA strSection;
 		strSection.Format("Group%d", i);
 		ini.WriteIntA(strSection, "ShowItemCount", showTitleMap.size());
@@ -524,8 +517,8 @@ void CDlgSub::ReInit()
 	ShowWindow(SW_HIDE);
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
-		m_WndMap[i]->SetPicUnHandled();
-		m_WndMap[i]->ClearData();
+		m_WndVec[i]->SetPicUnHandled();
+		m_WndVec[i]->ClearData();
 	}
 	ReInitWorkWnd();
 	ShowWindow(SW_SHOW);
@@ -537,7 +530,7 @@ void CDlgSub::ReInit()
 void CDlgSub::ReInitList()
 {
 	for (int i = Group_SWL1; i < Group_Count; ++i)
-		m_WndMap[i]->ReInitList();
+		m_WndVec[i]->ReInitList();
 }
 
 void CDlgSub::ReInitWorkWnd()
@@ -548,256 +541,13 @@ void CDlgSub::ReInitWorkWnd()
 	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
-		m_WndMap[i]->SetListInfo(ListInsVec[i], StockName);
-		m_WndMap[i]->SetDataPoint(&pListData->at(i), DT_ListData);
-		m_WndMap[i]->ReInitList();
-		m_WndMap[i]->ReSetPic();
+		m_WndVec[i]->SetListInfo(ListInsVec[i], StockName);
+		m_WndVec[i]->SetDataPoint(&pListData->at(i), DT_ListData);
+		m_WndVec[i]->ReInitList();
+		m_WndVec[i]->ReSetPic();
 	}
 }
 
-void CDlgSub::InitMsgHandleMap()
-{
-	m_MsgHandleMap[WW_ListData]
-		= &CDlgSub::OnUpdateList;
-	m_MsgHandleMap[WW_GetMarket]
-		= &CDlgSub::OnGetMarket;
-	m_MsgHandleMap[WW_GetKline]
-		= &CDlgSub::OnGetKline;
-	m_MsgHandleMap[WW_GetPoint]
-		= &CDlgSub::OnGetPoint;
-	m_MsgHandleMap[WW_GetCallAction]
-		= &CDlgSub::OnGetCallAction;
-	m_MsgHandleMap[WW_GetHisTFBase]
-		= &CDlgSub::OnGetHisTFBase;
-
-	m_MsgHandleMap[Syn_Point]
-		= &CDlgSub::OnUpdatePoint;
-	//m_MsgHandleMap[Syn_TodayPoint]
-	//	= &CDlgSub::OnTodayPoint;
-	m_MsgHandleMap[Syn_HisRpsPoint]
-		= &CDlgSub::OnHisRpsPoint;
-	m_MsgHandleMap[Syn_RTIndexMarket]
-		= &CDlgSub::OnRTIndexMarket;
-	m_MsgHandleMap[Syn_RTStockMarket]
-		= &CDlgSub::OnRTStockMarket;
-	m_MsgHandleMap[Syn_HisIndexMarket]
-		= &CDlgSub::OnHisIndexMarket;
-	m_MsgHandleMap[Syn_HisStockMarket]
-		= &CDlgSub::OnHisStockMarket;
-	m_MsgHandleMap[Syn_HisKline]
-		= &CDlgSub::OnHisKline;
-	m_MsgHandleMap[Syn_CloseInfo]
-		= &CDlgSub::OnCloseInfo;
-	m_MsgHandleMap[WW_ChangeIndy]
-		= &CDlgSub::OnChangeIndy;
-	m_MsgHandleMap[Syn_HisSecPoint]
-		= &CDlgSub::OnHisSecPoint;
-	m_MsgHandleMap[Syn_RehabInfo]
-		= &CDlgSub::OnRehabInfo;
-	m_MsgHandleMap[Syn_HisCallAction]
-		= &CDlgSub::OnHisCallAction;
-	m_MsgHandleMap[Syn_HisTFBase]
-		= &CDlgSub::OnHisTFBase;
-	m_MsgHandleMap[Syn_TodayTFMarket]
-		= &CDlgSub::OnTodayTFMarket;
-	m_MsgHandleMap[Syn_RTTFMarkt]
-		= &CDlgSub::OnRTTFMarket;
-
-}
-
-void CDlgSub::MsgProc()
-{
-	int MsgId;
-	char *info;
-	int msgLength;
-	while (true)
-	{
-		MsgId = RecvMsg(0, &info, msgLength, 0);
-		if (MsgId == Msg_Exit)
-		{
-			delete[]info;
-			info = nullptr;
-			break;
-		}
-		auto pFuc = m_MsgHandleMap[MsgId];
-		if (pFuc)
-			(this->*pFuc)(msgLength, info);
-		delete[]info;
-		info = nullptr;
-	}
-
-}
-
-void CDlgSub::OnUpdateList(int nMsgLength, const char * info)
-{
-	for (auto &it : m_WndMap)
-		SendMsg(it.second->GetThreadID(), WW_ListData,
-			info, nMsgLength);
-
-}
-
-void CDlgSub::OnGetMarket(int nMsgLength, const char * info)
-{
-	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	m_WndSubMap[pDgInfo->Group] = pDgInfo->StockID;
-	SendMsg(m_SynThreadID, Syn_GetMarket, info, nMsgLength);
-}
-
-void CDlgSub::OnGetKline(int nMsgLength, const char * info)
-{
-	SendMsg(m_SynThreadID, Syn_GetKline, info, nMsgLength);
-}
-
-void CDlgSub::OnGetPoint(int nMsgLength, const char * info)
-{
-	SendMsg(m_SynThreadID, Syn_GetPoint, info, nMsgLength);
-}
-
-void CDlgSub::OnUpdatePoint(int nMsgLength, const char * info)
-{
-	int nGroup = *(int*)info;
-	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_Point,
-		info + 4, nMsgLength - 4);
-}
-
-//void CDlgSub::OnTodayPoint(int nMsgLength, const char * info)
-//{
-//	int nGroup = *(int*)info;
-//	SendMsg(m_WndMap[nGroup]->GetThreadID(), WW_TodayPoint,
-//		info + 4, nMsgLength - 4);
-//}
-
-void CDlgSub::OnHisRpsPoint(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisRpsPoint,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnRTIndexMarket(int nMsgLength, const char * info)
-{
-	SStringA strStock = ((CommonIndexMarket*)info)->SecurityID;
-	if (m_WndSubMap[Group_SWL1] == strStock)
-		SendMsg(m_WndMap[Group_SWL1]->GetThreadID(), WW_RTIndexMarket,
-			info, nMsgLength);
-	if (m_WndSubMap[Group_SWL2] == strStock)
-		SendMsg(m_WndMap[Group_SWL2]->GetThreadID(), WW_RTIndexMarket,
-			info, nMsgLength);
-}
-
-void CDlgSub::OnRTStockMarket(int nMsgLength, const char * info)
-{
-	SStringA strStock = ((CommonIndexMarket*)info)->SecurityID;
-	if (m_WndSubMap[Group_Stock] == strStock)
-		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RTStockMarket,
-			info, nMsgLength);
-}
-
-void CDlgSub::OnHisIndexMarket(int nMsgLength, const char * info)
-{
-
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisIndexMarket,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnHisStockMarket(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisStockMarket,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnHisKline(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisKline,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnCloseInfo(int nMsgLength, const char * info)
-{
-	for (int i = 0; i < Group_Count; ++i)
-		SendMsg(m_WndMap[i]->GetThreadID(), WW_CloseInfo,
-			info, nMsgLength);
-}
-
-void CDlgSub::OnChangeIndy(int nMsgLength, const char * info)
-{
-	int nGroup = *(int*)info;
-	if (Group_SWL1 == nGroup)
-	{
-		for (int i = Group_SWL2; i < Group_Count; ++i)
-			SendMsg(m_WndMap[i]->GetThreadID(), WW_ChangeIndy,
-				info, nMsgLength);
-	}
-	else if (Group_SWL2 == nGroup)
-		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_ChangeIndy,
-			info, nMsgLength);
-}
-
-void CDlgSub::OnHisSecPoint(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisSecPoint,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnRehabInfo(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_RehabInfo,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnHisCallAction(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisCallAction,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnGetCallAction(int nMsgLength, const char * info)
-{
-	SendMsg(m_SynThreadID, Syn_GetCallAction, info, nMsgLength);
-}
-
-void CDlgSub::OnHisTFBase(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisTFBase,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnGetHisTFBase(int nMsgLength, const char * info)
-{
-	SendMsg(m_SynThreadID, Syn_GetHisTFBase, info, nMsgLength);
-
-}
-
-void CDlgSub::OnTodayTFMarket(int nMsgLength, const char * info)
-{
-	HWND hWnd = *(HWND*)info;
-	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
-	SendMsg(m_WndMap[m_WndHandleMap[hWnd]]->GetThreadID(), WW_TodayTFMarket,
-		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
-}
-
-void CDlgSub::OnRTTFMarket(int nMsgLength, const char * info)
-{
-	SStringA strStock = ((TickFlowMarket*)info)[0].SecurityID;
-	if (m_WndSubMap[Group_Stock] == strStock)
-		SendMsg(m_WndMap[Group_Stock]->GetThreadID(), WW_RTTFMarket,
-			info, nMsgLength);
-}
 
 void CDlgSub::OnFinalMessage(HWND hWnd)
 {
@@ -814,7 +564,7 @@ void CDlgSub::OnBtnClose()
 void CDlgSub::SaveStockFilterPara(int nGroup)
 {
 	SFPlan sfPlan;
-	m_WndMap[nGroup]->OutputStockFilterPara(sfPlan);
+	m_WndVec[nGroup]->OutputStockFilterPara(sfPlan);
 	if (!sfPlan.condVec.empty())
 	{
 		SStringA strPath;
@@ -831,7 +581,7 @@ void CDlgSub::SaveStockFilterPara(int nGroup)
 void CDlgSub::SaveComboStockFilterPara(int nGroup)
 {
 	vector<StockFilter> sfVec;
-	m_WndMap[nGroup]->OutputComboStockFilterPara(sfVec);
+	m_WndVec[nGroup]->OutputComboStockFilterPara(sfVec);
 	SStringA strPath;
 	strPath.Format(".//config//%s_SF_%d.DAT", m_strWindowName, nGroup);
 	if (!sfVec.empty())
@@ -849,7 +599,7 @@ void CDlgSub::SaveComboStockFilterPara(int nGroup)
 		DeleteFileA(strPath);
 
 	vector<HisStockFilter> hsfVec;
-	m_WndMap[nGroup]->OutputComboHisStockFilterPara(hsfVec);
+	m_WndVec[nGroup]->OutputComboHisStockFilterPara(hsfVec);
 	strPath.Format(".//config//%s_HSF_%d.DAT", m_strWindowName, nGroup);
 	if (!hsfVec.empty())
 	{
@@ -867,19 +617,16 @@ void CDlgSub::SaveComboStockFilterPara(int nGroup)
 
 }
 
-void SOUI::CDlgSub::StopAndClearData()
+void CDlgSub::StopAndClearData()
 {
 	SendMsg(m_SynThreadID, Syn_RemoveWnd, (char*)&m_hWnd, sizeof(m_hWnd));
-	SendMsg(m_DataThreadID, Msg_Exit, NULL, 0);
-	if (tDataProc.joinable())
-		tDataProc.join();
-	m_DataThreadID = INVALID_THREADID;
+	m_MsgHandler.Stop();
 
 	SavePicConfig();
 	SaveListConfig();
 
 	for (int i = 0; i < Group_Count; ++i)
-		m_WndMap[i]->DestroyWindow();
+		m_WndVec[i]->DestroyWindow();
 
 }
 

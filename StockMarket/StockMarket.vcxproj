@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
@@ -204,6 +204,7 @@
     <ClCompile Include="DlgLogin.cpp" />
     <ClCompile Include="DlgMacdPara.cpp" />
     <ClCompile Include="DlgMaPara.cpp" />
+    <ClCompile Include="DlgMsgHandler.cpp" />
     <ClCompile Include="DlgMultiFilter.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
@@ -246,6 +247,7 @@
     <ClCompile Include="SouiRealWndHandler.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
     <ClCompile Include="SKlineTip.cpp" />
+    <ClCompile Include="SPriceVolPic.cpp" />
     <ClCompile Include="SSpinButtonCtrlEx.cpp" />
     <ClCompile Include="SSubTargetPic.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -281,6 +283,7 @@
     <ClInclude Include="DlgLogin.h" />
     <ClInclude Include="DlgMacdPara.h" />
     <ClInclude Include="DlgMaPara.h" />
+    <ClInclude Include="DlgMsgHandler.h" />
     <ClInclude Include="DlgMultiFilter.h" />
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
@@ -310,6 +313,7 @@
     <ClInclude Include="SouiRealWndHandler.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />
     <ClInclude Include="SKlineTip.h" />
+    <ClInclude Include="SPriceVolPic.h" />
     <ClInclude Include="SSpinButtonCtrlEx.h" />
     <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />

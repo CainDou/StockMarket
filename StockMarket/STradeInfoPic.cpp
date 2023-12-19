@@ -48,6 +48,9 @@ void STradeInfoPic::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec)
 
 void STradeInfoPic::OnPaint(IRenderTarget * pRT)
 {
+	SPainter pa;
+	SWindow::BeforePaint(pRT, pa);
+
 	if (!m_bInit)
 	{
 		m_bInit = TRUE;
@@ -86,6 +89,8 @@ void STradeInfoPic::OnPaint(IRenderTarget * pRT)
 		DrawPrice(pRT);
 		DrawDeal(pRT);
 	}
+	AfterPaint(pRT, pa);
+
 
 }
 

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <SOUI name="wnd_work" title="布局" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="400" height="300" margin="1,1,1,1" translucent="0" colorBorder="#FF0000">
 	<root cache="1" colorBkgnd="#000000ff" focusable="1">
 		<window pos="0,0,-0,-0" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" translucent="0">
@@ -65,6 +65,11 @@
 			<klinePic name="klinePic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
 				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
 			</klinePic>
+
+			<priceVolPic name="priceVolPic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#101010" font="size:12,face:微软雅黑">
+				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
+			</priceVolPic>
+
 			<text name="txt_hisFilterCalc" pos="5,%35,-5,%70" colorBkgnd="#000000ff" colorText="#FFFF00FF" font="size:20,face:微软雅黑" multiLines="1" align="center" valign="middle" text="正在计算历史数据，请稍等" visible="0" margin="1,1,1,1" colorBorder="#FFFF00FF" />
 		</window>
 	</root>
