@@ -1,9 +1,7 @@
 #include "stdafx.h"
-#include "SPriceVolPic.h"
+#include "SLpPriceVolPic.h"
 
-#define HEADHEIGHT 20
 
-#define PERTOTALHEIGHT 44
 #define PRESIDEHEIGHT  18
 
 #define PRICEWIDTH 60
@@ -33,28 +31,37 @@
 #define PASMIDSELLCOLOR RGBA(0x50,0xE0,0xF0,255)
 #define PASSMLSELLCOLOR RGBA(0x70,0xA0,0xE0,255)
 
+#define CMPBIGCOLOR RGBA(0x70,0x70,0x70,0xA0)
+#define CMPMIDCOLOR RGBA(0x50,0x50,0x50,0xA0)
+#define CMPSMLCOLOR RGBA(0x30,0x30,0x30,0xA0)
 
 #define MARGIN 1
 #define ITEMMARGIN 2
 
-const int TextWidth = 
+const int TextWidth =
 PRICEWIDTH + VOLWIDTH + BIGBUYVOLWIDTH + MIDBUYVOLWIDTH +
 SMLBUYVOLWIDTH + BIGSELLVOLWIDTH + MIDSELLVOLWIDTH + SMLSELLVOLWIDTH +
 ACTBUYRATIOWIDTH + DEALWIDTH;
 
-SPriceVolPic::SPriceVolPic()
+SLpPriceVolPic::SLpPriceVolPic()
 {
 	m_nOffset = 0;
 	m_bInit = FALSE;
+	m_nDataType = 0;
+	m_nDataLevel = 10;
+	m_fBasePrice = -1;
+	m_nMaxPrice = INT_MIN;
+	m_nMinPrice = INT_MAX;
+	m_bDataInited = FALSE;
 }
 
 
-SPriceVolPic::~SPriceVolPic()
+SLpPriceVolPic::~SLpPriceVolPic()
 {
 }
 
 
-void SPriceVolPic::OnPaint(IRenderTarget * pRT)
+void SLpPriceVolPic::OnPaint(IRenderTarget * pRT)
 {
 	SPainter pa;
 	SWindow::BeforePaint(pRT, pa);
@@ -86,24 +93,24 @@ void SPriceVolPic::OnPaint(IRenderTarget * pRT)
 
 }
 
-void SPriceVolPic::DrawPriceVol(IRenderTarget * pRT)
+void SLpPriceVolPic::DrawPriceVol(IRenderTarget * pRT)
 {
+
 	DrawArrow(pRT);
 	DrawHead1(pRT);
 	DrawHead2(pRT);
+	if (m_ShowDataMap.empty())
+		return;
 	SetMaxPaintData();
-	m_cs.Enter();
-	auto PriceVolMap(m_PriceVolMap);
-	m_cs.Leave();
 	int nMaxNum = (m_rc.Height() - HEADHEIGHT * 2) / PERTOTALHEIGHT;
 	int nPrice = m_StockTick.LastPrice * 100 + 0.5;
-	if (nMaxNum >= PriceVolMap.size())
+	if (nMaxNum >= m_ShowDataMap.size())
 		m_nOffset = 0;
 	else
 	{
 		int nPricePos = 0;
 		int nCount = 0;
-		for (auto&it = PriceVolMap.rbegin(); it != PriceVolMap.rend(); ++it)
+		for (auto&it = m_ShowDataMap.rbegin(); it != m_ShowDataMap.rend(); ++it)
 		{
 			if (it->first == nPrice)
 			{
@@ -113,26 +120,31 @@ void SPriceVolPic::DrawPriceVol(IRenderTarget * pRT)
 			++nCount;
 		}
 		int nHalfNum = nMaxNum / 2;
-		m_nOffset = min(max(0, nPricePos - nHalfNum), PriceVolMap.size() - nMaxNum);
+		m_nOffset = min(max(0, nPricePos - nHalfNum), m_ShowDataMap.size() - nMaxNum);
 	}
 	int nDataCount = -1;
 	int nTopHeight = m_rc.top + HEADHEIGHT * 2;
-	for (auto&it = PriceVolMap.rbegin(); it != PriceVolMap.rend(); ++it)
+	for (auto&it = m_ShowDataMap.rbegin(); it != m_ShowDataMap.rend(); ++it)
 	{
 		++nDataCount;
 		if (nDataCount < m_nOffset)
 			continue;
 		if (nDataCount - m_nOffset >= nMaxNum)
 			break;
-		DrawSingleData(pRT, it->second, 
+		DrawSingleData(pRT, it->second,
 			CRect(m_rc.left, nTopHeight, m_rc.right, nTopHeight + PERTOTALHEIGHT),
 			it->first == nPrice);
+		if(m_ShowCmpDataMap.count(it->first))
+			DrawCmpSingleData(pRT, m_ShowCmpDataMap[it->first],
+				CRect(m_rc.left, nTopHeight, m_rc.right, nTopHeight + PERTOTALHEIGHT),
+				it->first == nPrice);
+
 		nTopHeight += PERTOTALHEIGHT;
 	}
 
 }
 
-void SPriceVolPic::DrawArrow(IRenderTarget * pRT)
+void SLpPriceVolPic::DrawArrow(IRenderTarget * pRT)
 {
 	CAutoRefPtr<IPen> oldPen;
 	pRT->SelectObject(m_penGray, (IRenderObj**)&oldPen);
@@ -192,7 +204,7 @@ void SPriceVolPic::DrawArrow(IRenderTarget * pRT)
 
 }
 
-void SOUI::SPriceVolPic::DrawHead1(IRenderTarget * pRT)
+void SOUI::SLpPriceVolPic::DrawHead1(IRenderTarget * pRT)
 {
 	CAutoRefPtr<IPen> oldPen;
 	int nBottom = m_rc.top + HEADHEIGHT;
@@ -210,14 +222,14 @@ void SOUI::SPriceVolPic::DrawHead1(IRenderTarget * pRT)
 	pRT->SelectObject(oldPen);
 	SStringW str;
 	COLORREF oldColor = pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	pRT->DrawTextW(str.Format(L"%s %s 价量分布", m_strStockName,m_strStock), wcslen(str),
+	pRT->DrawTextW(str.Format(L"%s %s 价量分布", m_strStockName, m_strStock), wcslen(str),
 		CRect(m_rc.left, m_rc.top, m_rc.right, nBottom),
 		DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 	pRT->SetTextColor(oldColor);
 
 }
 
-void SPriceVolPic::DrawHead2(IRenderTarget * pRT)
+void SLpPriceVolPic::DrawHead2(IRenderTarget * pRT)
 {
 	CAutoRefPtr<IPen> oldPen;
 	int nTop = m_rc.top + HEADHEIGHT;
@@ -297,7 +309,7 @@ void SPriceVolPic::DrawHead2(IRenderTarget * pRT)
 
 }
 
-void SPriceVolPic::DrawSingleData(IRenderTarget * pRT, PriceVolInfo & info, CRect & rc, BOOL bNowPrice)
+void SLpPriceVolPic::DrawSingleData(IRenderTarget * pRT, PeriodPriceVolInfo & info, CRect & rc, BOOL bNowPrice)
 {
 	CAutoRefPtr<IPen> oldPen;
 	pRT->SelectObject(m_penGray, (IRenderObj**)&oldPen);
@@ -333,10 +345,10 @@ void SPriceVolPic::DrawSingleData(IRenderTarget * pRT, PriceVolInfo & info, CRec
 	nLeft += PRICEWIDTH;
 
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
-	int64_t nTradeVol = info.nActBigBuyVol + info.nActMidBuyVol + info.nActSmallBuyVol +
-		info.nPasBigBuyVol + info.nPasMidBuyVol + info.nPasSmallBuyVol;
+	double fTradeVol = info.fActBigBuyVol + info.fActMidBuyVol + info.fActSmallBuyVol +
+		info.fPasBigBuyVol + info.fPasMidBuyVol + info.fPasSmallBuyVol;
 
-	str = GetVolShowText(nTradeVol);
+	str = GetVolShowText(fTradeVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + VOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
@@ -345,39 +357,39 @@ void SPriceVolPic::DrawSingleData(IRenderTarget * pRT, PriceVolInfo & info, CRec
 	int nTwoDataLeft = nLeft;
 
 	pRT->SetTextColor(ACTBIGBUYCOLOR);
-	str = GetVolShowText(info.nActBigBuyVol);
+	str = GetVolShowText(info.fActBigBuyVol);
 	pRT->DrawTextW(str, wcslen(str),
-		CRect(nLeft, rc.top , nLeft + BIGBUYVOLWIDTH, nVCenter),
+		CRect(nLeft, rc.top, nLeft + BIGBUYVOLWIDTH, nVCenter),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
 	pRT->SetTextColor(PASBIGBUYCOLOR);
-	str = GetVolShowText(info.nPasBigBuyVol);
+	str = GetVolShowText(info.fPasBigBuyVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, nVCenter, nLeft + BIGBUYVOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	nLeft += BIGBUYVOLWIDTH;
 
 	pRT->SetTextColor(ACTMIDBUYCOLOR);
-	str = GetVolShowText(info.nActMidBuyVol);
+	str = GetVolShowText(info.fActMidBuyVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + MIDBUYVOLWIDTH, nVCenter),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
 	pRT->SetTextColor(PASMIDBUYCOLOR);
-	str = GetVolShowText(info.nPasMidBuyVol);
+	str = GetVolShowText(info.fPasMidBuyVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, nVCenter, nLeft + MIDBUYVOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	nLeft += MIDBUYVOLWIDTH;
 
 	pRT->SetTextColor(ACTSMLBUYCOLOR);
-	str = GetVolShowText(info.nActSmallBuyVol);
+	str = GetVolShowText(info.fActSmallBuyVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + SMLBUYVOLWIDTH, nVCenter),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
 	pRT->SetTextColor(PASSMLBUYCOLOR);
-	str = GetVolShowText(info.nPasSmallBuyVol);
+	str = GetVolShowText(info.fPasSmallBuyVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, nVCenter, nLeft + SMLBUYVOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
@@ -386,102 +398,103 @@ void SPriceVolPic::DrawSingleData(IRenderTarget * pRT, PriceVolInfo & info, CRec
 	int PicCenter = nLeft + nBuyWidth;
 	//主动买
 	int nBuyRight = PicCenter;
-	int nWidth = nBuyWidth * 1.0 / m_MaxVol * info.nActSmallBuyVol;
+	int nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fActSmallBuyVol;
 	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nPicTop,
 		nBuyRight, nVCenter - MARGIN), ACTSMLBUYCOLOR);
 
+
 	nBuyRight -= nWidth;
-	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.nActMidBuyVol;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fActMidBuyVol;
 	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nPicTop,
 		nBuyRight, nVCenter - MARGIN), ACTMIDBUYCOLOR);
 
 	nBuyRight -= nWidth;
-	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.nActBigBuyVol;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fActBigBuyVol;
 	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nPicTop,
 		nBuyRight, nVCenter - MARGIN), ACTBIGBUYCOLOR);
 
 	//被动买
 	nBuyRight = PicCenter;
-	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.nPasSmallBuyVol;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fPasSmallBuyVol;
 	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nVCenter + MARGIN,
 		nBuyRight, nPicBottom), PASSMLBUYCOLOR);
 
 	nBuyRight -= nWidth;
-	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.nPasMidBuyVol;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fPasMidBuyVol;
 	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nVCenter + MARGIN,
 		nBuyRight, nPicBottom), PASMIDBUYCOLOR);
 
 	nBuyRight -= nWidth;
-	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.nPasBigBuyVol;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fPasBigBuyVol;
 	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nVCenter + MARGIN,
 		nBuyRight, nPicBottom), PASBIGBUYCOLOR);
 
 	//被动卖
 	int nSellLeft = PicCenter;
-	nWidth = nSellWidth * 1.0 / m_MaxVol * info.nPasSmallSellVol;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fPasSmallSellVol;
 	pRT->FillSolidRect(CRect(nSellLeft, nPicTop,
 		nSellLeft + nWidth, nVCenter - MARGIN), PASSMLSELLCOLOR);
 
 	nSellLeft += nWidth;
-	nWidth = nSellWidth * 1.0 / m_MaxVol * info.nPasMidSellVol;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fPasMidSellVol;
 	pRT->FillSolidRect(CRect(nSellLeft, nPicTop,
 		nSellLeft + nWidth, nVCenter - MARGIN), PASMIDSELLCOLOR);
 
 	nSellLeft += nWidth;
-	nWidth = nSellWidth * 1.0 / m_MaxVol * info.nPasBigSellVol;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fPasBigSellVol;
 	pRT->FillSolidRect(CRect(nSellLeft, nPicTop,
 		nSellLeft + nWidth, nVCenter - MARGIN), PASBIGSELLCOLOR);
 
 	//主动卖
 	nSellLeft = PicCenter;
-	nWidth = nSellWidth * 1.0 / m_MaxVol * info.nActSmallSellVol;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fActSmallSellVol;
 	pRT->FillSolidRect(CRect(nSellLeft, nVCenter + MARGIN,
 		nSellLeft + nWidth, nPicBottom), ACTSMLSELLCOLOR);
 
 	nSellLeft += nWidth;
-	nWidth = nSellWidth * 1.0 / m_MaxVol * info.nActMidSellVol;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fActMidSellVol;
 	pRT->FillSolidRect(CRect(nSellLeft, nVCenter + MARGIN,
 		nSellLeft + nWidth, nPicBottom), ACTMIDSELLCOLOR);
 
 	nSellLeft += nWidth;
-	nWidth = nSellWidth * 1.0 / m_MaxVol * info.nActBigSellVol;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fActBigSellVol;
 	pRT->FillSolidRect(CRect(nSellLeft, nVCenter + MARGIN,
 		nSellLeft + nWidth, nPicBottom), ACTBIGSELLCOLOR);
 
 	nLeft += nPicWidth;
 
 	pRT->SetTextColor(PASSMLSELLCOLOR);
-	str = GetVolShowText(info.nPasSmallSellVol);
+	str = GetVolShowText(info.fPasSmallSellVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + SMLSELLVOLWIDTH, nVCenter),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	pRT->SetTextColor(ACTSMLSELLCOLOR);
-	str = GetVolShowText(info.nActSmallSellVol);
+	str = GetVolShowText(info.fActSmallSellVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, nVCenter, nLeft + SMLSELLVOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	nLeft += SMLSELLVOLWIDTH;
 
 	pRT->SetTextColor(PASMIDSELLCOLOR);
-	str = GetVolShowText(info.nPasMidSellVol);
+	str = GetVolShowText(info.fPasMidSellVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + MIDSELLVOLWIDTH, nVCenter),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
 	pRT->SetTextColor(ACTMIDSELLCOLOR);
-	str = GetVolShowText(info.nActMidSellVol);
+	str = GetVolShowText(info.fActMidSellVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, nVCenter, nLeft + MIDSELLVOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	nLeft += MIDSELLVOLWIDTH;
 
 	pRT->SetTextColor(PASBIGSELLCOLOR);
-	str = GetVolShowText(info.nPasBigSellVol);
+	str = GetVolShowText(info.fPasBigSellVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + BIGSELLVOLWIDTH, nVCenter),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 	pRT->SetTextColor(ACTBIGSELLCOLOR);
-	str = GetVolShowText(info.nActBigSellVol);
+	str = GetVolShowText(info.fActBigSellVol);
 	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, nVCenter, nLeft + BIGSELLVOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
@@ -498,57 +511,168 @@ void SPriceVolPic::DrawSingleData(IRenderTarget * pRT, PriceVolInfo & info, CRec
 
 	pRT->SetTextColor(RGBA(255, 255, 255, 255));
 
-	int64_t nActBuyVol = info.nActBigBuyVol + info.nActMidBuyVol + info.nActSmallBuyVol;
-	int64_t nActSellVol = info.nActBigSellVol + info.nActMidSellVol + info.nActSmallSellVol;
-
-	pRT->DrawTextW(str.Format(L"%.02f%%", nActBuyVol*1.0 / (nActBuyVol + nActSellVol) *100), wcslen(str),
+	double fActBuyVol = info.fActBigBuyVol + info.fActMidBuyVol + info.fActSmallBuyVol;
+	double fActSellVol = info.fActBigSellVol + info.fActMidSellVol + info.fActSmallSellVol;
+	if (fActBuyVol + fActSellVol != 0)
+		str.Format(L"%.02f%%", fActBuyVol*1.0 / (fActBuyVol + fActSellVol) * 100);
+	else
+		str.Format(L"-");
+	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + ACTBUYRATIOWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
-	nLeft += ACTBUYRATIOWIDTH;
-	int nTotalOrder = info.nActBigBuyOrder + info.nActMidBuyOrder + info.nActSmallBuyOrder +
-		info.nPasBigBuyOrder + info.nPasMidBuyOrder + info.nPasSmallBuyOrder +
-		info.nActBigSellOrder + info.nActMidSellOrder + info.nActSmallSellOrder +
-		info.nPasBigSellOrder + info.nPasMidSellOrder + info.nPasSmallSellOrder;
 
-	pRT->DrawTextW(str.Format(L"%d", nTotalOrder), wcslen(str),
+	nLeft += ACTBUYRATIOWIDTH;
+	double fTotalOrder = info.fActBigBuyOrder + info.fActMidBuyOrder + info.fActSmallBuyOrder +
+		info.fPasBigBuyOrder + info.fPasMidBuyOrder + info.fPasSmallBuyOrder +
+		info.fActBigSellOrder + info.fActMidSellOrder + info.fActSmallSellOrder +
+		info.fPasBigSellOrder + info.fPasMidSellOrder + info.fPasSmallSellOrder;
+	str = GetVolShowText(fTotalOrder);
+	pRT->DrawTextW(str, wcslen(str),
 		CRect(nLeft, rc.top, nLeft + VOLWIDTH, rc.bottom),
 		DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
 
 }
 
-void SOUI::SPriceVolPic::SetMaxPaintData()
+void SOUI::SLpPriceVolPic::DrawCmpSingleData(IRenderTarget * pRT, PeriodPriceVolInfo & info, CRect & rc, BOOL bNowPrice)
 {
-	m_cs.Enter();
-	m_MaxVol = 0;
-	for (auto&it : m_PriceVolMap)
-		m_MaxVol = max(m_MaxVol,
-			max(it.second.nActBigBuyVol + it.second.nActMidBuyVol + it.second.nActSmallBuyVol,
-				it.second.nPasBigBuyVol + it.second.nPasMidBuyVol + it.second.nPasSmallBuyVol));
-	m_cs.Leave();
+	
+
+	int nVCenter = (rc.top + rc.bottom) / 2 /*+ 1*/;
+
+	int nPicWidth = rc.Width() - TextWidth;
+	int nBuyWidth = nPicWidth / 2 - MARGIN;
+	int nSellWidth = nBuyWidth;
+	int nPicTop = rc.top + ITEMMARGIN;
+	int nPicBottom = rc.bottom - ITEMMARGIN;
+	int nLeft = rc.left;
+	nLeft += PRICEWIDTH;
+
+	nLeft += VOLWIDTH;
+	nLeft += BIGBUYVOLWIDTH;
+	nLeft += MIDBUYVOLWIDTH;
+	nLeft += SMLBUYVOLWIDTH;
+
+	int PicCenter = nLeft + nBuyWidth;
+	//主动买
+	int nBuyRight = PicCenter;
+	int nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fActSmallBuyVol;
+	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nPicTop,
+		nBuyRight, nVCenter - MARGIN), CMPSMLCOLOR);
+
+
+	nBuyRight -= nWidth;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fActMidBuyVol;
+	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nPicTop,
+		nBuyRight, nVCenter - MARGIN), CMPMIDCOLOR);
+
+	nBuyRight -= nWidth;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fActBigBuyVol;
+	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nPicTop,
+		nBuyRight, nVCenter - MARGIN), CMPBIGCOLOR);
+
+	//被动买
+	nBuyRight = PicCenter;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fPasSmallBuyVol;
+	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nVCenter + MARGIN,
+		nBuyRight, nPicBottom), CMPSMLCOLOR);
+
+	nBuyRight -= nWidth;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fPasMidBuyVol;
+	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nVCenter + MARGIN,
+		nBuyRight, nPicBottom), CMPMIDCOLOR);
+
+	nBuyRight -= nWidth;
+	nWidth = nBuyWidth * 1.0 / m_MaxVol * info.fPasBigBuyVol;
+	pRT->FillSolidRect(CRect(nBuyRight - nWidth, nVCenter + MARGIN,
+		nBuyRight, nPicBottom), CMPBIGCOLOR);
+
+	//被动卖
+	int nSellLeft = PicCenter;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fPasSmallSellVol;
+	pRT->FillSolidRect(CRect(nSellLeft, nPicTop,
+		nSellLeft + nWidth, nVCenter - MARGIN), CMPSMLCOLOR);
+
+	nSellLeft += nWidth;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fPasMidSellVol;
+	pRT->FillSolidRect(CRect(nSellLeft, nPicTop,
+		nSellLeft + nWidth, nVCenter - MARGIN), CMPMIDCOLOR);
+
+	nSellLeft += nWidth;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fPasBigSellVol;
+	pRT->FillSolidRect(CRect(nSellLeft, nPicTop,
+		nSellLeft + nWidth, nVCenter - MARGIN), CMPBIGCOLOR);
+
+	//主动卖
+	nSellLeft = PicCenter;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fActSmallSellVol;
+	pRT->FillSolidRect(CRect(nSellLeft, nVCenter + MARGIN,
+		nSellLeft + nWidth, nPicBottom), CMPSMLCOLOR);
+
+	nSellLeft += nWidth;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fActMidSellVol;
+	pRT->FillSolidRect(CRect(nSellLeft, nVCenter + MARGIN,
+		nSellLeft + nWidth, nPicBottom), CMPMIDCOLOR);
+
+	nSellLeft += nWidth;
+	nWidth = nSellWidth * 1.0 / m_MaxVol * info.fActBigSellVol;
+	pRT->FillSolidRect(CRect(nSellLeft, nVCenter + MARGIN,
+		nSellLeft + nWidth, nPicBottom), CMPBIGCOLOR);
+
+	nLeft += nPicWidth;
+
+	
+
 }
 
-COLORREF SPriceVolPic::GetTextColor(double price)
+void SOUI::SLpPriceVolPic::SetMaxPaintData()
+{
+	if (m_nDataType != eLPCDT_Num)
+	{
+		m_MaxVol = 0;
+		for (auto&it : m_ShowDataMap)
+			m_MaxVol = max(m_MaxVol,
+				max(it.second.fActBigBuyVol + it.second.fActMidBuyVol + it.second.fActSmallBuyVol,
+					it.second.fPasBigBuyVol + it.second.fPasMidBuyVol + it.second.fPasSmallBuyVol));
+		if(!m_ShowCmpDataMap.empty())
+			for (auto&it : m_ShowCmpDataMap)
+				m_MaxVol = max(m_MaxVol,
+					max(it.second.fActBigBuyVol + it.second.fActMidBuyVol + it.second.fActSmallBuyVol,
+						it.second.fPasBigBuyVol + it.second.fPasMidBuyVol + it.second.fPasSmallBuyVol));
+
+	}
+}
+
+
+COLORREF SLpPriceVolPic::GetTextColor(double price)
 {
 	if (price > 10000000 || price < 0)
 		return RGBA(255, 255, 255, 255);
-	if (price - m_StockTick.PreCloPrice > 0.000001)
+	if (price - m_fBasePrice > 0.000001)
 		return RGBA(255, 31, 31, 255);
-	else if (price - m_StockTick.PreCloPrice < -0.000001)
+	else if (price - m_fBasePrice < -0.000001)
 		return RGBA(0, 255, 0, 255);
 	return RGBA(255, 255, 255, 255);
 }
 
-SStringW SOUI::SPriceVolPic::GetVolShowText(int nVol)
+SStringW SOUI::SLpPriceVolPic::GetVolShowText(double fVolRatio)
 {
+
 	SStringW str;
-	nVol /= 100;
-	if (nVol < 10000)
-		str.Format(L"%d", nVol);
-	else if(nVol < 100000000)
-		str.Format(L"%.02f万", nVol*1.0 / 10000);
+	if (m_nDataType == eLPCDT_Num)
+	{
+		fVolRatio /= 100;
+		if (fVolRatio < 10000)
+			str.Format(L"%.0f", fVolRatio);
+		else if (fVolRatio < 100000000)
+			str.Format(L"%.1f万", fVolRatio / 10000);
+		else
+			str.Format(L"%.01f亿", fVolRatio / 100000000);
+	}
 	else
-		str.Format(L"%.02f亿", nVol*1.0 / 100000000);
+	{
+		str.Format(L"%.02f%%", fVolRatio);
+	}
 	return str;
 
 }

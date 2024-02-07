@@ -63,7 +63,7 @@ namespace SOUI
 	}
 	inline void SPriceVolPic::ChangeShowStock(SStringA subIns, SStringA StockName)
 	{
-		m_strName = StrA2StrW(StockName);
+		m_strStockName = StrA2StrW(StockName);
 		m_strStock = StrA2StrW(subIns);
 	}
 }

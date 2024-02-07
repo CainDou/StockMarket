@@ -265,7 +265,7 @@ void SSubTargetPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 	m_nEnd = m_pData[0]->size();
 	for (int i = 1; i < m_nShowDataCount; ++i)
 	{
-		m_nEnd = min(m_nEnd, m_pData[0]->size());
+		m_nEnd = min(m_nEnd, m_pData[i]->size());
 	}
 	if (m_nEnd > m_nAllLineNum)
 		m_nFirst = m_nEnd - m_nAllLineNum;
@@ -280,9 +280,10 @@ void SSubTargetPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 
 	for (unsigned i = 0; i < m_nShowDataCount; i++)
 	{
+		int nEnd = min(m_nEnd, m_pData[i]->size());
 		if (m_bRightArr[i])
 		{
-			for (int j = max(0, m_nFirst); j < m_nEnd; ++j)
+			for (int j = max(0, m_nFirst); j < nEnd; ++j)
 			{
 				m_fMaxR = max(m_fMaxR, m_pData[i]->at(j).value);
 				m_fMinR = min(m_fMinR, m_pData[i]->at(j).value);
@@ -290,10 +291,10 @@ void SSubTargetPic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 		}
 		else
 		{
-			for (int j = max(0, m_nFirst); j < m_nEnd; ++j)
+			for (int j = max(0, m_nFirst); j < nEnd; ++j)
 			{
-				m_fMaxL = max(m_fMaxR, m_pData[i]->at(j).value);
-				m_fMinL = min(m_fMinR, m_pData[i]->at(j).value);
+				m_fMaxL = max(m_fMaxL, m_pData[i]->at(j).value);
+				m_fMinL = min(m_fMinL, m_pData[i]->at(j).value);
 			}
 		}
 	}
@@ -696,7 +697,7 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 		m_nEnd = m_pData[0]->size();
 		for (int i = 1; i < m_nShowDataCount; ++i)
 		{
-			m_nEnd = min(m_nEnd, m_pData[0]->size());
+			m_nEnd = min(m_nEnd, m_pData[i]->size());
 		}
 
 		m_nEnd -= m_nOffset;

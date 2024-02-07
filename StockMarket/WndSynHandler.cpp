@@ -22,6 +22,7 @@ CWndSynHandler::CWndSynHandler()
 	bExit = false;
 	m_bFirstData = true;
 	m_bCaUpdate = false;
+	m_uLpPriceVolThreadID = 0;
 }
 
 
@@ -528,6 +529,16 @@ int CWndSynHandler::GetHisTFBase(SStringA stockID, int nPeriod, int nGroup)
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
+int CWndSynHandler::GetLpPriceVol(SStringA stockID, int nPeriod, int nDate)
+{
+	SendLpDInfo info = { 0 };
+	info.MsgType = SendType_LpPriceVol;
+	info.PeriodType = nPeriod;
+	info.Date = nDate;
+	strcpy_s(info.StockID, stockID);
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+}
+
 
 void CWndSynHandler::InitDataHandleMap()
 {
@@ -594,6 +605,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgRTFilterData;
 	m_netHandleMap[RecvMsg_RTPriceVol]
 		= &CWndSynHandler::OnMsgRTPriceVol;
+	m_netHandleMap[RecvMsg_LpPriceVol]
+		= &CWndSynHandler::OnMsgLpPriceVol;
 
 	m_netHandleMap[TradeRecvMsg_Register]
 		= &CWndSynHandler::OnMsgAccountRegister;
@@ -666,11 +679,15 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnTodayTFMarket;
 	m_synHandleMap[Syn_RTPriceVol]
 		= &CWndSynHandler::OnRTPriceVol;
+	m_synHandleMap[Syn_LpPriceVol]
+		= &CWndSynHandler::OnLpPriceVol;
 
 	m_synHandleMap[Syn_GetTradeMarket]
 		= &CWndSynHandler::OnGetTradeMarket;
 	m_synHandleMap[Syn_ReLogin]
 		= &CWndSynHandler::OnReLogin;
+	m_synHandleMap[Syn_GetLpPriceVol]
+		= &CWndSynHandler::OnGetLpPriceVol;
 
 }
 
@@ -1465,6 +1482,19 @@ void CWndSynHandler::OnMsgRTPriceVol(ReceiveInfo & recvInfo)
 	buffer = nullptr;
 }
 
+void CWndSynHandler::OnMsgLpPriceVol(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_LpPriceVol, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnMsgAccountRegister(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
@@ -1876,6 +1906,8 @@ void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
 
 	for (auto &it : m_hWndMap)
 		SendMsg(it.second, Syn_ListData, NULL, 0);
+	if(m_uLpPriceVolThreadID != 0)
+		SendMsg(m_uLpPriceVolThreadID, Syn_ListData, NULL, 0);
 
 }
 
@@ -2286,6 +2318,12 @@ void CWndSynHandler::OnRTPriceVol(int nMsgLength, const char * info)
 	}
 }
 
+void CWndSynHandler::OnLpPriceVol(int nMsgLength, const char * info)
+{
+	SendMsg(m_uLpPriceVolThreadID, Syn_LpPriceVol,
+		info, nMsgLength);
+}
+
 void CWndSynHandler::OnGetTradeMarket(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
@@ -2301,6 +2339,13 @@ void CWndSynHandler::OnReLogin(int nMsgLength, const char * info)
 {
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 		NULL, LoginMsg_ReLogin);
+}
+
+void CWndSynHandler::OnGetLpPriceVol(int nMsgLength, const char * info)
+{
+	LpDataGetInfo *pDgInfo = (LpDataGetInfo *)info;
+	GetLpPriceVol(pDgInfo->StockID, pDgInfo->PeriodType, pDgInfo->Date);
+
 }
 
 void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char * info)

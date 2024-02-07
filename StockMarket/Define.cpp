@@ -756,3 +756,206 @@ _TradeDouble _TradeDouble::operator/(const _TradeDouble & other)
 	}
 	return res;
 }
+
+_PeridoPriceVol::_PeridoPriceVol()
+{
+	ZeroMemory(this, sizeof(*this));
+}
+
+_PeridoPriceVol::_PeridoPriceVol(int nPrice, int nType)
+{
+	ZeroMemory(this, sizeof(*this));
+	this->nPriceMulti100 = nPrice;
+	this->nPeriodType = nType;
+}
+
+_PeridoPriceVol::_PeridoPriceVol(const PriceVolInfo & other)
+{
+	strcpy_s(this->SecurityID, other.SecurityID);
+	this->nPriceMulti100 = other.nPriceMulti100;
+	this->fActBigBuyVol = other.nActBigBuyVol;
+	this->fActBigBuyOrder = other.nActBigBuyOrder;
+	this->fActMidBuyVol = other.nActMidBuyVol;
+	this->fActMidBuyOrder = other.nActMidBuyOrder;
+	this->fActSmallBuyVol = other.nActSmallBuyVol;
+	this->fActSmallBuyOrder = other.nActSmallBuyOrder;
+	this->fActBigSellVol = other.nActBigSellVol;
+	this->fActBigSellOrder = other.nActBigSellOrder;
+	this->fActMidSellVol = other.nActMidSellVol;
+	this->fActMidSellOrder = other.nActMidSellOrder;
+	this->fActSmallSellVol = other.nActSmallSellVol;
+	this->fActSmallSellOrder = other.nActSmallSellOrder;
+	this->fPasBigBuyVol = other.nPasBigBuyVol;
+	this->fPasBigBuyOrder = other.nPasBigBuyOrder;
+	this->fPasMidBuyVol = other.nPasMidBuyVol;
+	this->fPasMidBuyOrder = other.nPasMidBuyOrder;
+	this->fPasSmallBuyVol = other.nPasSmallBuyVol;
+	this->fPasSmallBuyOrder = other.nPasSmallBuyOrder;
+	this->fPasBigSellVol = other.nPasBigSellVol;
+	this->fPasBigSellOrder = other.nPasBigSellOrder;
+	this->fPasMidSellVol = other.nPasMidSellVol;
+	this->fPasMidSellOrder = other.nPasMidSellOrder;
+	this->fPasSmallSellVol = other.nPasSmallSellVol;
+	this->fPasSmallSellOrder = other.nPasSmallSellOrder;
+}
+
+_PeridoPriceVol & _PeridoPriceVol::operator+=(const _priceVol & other)
+{
+	strcpy_s(this->SecurityID, other.SecurityID);
+	this->fActBigBuyVol += other.nActBigBuyVol;
+	this->fActBigBuyOrder += other.nActBigBuyOrder;
+	this->fActMidBuyVol += other.nActMidBuyVol;
+	this->fActMidBuyOrder += other.nActMidBuyOrder;
+	this->fActSmallBuyVol += other.nActSmallBuyVol;
+	this->fActSmallBuyOrder += other.nActSmallBuyOrder;
+	this->fActBigSellVol += other.nActBigSellVol;
+	this->fActBigSellOrder += other.nActBigSellOrder;
+	this->fActMidSellVol += other.nActMidSellVol;
+	this->fActMidSellOrder += other.nActMidSellOrder;
+	this->fActSmallSellVol += other.nActSmallSellVol;
+	this->fActSmallSellOrder += other.nActSmallSellOrder;
+	this->fPasBigBuyVol += other.nPasBigBuyVol;
+	this->fPasBigBuyOrder += other.nPasBigBuyOrder;
+	this->fPasMidBuyVol += other.nPasMidBuyVol;
+	this->fPasMidBuyOrder += other.nPasMidBuyOrder;
+	this->fPasSmallBuyVol += other.nPasSmallBuyVol;
+	this->fPasSmallBuyOrder += other.nPasSmallBuyOrder;
+	this->fPasBigSellVol += other.nPasBigSellVol;
+	this->fPasBigSellOrder += other.nPasBigSellOrder;
+	this->fPasMidSellVol += other.nPasMidSellVol;
+	this->fPasMidSellOrder += other.nPasMidSellOrder;
+	this->fPasSmallSellVol += other.nPasSmallSellVol;
+	this->fPasSmallSellOrder += other.nPasSmallSellOrder;
+	return *this;
+}
+
+_PeridoPriceVol & _PeridoPriceVol::operator-=(const _priceVol & other)
+{
+	strcpy_s(this->SecurityID, other.SecurityID);
+	this->fActBigBuyVol -= other.nActBigBuyVol;
+	this->fActBigBuyOrder -= other.nActBigBuyOrder;
+	this->fActMidBuyVol -= other.nActMidBuyVol;
+	this->fActMidBuyOrder -= other.nActMidBuyOrder;
+	this->fActSmallBuyVol -= other.nActSmallBuyVol;
+	this->fActSmallBuyOrder -= other.nActSmallBuyOrder;
+	this->fActBigSellVol -= other.nActBigSellVol;
+	this->fActBigSellOrder -= other.nActBigSellOrder;
+	this->fActMidSellVol -= other.nActMidSellVol;
+	this->fActMidSellOrder -= other.nActMidSellOrder;
+	this->fActSmallSellVol -= other.nActSmallSellVol;
+	this->fActSmallSellOrder -= other.nActSmallSellOrder;
+	this->fPasBigBuyVol -= other.nPasBigBuyVol;
+	this->fPasBigBuyOrder -= other.nPasBigBuyOrder;
+	this->fPasMidBuyVol -= other.nPasMidBuyVol;
+	this->fPasMidBuyOrder -= other.nPasMidBuyOrder;
+	this->fPasSmallBuyVol -= other.nPasSmallBuyVol;
+	this->fPasSmallBuyOrder -= other.nPasSmallBuyOrder;
+	this->fPasBigSellVol -= other.nPasBigSellVol;
+	this->fPasBigSellOrder -= other.nPasBigSellOrder;
+	this->fPasMidSellVol -= other.nPasMidSellVol;
+	this->fPasMidSellOrder -= other.nPasMidSellOrder;
+	this->fPasSmallSellVol -= other.nPasSmallSellVol;
+	this->fPasSmallSellOrder -= other.nPasSmallSellOrder;
+	return *this;
+}
+
+_PeridoPriceVol & _PeridoPriceVol::operator+=(const _PeridoPriceVol & other)
+{
+	strcpy_s(this->SecurityID, other.SecurityID);
+	this->fActBigBuyVol += other.fActBigBuyVol;
+	this->fActBigBuyOrder += other.fActBigBuyOrder;
+	this->fActMidBuyVol += other.fActMidBuyVol;
+	this->fActMidBuyOrder += other.fActMidBuyOrder;
+	this->fActSmallBuyVol += other.fActSmallBuyVol;
+	this->fActSmallBuyOrder += other.fActSmallBuyOrder;
+	this->fActBigSellVol += other.fActBigSellVol;
+	this->fActBigSellOrder += other.fActBigSellOrder;
+	this->fActMidSellVol += other.fActMidSellVol;
+	this->fActMidSellOrder += other.fActMidSellOrder;
+	this->fActSmallSellVol += other.fActSmallSellVol;
+	this->fActSmallSellOrder += other.fActSmallSellOrder;
+	this->fPasBigBuyVol += other.fPasBigBuyVol;
+	this->fPasBigBuyOrder += other.fPasBigBuyOrder;
+	this->fPasMidBuyVol += other.fPasMidBuyVol;
+	this->fPasMidBuyOrder += other.fPasMidBuyOrder;
+	this->fPasSmallBuyVol += other.fPasSmallBuyVol;
+	this->fPasSmallBuyOrder += other.fPasSmallBuyOrder;
+	this->fPasBigSellVol += other.fPasBigSellVol;
+	this->fPasBigSellOrder += other.fPasBigSellOrder;
+	this->fPasMidSellVol += other.fPasMidSellVol;
+	this->fPasMidSellOrder += other.fPasMidSellOrder;
+	this->fPasSmallSellVol += other.fPasSmallSellVol;
+	this->fPasSmallSellOrder += other.fPasSmallSellOrder;
+	return *this;
+}
+
+_PeridoPriceVol & _PeridoPriceVol::operator-=(const _PeridoPriceVol & other)
+{
+	strcpy_s(this->SecurityID, other.SecurityID);
+	this->fActBigBuyVol -= other.fActBigBuyVol;
+	this->fActBigBuyOrder -= other.fActBigBuyOrder;
+	this->fActMidBuyVol -= other.fActMidBuyVol;
+	this->fActMidBuyOrder -= other.fActMidBuyOrder;
+	this->fActSmallBuyVol -= other.fActSmallBuyVol;
+	this->fActSmallBuyOrder -= other.fActSmallBuyOrder;
+	this->fActBigSellVol -= other.fActBigSellVol;
+	this->fActBigSellOrder -= other.fActBigSellOrder;
+	this->fActMidSellVol -= other.fActMidSellVol;
+	this->fActMidSellOrder -= other.fActMidSellOrder;
+	this->fActSmallSellVol -= other.fActSmallSellVol;
+	this->fActSmallSellOrder -= other.fActSmallSellOrder;
+	this->fPasBigBuyVol -= other.fPasBigBuyVol;
+	this->fPasBigBuyOrder -= other.fPasBigBuyOrder;
+	this->fPasMidBuyVol -= other.fPasMidBuyVol;
+	this->fPasMidBuyOrder -= other.fPasMidBuyOrder;
+	this->fPasSmallBuyVol -= other.fPasSmallBuyVol;
+	this->fPasSmallBuyOrder -= other.fPasSmallBuyOrder;
+	this->fPasBigSellVol -= other.fPasBigSellVol;
+	this->fPasBigSellOrder -= other.fPasBigSellOrder;
+	this->fPasMidSellVol -= other.fPasMidSellVol;
+	this->fPasMidSellOrder -= other.fPasMidSellOrder;
+	this->fPasSmallSellVol -= other.fPasSmallSellVol;
+	this->fPasSmallSellOrder -= other.fPasSmallSellOrder;
+	return *this;
+}
+
+_PeridoPriceVol & _PeridoPriceVol::AbsDiff(const _PeridoPriceVol & other)
+{
+	strcpy_s(this->SecurityID, other.SecurityID);
+	this->fActBigBuyVol = abs(this->fActBigBuyVol - other.fActBigBuyVol);
+	this->fActBigBuyOrder = abs(this->fActBigBuyOrder - other.fActBigBuyOrder);
+	this->fActMidBuyVol = abs(this->fActMidBuyVol - other.fActMidBuyVol);
+	this->fActMidBuyOrder = abs(this->fActMidBuyOrder - other.fActMidBuyOrder);
+	this->fActSmallBuyVol = abs(this->fActSmallBuyVol - other.fActSmallBuyVol);
+	this->fActSmallBuyOrder = abs(this->fActSmallBuyOrder - other.fActSmallBuyOrder);
+	this->fActBigSellVol = abs(this->fActBigSellVol - other.fActBigSellVol);
+	this->fActBigSellOrder = abs(this->fActBigSellOrder - other.fActBigSellOrder);
+	this->fActMidSellVol = abs(this->fActMidSellVol - other.fActMidSellVol);
+	this->fActMidSellOrder = abs(this->fActMidSellOrder - other.fActMidSellOrder);
+	this->fActSmallSellVol = abs(this->fActSmallSellVol - other.fActSmallSellVol);
+	this->fActSmallSellOrder = abs(this->fActSmallSellOrder - other.fActSmallSellOrder);
+	this->fPasBigBuyVol = abs(this->fPasBigBuyVol - other.fPasBigBuyVol);
+	this->fPasBigBuyOrder = abs(this->fPasBigBuyOrder - other.fPasBigBuyOrder);
+	this->fPasMidBuyVol = abs(this->fPasMidBuyVol - other.fPasMidBuyVol);
+	this->fPasMidBuyOrder = abs(this->fPasMidBuyOrder - other.fPasMidBuyOrder);
+	this->fPasSmallBuyVol = abs(this->fPasSmallBuyVol - other.fPasSmallBuyVol);
+	this->fPasSmallBuyOrder = abs(this->fPasSmallBuyOrder - other.fPasSmallBuyOrder);
+	this->fPasBigSellVol = abs(this->fPasBigSellVol - other.fPasBigSellVol);
+	this->fPasBigSellOrder = abs(this->fPasBigSellOrder - other.fPasBigSellOrder);
+	this->fPasMidSellVol = abs(this->fPasMidSellVol - other.fPasMidSellVol);
+	this->fPasMidSellOrder = abs(this->fPasMidSellOrder - other.fPasMidSellOrder);
+	this->fPasSmallSellVol = abs(this->fPasSmallSellVol - other.fPasSmallSellVol);
+	this->fPasSmallSellOrder = abs(this->fPasSmallSellOrder - other.fPasSmallSellOrder);
+	return *this;
+	// TODO: 在此处插入 return 语句
+}
+
+BOOL _PeridoPriceVol::IsDataSame(const _PeridoPriceVol & other)
+{
+	int nOffset = offsetof(_PeridoPriceVol, fActBigBuyVol);
+	int nSzie = sizeof(*this) - nOffset;
+	const void *pThis = (char*)this + nOffset;
+	const void *pOther = (char*)&other + nOffset;
+	return memcmp(pThis, pOther, nSzie) == 0;
+}
+

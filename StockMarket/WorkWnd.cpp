@@ -275,7 +275,7 @@ void CWorkWnd::InitList()
 	m_ListDataSortMap[SHead_ActSellVolume] = eSDT_Uint64;
 	m_ListDataSortMap[SHead_ActBuyVolume] = eSDT_Uint64;
 	m_ListDataSortMap[SHead_Amount] = eSDT_BigDouble;
-	m_ListDataSortMap[SHead_CAVol] = eSDT_Int;
+	//m_ListDataSortMap[SHead_CAVol] = eSDT_Int;
 	m_ListDataSortMap[SHead_CAVolRank] = eSDT_Int;
 	m_ListDataSortMap[SHead_CAAmo] = eSDT_BigDouble;
 	m_ListDataSortMap[SHead_CAAmoRank] = eSDT_Int;
@@ -2575,8 +2575,8 @@ void CWorkWnd::SortListData(bool bSortCode)
 		SortData(m_ListShowTFData, nSortHeader,
 			m_TFSortMap[nSortHeader], m_SortPara.nFlag);
 	else if (m_CASortMap.count(nSortHeader))
-		SortData(m_ListShowTFData, nSortHeader,
-			m_TFSortMap[nSortHeader], m_SortPara.nFlag);
+		SortData(m_ListShowCAData, nSortHeader,
+			m_CASortMap[nSortHeader], m_SortPara.nFlag);
 	else
 		SortOtherData(nSortHeader, m_SortPara.nFlag);
 	m_bListInited = true;

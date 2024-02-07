@@ -1,0 +1,12 @@
+﻿<include>
+	<!--<group pos="5,5,%33,%50" align="left" headerHeight="0" visible="1"  name="group_lp1" colorBorder="#FF0000FF"> -->
+		<text pos = "10,5,@50,@20" colorText="#00FFFF" align="right">周期</text>
+		<!--<combobox name = "cbx_period1"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"  >
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<!--<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date1" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<!--<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol1"/> -->
+	<!--</group> -->
+</include>

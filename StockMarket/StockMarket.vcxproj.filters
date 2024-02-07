@@ -200,6 +200,12 @@
     <ClCompile Include="DlgMsgHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgLpPriceVol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SLpPriceVolPic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -370,6 +376,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgMsgHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgLpPriceVol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SLpPriceVolPic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

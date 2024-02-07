@@ -121,6 +121,7 @@ enum RecvMsgType
 	RecvMsg_TodayTFMarket,
 	RecvMsg_RTFilter,
 	RecvMsg_RTPriceVol,
+	RecvMsg_LpPriceVol,
 };
 
 enum SendMsgType
@@ -137,6 +138,7 @@ enum SendMsgType
 	SendType_IndexHisDayKline,
 	SendType_HisTFBase, 
 	SendType_UnSubIns,
+	SendType_LpPriceVol,
 };
 
 enum ComSendMsgType
@@ -264,6 +266,24 @@ typedef struct _ReceivePointInfo
 	unsigned long FirstDataSize;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceivePointInfo;
 
+typedef struct _ReceiveLpPriVolInfo
+{
+	_ReceiveLpPriVolInfo() :MsgType(-1), TotalDataSize(-1)
+	{
+
+	}
+	_ReceiveLpPriVolInfo(ReceiveInfo& ri)
+	{
+		memcpy_s(this, sizeof(ReceivePointInfo),
+			&ri, sizeof(ri));
+	}
+	int MsgType;
+	char Message[10];
+	int PeriodType;
+	int Date;
+	unsigned long TotalDataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long FirstDataSize;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+}ReceiveLpPriVolInfo;
 
 enum SListHead
 {
@@ -383,6 +403,14 @@ typedef struct _SendIDInfo
 	int  NoUse2;
 }SendIDInfo;
 
+typedef struct _SendLpInfo
+{
+	int MsgType;
+	char StockID[10];
+	int  PeriodType;
+	int  Date;
+}SendLpDInfo;
+
 
 typedef struct _SendTradeInfo
 {
@@ -464,7 +492,6 @@ enum SynMsg
 	Syn_TodayTFMarket,
 	Syn_RTTFMarkt,
 	Syn_RTPriceVol,
-
 	//交易的同步信息
 	Syn_GetTradeMarket,
 	Syn_RTBuyStockMarket,
@@ -473,6 +500,11 @@ enum SynMsg
 	Syn_HisSellStockMarket,
 	Syn_ReLogin,
 
+	//长周期的资金流
+	Syn_GetLpPriceVol,
+	Syn_LpPriceVol,
+	Syn_ReCalcLpPriceVol,
+	Syn_ChangeShowDiff,
 };
 
 
@@ -517,9 +549,8 @@ enum WorkWndMsg
 	WW_TodayTFMarket,
 	WW_RTTFMarket,
 	WW_RTPriceVol,
-
+	WW_End,
 };
-
 
 
 enum StockInfoType
@@ -557,6 +588,11 @@ enum WDMSG
 
 };
 
+enum LPDMsg
+{
+	LPDMsg_UpdatePic,
+	LPDMsg_ChangeDate,
+};
 
 enum RpsGroup
 {
@@ -1069,6 +1105,16 @@ typedef struct _DataGetInfo
 	int	 Group;
 	int Period;
 }DataGetInfo;
+
+
+typedef struct _LpDataGetInfo
+{
+	HWND hWnd;
+	char oldStockID[8];
+	char StockID[8];
+	int	 PeriodType;
+	int Date;
+}LpDataGetInfo;
 
 
 enum
@@ -2302,3 +2348,100 @@ typedef struct _priceVol
 	int nPasSmallSellVol;
 	int nPasSmallSellOrder;
 }PriceVolInfo;
+
+typedef struct _PeridoPriceVol
+{
+	SecurityID SecurityID;
+	int		nPriceMulti100;
+	int		nPeriodType;
+	double fActBigBuyVol;
+	double fActBigBuyOrder;
+	double fActMidBuyVol;
+	double fActMidBuyOrder;
+	double fActSmallBuyVol;
+	double fActSmallBuyOrder;
+	double fActBigSellVol;
+	double fActBigSellOrder;
+	double fActMidSellVol;
+	double fActMidSellOrder;
+	double fActSmallSellVol;
+	double fActSmallSellOrder;
+	double fPasBigBuyVol;
+	double fPasBigBuyOrder;
+	double fPasMidBuyVol;
+	double fPasMidBuyOrder;
+	double fPasSmallBuyVol;
+	double fPasSmallBuyOrder;
+	double fPasBigSellVol;
+	double fPasBigSellOrder;
+	double fPasMidSellVol;
+	double fPasMidSellOrder;
+	double fPasSmallSellVol;
+	double fPasSmallSellOrder;
+	_PeridoPriceVol();
+	_PeridoPriceVol(int nPrice, int nType);
+	_PeridoPriceVol(const PriceVolInfo& other);
+	_PeridoPriceVol& operator += (const _priceVol& other);
+	_PeridoPriceVol& operator -= (const _priceVol& other);
+	_PeridoPriceVol& operator += (const _PeridoPriceVol& other);
+	_PeridoPriceVol& operator -= (const _PeridoPriceVol& other);
+	_PeridoPriceVol& AbsDiff(const _PeridoPriceVol& other);
+
+	BOOL IsDataSame(const _PeridoPriceVol& other);
+
+}PeriodPriceVolInfo;
+
+
+enum eLPCapPeriodType
+{
+	eLPCT_AllTime = 0,
+	eLPCT_Month1,
+	eLPCT_Month3,
+	eLPCT_Month6,
+	eLPCT_Year1,
+	eLPCT_Year2,
+	eLPCT_Year3,
+	eLPCT_Year5,
+	eLPCT_Year10,
+	eLPCT_Date,
+};
+
+enum eLpCapDataType
+{
+	eLPCDT_Num,
+	eLPCDT_Ratio,
+};
+
+enum eLpCalcWndType
+{
+	eLPCW_Wnd0,
+	eLPCW_Wnd1,
+	eLPCW_Wnd2,
+	eLPCW_Wnd3,
+	eLPCW_Wnd4,
+	eLPCW_Wnd5,
+	eLPCW_ShowWnd,
+	eLPCW_AllWnd,
+};
+
+enum eLpCapBasePriceType
+{
+	eLPCBPT_NULL,
+	eLPCBPT_LastPx,
+	eLPCBPT_0,
+	eLPCBPT_1,
+	eLPCBPT_2,
+	eLPCBPT_5,
+	eLPCBPT_10,
+	eLPCBPT_User,
+
+};
+
+enum eLpCapShowDiffType
+{
+	eLPCSDT_NULL,
+	eLPCSDT_ShowDiff,
+	eLPCSDT_Overlapping,
+	eLPCSDT_Deflate,
+
+};

@@ -1,0 +1,111 @@
+﻿<?xml version="1.0"?>
+<SOUI name="subWindow" title="价量分布" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="normal" appWnd="0" translucent="0" colorBkgnd="#000000ff">
+	<root cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" name="text_windowName">@string/title</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
+			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
+			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+		</caption>
+		<window pos="0,30,-0,-0" colorBkgnd="#000000ff" cache="1" font="adding:0,face:微软雅黑">
+			<group pos="5,5,-5,@30" align="left" headerHeight="0" visible="1" >
+			<text pos = "10,5,@75,@20" colorText="#00FFFF" align="right">股票代码</text>
+			<edit pos="[5,{0,@130,@20" colorBkgnd="#FFFFFFFF" colorText ="#000000FF" name="edit_stockID" notifyChange="1" number="1"/>
+			<text pos = "[5,{0,@75,@20" colorText="#00FFFF" align="right">图形数量</text>
+			<combobox name = "cbx_picNum"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"  focusable = "0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text pos = "[5,{0,@75,@20" colorText="#00FFFF" align="right">数据类型</text>
+			<combobox name = "cbx_dataType"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text pos = "[5,{0,@75,@25" colorText="#00FFFF" align="right">数据档位</text>
+			<combobox name = "cbx_dataLevel"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text pos = "[5,{0,@100,@20" colorText="#00FFFF" align="right">基准价格(元)</text>
+			<combobox name = "cbx_basePrice"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<edit pos="[5,{0,@100,@20" colorBkgnd="#FFFFFFFF" colorText ="#000000FF" name="edit_basePrice" enable="1" colorDisable="#505050FF" visible="0" number="1"/>
+			<text pos="[5,{0,@75,@20" text="对比方式" colorText="#00FFFF" align="right"/>
+			<combobox name = "cbx_diffType"  pos = "[5,{0,@150,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			<text pos = "[5,{0,@75,@20" colorText="#00FFFF" align="right" visible="0" name ="txt_baseWnd">基准窗口</text>
+			<combobox name = "cbx_baseWnd"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0" visible="0">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+			</combobox>
+			</group>
+			</window>
+			<window pos="0,65,-0,-0" colorBkgnd="#000000ff" cache="1" font="adding:0,face:微软雅黑">
+			<!--<include src="layout:page_lpPriceVol" /> -->
+			<group pos="5,5,%33,%50" align="left" headerHeight="0" visible="1"  name="group_lp1" colorBorder="#FF0000FF">
+
+			<text pos = "10,5,@85,@20" colorText="#00FFFF" align="right">窗口1 周期</text>
+			<combobox name = "cbx_period1"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date1" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol1"  font="size:12,face:微软雅黑"/>
+		<listbox name="lb_stockID" pos="90,0,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" />
+		</group>
+		<group pos="%33,5,%67,%50" align="left" headerHeight="0" visible="1"  name="group_lp2" colorBorder="#FF0000FF">
+		<text pos = "10,5,@85,@20" colorText="#00FFFF" align="right">窗口2 周期</text>
+		<combobox name = "cbx_period2"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date2" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol2"  font="size:12,face:微软雅黑"/>
+
+	</group>
+	<group pos="%67,5,-5,%50" align="left" headerHeight="0" visible="1"  name="group_lp3" colorBorder="#FF0000FF">
+		<text pos = "10,5,@85,@20" colorText="#00FFFF" align="right">窗口3 周期</text>
+		<combobox name = "cbx_period3"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date3" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol3"  font="size:12,face:微软雅黑"/>
+	</group>
+	<group pos="5,%50,%33,-5" align="left" headerHeight="0" visible="1"  name="group_lp4" colorBorder="#FF0000FF">
+		<text pos = "10,5,@85,@20" colorText="#00FFFF" align="right">窗口4 周期</text>
+		<combobox name = "cbx_period4"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date4" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol4"  font="size:12,face:微软雅黑"/>
+	</group>
+	<group pos="%33,%50,%67,-5" align="left" headerHeight="0" visible="1"  name="group_lp5" colorBorder="#FF0000FF">
+		<text pos = "10,5,@85,@20" colorText="#00FFFF" align="right">窗口5 周期</text>
+		<combobox name = "cbx_period5"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date5" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol5"  font="size:12,face:微软雅黑"/>
+	</group>
+	<group pos="%67,%50,-5,-5" align="left" headerHeight="0" visible="1"  name="group_lp6" colorBorder="#FF0000FF">
+		<text pos = "10,5,@85,@20" colorText="#00FFFF" align="right">窗口6 周期</text>
+		<combobox name = "cbx_period6"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"   focusable = "0">
+			<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="adding:0,face:微软雅黑"/>
+		</combobox>
+		<dateTimePicker pos="[5,{0" size="120,20" name="dtp_date6" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+			<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+		</dateTimePicker>
+		<lpPiceVolPic pos="5,[5,-5,-5" name="lpPiceVol6"  font="size:12,face:微软雅黑"/>
+	</group>
+	</window>
+			
+	</root>
+</SOUI>

@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
@@ -202,6 +202,7 @@
     <ClCompile Include="DlgKbElf.cpp" />
     <ClCompile Include="DlgLimitUpStat.cpp" />
     <ClCompile Include="DlgLogin.cpp" />
+    <ClCompile Include="DlgLpPriceVol.cpp" />
     <ClCompile Include="DlgMacdPara.cpp" />
     <ClCompile Include="DlgMaPara.cpp" />
     <ClCompile Include="DlgMsgHandler.cpp" />
@@ -243,6 +244,7 @@
     <ClCompile Include="SColorListCtrlEx.cpp" />
     <ClCompile Include="SFenShiPic.cpp" />
     <ClCompile Include="SKlinePic.cpp" />
+    <ClCompile Include="SLpPriceVolPic.cpp" />
     <ClCompile Include="SMessageBoxTimer.cpp" />
     <ClCompile Include="SouiRealWndHandler.cpp" />
     <ClCompile Include="SHeaderCtrlEx.cpp" />
@@ -281,6 +283,7 @@
     <ClInclude Include="DlgKbElf.h" />
     <ClInclude Include="DlgLimitUpStat.h" />
     <ClInclude Include="DlgLogin.h" />
+    <ClInclude Include="DlgLpPriceVol.h" />
     <ClInclude Include="DlgMacdPara.h" />
     <ClInclude Include="DlgMaPara.h" />
     <ClInclude Include="DlgMsgHandler.h" />
@@ -309,6 +312,7 @@
     <ClInclude Include="SColorListCtrlEx.h" />
     <ClInclude Include="SFenShiPic.h" />
     <ClInclude Include="SKlinePic.h" />
+    <ClInclude Include="SLpPriceVolPic.h" />
     <ClInclude Include="SMessageBoxTimer.h" />
     <ClInclude Include="SouiRealWndHandler.h" />
     <ClInclude Include="SHeaderCtrlEx.h" />

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <SOUI name="mainWindow" title="@string/title" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="appMain" appWnd="1" translucent="0" colorBkgnd="#000000ff">
 	<root cache="1">
 		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
@@ -8,7 +8,9 @@
 			<imgbtn pos="[20,5" size="80,30" tip="多窗口选股" animate="0" text="多窗口选股" name="btn_MultiFilter" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" />
 			<imgbtn pos="[20,5" size="80,30" tip="涨停统计" animate="0" text="涨停统计" name="btn_LimitUpStat" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" />
 			<imgbtn pos="[20,5" size="50,30" tip="模拟交易" animate="0" text="交易" name="btn_TradSimulate" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" />
+			<imgbtn pos="[20,5" size="80,30" tip="长周期价量分布" animate="0" text="价量分布" name="btn_LpPriceVol" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" visible="1" />
 			<imgbtn pos="[20,5" size="50,30" tip="公式编辑" animate="0" text="公式" name="btn_EditFunc" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" visible="0" />
+
 			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
 			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />

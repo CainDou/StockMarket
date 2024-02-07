@@ -25,10 +25,11 @@ public:
 	void Run();
 	void Close();
 	void SetMainWnd(HWND hWnd);
-	void AddWnd(HWND hWnd,UINT threadID);
+	void AddWnd(HWND hWnd, UINT threadID);
 	void RemoveWnd(HWND hWnd);
 	void GetListInsVec(vector<vector<StockInfo>> &ListInsVec,
-		 strHash<SStringA>& StockNameVec);
+		strHash<SStringA>& StockNameVec);
+	vector<StockInfo> GetListInsVec(int nGroup);
 	vector<map<int, strHash<RtRps>>>* GetListData();
 	map<int, strHash<TickFlowMarket>>* GetTFMarket();
 	vector<map<int, vector<vector<double>>>>* GetFilterData();
@@ -41,27 +42,28 @@ public:
 	strHash<double> GetCloseMap() const;
 	void SetCmdLine(LPCTSTR lpstrCmdLine);
 	map<int, ShowPointInfo> GetPointInfo();
-	void SetSubWndInfo(HWND hSubWnd,HWND hWnd,int nGroup);
+	void SetSubWndInfo(HWND hSubWnd, HWND hWnd, int nGroup);
 	void SetAccountWnd(HWND hwnd);
 	void SetTradeWnd(HWND hWnd);
 	void SetTradeDlgThreadID(unsigned threadID);
+	void SetLpPriceVolWnd(HWND hWnd, unsigned threadID);
 	//初始化函数
 protected:
 	void InitCommonSetting();
 	void InitNetConfig();
 	void InitPointInfo();
 	void InitDataNameMap();
-	void InitRpsDataMap(string strDataName,int nMarketStart,int nL1Start,int nL2Start);
+	void InitRpsDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start);
 	void InitSecDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start);
 
 	//辅助函数
 protected:
-	int GetHisPoint(int nMsgType,SStringA stockID, int nPeriod, int nGroup,SStringA attInfo);
-	int GetMarket(SStringA stockID,SStringA oldStockID, int nGroup);
+	int GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo);
+	int GetMarket(SStringA stockID, SStringA oldStockID, int nGroup);
 	int GetHisKline(SStringA stockID, int nPeriod, int nGroup);
 	int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
 	int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
-
+	int GetLpPriceVol(SStringA stockID, int nPeriod, int nDate);
 	void InitDataHandleMap();
 	void InitNetHandleMap();
 	void InitSynHandleMap();
@@ -70,7 +72,7 @@ protected:
 	bool CheckCmdLine();
 	bool GetAutoUpdateFile(SStringA strMD5);
 	bool GetAutoUpdateFileVer(SStringA &strMD5);
-	bool HandleRpsData(string strDataName, sRps& data, 
+	bool HandleRpsData(string strDataName, sRps& data,
 		vector<double>&filterDataMap);
 	bool HandleSecData(string strDataName, sSection& data,
 		vector<double>&filterDataMap);
@@ -94,30 +96,31 @@ protected:
 	//Net具体处理
 protected:
 	bool RecvInfoHandle(BOOL & bNeedConnect, int &nOffset, ReceiveInfo &recvInfo);
-	void OnMsgClientID( ReceiveInfo &recvInfo);
-	void OnMsgStockInfo( ReceiveInfo &recvInfo);
-	void OnMsgRTTimeLine( ReceiveInfo &recvInfo);
-	void OnMsgTodayTimeLine( ReceiveInfo &recvInfo);
-	void OnMsgHisRpsPoint( ReceiveInfo &recvInfo);
-	void OnMsgLastDayEma( ReceiveInfo &recvInfo);
-	void OnMsgRTIndexMarket( ReceiveInfo &recvInfo);
-	void OnMsgRTStockMarket( ReceiveInfo &recvInfo);
-	void OnMsgHisIndexMarket( ReceiveInfo &recvInfo);
-	void OnMsgHisStockMarket( ReceiveInfo &recvInfo);
-	void OnMsgHisKline( ReceiveInfo &recvInfo);
-	void OnMsgCloseInfo( ReceiveInfo &recvInfo);
-	void OnMsgWait( ReceiveInfo &recvInfo);
-	void OnMsgReInit( ReceiveInfo &recvInfo);
-	void OnMsgRTTFMarket( ReceiveInfo &recvInfo);
-	void OnMsgRtRps( ReceiveInfo &recvInfo);
-	void OnMsgHisSecPoint( ReceiveInfo &recvInfo);
-	void OnMsgRehabInfo( ReceiveInfo &recvInfo);
-	void OnMsgCallAction( ReceiveInfo &recvInfo);
-	void OnMsgHisCallAction( ReceiveInfo &recvInfo);
+	void OnMsgClientID(ReceiveInfo &recvInfo);
+	void OnMsgStockInfo(ReceiveInfo &recvInfo);
+	void OnMsgRTTimeLine(ReceiveInfo &recvInfo);
+	void OnMsgTodayTimeLine(ReceiveInfo &recvInfo);
+	void OnMsgHisRpsPoint(ReceiveInfo &recvInfo);
+	void OnMsgLastDayEma(ReceiveInfo &recvInfo);
+	void OnMsgRTIndexMarket(ReceiveInfo &recvInfo);
+	void OnMsgRTStockMarket(ReceiveInfo &recvInfo);
+	void OnMsgHisIndexMarket(ReceiveInfo &recvInfo);
+	void OnMsgHisStockMarket(ReceiveInfo &recvInfo);
+	void OnMsgHisKline(ReceiveInfo &recvInfo);
+	void OnMsgCloseInfo(ReceiveInfo &recvInfo);
+	void OnMsgWait(ReceiveInfo &recvInfo);
+	void OnMsgReInit(ReceiveInfo &recvInfo);
+	void OnMsgRTTFMarket(ReceiveInfo &recvInfo);
+	void OnMsgRtRps(ReceiveInfo &recvInfo);
+	void OnMsgHisSecPoint(ReceiveInfo &recvInfo);
+	void OnMsgRehabInfo(ReceiveInfo &recvInfo);
+	void OnMsgCallAction(ReceiveInfo &recvInfo);
+	void OnMsgHisCallAction(ReceiveInfo &recvInfo);
 	void OnMsgHisTFBase(ReceiveInfo &recvInfo);
 	void OnMsgTodayTFMarket(ReceiveInfo &recvInfo);
 	void OnMsgRTFilterData(ReceiveInfo &recvInfo);
 	void OnMsgRTPriceVol(ReceiveInfo &recvInfo);
+	void OnMsgLpPriceVol(ReceiveInfo &recvInfo);
 
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
@@ -130,7 +133,7 @@ protected:
 	void OnMsgHisTrust(ReceiveInfo &recvInfo);
 	void OnMsgHisDeal(ReceiveInfo &recvInfo);
 	void OnMsgSubmitFeedback(ReceiveInfo &recvInfo);
-	void OnNoDefineMsg( ReceiveInfo &recvInfo);
+	void OnNoDefineMsg(ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
 protected:
@@ -155,7 +158,7 @@ protected:
 	void OnHisStockMarket(int nMsgLength, const char* info);
 	void OnHisKline(int nMsgLength, const char* info);
 	void OnCloseInfo(int nMsgLength, const char* info);
-	void OnReinit(int nMsgLength, const char* info);	
+	void OnReinit(int nMsgLength, const char* info);
 	void OnHisSecPoint(int nMsgLength, const char* info);
 	void OnRehabInfo(int nMsgLength, const char* info);
 	void OnHisCallAction(int nMsgLength, const char* info);
@@ -164,9 +167,10 @@ protected:
 	void OnGetHisTFBase(int nMsgLength, const char* info);
 	void OnTodayTFMarket(int nMsgLength, const char* info);
 	void OnRTPriceVol(int nMsgLength, const char* info);
+	void OnLpPriceVol(int nMsgLength, const char* info);
 	void OnGetTradeMarket(int nMsgLength, const char* info);
 	void OnReLogin(int nMsgLength, const char* info);
-
+	void OnGetLpPriceVol(int nMsgLength, const char* info);
 	//交易信息处理
 protected:
 	void PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info);
@@ -197,7 +201,7 @@ public:
 	map<int, strHash<FilterData>> m_FilterHash;
 
 	vector<map<int, strHash<RtRps>>> m_RtRpsHash;
-	vector<map<int,vector<vector<double>>>> m_FilterDataMap;
+	vector<map<int, vector<vector<double>>>> m_FilterDataMap;
 	//分组 - 周期 -股票Index 日期序列 数据ID 数据序列
 	vector<strHash<CAInfo>> m_CallActionHash;
 	//map<string, vector<string>> m_rpsDataNameMap;
@@ -226,6 +230,7 @@ protected:
 	UINT m_uMsgThreadID;
 	UINT m_uTradeMsgThreadID;
 	UINT m_uTradeDlgThreadID;
+	UINT m_uLpPriceVolThreadID;
 
 	//处理函数哈希表
 protected:
@@ -238,7 +243,7 @@ public:
 	strHash<double>m_preCloseMap;
 	vector<vector<SStringA>> m_ListInsVec;
 	vector<vector<StockInfo>> m_ListInfoVec;
-	map<int,map<int, unordered_map<string, map<string, double>>>> m_allDataHash;
+	map<int, map<int, unordered_map<string, map<string, double>>>> m_allDataHash;
 
 	//调用子类
 protected:
@@ -247,7 +252,7 @@ protected:
 
 protected:
 	HWND m_hMain;
-	map<HWND,UINT> m_hWndMap;	//一级窗口的工作线程号
+	map<HWND, UINT> m_hWndMap;	//一级窗口的工作线程号
 	map<HWND, SStringA> m_WndSubMap;
 	map<HWND, SStringA> m_TradeSubMap;
 	map<int, HWND> m_TradeGetID;
@@ -265,6 +270,7 @@ protected:
 	unordered_map<int, int>m_tradeSynMap;
 	HWND m_hAccWnd;
 	HWND m_hTradeWnd;
+	HWND m_hLpPriceVolWnd;
 };
 
 inline void CWndSynHandler::SetMainWnd(HWND hWnd)
@@ -284,11 +290,18 @@ inline void CWndSynHandler::RemoveWnd(HWND hWnd)
 }
 
 inline void CWndSynHandler::GetListInsVec(
-	vector<vector<StockInfo>>& ListInsVec, 
+	vector<vector<StockInfo>>& ListInsVec,
 	strHash<SStringA>&StockName)
 {
 	ListInsVec = m_ListInfoVec;
 	StockName = m_StockName;
+}
+
+inline vector<StockInfo> CWndSynHandler::GetListInsVec(int nGroup)
+{
+	if (nGroup >= Group_SWL1&& nGroup <= Group_Stock)
+		return m_ListInfoVec[nGroup];
+	return vector<StockInfo>();
 }
 
 inline vector<map<int, strHash<RtRps>>>* CWndSynHandler::GetListData()
@@ -349,7 +362,7 @@ inline map<int, ShowPointInfo> CWndSynHandler::GetPointInfo()
 
 inline void CWndSynHandler::SetSubWndInfo(HWND hSubWnd, HWND hWnd, int nGroup)
 {
-	m_hSubWndMap[hSubWnd]= hWnd;
+	m_hSubWndMap[hSubWnd] = hWnd;
 	m_SubWndGroup[hSubWnd] = nGroup;
 }
 
@@ -366,5 +379,11 @@ inline void CWndSynHandler::SetTradeWnd(HWND hWnd)
 inline void CWndSynHandler::SetTradeDlgThreadID(unsigned threadID)
 {
 	m_uTradeDlgThreadID = threadID;
+}
+
+inline void CWndSynHandler::SetLpPriceVolWnd(HWND hWnd, unsigned threadID)
+{
+	m_hLpPriceVolWnd = hWnd;
+	m_uLpPriceVolThreadID = threadID;
 }
 
