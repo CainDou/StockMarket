@@ -891,6 +891,7 @@ map<int, PeriodPriceVolInfo> CDlgLpPriceVol::CalcShowPic(vector<PeriodPriceVolIn
 			for (int i = 0; i < nLevel; ++i)
 			{
 				int nPriceMax = m_nMinPrice + (i + 1) *fPerDiff + 0.5;
+				ShowDataMap[nPriceMax - 1] = PeriodPriceVolInfo(nPriceMax - 1, dataVec[0].nPeriodType);
 				for (; nIndex < dataVec.size(); ++nIndex)
 				{
 					if (dataVec[nIndex].nPriceMulti100 < nPriceMax)
@@ -898,8 +899,6 @@ map<int, PeriodPriceVolInfo> CDlgLpPriceVol::CalcShowPic(vector<PeriodPriceVolIn
 					else
 						break;
 				}
-				if (ShowDataMap.count(nPriceMax - 1))
-					ShowDataMap[nPriceMax - 1].nPriceMulti100 = nPriceMax - 1;
 			}
 		}
 		else
