@@ -278,7 +278,7 @@ void CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA str
 			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
 			if (overallType == -1)
 			{
-				int type = (ePointType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
+				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
 				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
 				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
 				for (auto &it : pointMap)
@@ -323,7 +323,7 @@ void CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA str
 			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
 			if (overallType == -1)
 			{
-				int type = (ePointType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
+				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
 				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
 				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
 				for (auto &it : pointMap)

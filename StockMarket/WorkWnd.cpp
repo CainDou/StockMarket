@@ -500,6 +500,7 @@ void CWorkWnd::OnInit(EventArgs * e)
 	m_pCheckNewStock = FindChildByID2<SCheckBox>(R.id.chk_NewStock);
 	m_pBtnRehab = FindChildByID2<SImageButton>(R.id.btn_Rehab);
 	m_pKlinePic->SetCaInfoData(&m_CallAction);
+	m_pKlinePic->SetTradeVolData(&m_TradeVolData);
 	m_pBtnRehab->SetVisible(FALSE, FALSE);
 	m_pPeriodBtnMap[Period_FenShi] =
 		FindChildByID2<SImageButton>(R.id.btn_FS);
@@ -1114,6 +1115,8 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 	case KM_TFOrder:
 	case KM_TFAvgVol:
 	{
+		if (m_Group != Group_Stock)
+			break;
 		m_pKlinePic->SetTickFlowDataType(nID - KM_TFRatio);
 		if (m_pKlinePic->GetIsTFBaseDataUsed())
 		{
@@ -1138,6 +1141,30 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 
 	}
 	break;
+	case KM_VolDiff:
+		if (m_Group != Group_Stock)
+			break;
+		m_pKlinePic->SetBigVolDiffState();
+		m_pKlinePic->Invalidate();
+		//bState = m_pKlinePic->GetVolumeState();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case KM_VolDiffPara:
+	{
+		if (m_Group != Group_Stock)
+			break;
+		m_MaParaSet = eMa_VolDiff;
+		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		::EnableWindow(m_hWnd, FALSE);
+	}
+	break;
+
 	default:
 		break;
 	}
@@ -1387,6 +1414,8 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 		menu.CheckMenuItem(KM_CAVolOrAmo, AllState);
 		menu.CheckMenuItem(KM_CAVol, VolState);
 		menu.CheckMenuItem(KM_CAAmo, AmoState);
+
+		menu.CheckMenuItem(KM_VolDiff, m_pKlinePic->GetBigVolDiffState()? MF_CHECKED : MF_UNCHECKED);
 
 		if (m_pKlinePic->GetMacdState())
 			menu.CheckMenuItem(KM_MACD, MF_CHECKED);
@@ -1639,6 +1668,10 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnUpdateRTTFMarket;
 	m_dataHandleMap[WW_RTPriceVol] =
 		&CWorkWnd::OnUpdateRTPriceVol;
+	m_dataHandleMap[WW_RTTradeVol] =
+		&CWorkWnd::OnUpdateRTTradeVol;
+	m_dataHandleMap[WW_HisTradeVol] =
+		&CWorkWnd::OnUpdateHisTradeVol;
 
 }
 void CWorkWnd::InitNameVec()
@@ -3660,8 +3693,13 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 			GetInfo.Group = m_Group;
 			GetInfo.Period = nPeriod;
 			if (nPeriod == Period_1Day)
+			{
 				SendMsg(m_uParWndThreadID, WW_GetCallAction,
-				(char*)&GetInfo, sizeof(GetInfo));
+					(char*)&GetInfo, sizeof(GetInfo));
+				SendMsg(m_uParWndThreadID, WW_GetTradeVol,
+					(char*)&GetInfo, sizeof(GetInfo));
+
+			}
 
 			SendMsg(m_uParWndThreadID, WW_GetKline,
 				(char*)&GetInfo, sizeof(GetInfo));
@@ -3739,8 +3777,12 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	{
 		GetInfo.Period = m_PicPeriod;
 		if (Period_1Day == m_PicPeriod)
+		{
 			SendMsg(m_uParWndThreadID, WW_GetCallAction,
-			(char*)&GetInfo, sizeof(GetInfo));
+				(char*)&GetInfo, sizeof(GetInfo));
+			SendMsg(m_uParWndThreadID, WW_GetTradeVol,
+				(char*)&GetInfo, sizeof(GetInfo));
+		}
 
 		SendMsg(m_uParWndThreadID, WW_GetKline,
 			(char*)&GetInfo, sizeof(GetInfo));
@@ -3771,10 +3813,12 @@ void CWorkWnd::SetDataFlagFalse()
 {
 	m_bMarketGet = false;
 	m_bCAInfoGet = false;
+	m_bTradeVolGet = false;
 	m_PointGetMap.clear();
 	m_L1IndyPointGetMap.clear();
 	m_L2IndyPointGetMap.clear();
 	m_CallAction.clear();
+	m_TradeVolData.clear();
 	//m_PointGetMap.clear();
 	m_KlineGetMap.clear();
 	m_pKlinePic->SetTodayMarketState(false);
@@ -4147,6 +4191,7 @@ void SOUI::CWorkWnd::OnUpdateHisCallAction(int nMsgLength, const char * info)
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
+
 void CWorkWnd::OnUpdateHisTFBase(int nMsgLength, const char * info)
 {
 	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
@@ -4220,6 +4265,42 @@ void CWorkWnd::OnUpdateRTPriceVol(int nMsgLength, const char * info)
 		priceVol[pPriceVol[i].nPriceMulti100] = pPriceVol[i];
 	m_pPriceVolPic->UpdateData(priceVol);
 }
+
+void SOUI::CWorkWnd::OnUpdateRTTradeVol(int nMsgLength, const char * info)
+{
+	TradeVol* pPriceVol = (TradeVol*)(info);
+	int nDataCount = nMsgLength / sizeof(TradeVol);
+	for (int i = 0; i < nDataCount; ++i)
+	{
+		if (m_TradeVolData.empty() || m_TradeVolData.back().nDate != pPriceVol[i].nDate)
+			m_TradeVolData.emplace_back(pPriceVol[i]);
+		else
+			m_TradeVolData.back() = pPriceVol[i];
+
+	}
+	if(m_pKlinePic->GetBigVolDiffState())
+		::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+
+}
+
+void SOUI::CWorkWnd::OnUpdateHisTradeVol(int nMsgLength, const char * info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo *)info;
+	int nOffset = sizeof(*pRecvInfo);
+	int nMsgID = *(int*)(info + nOffset);
+	nOffset += sizeof(nMsgID);
+	int nSize = pRecvInfo->SrcDataSize / sizeof(TradeVol);
+	int nGroup = pRecvInfo->Group;
+	int nPeriod = pRecvInfo->Period;
+	m_TradeVolData.resize(nSize);
+	memcpy_s(&m_TradeVolData[0], pRecvInfo->SrcDataSize,
+		info + nOffset, pRecvInfo->SrcDataSize);
+	m_bTradeVolGet = TRUE;
+	m_pKlinePic->SetHisVolDiffState(true);
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+
+}
+
 
 void CWorkWnd::OnFenShiEma(int nMsgLength, const char * info)
 {

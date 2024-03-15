@@ -281,6 +281,11 @@ void CWndSynHandler::InitPointInfo()
 
 }
 
+void InitSubPicDrawInfo()
+{
+
+}
+
 void CWndSynHandler::InitDataNameMap()
 {
 	InitRpsDataMap("close", SFI_CloseRps520, SFI_CloseRps520L1, SFI_CloseRps520L2);
@@ -499,46 +504,46 @@ int CWndSynHandler::GetMarket(SStringA stockID, SStringA oldStockID, int nGroup)
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
-int CWndSynHandler::GetHisKline(SStringA stockID, int nPeriod, int nGroup)
+int CWndSynHandler::GetHisData(SStringA stockID, int nPeriod, int nGroup,int nMsgID)
 {
 	SendInfo info = { 0 };
-	info.MsgType = SendType_HisPeriodKline;
+	info.MsgType = nMsgID;
 	info.Group = nGroup;
 	info.Period = nPeriod;
 	strcpy_s(info.str, stockID);
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
-int CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
-{
-	SendInfo info = { 0 };
-	info.MsgType = SendType_HisCallAction;
-	info.Group = nGroup;
-	info.Period = nPeriod;
-	strcpy_s(info.str, stockID);
-	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
-}
-
-int CWndSynHandler::GetHisTFBase(SStringA stockID, int nPeriod, int nGroup)
-{
-	SendInfo info = { 0 };
-	info.MsgType = SendType_HisTFBase;
-	info.Group = nGroup;
-	info.Period = nPeriod;
-	strcpy_s(info.str, stockID);
-	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
-}
-
-int CWndSynHandler::GetLpPriceVol(SStringA stockID, int nPeriod, int nDate)
-{
-	SendLpDInfo info = { 0 };
-	info.MsgType = SendType_LpPriceVol;
-	info.PeriodType = nPeriod;
-	info.Date = nDate;
-	strcpy_s(info.StockID, stockID);
-	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
-}
-
+//int CWndSynHandler::GetHisCallAction(SStringA stockID, int nPeriod, int nGroup)
+//{
+//	SendInfo info = { 0 };
+//	info.MsgType = SendType_HisCallAction;
+//	info.Group = nGroup;
+//	info.Period = nPeriod;
+//	strcpy_s(info.str, stockID);
+//	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+//}
+//
+//int CWndSynHandler::GetHisTFBase(SStringA stockID, int nPeriod, int nGroup)
+//{
+//	SendInfo info = { 0 };
+//	info.MsgType = SendType_HisTFBase;
+//	info.Group = nGroup;
+//	info.Period = nPeriod;
+//	strcpy_s(info.str, stockID);
+//	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+//}
+//
+//int CWndSynHandler::GetLpPriceVol(SStringA stockID, int nPeriod, int nDate)
+//{
+//	SendLpDInfo info = { 0 };
+//	info.MsgType = SendType_LpPriceVol;
+//	info.PeriodType = nPeriod;
+//	info.Date = nDate;
+//	strcpy_s(info.StockID, stockID);
+//	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+//}
+//
 
 void CWndSynHandler::InitDataHandleMap()
 {
@@ -607,6 +612,10 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgRTPriceVol;
 	m_netHandleMap[RecvMsg_LpPriceVol]
 		= &CWndSynHandler::OnMsgLpPriceVol;
+	m_netHandleMap[RecvMsg_RTTradeVol]
+		= &CWndSynHandler::OnMsgRTTradeVol;
+	m_netHandleMap[RecvMsg_HisTradeVol]
+		= &CWndSynHandler::OnMsgHisTradeVol;
 
 	m_netHandleMap[TradeRecvMsg_Register]
 		= &CWndSynHandler::OnMsgAccountRegister;
@@ -681,6 +690,12 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnRTPriceVol;
 	m_synHandleMap[Syn_LpPriceVol]
 		= &CWndSynHandler::OnLpPriceVol;
+	m_synHandleMap[Syn_GetTradeVol]
+		= &CWndSynHandler::OnGetTradeVol;
+	m_synHandleMap[Syn_RTTradeVol]
+		= &CWndSynHandler::OnRTTradeVol;
+	m_synHandleMap[Syn_HisTradeVol]
+		= &CWndSynHandler::OnHisTradeVol;
 
 	m_synHandleMap[Syn_GetTradeMarket]
 		= &CWndSynHandler::OnGetTradeMarket;
@@ -1495,6 +1510,29 @@ void CWndSynHandler::OnMsgLpPriceVol(ReceiveInfo & recvInfo)
 
 }
 
+void CWndSynHandler::OnMsgRTTradeVol(ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_RTTradeVol, buffer, recvInfo.DataSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgHisTradeVol(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisTradeVol, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnMsgAccountRegister(ReceiveInfo & recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
@@ -1885,7 +1923,7 @@ void CWndSynHandler::OnGetMarket(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetKline(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	int nID = GetHisKline(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,SendType_HisPeriodKline);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
@@ -2242,7 +2280,7 @@ void CWndSynHandler::OnHisCallAction(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetCallAction(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	int nID = GetHisCallAction(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,SendType_HisCallAction);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
@@ -2274,7 +2312,7 @@ void CWndSynHandler::OnHisTFBase(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetHisTFBase(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	int nID = GetHisTFBase(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group);
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group, SendType_HisTFBase);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 
@@ -2344,8 +2382,62 @@ void CWndSynHandler::OnReLogin(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetLpPriceVol(int nMsgLength, const char * info)
 {
 	LpDataGetInfo *pDgInfo = (LpDataGetInfo *)info;
-	GetLpPriceVol(pDgInfo->StockID, pDgInfo->PeriodType, pDgInfo->Date);
+	GetHisData(pDgInfo->StockID, pDgInfo->PeriodType, pDgInfo->Date, SendType_LpPriceVol);
 
+}
+
+void CWndSynHandler::OnGetTradeVol(int nMsgLength, const char * info)
+{
+	DataGetInfo *pDgInfo = (DataGetInfo *)info;
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,SendType_HisTradeVol);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
+
+}
+
+void CWndSynHandler::OnRTTradeVol(int nMsgLength, const char * info)
+{
+	SStringA strStock = ((TradeVol*)info)[0].SecurityID;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_RTTradeVol,
+				info, nMsgLength);
+	}
+
+}
+
+void CWndSynHandler::OnHisTradeVol(int nMsgLength, const char * info)
+{
+
+	{
+		ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+		SStringA strStock = pRecvInfo->Message;
+		int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+		for (auto &it : m_SubWndGetInfoMap)
+		{
+			auto &hWnd = it.first;
+			HWND hParWnd = m_hSubWndMap[hWnd];
+			if (it.second.count(nMsgID))
+			{
+				int nNewSize = sizeof(HWND) + nMsgLength;
+				char* msgWithHandle = new char[nNewSize];
+				memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+				int nOffset = sizeof(HWND);
+				memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+				SendMsg(m_hWndMap[hParWnd], Syn_HisTradeVol,
+					msgWithHandle, nNewSize);
+				delete[]msgWithHandle;
+				break;
+
+
+			}
+		}
+
+	}
 }
 
 void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char * info)

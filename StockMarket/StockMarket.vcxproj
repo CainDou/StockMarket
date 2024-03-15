@@ -251,6 +251,7 @@
     <ClCompile Include="SKlineTip.cpp" />
     <ClCompile Include="SPriceVolPic.cpp" />
     <ClCompile Include="SSpinButtonCtrlEx.cpp" />
+    <ClCompile Include="SSubTarget.cpp" />
     <ClCompile Include="SSubTargetPic.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -319,6 +320,7 @@
     <ClInclude Include="SKlineTip.h" />
     <ClInclude Include="SPriceVolPic.h" />
     <ClInclude Include="SSpinButtonCtrlEx.h" />
+    <ClInclude Include="SSubTarget.h" />
     <ClInclude Include="SSubTargetPic.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="STradeInfoPic.h" />

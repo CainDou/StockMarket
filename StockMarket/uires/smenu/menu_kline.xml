@@ -24,6 +24,8 @@
   <sep/>
   <item id="205" check="0">MACD</item>
   <sep/>
+  <item id="233" check="0">大单成交差</item>
+  <sep/>
   <item   text="打分数据窗口" id="206"  contextHelpId="2">
     <item id="210"  check="0">0</item>
     <item id="211"  check="0">1</item>
@@ -44,6 +46,7 @@
     <item id="222">成交额MA参数</item>
     <item id="226">集竞成交量MA参数</item>
     <item id="227">集竞成交额MA参数</item>
+    <item id="234">大单成交差MA参数</item>
   </item>
   <sep/>
   <item id="200" >返回</item>

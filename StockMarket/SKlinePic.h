@@ -4,12 +4,13 @@
 #pragma once
 #include <core/swnd.h>
 #include "SKlineTip.h"
-
+#include <memory>
 namespace SOUI
 {
 	class CDealList;
 	class CPriceList;
 	class SSubTargetPic;
+	class SSubTarget;
 
 	class SKlinePic : public SWindow
 	{
@@ -46,20 +47,21 @@ namespace SOUI
 			vector<BOOL> bRightVec,
 			vector<SStringA> dataNameVec, SStringA StockID,
 			SStringA StockName);
-		void		ReSetSubPicData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
+		//void		ReSetSubPicData(int nDataCount, vector<CoreData>* data[], vector<BOOL>& bRightVec);
 		void		SetParentHwnd(HWND hParWnd);
 		void		SetTodayMarketState(bool bReady);
 		void		SetHisKlineState(bool bReady);
 		void		SetHisPointState(bool bReady);
 		void		SetHisCAInfoState(bool bReady);
 		void		SetTFMarketState(bool bReady);
+		void		SetHisVolDiffState(bool bReady);
 
 		bool		GetDataReadyState();
 		void        ClearTip();
 		//LRESULT		OnMsg(UINT uMsg, WPARAM wp, LPARAM lp);
 		void		SetRpsGroup(RpsGroup rg);
 		void		SetCaInfoData(vector<CAInfo>* pInfoVec);
-
+		void		SetTradeVolData(vector<TradeVol>*pDataVec);
 		void		SetRehabInfo(vector<RehabInfo>& rehabVec);
 		void		DataProc();
 		void		UpdateData();
@@ -68,13 +70,14 @@ namespace SOUI
 		void		ReProcMAData(eMaType maType);
 		void		ReProcMacdData();
 		void		ReProcBandData();
-		void		ChangePeriod(int nPeriod, BOOL bNeedReCalc); 
+		void		ChangePeriod(int nPeriod, BOOL bNeedReCalc);
 		bool		GetDealState() const;
 		bool		GetVolumeState() const;
 		bool		GetAmountState() const;
 		bool		GetCAVolState() const;
 		bool		GetCAAmoState() const;
 		bool		GetMacdState() const;
+		bool		GetBigVolDiffState() const;
 		//bool		GetRpsState(int nWndNum) const;
 		bool		GetMaState() const;
 		bool		GetBandState() const;
@@ -84,6 +87,7 @@ namespace SOUI
 		void		SetCAVolState(bool bRevesered = true, bool bState = false);
 		void		SetCAAmoState(bool bRevesered = true, bool bState = false);
 		void		SetMacdState(bool bRevesered = true, bool bState = false);
+		void		SetBigVolDiffState(bool bRevesered = true, bool bState = false);
 		//void		SetRpsState(int nWndNum,
 		//			bool bRevesered = true, bool bState = false);
 		void		SetMaState(bool bRevesered = true, bool bState = false);
@@ -113,11 +117,11 @@ namespace SOUI
 		void		OnPaint(IRenderTarget *pRT);
 		void		DrawArrow(IRenderTarget * pRT);
 		void		DrawVolAmoArrow(IRenderTarget * pRT, CRect& rc, int volAmoType);
-		void		DrawMacdArrow(IRenderTarget * pRT, CRect& rc);
+		void		DrawMacdArrow(IRenderTarget * pRT, CRect& rc, int nPicType);
 		void		DrawTickFlowArrow(IRenderTarget * pRT, CRect& rc);
 		void		DrawPrice(IRenderTarget * pRT);
 		void		DrawVolAmoPrice(IRenderTarget * pRT, CRect& rc, int volAmoType);
-		void		DrawMacdPrice(IRenderTarget * pRT, CRect& rc);
+		void		DrawMacdPrice(IRenderTarget * pRT, CRect& rc,int nPicType);
 		void		DrawTickFlowPrice(IRenderTarget * pRT, CRect& rc);
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
 		void		DrawTime(IRenderTarget * pRT, BOOL bFromOnPaint = FALSE);	//画时间纵轴
@@ -129,6 +133,8 @@ namespace SOUI
 			double data, bool bAmo, int nX, int nShowPos);		//画附图vol
 		void		DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
 			double data, bool bAmo, int nX, int nShowPos);		//画附图vol
+		void		DrawVolDiffData(IRenderTarget * pRT, vector<vector<CPoint>>& VolDiffSumLine,
+			int nShowPos, int nX);		//画附图vol
 		void		DrawMacdData(IRenderTarget * pRT, vector<CPoint>&DIFLine,
 			vector<CPoint>&DEALine, int nShowPos, int nX);
 		void		DrawTickFlow(IRenderTarget * pRT, vector<vector<CPoint>>& TFLine, int nShowPos, int nX);
@@ -137,6 +143,7 @@ namespace SOUI
 		void		DrawMainUpperMA(IRenderTarget *pRT, int nPos);
 		void		DrawVolAmoUpperMA(IRenderTarget *pRT, int nPos);
 		void		DrawCAVolAmoUpperMA(IRenderTarget *pRT, int nPos);
+		void		DrawVolDiffUpperInfo(IRenderTarget *pRT, int nPos);
 		void		DrawMacdUpperMarket(IRenderTarget *pRT, int nPos);
 		void		DrawTFDataUpperMarket(IRenderTarget *pRT, int nPos);
 		void		DrawMainUpperBand(IRenderTarget *pRT, int nPos);
@@ -171,6 +178,10 @@ namespace SOUI
 		void		GetCallActionMaxDiff();		//判断副图坐标最大最小值和k线条数
 		int			GetCallActionYPos(double fDiff, bool bAmo = false);	//获得附图y位置
 		SStringW	GetCallActionYPrice(int nY, bool bAmo = false);		//获得附图y位置价格
+		void		GetVolDiffMaxDiff();		//判断副图坐标最大最小值和k线条数
+		int			GetVolDiffYPos(double fDiff);	//获得附图y位置
+		SStringW	GetVolDiffYPrice(int nY);		//获得附图y位置价格
+
 		void		GetTFDataMaxDiff();
 		int			GetTFDataMaxYPos(double fDiff);	//获得附图y位置
 		SStringW	GetTFDataMaxYPrice(int nY);		//获得附图y位置价格
@@ -221,10 +232,18 @@ namespace SOUI
 		void CAVolMAProc(int nCount);
 		void CAAmoMAProc(int nCount);
 
+		template <typename a, typename b>
+		void SumProc(vector<a>& sumArr, vector<b>&  srcDataArr, int nPos, int nCount);
+
+		template <typename a, typename b>
+		void EmaProc(vector<a>& emaArr, vector<b>&  srcDataArr, int nPos, int nCount);
+
+
 		void BandDataUpdate();
 		void MACDDataUpdate();
-		int  ProcBandTargetData(int nPos, Band_t *BandData);
-		int	 ProcMACDData(int nPos, MACDData_t  *MacdData);
+		void BigVolDiffDataUpdate();
+		int  ProcBandTargetData(int nPos, std::unique_ptr<Band_t>& BandData);
+		int	 ProcMACDData(int nPos, std::unique_ptr<MACDData_t>& MacdData);
 
 		void HisTFBaseProc(int nCount, int nDataPos);
 		void RTTFMarketProc(int nCount, int nDataPos);
@@ -246,14 +265,16 @@ namespace SOUI
 
 		//数据
 	protected:
-		AllKPIC_INFO *m_pAll;
-		MACDData_t  *m_pMacdData;
-		TFData  *m_pTFData;
-		Band_t		*m_pBandData;
+		std::unique_ptr<AllKPIC_INFO> m_pAll;
+		std::unique_ptr<MACDData_t> m_pMacdData;
+		std::unique_ptr<TFData>  m_pTFData;
+		std::unique_ptr<VolDiffData> m_pVolDiffData;
+		std::unique_ptr<Band_t>		m_pBandData;
 		size_t			m_nUsedTickCount;
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
 		vector<CAInfo>* m_pCAInfo;
+		vector<TradeVol>*m_pTradeVol;
 		vector<vector<double>> m_CAVolMa;
 		vector<vector<double>> m_CAAmoMa;
 		map<int, vector<KlineType>> *m_pHisKlineMap;
@@ -274,16 +295,18 @@ namespace SOUI
 		double m_fCAAmoMin;
 		int m_nCACalcCount;
 		int m_nTFCalcCount;
+		int m_nVolDiffCalcCount;
 		map<uint64_t, int>m_DataTimeMap;
 		map<int, int>m_CADataPosMap;
+		map<int, int>m_VolDiffPosMap;
 		set<int>m_TFDataSet;
 		int		m_nTFDataType;
 		//调用类
 	protected:
-		CPriceList* m_pPriceList;
-		CDealList*  m_pDealList;
-		SKlineTip*  m_pTip;
-		SSubTargetPic**	m_ppSubPic;
+		std::unique_ptr<CPriceList> m_pPriceList;
+		std::unique_ptr<CDealList>  m_pDealList;
+		std::unique_ptr<SKlineTip>  m_pTip;
+		vector<std::unique_ptr<SSubTargetPic>>	m_pSubPicVec;
 		int m_nSubPicNum;
 		int	m_nChangeNum;
 
@@ -296,6 +319,7 @@ namespace SOUI
 		int			m_nAmoMaPara[MAX_MA_COUNT];
 		int			m_nCAVolMaPara[MAX_MA_COUNT];
 		int			m_nCAAmoMaPara[MAX_MA_COUNT];
+		int			m_nVolDiffSumPara[MAX_MA_COUNT];
 		int			m_nMACDPara[3];
 		bool		m_bDataInited;
 		int			m_nKWidth;		//两线之间的宽度
@@ -331,11 +355,13 @@ namespace SOUI
 		bool		m_bHisPointReady;
 		bool		m_bHisCAInfoReady;
 		bool		m_bHisTFBaseReady;
+		bool		m_bHisVolDiffReady;
 		bool		m_bShowCAVol;
 		bool		m_bShowCAAmo;
 		bool		m_bHalfPrice;
 		bool		m_bUseTFBaseData;
 		bool		m_bShowABSRatio;
+		bool		m_bShowVolDiff;
 
 		//绘图参数
 	protected:
@@ -345,6 +371,7 @@ namespace SOUI
 		CRect		m_rcCAVol;		//集合竞价图形
 		CRect       m_rcMACD;		//下框2坐标，指标2
 		CRect		m_rcTFData;		//订单流图形
+		CRect		m_rcVolDiff;
 		CRect		m_rcImage;
 		CPoint		m_preMovePoint;
 		CAutoRefPtr<IFont> m_pFont12;
@@ -384,6 +411,11 @@ namespace SOUI
 		m_pCAInfo = pInfoVec;
 	}
 
+	inline void SKlinePic::SetTradeVolData(vector<TradeVol>* pDataVec)
+	{
+		m_pTradeVol = pDataVec;
+	}
+
 	inline void SKlinePic::SetRehabInfo(vector<RehabInfo>& rehabVec)
 	{
 		m_RehabInfo = rehabVec;
@@ -412,6 +444,10 @@ namespace SOUI
 	inline bool SKlinePic::GetMacdState() const
 	{
 		return m_bShowMacd;
+	}
+	inline bool SKlinePic::GetBigVolDiffState() const
+	{
+		return m_bShowVolDiff;
 	}
 	//inline bool SKlinePic::GetRpsState(int nWndNum) const
 	//{
@@ -467,6 +503,13 @@ namespace SOUI
 		else m_bShowMacd = bState;
 		if (!m_bShowMacd) m_rcMACD.SetRectEmpty();
 	}
+	inline void SKlinePic::SetBigVolDiffState(bool bRevesered, bool bState)
+	{
+		if (bRevesered) m_bShowVolDiff = !m_bShowVolDiff;
+		else m_bShowVolDiff = bState;
+		if (!m_bShowVolDiff) m_rcVolDiff.SetRectEmpty();
+
+	}
 	//inline void SKlinePic::SetRpsState(int nWndNum,bool bRevesered, bool bState)
 	//{
 	//	if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
@@ -489,6 +532,7 @@ namespace SOUI
 		else if (maType == eMa_Amount)memcpy_s(m_nAmoMaPara, sizeof(m_nAmoMaPara), maPara, sizeof(m_nAmoMaPara));
 		else if (maType == eMa_CAVol)memcpy_s(m_nCAVolMaPara, sizeof(m_nVolMaPara), maPara, sizeof(m_nCAVolMaPara));
 		else if (maType == eMa_CAAmo)memcpy_s(m_nCAAmoMaPara, sizeof(m_nAmoMaPara), maPara, sizeof(m_nCAAmoMaPara));
+		else if (maType == eMa_VolDiff)memcpy_s(m_nVolDiffSumPara, sizeof(m_nVolDiffSumPara), maPara, sizeof(m_nVolDiffSumPara));
 
 	}
 	inline void SKlinePic::SetMacdPara(int MacdPara[])
@@ -505,6 +549,7 @@ namespace SOUI
 		if (maType == eMa_Amount)return m_nAmoMaPara;
 		if (maType == eMa_CAVol)return m_nCAVolMaPara;
 		if (maType == eMa_CAAmo)return m_nCAAmoMaPara;
+		if (maType == eMa_VolDiff)return m_nVolDiffSumPara;
 		return m_nMAPara;
 	}
 
@@ -549,6 +594,44 @@ namespace SOUI
 	inline int SKlinePic::GetTickFlowDataType() const
 	{
 		return m_nTFDataType;
+	}
+	template<typename a, typename b>
+	inline void SKlinePic::SumProc(vector<a>& sumArr, vector<b>&  srcDataArr, int nPos, int nCount)
+	{
+		a sum = 0;
+		if (nCount > 0 && nPos >= nCount)
+		{
+			for (int j = nPos - 1; j > nPos - nCount - 1; j--)
+				sum += srcDataArr[j];
+			//sum /= nCount;
+		}
+		if (sumArr.size() >= nPos)
+			sumArr[nPos - 1] = sum;
+		else
+			sumArr.emplace_back(sum);
+
+	}
+	template<typename a, typename b>
+	inline void SKlinePic::EmaProc(vector<a>& emaArr, vector<b>& srcDataArr, int nPos, int nCount)
+	{
+		a ema = 0;
+		if (nPos - 1 == 0)
+			ema = srcDataArr[nPos -1];
+		else
+		{
+			ema = (emaArr[nPos - 2] * (nCount - 1) + srcDataArr[nPos - 1] * 2) / (nCount + 1);
+		}
+		//if (nCount > 0 && nPos >= nCount)
+		//{
+		//	for (int j = nPos - 1; j > nPos - nCount - 1; j--)
+		//		sum += srcDataArr[j];
+		//	sum /= nCount;
+		//}
+		if (emaArr.size() >= nPos)
+			emaArr[nPos - 1] = ema;
+		else
+			emaArr.emplace_back(ema);
+
 	}
 }
 #endif // !_SKLINE_PIC

@@ -36,6 +36,9 @@ protected:
 	void OnTodayTFMarket(int nMsgLength, const char* info);
 	void OnRTTFMarket(int nMsgLength, const char* info);
 	void OnRTPriceVol(int nMsgLength, const char* info);
+	void OnGetTradeVol(int nMsgLength, const char* info);
+	void OnRTTradeVol(int nMsgLength, const char* info);
+	void OnHisTradeVol(int nMsgLength, const char* info);
 protected:
 	HWND m_hWnd;
 	unordered_map<int, PDATAHANDLEFUNC>m_MsgHandleMap;

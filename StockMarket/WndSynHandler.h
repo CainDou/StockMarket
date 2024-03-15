@@ -52,6 +52,7 @@ protected:
 	void InitCommonSetting();
 	void InitNetConfig();
 	void InitPointInfo();
+	void InitSubPicDrawInfo();
 	void InitDataNameMap();
 	void InitRpsDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start);
 	void InitSecDataMap(string strDataName, int nMarketStart, int nL1Start, int nL2Start);
@@ -60,10 +61,10 @@ protected:
 protected:
 	int GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo);
 	int GetMarket(SStringA stockID, SStringA oldStockID, int nGroup);
-	int GetHisKline(SStringA stockID, int nPeriod, int nGroup);
-	int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
-	int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
-	int GetLpPriceVol(SStringA stockID, int nPeriod, int nDate);
+	int GetHisData(SStringA stockID, int nPeriod, int nGroup,int nMsgID);
+	//int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
+	//int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
+	//int GetLpPriceVol(SStringA stockID, int nPeriod, int nDate);
 	void InitDataHandleMap();
 	void InitNetHandleMap();
 	void InitSynHandleMap();
@@ -121,6 +122,8 @@ protected:
 	void OnMsgRTFilterData(ReceiveInfo &recvInfo);
 	void OnMsgRTPriceVol(ReceiveInfo &recvInfo);
 	void OnMsgLpPriceVol(ReceiveInfo &recvInfo);
+	void OnMsgRTTradeVol(ReceiveInfo &recvInfo);
+	void OnMsgHisTradeVol(ReceiveInfo &recvInfo);
 
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
@@ -171,6 +174,10 @@ protected:
 	void OnGetTradeMarket(int nMsgLength, const char* info);
 	void OnReLogin(int nMsgLength, const char* info);
 	void OnGetLpPriceVol(int nMsgLength, const char* info);
+	void OnGetTradeVol(int nMsgLength, const char* info);
+	void OnRTTradeVol(int nMsgLength, const char* info);
+	void OnHisTradeVol(int nMsgLength, const char* info);
+
 	//交易信息处理
 protected:
 	void PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info);
@@ -217,7 +224,7 @@ protected:
 	bool			m_bTodayInit;
 	bool			m_bFirstData;
 	bool			m_bCaUpdate;
-	map<ePointType, int> m_PointGetMsg;
+	map<eSubTargetType, int> m_PointGetMsg;
 
 protected:
 	thread tLogin;

@@ -409,7 +409,7 @@ HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
 		if (filePath)
 		{
 			PIDLIST_ABSOLUTE pidl;
-			hr = ::SHParseDisplayName(filePath, NULL,&pidl, SFGAO_FOLDER, NULL);
+			hr = ::SHParseDisplayName(filePath, NULL, &pidl, SFGAO_FOLDER, NULL);
 			if (SUCCEEDED(hr))
 			{
 				IShellItem* psi;
@@ -471,7 +471,7 @@ HRESULT SaveFile(LPCTSTR DefaultFileName, LPTSTR FileName,
 	return hr;
 }
 
-void GetInitPara(CIniFile & ini, InitPara & para,SStringA strSection)
+void GetInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 {
 
 	int CloseMAPara[] = { 5,10,20,60,0,0 };
@@ -538,10 +538,10 @@ void GetInitPara(CIniFile & ini, InitPara & para,SStringA strSection)
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nAmoMaPara[i] = ini.GetIntA(strSection,
 			strKey.Format("AmoMAPara%d", i + 1), VolAmoMAPara[i]);
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nCAVolMaPara[i] = ini.GetIntA(strSection,
 			strKey.Format("CAVolMAPara%d", i + 1), VolAmoMAPara[i]);
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nCAAmoMaPara[i] = ini.GetIntA(strSection,
 			strKey.Format("CAAmoMAPara%d", i + 1), VolAmoMAPara[i]);
 
@@ -585,6 +585,11 @@ void GetInitPara(CIniFile & ini, InitPara & para,SStringA strSection)
 	para.bKlineUseTickFlowData = ini.GetIntA(strSection, "KlineUseTickFlowData", 0);
 	para.nKlineTickFlowDataType = ini.GetIntA(strSection, "KlineTickFlowDataType", 0);
 
+
+	para.bShowKlineVolDiff = ini.GetIntA(strSection, "ShowKlineVolDiff", 0) == 0 ? false : true;
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		para.nVolDiffSumPara[i] = ini.GetIntA(strSection,
+			strKey.Format("VolDiffMAPara%d", i + 1), VolAmoMAPara[i]);
 }
 
 void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
@@ -622,9 +627,9 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 		ini.WriteIntA(strSection, strKey.Format("VolMAPara%d", i + 1), para.nVolMaPara[i]);
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		ini.WriteIntA(strSection, strKey.Format("AmoMAPara%d", i + 1), para.nAmoMaPara[i]);
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		ini.WriteIntA(strSection, strKey.Format("CAVolMAPara%d", i + 1), para.nCAVolMaPara[i]);
-	for (int i = 0; i<MAX_MA_COUNT; ++i)
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		ini.WriteIntA(strSection, strKey.Format("CAAmoMAPara%d", i + 1), para.nCAAmoMaPara[i]);
 
 	ini.WriteIntA(strSection, "Jiange", para.nJiange);
@@ -652,6 +657,10 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 
 	ini.WriteIntA(strSection, "KlineUseTickFlowData", para.bKlineUseTickFlowData);
 	ini.WriteIntA(strSection, "KlineTickFlowDataType", para.nKlineTickFlowDataType);
+
+	ini.WriteIntA(strSection, "ShowKlineVolDiff", para.bShowKlineVolDiff);
+	for (int i = 0; i < MAX_MA_COUNT; ++i)
+		ini.WriteIntA(strSection, strKey.Format("VolDiffMAPara%d", i + 1), para.nVolDiffSumPara[i]);
 
 }
 
@@ -682,7 +691,7 @@ bool _StockFilterPara::operator<(const _StockFilterPara & other) const
 
 bool _StockFilterPara::operator==(const _StockFilterPara & other) const
 {
-	return memcmp(this,&other,sizeof(_StockFilterPara)) == 0;
+	return memcmp(this, &other, sizeof(_StockFilterPara)) == 0;
 }
 
 bool _HisStockFilterPara::operator<(const _HisStockFilterPara & other) const
@@ -709,7 +718,7 @@ _TradeDouble::_TradeDouble(long long llData, long long llDigital)
 
 double _TradeDouble::GetDouble() const
 {
-	return data / pow(10,digital);
+	return data / pow(10, digital);
 }
 
 _TradeDouble _TradeDouble::operator+(const _TradeDouble & other)

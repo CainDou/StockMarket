@@ -27,6 +27,7 @@ void CDlgMaPara::InitConfigName()
 	m_MaConfigName[eMa_Amount] = "Amo";
 	m_MaConfigName[eMa_CAVol] = "CAVol";
 	m_MaConfigName[eMa_CAAmo] = "CAAmo";
+	m_MaConfigName[eMa_VolDiff] = "VolDiff";
 
 }
 

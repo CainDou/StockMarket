@@ -122,6 +122,8 @@ enum RecvMsgType
 	RecvMsg_RTFilter,
 	RecvMsg_RTPriceVol,
 	RecvMsg_LpPriceVol,
+	RecvMsg_RTTradeVol,
+	RecvMsg_HisTradeVol
 };
 
 enum SendMsgType
@@ -139,6 +141,7 @@ enum SendMsgType
 	SendType_HisTFBase, 
 	SendType_UnSubIns,
 	SendType_LpPriceVol,
+	SendType_HisTradeVol,
 };
 
 enum ComSendMsgType
@@ -492,6 +495,9 @@ enum SynMsg
 	Syn_TodayTFMarket,
 	Syn_RTTFMarkt,
 	Syn_RTPriceVol,
+	Syn_GetTradeVol,
+	Syn_RTTradeVol,
+	Syn_HisTradeVol,
 	//交易的同步信息
 	Syn_GetTradeMarket,
 	Syn_RTBuyStockMarket,
@@ -549,6 +555,9 @@ enum WorkWndMsg
 	WW_TodayTFMarket,
 	WW_RTTFMarket,
 	WW_RTPriceVol,
+	WW_GetTradeVol,
+	WW_RTTradeVol,
+	WW_HisTradeVol,
 	WW_End,
 };
 
@@ -722,6 +731,14 @@ typedef struct Band
 	double dPreLow1[MAX_BAR_COUNT];
 	double dPreLow2[MAX_BAR_COUNT];
 	double Position[MAX_BAR_COUNT];
+	Band()
+	{
+		ZeroMemory(this, sizeof(*this));
+	}
+	void clear()
+	{
+		ZeroMemory(this, sizeof(*this));
+	}
 }Band_t;
 
 typedef struct BandPara
@@ -745,6 +762,14 @@ typedef struct MACDDataType
 	double MACD[MAX_BAR_COUNT];
 	double fMax;
 	double fMin;
+	MACDDataType()
+	{
+		ZeroMemory(this, sizeof(*this));
+	}
+	void clear()
+	{
+		ZeroMemory(this, sizeof(*this));
+	}
 }MACDData_t;
 
 typedef struct _TFDataType
@@ -766,9 +791,34 @@ typedef struct _TFDataType
 	int		nMinActOrder;
 	double	fMaxAvgVol;
 	double	fMinAvgVol;
-
+	void clear()
+	{
+		ZeroMemory(this, sizeof(*this));
+	}
 }TFData;
 
+typedef struct _VolDiffData
+{
+	vector<int> nVolDiff;
+	vector<int> nOrderDiff;
+	vector<vector<int64_t>> VolDiffSum;
+	vector<vector<int>>		OrderDiffSum;
+	int64_t		nMaxVolDiff;
+	int64_t		nMinVolDiff;
+	int		nMaxOrderDiff;
+	int		nMinOrderDiff;
+	_VolDiffData():nMaxVolDiff(0), nMinVolDiff(0), nMaxOrderDiff(0), nMinOrderDiff(0)
+	{
+
+	}
+	void clear()
+	{
+		ZeroMemory(this, sizeof(*this));
+		VolDiffSum.resize(MAX_MA_COUNT);
+		OrderDiffSum.resize(MAX_MA_COUNT);
+
+	}
+}VolDiffData;
 
 
 typedef struct _KLINE_INFO {
@@ -873,7 +923,7 @@ typedef struct _AllKPIC_INFO {
 	}
 
 	void clear() {
-		ZeroMemory(&data, sizeof(data));
+		ZeroMemory(this, sizeof(*this));
 		ZeroMemory(fMa, sizeof(fMa));
 		fMax = 0;
 		fMin = 0;
@@ -1060,6 +1110,8 @@ enum KlineMenu
 	KM_TFVol,
 	KM_TFOrder,
 	KM_TFAvgVol,
+	KM_VolDiff,
+	KM_VolDiffPara,
 	KM_End,
 };
 
@@ -1474,16 +1526,19 @@ inline double EMA(int nCount, double preEMA, double data)
 	return preEMA*(nCount - 1) / (nCount + 1) + data * 2 / (nCount + 1);
 }
 
-enum ePointType
+enum eSubTargetType
 {
 	eRpsPoint = 0,
 	eSecPoint,
+	eFSVolAmo,
+	eKlineVolAmo,
+	eMACD,
 };
 
 typedef struct _UsedPointInfo
 {
 	int overallType;
-	ePointType type;
+	eSubTargetType type;
 	SStringA srcDataName;
 	SStringA dataInRange;		//打分数据所在的范围
 	SStringA IndyRange;			//行业范围
@@ -1552,7 +1607,7 @@ enum eCAPointDataType
 typedef struct _ExDataDetInfo :public DataGetInfo
 {
 	int nAskGroup;	//请求的窗口周期
-	ePointType Type;
+	eSubTargetType Type;
 	char* exMsg;
 }ExDataGetInfo;
 
@@ -1601,6 +1656,8 @@ typedef struct InitPara
 	bool UseHisStockFilter;
 	bool bKlineUseTickFlowData;
 	int	 nKlineTickFlowDataType;
+	bool bShowKlineVolDiff;
+	int	 nVolDiffSumPara[MAX_MA_COUNT];
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
 	SStringA strFilterName;
@@ -1619,7 +1676,8 @@ typedef struct InitPara
 		ListShowST(true), ListShowSBM(true),
 		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
 		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), 
-		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName("")
+		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName(""),
+		bShowKlineVolDiff(false), nVolDiffSumPara{5,20}
 	{}
 }InitPara_t;
 
@@ -1666,6 +1724,7 @@ enum eMaType
 	eMa_Amount,
 	eMa_CAVol,
 	eMa_CAAmo,
+	eMa_VolDiff,
 };
 
 typedef struct _sReHab
@@ -1846,6 +1905,8 @@ enum eFigureColorType
 	eFCT_Default,//默认颜色
 	eFCT_PriceJudge,//根据价格判定
 };
+
+
 
 enum eTFDataType
 {
@@ -2349,6 +2410,36 @@ typedef struct _priceVol
 	int nPasSmallSellOrder;
 }PriceVolInfo;
 
+typedef struct _tradeVolInfo
+{
+	SecurityID SecurityID;
+	int nDate;
+	int nActBigBuyVol;
+	int nActBigBuyOrder;
+	int nActMidBuyVol;
+	int nActMidBuyOrder;
+	int nActSmallBuyVol;
+	int nActSmallBuyOrder;
+	int nActBigSellVol;
+	int nActBigSellOrder;
+	int nActMidSellVol;
+	int nActMidSellOrder;
+	int nActSmallSellVol;
+	int nActSmallSellOrder;
+	int nPasBigBuyVol;
+	int nPasBigBuyOrder;
+	int nPasMidBuyVol;
+	int nPasMidBuyOrder;
+	int nPasSmallBuyVol;
+	int nPasSmallBuyOrder;
+	int nPasBigSellVol;
+	int nPasBigSellOrder;
+	int nPasMidSellVol;
+	int nPasMidSellOrder;
+	int nPasSmallSellVol;
+	int nPasSmallSellOrder;
+}TradeVol;
+
 typedef struct _PeridoPriceVol
 {
 	SecurityID SecurityID;
@@ -2444,4 +2535,24 @@ enum eLpCapShowDiffType
 	eLPCSDT_Overlapping,
 	eLPCSDT_Deflate,
 
+};
+
+
+typedef struct _SubPicDrawInfo
+{
+	int TargetType;
+	int nDataCount;
+	vector<eDataFigureType>figureType;
+	vector<eFigureColorType>colorType;
+	vector<SStringA> dataName;
+	vector<COLORREF> dataColor;
+	vector<int> CalcPara;
+	vector<BOOL>bRight;
+}SubPicDrawInfo;
+
+
+enum eMacdLikePic
+{
+	eMLP_Macd,
+	eMLP_VolDiff,
 };

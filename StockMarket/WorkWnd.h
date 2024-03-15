@@ -195,6 +195,9 @@ namespace SOUI
 		void OnUpdateTodayTFMarket(int nMsgLength, const char* info);
 		void OnUpdateRTTFMarket(int nMsgLength, const char* info);
 		void OnUpdateRTPriceVol(int nMsgLength, const char* info);
+		void OnUpdateRTTradeVol(int nMsgLength, const char* info);
+		void OnUpdateHisTradeVol(int nMsgLength, const char* info);
+
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -309,7 +312,7 @@ namespace SOUI
 		BOOL		m_bUseStockFilter;
 		BOOL		m_bUseHisStockFilter;
 		//vector<vector<SStringA>> m_SubPicShowNameVec;
-		map< ePointType, map<SStringA, vector<SStringA>>>m_SubPicShowNameVec;
+		map< eSubTargetType, map<SStringA, vector<SStringA>>>m_SubPicShowNameVec;
 		map<int,SStringA>m_ListPosMap;
 		map<int, SStringA>m_MouseWheelMap;
 		map<int, strHash<RtRps>> *m_pListDataMap;
@@ -375,9 +378,11 @@ namespace SOUI
 		map<int, vector<TFBaseMarket>>m_TFBaseMap;
 		map<int, vector<TickFlowMarket>>m_RtTFMarketVec;
 		vector<CAInfo>m_CallAction;
+		vector<TradeVol> m_TradeVolData;
 
 		bool m_bMarketGet;
 		bool m_bCAInfoGet;
+		bool m_bTradeVolGet;
 		map<int, map<SStringA,BOOL>>m_PointGetMap;
 		map<int, map<SStringA, BOOL>>m_L1IndyPointGetMap;
 		map<int, map<SStringA, BOOL>>m_L2IndyPointGetMap;
@@ -385,7 +390,7 @@ namespace SOUI
 		map<int, bool>m_TFBaseGetMap;
 		//map<SStringA,map<int, bool>>m_PointGetMap;
 		//set<ShowPointInfo> m_PointUseMap;
-		map<ePointType, int> m_PointDataCount;
+		map<eSubTargetType, int> m_PointDataCount;
 		eMaType m_MaParaSet;
 	protected:
 		unordered_map<int, PDATAHANDLEFUNC>m_dataHandleMap;

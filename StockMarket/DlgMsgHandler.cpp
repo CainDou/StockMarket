@@ -53,6 +53,8 @@ void CDlgMsgHandler::InitMsgHandleMap()
 		= &CDlgMsgHandler::OnGetCallAction;
 	m_MsgHandleMap[WW_GetHisTFBase]
 		= &CDlgMsgHandler::OnGetHisTFBase;
+	m_MsgHandleMap[WW_GetTradeVol]
+		= &CDlgMsgHandler::OnGetTradeVol;
 
 	m_MsgHandleMap[Syn_Point]
 		= &CDlgMsgHandler::OnUpdatePoint;
@@ -88,7 +90,10 @@ void CDlgMsgHandler::InitMsgHandleMap()
 		= &CDlgMsgHandler::OnRTTFMarket;
 	m_MsgHandleMap[Syn_RTPriceVol]
 		= &CDlgMsgHandler::OnRTPriceVol;
-
+	m_MsgHandleMap[Syn_RTTradeVol]
+		= &CDlgMsgHandler::OnRTTradeVol;
+	m_MsgHandleMap[Syn_HisTradeVol]
+		= &CDlgMsgHandler::OnHisTradeVol;
 
 
 }
@@ -273,6 +278,13 @@ void CDlgMsgHandler::OnGetHisTFBase(int nMsgLength, const char * info)
 	SendMsg(m_SynThreadID, Syn_GetHisTFBase, info, nMsgLength);
 }
 
+void CDlgMsgHandler::OnGetTradeVol(int nMsgLength, const char * info)
+{
+	SendMsg(m_SynThreadID, Syn_GetTradeVol, info, nMsgLength);
+
+}
+
+
 void CDlgMsgHandler::OnTodayTFMarket(int nMsgLength, const char * info)
 {
 	HWND hWnd = *(HWND*)info;
@@ -300,4 +312,23 @@ void CDlgMsgHandler::OnRTPriceVol(int nMsgLength, const char * info)
 		if (m_WndSubMap[i] == strStock)
 			SendMsg(m_WndVec[i]->GetThreadID(), WW_RTPriceVol,
 				info, nMsgLength);
+}
+
+void CDlgMsgHandler::OnRTTradeVol(int nMsgLength, const char * info)
+{
+	SStringA strStock = ((TradeVol*)info)[0].SecurityID;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = 0; i < m_WndVec.size(); ++i)
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_RTTradeVol,
+				info, nMsgLength);
+
+}
+
+void CDlgMsgHandler::OnHisTradeVol(int nMsgLength, const char * info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SendMsg(m_WndVec[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisTradeVol,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
 }
