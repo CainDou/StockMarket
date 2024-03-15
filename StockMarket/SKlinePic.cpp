@@ -2468,7 +2468,7 @@ int SOUI::SKlinePic::GetVolDiffYPos(double fDiff)
 	if (!m_pVolDiffData)
 		return -1;
 	double fPos = m_rcVolDiff.top + (1 - (fDiff / m_pVolDiffData->nMaxVolDiff)) / 2
-		* (m_rcCAVol.Height() - UPPERINFOHEIGHT) + UPPERINFOHEIGHT;
+		* (m_rcVolDiff.Height() - UPPERINFOHEIGHT) + UPPERINFOHEIGHT;
 	int nPos = (int)fPos;
 	return nPos;
 }
