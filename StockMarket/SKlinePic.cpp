@@ -812,15 +812,15 @@ void SOUI::SKlinePic::DrawVolDiffUpperInfo(IRenderTarget * pRT, int nPos)
 				{
 					double fData = m_pVolDiffData->VolDiffSum[i][nDataPos];
 					if (abs(fData) > 1'000'000'000)
-						strMarket.Format(L"MA%d:%.01f亿", m_nVolDiffSumPara[i], fData / 100'000'000);
+						strMarket.Format(L"SUM%d:%.01f亿", m_nVolDiffSumPara[i], fData / 100'000'000);
 					else if (abs(fData) > 100'000'000)
-						strMarket.Format(L"MA%d:%.02f亿", m_nVolDiffSumPara[i], fData / 100'000'000);
+						strMarket.Format(L"SUM%d:%.02f亿", m_nVolDiffSumPara[i], fData / 100'000'000);
 					else if (abs(fData) > 1'000'000)
-						strMarket.Format(L"MA%d:%.0f万", m_nVolDiffSumPara[i], fData / 10000);
+						strMarket.Format(L"SUM%d:%.0f万", m_nVolDiffSumPara[i], fData / 10000);
 					else if (abs(fData) > 10'000)
-						strMarket.Format(L"MA%d:%.02f万", m_nVolDiffSumPara[i], fData / 10000);
+						strMarket.Format(L"SUM%d:%.02f万", m_nVolDiffSumPara[i], fData / 10000);
 					else
-						strMarket.Format(L"MA%d:%.0f", m_nVolDiffSumPara[i], fData);
+						strMarket.Format(L"SUM%d:%.0f", m_nVolDiffSumPara[i], fData);
 
 				}
 				else
