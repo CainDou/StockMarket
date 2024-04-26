@@ -33,6 +33,7 @@ CWndSynHandler::~CWndSynHandler()
 		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 			NULL, LoginMsg_Exit);
 	m_NetClient.Stop();
+	//bExit = true;
 	SendMsg(m_RpsProcThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uTradeMsgThreadID, Msg_Exit, NULL, 0);
@@ -109,6 +110,7 @@ void CWndSynHandler::Run()
 		ResetEvent(g_hEvent);
 		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
+		if (bExit)	exit(0);
 	}
 	SStringW Info = L"登陆成功,开始程序初始化";
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
@@ -359,10 +361,8 @@ unsigned CWndSynHandler::NetHandle(void * para)
 	ReceiveInfo recvInfo;
 	BOOL bNeedConnect = false;
 	//int c = 0;
-	while (true)
+	while (!pMd->bExit)
 	{
-		if (pMd->m_NetClient.GetExitState())
-			return 0;
 		if (pMd->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
 		{
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
@@ -381,6 +381,7 @@ void CWndSynHandler::Login()
 	m_pLoginDlg->SetIPInfo(m_strIPAddr, m_nIPPort);
 	int nRes = m_pLoginDlg->DoModal();
 	bExit = true;
+	SetEvent(g_hEvent);
 	SetEvent(g_hLoginEvent);
 	m_pLoginDlg = nullptr;
 }

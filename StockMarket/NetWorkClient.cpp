@@ -124,6 +124,7 @@ BOOL CNetWorkClient::Stop()
 	{
 		OnConnect(NULL, NULL);
 		WaitForSingleObject(m_hFunc, INFINITE);
+
 		m_hFunc = INVALID_HANDLE_VALUE;
 		m_bRun = FALSE;
 	}

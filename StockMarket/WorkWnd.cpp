@@ -4412,9 +4412,13 @@ void CWorkWnd::ProcHisRpsPointFromMsg(ReceivePointInfo * pRecvInfo,
 {
 
 	int nOffset = 0;
-	int nSize520 = pRecvInfo->FirstDataSize / sizeof(CoreData);
-	int nSize2060 = (pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize) /
-		sizeof(CoreData);
+	int nSize520 = pRecvInfo->TotalDataSize / 2;
+	int nSize2060 = nSize520;
+	int nCount520 = nSize520 / sizeof(CoreData);
+	int nCount2060 = nSize2060 / sizeof(CoreData);
+	//int nSize520 = pRecvInfo->FirstDataSize / sizeof(CoreData);
+	//int nSize2060 = (pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize) /
+	//	sizeof(CoreData);
 	int nGroup = pRecvInfo->Group;
 	int nPeriod = pRecvInfo->Period;
 	//vector<CoreData> PointVec(nSize520);
@@ -4445,9 +4449,9 @@ void CWorkWnd::ProcHisRpsPointFromMsg(ReceivePointInfo * pRecvInfo,
 	nOffset += attMsgSize;
 	SStringA point520Name = strDataName + dataName1 + strRange;
 	auto &Point520Vec = (*pPointData)[nPeriod][point520Name];
-	Point520Vec.resize(nSize520);
-	memcpy_s(&Point520Vec[0], pRecvInfo->FirstDataSize,
-		info + nOffset, pRecvInfo->FirstDataSize);
+	Point520Vec.resize(nCount520);
+	memcpy_s(&Point520Vec[0], nSize520,
+		info + nOffset, nSize520);
 
 	//Point520Vec.insert(Point520Vec.begin(),
 	//	PointVec.begin(), PointVec.end());
@@ -4455,11 +4459,11 @@ void CWorkWnd::ProcHisRpsPointFromMsg(ReceivePointInfo * pRecvInfo,
 	//memcpy_s(&PointVec[0], pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize,
 	//	info + nOffset, pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize);
 	SStringA point2060Name = strDataName + dataName2 + strRange;
-	nOffset += pRecvInfo->FirstDataSize;
+	nOffset += nSize520;
 	auto &Point2060Vec = (*pPointData)[nPeriod][strDataName + dataName2 + strRange];
-	Point2060Vec.resize(nSize2060);
-	memcpy_s(&Point2060Vec[0], pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize,
-		info + nOffset, pRecvInfo->TotalDataSize - pRecvInfo->FirstDataSize);
+	Point2060Vec.resize(nCount2060);
+	memcpy_s(&Point2060Vec[0], nSize2060,
+		info + nOffset, nSize2060);
 	(*pPointGetMap)[nPeriod][point520Name] = TRUE;
 	(*pPointGetMap)[nPeriod][point2060Name] = TRUE;
 

@@ -152,7 +152,7 @@ void SKlinePic::ReSetSubPic(int nNum, vector<ShowPointInfo>& infoVec)
 	if (nNum > m_nSubPicNum)
 	{
 		for (int i = 0; i < m_nSubPicNum; ++i)
-			pTmpSubPicArr[i].swap(pTmpSubPicArr[i]);
+			pTmpSubPicArr[i].swap(m_pSubPicVec[i]);
 		m_pSubPicVec.swap(pTmpSubPicArr);
 		for (int i = m_nSubPicNum; i < nNum; ++i)
 		{
@@ -1335,7 +1335,7 @@ void SKlinePic::HisTFBaseProc(int nCount, int nDataPos)
 {
 	auto &dataVec = m_pHisTFMarket->at(m_nPeriod);
 	auto &TFMarket = dataVec[nCount];
-	if (TFMarket.ActBuyVol*1.0 + TFMarket.ActSellVol == 0)
+	if (TFMarket.ActBuyVol + TFMarket.ActSellVol == 0)
 		m_pTFData->ABSR[nDataPos] = 0;
 	else
 		m_pTFData->ABSR[nDataPos] = (TFMarket.ActBuyVol*1.0 - TFMarket.ActSellVol) /
@@ -1381,7 +1381,7 @@ void SKlinePic::RTTFMarketProc(int nCount, int nDataPos)
 		0 : TFMarket.ABSR;
 	m_pTFData->A2PBSR[nDataPos] = (isnan(TFMarket.A2PBSR) || isinf(TFMarket.A2PBSR)) ?
 		0 : TFMarket.A2PBSR;
-	m_pTFData->A2PBSR[nDataPos] = (isnan(TFMarket.AABSR) || isinf(TFMarket.AABSR)) ?
+	m_pTFData->AABSR[nDataPos] = (isnan(TFMarket.AABSR) || isinf(TFMarket.AABSR)) ?
 		0 : TFMarket.AABSR;
 
 
@@ -3073,7 +3073,7 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 		if (m_bUseTFBaseData)
 		{
-			if (m_TFDataSet.count(i))
+			if (m_TFDataSet.count(m_nFirst + i))
 				DrawTickFlow(pRT, TickFlowLine, i, x);
 		}
 
@@ -4352,6 +4352,10 @@ void SKlinePic::TFDataUpdate()
 		return;
 	if (m_pTFData == nullptr)
 		m_pTFData.reset(new TFData);
+	if (m_pHisTFMarket->count(m_nPeriod) == 0)
+		return;
+	if (m_pRtTfMarket->count(m_nPeriod) == 0)
+		return;
 
 	//if (m_nTFCalcCount == 0)
 	//	ZeroMemory(m_pTFData, sizeof(TFData));

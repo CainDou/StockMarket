@@ -99,7 +99,6 @@ void CDlgLogin::OnClickButtonCancel()
 		loginInfo.loginwnd = m_hWnd;
 		loginInfo.bLogin = false;
 
-		SetEvent(g_hEvent);
 		TraceLog("¹Ø±Õ³ÌÐò");
 		m_pNetClient->Stop();
 		//g_bExit = TRUE;
