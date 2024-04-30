@@ -14,7 +14,7 @@ namespace SOUI
 		void OnClickButtonCancel();
 		void OnClickButtonIDList();
 		void OnInit(EventArgs *e);
-		void SetIPInfo(SStringA strIPAddr, int nIPPort);
+		void SetIPInfo(vector<SStringA> strIPAddr, vector<int> nIPPort);
 		void InitConfig();
 		void SaveConfig();
 		bool OnLbIDLButtonDown(EventArgs *e);
@@ -22,6 +22,7 @@ namespace SOUI
 		void OnBtnChangePsd();
 
 	protected:
+		BOOL ConnectServer();
 		virtual void OnFinalMessage(HWND hWnd);
 		LRESULT  OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 
@@ -48,8 +49,8 @@ namespace SOUI
 		SStringW strID;
 		SStringW strPsd;
 
-		SStringA m_strIPAddr;
-		int m_nIPPort;
+		vector<SStringA> m_strIPAddr;
+		vector<int> m_nIPPort;
 
 		SStatic * m_pLoginTxt;
 		HWND	  m_hParWnd;
@@ -72,7 +73,7 @@ namespace SOUI
 
 	};
 
-	inline void SOUI::CDlgLogin::SetIPInfo(SStringA strIPAddr, int nIPPort)
+	inline void SOUI::CDlgLogin::SetIPInfo(vector<SStringA> strIPAddr, vector<int> nIPPort)
 	{
 		m_strIPAddr = strIPAddr;
 		m_nIPPort = nIPPort;

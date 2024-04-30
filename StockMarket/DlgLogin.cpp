@@ -28,13 +28,11 @@ CDlgLogin::~CDlgLogin()
 
 void CDlgLogin::OnClickButtonLogin()
 {
-	if (!m_pNetClient->GetConnectState())
+
+	if (!ConnectServer())
 	{
-		if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
-		{
-			SMessageBox(m_hWnd, L"连接服务器失败，请稍后再试...", L"提示", MB_OK);
-			return;
-		}
+		SMessageBox(m_hWnd, L"连接服务器失败，请稍后再试...", L"提示", MB_OK);
+		return;
 	}
 	if (m_pEditAccout->GetWindowTextW().IsEmpty())
 	{
@@ -73,14 +71,10 @@ void CDlgLogin::OnClickButtonLogin()
 
 void CDlgLogin::OnClickButtonMarket()
 {
-
-	if (!m_pNetClient->GetConnectState())
+	if (!ConnectServer())
 	{
-		if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
-		{
-			SMessageBox(m_hWnd, L"连接服务器失败，请稍后再试...", L"提示", MB_OK);
-			return;
-		}
+		SMessageBox(m_hWnd, L"连接服务器失败，请稍后再试...", L"提示", MB_OK);
+		return;
 	}
 
 	SButton * pButton = FindChildByName2<SButton>(L"btn_login");
@@ -142,8 +136,7 @@ void CDlgLogin::OnInit(EventArgs * e)
 
 	m_pNetClient->SetWndHandle(m_hParWnd);
 	//m_pNetClient->m_socket = INVALID_SOCKET;
-	if (!m_pNetClient->GetConnectState())
-		if (!m_pNetClient->OnConnect(m_strIPAddr, m_nIPPort))
+	if(!ConnectServer())
 			m_pLoginTxt->SetWindowTextW(L"服务器连接失败...");
 	if (m_bAutoLogin)
 		OnClickButtonLogin();
@@ -296,6 +289,26 @@ void CDlgLogin::OnBtnChangePsd()
 
 }
 
+
+BOOL SOUI::CDlgLogin::ConnectServer()
+{
+	int nServerCount = min(m_strIPAddr.size(), m_nIPPort.size());
+
+	if (!m_pNetClient->GetConnectState())
+	{
+		int nServer = 0;
+		for (; nServer < nServerCount; ++nServer)
+		{
+			if (m_pNetClient->OnConnect(m_strIPAddr[nServer], m_nIPPort[nServer]))
+				break;
+		}
+		if (nServer >= nServerCount)
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
 
 void CDlgLogin::OnFinalMessage(HWND hWnd)
 {

@@ -161,9 +161,22 @@ void CWndSynHandler::InitCommonSetting()
 void CWndSynHandler::InitNetConfig()
 {
 	CIniFile ini(".//config//NetConfig.ini");
-	m_strIPAddr = ini.GetStringA("IP", "Addr", "");
-	m_nIPPort = ini.GetIntA("IP", "Port", 0);
 
+	int nServerCount = ini.GetIntA("ServerCount", "Count", 1);
+
+	SStringA strIPAddr = ini.GetStringA("IP", "Addr", "");
+	m_strIPAddr.emplace_back(strIPAddr);
+	int nIPPort = ini.GetIntA("IP", "Port", 0);
+	m_nIPPort.emplace_back(nIPPort);
+	for (int i = 1; i < nServerCount; ++i)
+	{
+		SStringA strSection;
+		strSection.Format("IP%d", i);
+		strIPAddr = ini.GetStringA(strSection, "Addr", "");
+		m_strIPAddr.emplace_back(strIPAddr);
+		nIPPort = ini.GetIntA(strSection, "Port", 0);
+		m_nIPPort.emplace_back(nIPPort);
+	}
 }
 
 void CWndSynHandler::InitPointInfo()
@@ -776,7 +789,7 @@ bool CWndSynHandler::CheckCmdLine()
 		return true;
 	else
 	{
-		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
+		if(!ConnectServer())
 			return true;
 
 		SStringA strMD5 = "";
@@ -1013,6 +1026,23 @@ void CWndSynHandler::UpdateRtSecPointFromCAInfo(vector<RtPointData>& subDataVec,
 	}
 }
 
+bool CWndSynHandler::ConnectServer()
+{
+	int nServerCount = min(m_strIPAddr.size(), m_nIPPort.size());
+	int nServer = 0;
+	for (; nServer < nServerCount; ++nServer)
+	{
+		if (m_NetClient.OnConnect(m_strIPAddr[nServer], m_nIPPort[nServer]))
+		{
+			break;
+
+		}
+	}
+	if (nServer >= nServerCount)
+		return false;
+	return true;
+}
+
 bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	int &nOffset, ReceiveInfo &recvInfo)
 {
@@ -1020,7 +1050,7 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 	{
 		if (m_NetClient.GetExitState())
 			return 0;
-		if (m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
+		if (ConnectServer())
 		{
 			SendIDInfo info = { 0 };
 			info.ClinetID = m_NetClient.GetClientID();

@@ -472,10 +472,10 @@ void SSubTargetPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 	CoreData* pData = new CoreData[m_nShowDataCount];
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
-		if (xPos >= 0 && xPos < m_pData[0]->size())
+		if (xPos >= 0 && xPos < m_nEnd)
 			pData[i] = m_pData[i]->at(xPos);
-		else if (xPos == -1 && !m_pData[i]->empty())
-			pData[i] = m_pData[i]->at(m_pData[i]->size() - 1);
+		else if (xPos <0 && !m_pData[i]->empty() || xPos >=m_nEnd)
+			pData[i] = m_pData[i]->at(m_nEnd - 1);
 	}
 	DrawTextonPic(pRT, m_rcTargetSel, L"●", RGBA(80, 80, 80, 255), DT_CENTER | DT_VCENTER, 20);
 
@@ -689,7 +689,6 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 			for (int j = 0; j < m_nShowDataCount; ++j)
 				LineVec[j][i].SetPoint(x + width,
 					GetYPos(m_pData[j]->at(i + m_nFirst).value, m_bRightArr[j]));
-			//加最后的数值
 		}
 	}
 	else
@@ -720,8 +719,10 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 
 	}
 
+	CPoint pt;
+	GetCursorPos(&pt);
 
-	if (!m_bShowMouseLine)
+	if (!m_bShowMouseLine || !IsInRect(pt.x,pt.y))
 		DrawMouseData(pRT, m_nEnd - 1);
 
 	for (int i = 0; i < m_nShowDataCount; ++i)
