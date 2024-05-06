@@ -1048,8 +1048,8 @@ bool CWndSynHandler::RecvInfoHandle(BOOL & bNeedConnect,
 {
 	if (bNeedConnect)
 	{
-		if (m_NetClient.GetExitState())
-			return 0;
+		if (bExit)
+			return false;
 		if (ConnectServer())
 		{
 			SendIDInfo info = { 0 };

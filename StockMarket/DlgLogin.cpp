@@ -94,7 +94,7 @@ void CDlgLogin::OnClickButtonCancel()
 		loginInfo.bLogin = false;
 
 		TraceLog("¹Ø±Õ³ÌÐò");
-		m_pNetClient->Stop();
+		//m_pNetClient->Stop();
 		//g_bExit = TRUE;
 		EndDialog(-1);
 	}
