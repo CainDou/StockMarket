@@ -379,6 +379,7 @@ unsigned CWndSynHandler::NetHandle(void * para)
 		if (pMd->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
 		{
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
+			OutputDebugStringFormat("接收数据:%d 数据量:%d\n", recvInfo.MsgType, recvInfo.SrcDataSize);
 			if (pFuc == nullptr)
 				pFuc = &CWndSynHandler::OnNoDefineMsg;
 			(pMd->*pFuc)(recvInfo);
@@ -1870,6 +1871,11 @@ void CWndSynHandler::OnUpdateFilterData(int nMsgLength, const char * info)
 			filterMap[SFI_PeriBottom] = filterData.bPeriscopeBottom;
 			filterMap[SFI_BottomStart] = filterData.bBottomStart;
 			filterMap[SFI_JumpOver] = filterData.bJumpOver;
+			filterMap[SFI_STBLong] = filterData.bSTBLong;
+			filterMap[SFI_STBShort] = filterData.bSTBShort;
+			filterMap[SFI_STBSellLong] = filterData.bSTBSellLong;
+			filterMap[SFI_STBSellShort] = filterData.bSTBSellShort;
+
 		}
 	}
 }

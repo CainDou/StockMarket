@@ -1316,6 +1316,10 @@ enum SF_INDEX
 	SFI_PeriBottom,
 	SFI_BottomStart,
 	SFI_JumpOver,
+	SFI_STBLong,
+	SFI_STBShort,
+	SFI_STBSellLong,
+	SFI_STBSellShort,
 	SFI_Count,
 
 };
@@ -2378,6 +2382,10 @@ typedef struct _FilterDataType
 	BOOL bPeriscopeBottom;
 	BOOL bBottomStart;
 	BOOL bJumpOver;
+	BOOL bSTBLong;
+	BOOL bSTBShort;
+	BOOL bSTBSellLong;
+	BOOL bSTBSellShort;
 }FilterData;
 
 typedef struct _priceVol

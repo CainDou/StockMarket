@@ -664,6 +664,10 @@ void CDlgComboStockFilter::InitStringMap()
 	m_IndexMap[SFI_PeriBottom] = L"潜望底";
 	m_IndexMap[SFI_BottomStart] = L"底部启动";
 	m_IndexMap[SFI_JumpOver] = L"突破回踩";
+	m_IndexMap[SFI_STBLong] = L"超级策略布林线多开";
+	m_IndexMap[SFI_STBShort] = L"超级策略布林线空开";
+	m_IndexMap[SFI_STBSellLong] = L"超级策略布林线多平";
+	m_IndexMap[SFI_STBSellShort] = L"超级策略布林线空平";
 
 	m_bIndexOnlyIn1[SFI_VolMome] = TRUE;
 	m_bIndexOnlyIn1[SFI_AbsMome] = TRUE;
@@ -674,6 +678,10 @@ void CDlgComboStockFilter::InitStringMap()
 	m_bIndexOnlyIn1[SFI_PeriBottom] = TRUE;
 	m_bIndexOnlyIn1[SFI_BottomStart] = TRUE;
 	m_bIndexOnlyIn1[SFI_JumpOver] = TRUE;
+	m_bIndexOnlyIn1[SFI_STBLong] = TRUE;
+	m_bIndexOnlyIn1[SFI_STBShort] = TRUE;
+	m_bIndexOnlyIn1[SFI_STBSellLong] = TRUE;
+	m_bIndexOnlyIn1[SFI_STBSellShort] = TRUE;
 
 	m_bOnlyInDay[SFI_StrengthFilter] = TRUE;
 	m_bOnlyInDay[SFI_AbsStrength] = TRUE;
@@ -691,6 +699,10 @@ void CDlgComboStockFilter::InitStringMap()
 	m_bOnlyBool[SFI_PeriBottom] = TRUE;
 	m_bOnlyBool[SFI_BottomStart] = TRUE;
 	m_bOnlyBool[SFI_JumpOver] = TRUE;
+	m_bOnlyBool[SFI_STBLong] = TRUE;
+	m_bOnlyBool[SFI_STBShort] = TRUE;
+	m_bOnlyBool[SFI_STBSellLong] = TRUE;
+	m_bOnlyBool[SFI_STBSellShort] = TRUE;
 
 
 
@@ -839,6 +851,10 @@ void CDlgComboStockFilter::InitStringMap()
 	m_ReverseIndexMap[L"潜望底"] = SFI_PeriBottom;
 	m_ReverseIndexMap[L"底部启动"] = SFI_BottomStart;
 	m_ReverseIndexMap[L"突破回踩"] = SFI_JumpOver;
+	m_ReverseIndexMap[L"超级策略布林线多开"] = SFI_STBLong;
+	m_ReverseIndexMap[L"超级策略布林线空开"] = SFI_STBShort;
+	m_ReverseIndexMap[L"超级策略布林线多平"] = SFI_STBSellLong;
+	m_ReverseIndexMap[L"超级策略布林线空平"] = SFI_STBSellShort;
 
 
 	m_ConditionMap[SFC_Greater] = L"大于";
@@ -910,14 +926,18 @@ void CDlgComboStockFilter::InitStringMap()
 	m_NumUint[SFI_CAAmoRankL2] = L"(> 0)";
 
 	m_NumUint[SFI_VolMome] = L"（0或1，1符合 0不符条件）";
-	m_NumUint[SFI_AbsMome] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_StructState] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_StrengthFilter] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_AbsStrength] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_FlatBoard] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_PeriBottom] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_BottomStart] = L"（0或1，1符合 0不符条件）";;
-	m_NumUint[SFI_JumpOver] = L"（0或1，1符合 0不符条件）";;
+	m_NumUint[SFI_AbsMome] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_StructState] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_StrengthFilter] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_AbsStrength] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_FlatBoard] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_PeriBottom] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_BottomStart] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_JumpOver] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_STBLong] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_STBShort] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_STBSellLong] = L"（0或1，1符合 0不符条件）";
+	m_NumUint[SFI_STBSellShort] = L"（0或1，1符合 0不符条件）";
 
 
 
