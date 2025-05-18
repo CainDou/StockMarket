@@ -2,7 +2,7 @@
 #include "SLpPriceVolPic.h"
 
 
-#define PRESIDEHEIGHT  18
+#define PREPICEIGHT  18
 
 #define PRICEWIDTH 60
 #define VOLWIDTH 60

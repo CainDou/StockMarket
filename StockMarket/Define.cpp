@@ -584,6 +584,10 @@ void GetInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 	para.UseHisStockFilter = ini.GetIntA(strSection, "HisStockFilter", 0);
 	para.bKlineUseTickFlowData = ini.GetIntA(strSection, "KlineUseTickFlowData", 0);
 	para.nKlineTickFlowDataType = ini.GetIntA(strSection, "KlineTickFlowDataType", 0);
+	para.bShowOrderPrice = ini.GetIntA(strSection, "ShowOrderPrice", 0);
+	para.bShowOrderPriceDetail = ini.GetIntA(strSection, "ShowOrderPriceDetail", 0);
+	para.bShowDeletePriceDetail = ini.GetIntA(strSection, "ShowDeletePriceDetail", 0);
+	para.nFundFlowShowType = ini.GetIntA(strSection, "FundFlowShowType", 0);
 
 
 	para.bShowKlineVolDiff = ini.GetIntA(strSection, "ShowKlineVolDiff", 0) == 0 ? false : true;
@@ -659,6 +663,12 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 	ini.WriteIntA(strSection, "KlineTickFlowDataType", para.nKlineTickFlowDataType);
 
 	ini.WriteIntA(strSection, "ShowKlineVolDiff", para.bShowKlineVolDiff);
+
+	ini.WriteIntA(strSection, "ShowOrderPrice", para.bShowOrderPrice);
+	ini.WriteIntA(strSection, "ShowOrderPriceDetail", para.bShowOrderPriceDetail);
+	ini.WriteIntA(strSection, "ShowDeletePriceDetail", para.bShowDeletePriceDetail);
+	ini.WriteIntA(strSection, "FundFlowShowType", para.nFundFlowShowType);
+
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		ini.WriteIntA(strSection, strKey.Format("VolDiffMAPara%d", i + 1), para.nVolDiffSumPara[i]);
 

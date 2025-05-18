@@ -125,6 +125,12 @@ protected:
 	void OnMsgLpPriceVol(ReceiveInfo &recvInfo);
 	void OnMsgRTTradeVol(ReceiveInfo &recvInfo);
 	void OnMsgHisTradeVol(ReceiveInfo &recvInfo);
+	void OnMsgOrderState(ReceiveInfo &recvInfo);
+	void OnMsgDeleteState(ReceiveInfo &recvInfo);
+	void OnMsgTradeState(ReceiveInfo &recvInfo);
+	void OnMsgOrderPriceVol(ReceiveInfo &recvInfo);
+	void OnMsgDeletePriceVol(ReceiveInfo &recvInfo);
+	void OnMsgTradePriceVol(ReceiveInfo &recvInfo);
 
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
@@ -178,6 +184,12 @@ protected:
 	void OnGetTradeVol(int nMsgLength, const char* info);
 	void OnRTTradeVol(int nMsgLength, const char* info);
 	void OnHisTradeVol(int nMsgLength, const char* info);
+	void OnGetOrderState(int nMsgLength, const char* info);
+	void OnGetDeleteState(int nMsgLength, const char* info);
+	void OnGetTradeState(int nMsgLength, const char* info);
+	void OnGetOrderPriceVol(int nMsgLength, const char* info);
+	void OnGetDeletePriceVol(int nMsgLength, const char* info);
+	void OnGetTradePriceVol(int nMsgLength, const char* info);
 
 	//交易信息处理
 protected:
@@ -233,7 +245,7 @@ protected:
 	thread tMsgSyn;
 	thread tTradeMsgSyn;
 
-	UINT m_uNetThreadID;
+	//UINT m_uNetThreadID;
 	UINT m_RpsProcThreadID;
 	UINT m_uMsgThreadID;
 	UINT m_uTradeMsgThreadID;

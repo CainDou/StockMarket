@@ -4,7 +4,7 @@
 #define HEADHEIGHT 20
 
 #define PERTOTALHEIGHT 44
-#define PRESIDEHEIGHT  18
+#define PREPICEIGHT  18
 
 #define PRICEWIDTH 60
 #define VOLWIDTH 60

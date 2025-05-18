@@ -39,6 +39,8 @@ namespace SOUI
 		void		SetDataPoint(vector<CommonIndexMarket>* pIdxMarketVec);
 		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec,
 					vector<TickFlowMarket>* pTFMarketVec);
+		void		SetFundFlowDataPoint(vector<OrderState> *pOrderStateVec,
+		vector<DeleteState> *pDeleteStateVec,vector<TradeState> *pTradeStateVec);
 		void		ChangeShowStock(SStringA subIns, SStringA StockName);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
 		void		SetSubPicShowData(int nDataCount[],
@@ -72,6 +74,14 @@ namespace SOUI
 		//			bool bState = false);
 		void		SetAvgState(bool bRevesered = true, bool bState = false);
 		void		SetEmaState(bool bRevesered = true, bool bState = false);
+		void		SetOrderPriceState(bool bRevesered = true, bool bState = false);
+		void		SetOrderPriceDetailState(bool bRevesered = true, bool bState = false);
+		void		SetDeletePriceDetailState(bool bRevesered = true, bool bState = false);
+		void		SetFundFlowVolState(int nType);
+		bool		GetOrderPriceState();
+		bool		GetOrderPriceDetailState();
+		bool		GetDeletePriceDetailState();
+		int			GetFundFlowVolState();
 		void		SetEmaPara(int EmaPara[]);
 		void		SetMacdPara(int MacdPara[]);
 		const int*	GetEmaPara();
@@ -93,7 +103,7 @@ namespace SOUI
 		void		DrawMouse(IRenderTarget * pRT, CPoint p, BOOL bFromOnPaint = FALSE);
 		void		DrawData(IRenderTarget * pRT);
 		void		DrawVirtualTimeLine(IRenderTarget * pRT);
-		void		DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP &data);
+		void		DrawUpperMarket(IRenderTarget * pRT, FENSHI_GROUP &data,int id);
 		void		DrawTextonPic(IRenderTarget * pRT, CRect rc, SStringW str,
 					COLORREF color = RGBA(255, 255, 255, 255), UINT uFormat = DT_SINGLELINE,
 					DWORD rop = SRCINVERT);
@@ -104,7 +114,13 @@ namespace SOUI
 		void		DrawMovePrice(IRenderTarget * pRT, int y, bool bNew);
 		void		DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew);
 		void		DrawMouseLine(IRenderTarget * pRT, CPoint po);
-
+		void		DrawFundFlowPriceLine(IRenderTarget * pRT, int nDataNum);
+		void		DrawFundFlowVol(IRenderTarget * pRT, int nDataNum);
+		void		DrawTragetArrow(IRenderTarget * pRT, CRect& rc);
+		void		DrawMainUpperInfo(IRenderTarget * pRT, FENSHI_GROUP & data);
+		void		DrawMainPriceTragetInfo(IRenderTarget * pRT, FENSHI_GROUP & data, int id);
+		void		DrawMacdUpperInfo(IRenderTarget * pRT, FENSHI_GROUP & data);
+		void		DrawFundFlowVolUpperInfo(IRenderTarget * pRT, int id);
 		//图形相关数据初始化和计算获取
 	protected:
 		void		DataInit();
@@ -121,6 +137,9 @@ namespace SOUI
 		SStringW	GetFuTuYPrice(int nY);		//获得附图y位置价格
 		int			GetMACDYPos(double fDiff);	//获得MACD图y位置
 		SStringW	GetMACDYPrice(int nY);		//获得MACD图y位置价格
+		int			GetFundFlowVolYPos(double fDiff);
+		SStringW	GetFundFlowVolYValue(int nY);
+		void		GetFundFlowMaxDiff();
 		void        InitVirTimeLineMap();
 		void		GetMACDMaxDiff();			//判断MACD指标图中最大值最小值
 		void		GetMacdDiff();
@@ -167,12 +186,20 @@ namespace SOUI
 		bool		m_bKeyDown;
 		bool		m_bIsIndex;
 		bool		m_bIsFirstKey;
+		bool		m_bShowOrderPrice;
+		//bool		m_bShowDeletePrice;
+		//bool		m_bShowTradePrice;
+		bool		m_bShowOrderPriceDetail;
+		bool		m_bShowDeletePriceDetail;
+		int			m_nFundFlowShowType;
+		//bool		m_bShowTradePriceDetail;
 
 		//具体显示参数
 	protected:
 		CRect       m_rcAll;		//上下框相加
 		CRect		m_rcMain;		//上框坐标,K线
 		CRect		m_rcVolume;		//下框坐标,指标
+		CRect		m_rcFundFlowVol;//资金流量指标
 		CRect		m_rcMACD;		//MACD指标框
 		CRect		m_rcImage;
 		CPoint		m_preMovePt;
@@ -196,6 +223,7 @@ namespace SOUI
 		int			m_nNowPosition;		//现在的数据线的位置
 		int			m_nPaintTick;
 		bool		m_bHalfPrice;
+		int64_t		m_nFundFlowVolMax;
 
 		//调用子类
 	protected:
@@ -209,6 +237,10 @@ namespace SOUI
 		vector<CommonStockMarket> *m_pStkMarketVec;
 		vector<CommonIndexMarket> *m_pIdxMarketVec;
 		vector<TickFlowMarket>* m_pTFMarketVec;
+		vector<OrderState> *m_pOrderStateVec;
+		vector<DeleteState> *m_pDeleteStateVec;
+		vector<TradeState> *m_pTradeStateVec;
+
 		FENSHI_INFO *m_pData;
 		SStringA    m_strSubIns;
 		SStringA	m_strStockName;
@@ -296,6 +328,49 @@ namespace SOUI
 	{
 		if (bRevesered) m_bShowEMA = !m_bShowEMA;
 		else m_bShowEMA = bState;
+	}
+	inline void SFenShiPic::SetOrderPriceState(bool bRevesered, bool bState)
+	{
+		if (bRevesered) m_bShowOrderPrice = !m_bShowOrderPrice;
+		else m_bShowOrderPrice = bState;
+		GetMaxDiff();
+
+	}
+	inline void SFenShiPic::SetOrderPriceDetailState(bool bRevesered, bool bState)
+	{
+		if (bRevesered) m_bShowOrderPriceDetail = !m_bShowOrderPriceDetail;
+		else m_bShowOrderPriceDetail = bState;
+		GetMaxDiff();
+
+	}
+	inline void SFenShiPic::SetDeletePriceDetailState(bool bRevesered, bool bState)
+	{
+		if (bRevesered) m_bShowDeletePriceDetail = !m_bShowDeletePriceDetail;
+		else m_bShowDeletePriceDetail = bState;
+		GetMaxDiff();
+
+	}
+	inline void SFenShiPic::SetFundFlowVolState(int nType)
+	{
+		m_nFundFlowShowType = nType;
+		GetFundFlowMaxDiff();
+
+	}
+	inline bool SFenShiPic::GetOrderPriceState()
+	{
+		return m_bShowOrderPrice;
+	}
+	inline bool SFenShiPic::GetOrderPriceDetailState()
+	{
+		return m_bShowOrderPriceDetail;
+	}
+	inline bool SFenShiPic::GetDeletePriceDetailState()
+	{
+		return m_bShowDeletePriceDetail;
+	}
+	inline int SFenShiPic::GetFundFlowVolState()
+	{
+		return m_nFundFlowShowType;
 	}
 	inline void SFenShiPic::SetEmaPara(int EmaPara[])
 	{

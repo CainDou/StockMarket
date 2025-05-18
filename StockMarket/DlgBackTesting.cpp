@@ -285,8 +285,8 @@ void CDlgBackTesting::InitNetHandleMap()
 	m_netHandleMap[RecvMsg_HisMultiDataForHSF] =
 		&CDlgBackTesting::OnMsgHisMultiDataForHSF;
 
-	m_NetClient.RegisterHandle(NetHandle);
-	m_NetClient.Start(m_uNetThreadID, this);
+	//m_NetClient.RegisterHandle(NetHandle);
+	m_NetClient.Start(NetHandle, this);
 
 }
 

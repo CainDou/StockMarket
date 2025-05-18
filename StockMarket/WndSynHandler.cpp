@@ -32,8 +32,8 @@ CWndSynHandler::~CWndSynHandler()
 		//m_pLoginDlg->EndDialog(0);
 		::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 			NULL, LoginMsg_Exit);
+	bExit = true;
 	m_NetClient.Stop();
-	//bExit = true;
 	SendMsg(m_RpsProcThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
 	SendMsg(m_uTradeMsgThreadID, Msg_Exit, NULL, 0);
@@ -72,7 +72,7 @@ void CWndSynHandler::Run()
 	tTradeMsgSyn = thread(&CWndSynHandler::TradeMsgProc, this);
 	m_uTradeMsgThreadID = *(unsigned*)&tTradeMsgSyn.get_id();
 	m_NetClient.SetWndHandle(m_hMain);
-	m_NetClient.RegisterHandle(NetHandle);
+	//m_NetClient.RegisterHandle(NetHandle);
 
 	if (!CheckCmdLine())
 	{
@@ -80,7 +80,12 @@ void CWndSynHandler::Run()
 		exit(0);
 	}
 
-	m_NetClient.Start(m_uNetThreadID, this);
+	//m_NetClient.Start(m_uNetThreadID, this);
+	if (!m_NetClient.Start(NetHandle, this))
+	{
+		TraceLog("启动网络处理线程失败");
+		exit(0);
+	}
 
 	tLogin = thread(&CWndSynHandler::Login, this);
 	WaitForSingleObject(g_hLoginEvent, INFINITE);
@@ -379,7 +384,6 @@ unsigned CWndSynHandler::NetHandle(void * para)
 		if (pMd->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
 		{
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
-			OutputDebugStringFormat("接收数据:%d 数据量:%d\n", recvInfo.MsgType, recvInfo.SrcDataSize);
 			if (pFuc == nullptr)
 				pFuc = &CWndSynHandler::OnNoDefineMsg;
 			(pMd->*pFuc)(recvInfo);
@@ -632,6 +636,20 @@ void CWndSynHandler::InitNetHandleMap()
 	m_netHandleMap[RecvMsg_HisTradeVol]
 		= &CWndSynHandler::OnMsgHisTradeVol;
 
+	m_netHandleMap[RecvMsg_OrderState]
+		= &CWndSynHandler::OnMsgOrderState;
+	m_netHandleMap[RecvMsg_DeleteState]
+		= &CWndSynHandler::OnMsgDeleteState;
+	m_netHandleMap[RecvMsg_TradeState]
+		= &CWndSynHandler::OnMsgTradeState;
+	m_netHandleMap[RecvMsg_OrderPriceVol]
+		= &CWndSynHandler::OnMsgOrderPriceVol;
+	m_netHandleMap[RecvMsg_DeletePriceVol]
+		= &CWndSynHandler::OnMsgDeletePriceVol;
+	m_netHandleMap[RecvMsg_TradePriceVol]
+		= &CWndSynHandler::OnMsgTradePriceVol;
+
+
 	m_netHandleMap[TradeRecvMsg_Register]
 		= &CWndSynHandler::OnMsgAccountRegister;
 	m_netHandleMap[TradeRecvMsg_ChangePsd]
@@ -711,6 +729,19 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnRTTradeVol;
 	m_synHandleMap[Syn_HisTradeVol]
 		= &CWndSynHandler::OnHisTradeVol;
+	m_synHandleMap[Syn_OrderState]
+		= &CWndSynHandler::OnGetOrderState;
+	m_synHandleMap[Syn_DeleteState]
+		= &CWndSynHandler::OnGetDeleteState;
+	m_synHandleMap[Syn_TradeState]
+		= &CWndSynHandler::OnGetTradeState;
+	m_synHandleMap[Syn_OrderPriceVol]
+		= &CWndSynHandler::OnGetOrderPriceVol;
+	m_synHandleMap[Syn_DeletePriceVol]
+		= &CWndSynHandler::OnGetDeletePriceVol;
+	m_synHandleMap[Syn_TradePriceVol]
+		= &CWndSynHandler::OnGetTradePriceVol;
+
 
 	m_synHandleMap[Syn_GetTradeMarket]
 		= &CWndSynHandler::OnGetTradeMarket;
@@ -1560,6 +1591,84 @@ void CWndSynHandler::OnMsgHisTradeVol(ReceiveInfo & recvInfo)
 	int offset = sizeof(recvInfo);
 	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_HisTradeVol, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgOrderState(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_OrderState, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgDeleteState(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_DeleteState, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgTradeState(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_TradeState, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgOrderPriceVol(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_OrderPriceVol, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgDeletePriceVol(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_DeletePriceVol, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgTradePriceVol(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_TradePriceVol, buffer, totalSize);
 	delete[]buffer;
 	buffer = nullptr;
 
@@ -2475,6 +2584,102 @@ void CWndSynHandler::OnHisTradeVol(int nMsgLength, const char * info)
 		}
 
 	}
+}
+
+void CWndSynHandler::OnGetOrderState(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_OrderState,
+				info, nMsgLength);
+	}
+
+}
+
+void CWndSynHandler::OnGetDeleteState(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_DeleteState,
+				info, nMsgLength);
+	}
+
+}
+
+void CWndSynHandler::OnGetTradeState(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_TradeState,
+				info, nMsgLength);
+	}
+
+}
+
+void CWndSynHandler::OnGetOrderPriceVol(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_OrderPriceVol,
+				info, nMsgLength);
+	}
+
+}
+
+void CWndSynHandler::OnGetDeletePriceVol(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_DeletePriceVol,
+				info, nMsgLength);
+	}
+
+}
+
+void CWndSynHandler::OnGetTradePriceVol(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	for (auto &it : m_WndSubMap)
+	{
+		auto &hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		int nGroup = m_SubWndGroup[hWnd];
+		if (nGroup == Group_Stock && it.second == strStock)
+			SendMsg(m_hWndMap[hParWnd], Syn_TradePriceVol,
+				info, nMsgLength);
+	}
+
 }
 
 void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char * info)

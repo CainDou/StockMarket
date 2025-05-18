@@ -7,10 +7,10 @@ CNetWorkClient::CNetWorkClient()
 	m_hWnd = NULL;
 	m_bConnected = FALSE;
 	m_pFnHandle = NULL;
-	m_uThreadID = 0;
+	//m_uThreadID = 0;
 	m_socket = INVALID_SOCKET;
 	m_ClientID = INVALID_SOCKET;
-	m_hFunc = INVALID_HANDLE_VALUE;
+	//m_hFunc = INVALID_HANDLE_VALUE;
 	m_bExit = FALSE;
 	m_bRun = FALSE;
 	m_nAskID = 0;
@@ -99,22 +99,25 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 	return TRUE;
 }
 
-BOOL CNetWorkClient::RegisterHandle(PFNNETHANDLE pFunc)
-{
-	m_pFnHandle = pFunc;
-	return TRUE;
-}
+//BOOL CNetWorkClient::RegisterHandle(PFNNETHANDLE pFunc)
+//{
+//	m_pFnHandle = pFunc;
+//	return TRUE;
+//}
 
-HANDLE CNetWorkClient::Start(UINT & ThreadID, void *para)
+BOOL CNetWorkClient::Start(PFNNETHANDLE pFunc, void *para)
 {
-	if (!m_pFnHandle)
-		return NULL;
+	if (!pFunc)
+		return FALSE;
 	
-	m_hFunc = (HANDLE)_beginthreadex(NULL, 0, m_pFnHandle, para, 0, &m_uThreadID);
-	if (m_hFunc != INVALID_HANDLE_VALUE)
-		m_bRun = TRUE;
-	ThreadID = m_uThreadID;
-	return m_hFunc;
+	m_thread = std::thread(pFunc, para);
+	m_bRun = TRUE;
+
+	//m_hFunc = (HANDLE)_beginthreadex(NULL, 0, m_pFnHandle, para, 0, &m_uThreadID);
+	//if (m_hFunc != INVALID_HANDLE_VALUE)
+	//	m_bRun = TRUE;
+	//ThreadID = m_uThreadID;
+	return TRUE;
 }
 
 BOOL CNetWorkClient::Stop()
@@ -123,9 +126,11 @@ BOOL CNetWorkClient::Stop()
 	if (m_bRun)
 	{
 		OnConnect(NULL, NULL);
-		WaitForSingleObject(m_hFunc, INFINITE);
+		if (m_thread.joinable())
+			m_thread.join();
+		//WaitForSingleObject(m_hFunc, INFINITE);
 
-		m_hFunc = INVALID_HANDLE_VALUE;
+		//m_hFunc = INVALID_HANDLE_VALUE;
 		m_bRun = FALSE;
 	}
 	return TRUE;

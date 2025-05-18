@@ -15,7 +15,7 @@ using std::vector;
 
 #define MIN_LINE_NUM 60
 #define MAX_LINE_NUM 5000
-#define DEFAULT_LINE_NUM 240
+#define DEFAULT_LINE_NUM 241
 #define ZOOMRATIO 1.5
 
 #define RIGHT_BLANK 50
@@ -684,8 +684,7 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 	{
 		for (int i = 0; i < nDataNum; i++)
 		{
-
-			x = GetXPos(i);
+			x = GetXPos(i + 1);
 			for (int j = 0; j < m_nShowDataCount; ++j)
 				LineVec[j][i].SetPoint(x + width,
 					GetYPos(m_pData[j]->at(i + m_nFirst).value, m_bRightArr[j]));

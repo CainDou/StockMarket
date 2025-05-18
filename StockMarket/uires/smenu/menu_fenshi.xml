@@ -24,5 +24,17 @@
   <sep/>
   <item id="108" >EMA参数</item>
   <sep/>
+  <item   text="资金流价" id="118" contextHelpId="2">
+    <item id="119"  check="0">委托均价</item>
+    <item id="120"  check="0">委托买卖均价</item>
+    <item id="121"  check="0">撤单买卖均价</item>
+  </item>  
+  <item   text="资金流单量" id="122" contextHelpId="2">
+    <item id="123"  check="0">无</item>
+    <item id="124"  check="0">委托量</item>
+    <item id="125"  check="0">撤单量</item>
+    <item id="126"  check="0">委托单</item>
+    <item id="127"  check="0">撤单单</item>
+  </item>  
   <item id="100" >返回</item>
 </menu>

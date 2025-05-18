@@ -123,7 +123,14 @@ enum RecvMsgType
 	RecvMsg_RTPriceVol,
 	RecvMsg_LpPriceVol,
 	RecvMsg_RTTradeVol,
-	RecvMsg_HisTradeVol
+	RecvMsg_HisTradeVol,
+	RecvMsg_OrderState,
+	RecvMsg_DeleteState,
+	RecvMsg_TradeState,
+	RecvMsg_OrderPriceVol,
+	RecvMsg_DeletePriceVol,
+	RecvMsg_TradePriceVol,
+
 };
 
 enum SendMsgType
@@ -498,6 +505,13 @@ enum SynMsg
 	Syn_GetTradeVol,
 	Syn_RTTradeVol,
 	Syn_HisTradeVol,
+	Syn_OrderState,
+	Syn_DeleteState,
+	Syn_TradeState,
+	Syn_OrderPriceVol,
+	Syn_DeletePriceVol,
+	Syn_TradePriceVol,
+
 	//交易的同步信息
 	Syn_GetTradeMarket,
 	Syn_RTBuyStockMarket,
@@ -558,6 +572,12 @@ enum WorkWndMsg
 	WW_GetTradeVol,
 	WW_RTTradeVol,
 	WW_HisTradeVol,
+	WW_OrderState,
+	WW_DeleteState,
+	WW_TradeState,
+	WW_OrderPriceVol,
+	WW_DeletePriceVol,
+	WW_TradePriceVol,
 	WW_End,
 };
 
@@ -1069,6 +1089,16 @@ enum FSMenu
 	FM_PointWnd6,
 	FM_PointWnd7,
 	FM_PointWnd8,
+	FM_FundFlowPrice,
+	FM_FFOrderPrice,
+	FM_FFOrderPriceDetail,
+	FM_FFDeletePriceDetail,
+	FM_FundFlowVol,
+	FM_FFVolNull,
+	FM_FFOrderVol,
+	FM_FFDeleteVol,
+	FM_FFOrderNum,
+	FM_FFDeleteNum,
 	FM_End,
 };
 
@@ -1662,6 +1692,10 @@ typedef struct InitPara
 	int	 nKlineTickFlowDataType;
 	bool bShowKlineVolDiff;
 	int	 nVolDiffSumPara[MAX_MA_COUNT];
+	bool bShowOrderPrice;
+	bool bShowOrderPriceDetail;
+	bool bShowDeletePriceDetail;
+	int nFundFlowShowType;
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
 	SStringA strFilterName;
@@ -1681,7 +1715,8 @@ typedef struct InitPara
 		ListShowSTARM(true), ListShowNewStock(true), nKlineRehabType(0),
 		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), 
 		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName(""),
-		bShowKlineVolDiff(false), nVolDiffSumPara{5,20}
+		bShowKlineVolDiff(false), nVolDiffSumPara{5,20},bShowOrderPrice(false),
+		bShowOrderPriceDetail(false),bShowDeletePriceDetail(false),nFundFlowShowType(0)
 	{}
 }InitPara_t;
 
@@ -2564,3 +2599,165 @@ enum eMacdLikePic
 	eMLP_Macd,
 	eMLP_VolDiff,
 };
+
+//资金流数据定义
+enum eOrderDelVolGap
+{
+	ODVG_Neg5 = 0,
+	ODVG_Neg4,
+	ODVG_Neg3,
+	ODVG_Neg2,
+	ODVG_Neg1,
+	ODVG_0,
+	ODVG_Pos1,
+	ODVG_Pos2,
+	ODVG_Pos3,
+	ODVG_Pos4,
+	ODVG_Pos5,
+	ODVG_Count,
+};
+
+enum eTimeVolGap
+{
+	TVG_1 = 0,
+	TVG_2,
+	TVG_3,
+	TVG_Count,
+};
+
+enum eWideVolGap
+{
+	WVG_0 = 0,
+	WVG_1,
+	WVG_2,
+	WVG_3,
+	WVG_Count,
+};
+
+typedef struct _SummaryState
+{
+	int32_t nSid;
+	int32_t nOpenPrice;
+	int32_t nHighPrice;
+	int32_t nLowPrice;
+	int32_t nClosePrice;
+	double fVWAP;
+	double fVWAPGap;
+	double fTradMoney;
+	int64_t nTradVolume;
+	double fTradPrice;
+	int32_t nTradNum;
+	int32_t nOrdDif;
+}SummaryState;
+
+typedef struct _OrderState
+{
+	int32_t nSid;
+	int64_t nOrdVolume;
+	int32_t nOrdNum;
+	double fOrdPrice;
+	int64_t nOrdVolumeB;
+	int32_t nOrdNumB;
+	double fOrdPriceB;
+	int64_t nOrdVolumeS;
+	int32_t nOrdNumS;
+	double fOrdPriceS;
+	int64_t nOrdVolGapB[ODVG_Count];
+	int64_t nOrdVolGapS[ODVG_Count];
+}OrderState;
+
+typedef struct _DeleteState
+{
+	int32_t nSid;
+	int64_t nDelVolume;
+	int32_t nDelNum;
+	int64_t nDelVolumeB;
+	double fDelPriceB;
+	int32_t nDelNumB;
+	int64_t nDelVolumeS;
+	double fDelPriceS;
+	int32_t nDelNumS;
+	int64_t nDelVolGapB[ODVG_Count];
+	int64_t nDelVolGapS[ODVG_Count];
+	//int64_t nDel2OrdTimeB;
+	//int64_t nDel2OrdTimeS;
+	int64_t nDel2OrdTimeVolumeB[TVG_Count];
+	int64_t nDel2OrdTimeVolumeS[TVG_Count];
+}DeleteState;
+
+typedef struct _TradeState
+{
+	int nSid;
+	int32_t nTradNumAB;
+	int32_t nOrdDifAB;
+	//int32_t nTradPriceWideAB;
+	//int32_t nOrdPriceGapAB;
+	//double fOrdWaitTimePS;
+	//double fTradSpreadTimePS;
+	int32_t nTradNumAS;
+	int32_t nOrdDifAS;
+	//int32_t nTradPriceWideAS;
+	//int32_t nOrdPriceGapAS;
+	//double fOrdWaitTimePB;
+	//double fTradSpreadTimePB;
+	int64_t nTradPriWideVolumeB[WVG_Count];
+	int64_t nTradPriWideVolumeS[WVG_Count];
+	int64_t nOrdWaitTimeVolumeB[TVG_Count];
+	int64_t nOrdWaitTimeVolumeS[TVG_Count];
+	int64_t nTradSpreadTimeVolumeB[TVG_Count];
+	int64_t nTradSpreadTimeVolumeS[TVG_Count];
+}TradeState;
+
+typedef struct _TradeVolState
+{
+	int32_t nSid;
+	int32_t nPrice;
+	int32_t nTradABLU;
+	int32_t nTradABMU;
+	int32_t nTradABSU;
+	int32_t nTradPBLU;
+	int32_t nTradPBMU;
+	int32_t nTradPBSU;
+	int32_t nTradASLU;
+	int32_t nTradASMU;
+	int32_t nTradASSU;
+	int32_t nTradPSLU;
+	int32_t nTradPSMU;
+	int32_t nTradPSSU;
+	int32_t nTradABLD;
+	int32_t nTradABMD;
+	int32_t nTradABSD;
+	int32_t nTradPBLD;
+	int32_t nTradPBMD;
+	int32_t nTradPBSD;
+	int32_t nTradASLD;
+	int32_t nTradASMD;
+	int32_t nTradASSD;
+	int32_t nTradPSLD;
+	int32_t nTradPSMD;
+	int32_t nTradPSSD;
+}TradeVolState;
+
+typedef struct _OrderVolState
+{
+	int32_t nSid;
+	int32_t nPrice;
+	int32_t nOrdBL;
+	int32_t nOrdBM;
+	int32_t nOrdBS;
+	int32_t nOrdSL;
+	int32_t nOrdSM;
+	int32_t nOrdSS;
+}OrderVolState;
+
+typedef struct _DeleteVolState
+{
+	int32_t nSid;
+	int32_t nPrice;
+	int32_t nDelBL;
+	int32_t nDelBM;
+	int32_t nDelBS;
+	int32_t nDelSL;
+	int32_t nDelSM;
+	int32_t nDelSS;
+}DeleteVolState;

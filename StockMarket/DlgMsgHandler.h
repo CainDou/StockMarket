@@ -39,6 +39,13 @@ protected:
 	void OnGetTradeVol(int nMsgLength, const char* info);
 	void OnRTTradeVol(int nMsgLength, const char* info);
 	void OnHisTradeVol(int nMsgLength, const char* info);
+	void OnOrderState(int nMsgLength, const char* info);
+	void OnDeleteState(int nMsgLength, const char* info);
+	void OnTradeState(int nMsgLength, const char* info);
+	void OnOrderPriceVol(int nMsgLength, const char* info);
+	void OnDeletePriceVol(int nMsgLength, const char* info);
+	void OnTradePriceVol(int nMsgLength, const char* info);
+
 protected:
 	HWND m_hWnd;
 	unordered_map<int, PDATAHANDLEFUNC>m_MsgHandleMap;

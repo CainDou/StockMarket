@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
@@ -243,6 +243,7 @@
     <ClCompile Include="SCapsRichEdit.cpp" />
     <ClCompile Include="SColorListCtrlEx.cpp" />
     <ClCompile Include="SFenShiPic.cpp" />
+    <ClCompile Include="SFundFlowPriceVol.cpp" />
     <ClCompile Include="SKlinePic.cpp" />
     <ClCompile Include="SLpPriceVolPic.cpp" />
     <ClCompile Include="SMessageBoxTimer.cpp" />
@@ -312,6 +313,7 @@
     <ClInclude Include="SCapsRichEdit.h" />
     <ClInclude Include="SColorListCtrlEx.h" />
     <ClInclude Include="SFenShiPic.h" />
+    <ClInclude Include="SFundFlowPriceVol.h" />
     <ClInclude Include="SKlinePic.h" />
     <ClInclude Include="SLpPriceVolPic.h" />
     <ClInclude Include="SMessageBoxTimer.h" />
