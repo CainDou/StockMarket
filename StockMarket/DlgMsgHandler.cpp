@@ -95,6 +95,19 @@ void CDlgMsgHandler::InitMsgHandleMap()
 	m_MsgHandleMap[Syn_HisTradeVol]
 		= &CDlgMsgHandler::OnHisTradeVol;
 
+	m_MsgHandleMap[Syn_OrderState]
+		= &CDlgMsgHandler::OnOrderState;
+	m_MsgHandleMap[Syn_DeleteState]
+		= &CDlgMsgHandler::OnDeleteState;
+	m_MsgHandleMap[Syn_TradeState]
+		= &CDlgMsgHandler::OnTradeState;
+	m_MsgHandleMap[Syn_OrderPriceVol]
+		= &CDlgMsgHandler::OnOrderPriceVol;
+	m_MsgHandleMap[Syn_DeletePriceVol]
+		= &CDlgMsgHandler::OnDeletePriceVol;
+	m_MsgHandleMap[Syn_TradePriceVol]
+		= &CDlgMsgHandler::OnTradePriceVol;
+
 
 }
 
@@ -181,7 +194,7 @@ void CDlgMsgHandler::OnRTStockMarket(int nMsgLength, const char * info)
 {
 	SStringA strStock = ((CommonStockMarket*)info)->SecurityID;
 	int nStart = m_bOnlyStock ? 0 : Group_Stock;
-	for (int i = 0; i < m_WndVec.size(); ++i)
+	for (int i = nStart; i < m_WndVec.size(); ++i)
 	{
 		if (m_WndSubMap[i] == strStock)
 			SendMsg(m_WndVec[i]->GetThreadID(), WW_RTStockMarket,
@@ -297,7 +310,7 @@ void CDlgMsgHandler::OnRTTFMarket(int nMsgLength, const char * info)
 {
 	SStringA strStock = ((TickFlowMarket*)info)[0].SecurityID;
 	int nStart = m_bOnlyStock ? 0 : Group_Stock;
-	for (int i = 0; i < m_WndVec.size(); ++i)
+	for (int i = nStart; i < m_WndVec.size(); ++i)
 		if (m_WndSubMap[i] == strStock)
 			SendMsg(m_WndVec[i]->GetThreadID(), WW_RTTFMarket,
 				info, nMsgLength);
@@ -308,7 +321,7 @@ void CDlgMsgHandler::OnRTPriceVol(int nMsgLength, const char * info)
 {
 	SStringA strStock = ((PriceVolInfo*)info)[0].SecurityID;
 	int nStart = m_bOnlyStock ? 0 : Group_Stock;
-	for (int i = 0; i < m_WndVec.size(); ++i)
+	for (int i = nStart; i < m_WndVec.size(); ++i)
 		if (m_WndSubMap[i] == strStock)
 			SendMsg(m_WndVec[i]->GetThreadID(), WW_RTPriceVol,
 				info, nMsgLength);
@@ -318,7 +331,7 @@ void CDlgMsgHandler::OnRTTradeVol(int nMsgLength, const char * info)
 {
 	SStringA strStock = ((TradeVol*)info)[0].SecurityID;
 	int nStart = m_bOnlyStock ? 0 : Group_Stock;
-	for (int i = 0; i < m_WndVec.size(); ++i)
+	for (int i = nStart; i < m_WndVec.size(); ++i)
 		if (m_WndSubMap[i] == strStock)
 			SendMsg(m_WndVec[i]->GetThreadID(), WW_RTTradeVol,
 				info, nMsgLength);
@@ -331,4 +344,86 @@ void CDlgMsgHandler::OnHisTradeVol(int nMsgLength, const char * info)
 	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
 	SendMsg(m_WndVec[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisTradeVol,
 		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+}
+
+void CDlgMsgHandler::OnOrderState(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_OrderState,
+				info, nMsgLength);
+	}
+
+}
+
+void CDlgMsgHandler::OnDeleteState(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_DeleteState,
+				info, nMsgLength);
+	}
+
+}
+
+void CDlgMsgHandler::OnTradeState(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_TradeState,
+				info, nMsgLength);
+	}
+
+}
+
+void CDlgMsgHandler::OnOrderPriceVol(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_OrderPriceVol,
+				info, nMsgLength);
+	}
+
+}
+
+void CDlgMsgHandler::OnDeletePriceVol(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_DeletePriceVol,
+				info, nMsgLength);
+	}
+}
+
+void CDlgMsgHandler::OnTradePriceVol(int nMsgLength, const char * info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo *)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+		if (m_WndSubMap[i] == strStock)
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_TradePriceVol,
+				info, nMsgLength);
+	}
 }

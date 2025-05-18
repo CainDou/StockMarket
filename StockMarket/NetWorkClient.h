@@ -1,6 +1,7 @@
 #pragma once
 #include<WinSock2.h>
 #include <atomic>
+#include<thread>
 /**
 * PFNNETHANDLE
 * @brief     接收函数--函数指针
@@ -17,8 +18,8 @@ public:
 	BOOL SetWndHandle(HWND hwnd);
 	BOOL ConnectInit(LPCSTR pszRemoteAddr, u_short nPort, HWND hWnd);
 	BOOL OnConnect(LPCSTR lpIP, UINT uPort);
-	BOOL RegisterHandle(PFNNETHANDLE pFunc);
-	HANDLE Start(UINT &ThreadID,void* para);
+	//BOOL RegisterHandle(PFNNETHANDLE pFunc);
+	BOOL Start(PFNNETHANDLE pFunc,void* para);
 	BOOL   Stop();
 	SOCKET GetSocket() const;
 	BOOL   GetState() const;
@@ -39,8 +40,9 @@ protected:
 	BOOL m_bConnected;
 	BOOL m_bRun;
 	BOOL m_bExit;
-	UINT m_uThreadID;
-	HANDLE m_hFunc;
+	//UINT m_uThreadID;
+	std::thread m_thread;
+	//HANDLE m_hFunc;
 	PFNNETHANDLE m_pFnHandle;
 	std::atomic_int m_nAskID;
 };

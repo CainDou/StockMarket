@@ -10,6 +10,7 @@ namespace SOUI
 	class CDlgStockFilter;
 	class CDlgComboStockFilter;
 	class SPriceVolPic;
+	class SFundFlowPriceVol;
 
 	class CWorkWnd : public SHostWnd
 	{
@@ -66,7 +67,7 @@ namespace SOUI
 		void	OnLButtonUp(UINT nFlags, CPoint point);
 		BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 		void	SwitchPic2List();
-		void	SwitchList2Pic(int nPeriod,BOOL bPriceVol);
+		void	SwitchList2Pic(int nPeriod,int nPriceVolPicType);
 		void	DataProc();
 		void	InitProcFucMap();
 		void	InitNameVec();
@@ -154,12 +155,18 @@ namespace SOUI
 		void OnCheckSTARM();
 		void OnCheckNewStock();
 		void OnBtnRehab();
+		void OnBtnFundFlowPriVol();
+		void OnRadioAllTime();
+		void OnRadioLast();
+		void OnChkOrder();
+		void OnChkDelete();
+		void OnChkTrade();
 
 		//按钮辅助操作
 		void SetBtnState(SImageButton* nowBtn, SImageButton** preBtn);
 		void SetBtnState(SImageButton* nowBtn, bool bSelected);
 		void SetBtnState(int nPeriod, bool bSelected);
-		void OnBtnShowTypeChange(bool bFroceList = false);
+		void OnBtnShowTypeChange(bool bFroceList = false, bool bFromPriVol = false);
 		void OnBtnPeriedChange(int nPeriod);
 		void SetListShowIndyStr(SStatic* pText);
 		void SetFenShiShowData(vector<ShowPointInfo>&infoVec,int nStartWnd = 0);
@@ -197,7 +204,12 @@ namespace SOUI
 		void OnUpdateRTPriceVol(int nMsgLength, const char* info);
 		void OnUpdateRTTradeVol(int nMsgLength, const char* info);
 		void OnUpdateHisTradeVol(int nMsgLength, const char* info);
-
+		void OnUpdateOrderState(int nMsgLength, const char* info);
+		void OnUpdateDeleteState(int nMsgLength, const char* info);
+		void OnUpdateTradeState(int nMsgLength, const char* info);
+		void OnUpdateOrderPriceVol(int nMsgLength, const char* info);
+		void OnUpdateDeletePriceVol(int nMsgLength, const char* info);
+		void OnUpdateTradePriceVol(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -241,6 +253,12 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.chk_STARM, OnCheckSTARM)
 			EVENT_ID_COMMAND(R.id.chk_NewStock, OnCheckNewStock)
 			EVENT_ID_COMMAND(R.id.btn_Rehab, OnBtnRehab)
+			EVENT_ID_COMMAND(R.id.btn_ffPriVol, OnBtnFundFlowPriVol)
+			EVENT_ID_COMMAND(R.id.radio_alltime, OnRadioAllTime)
+			EVENT_ID_COMMAND(R.id.radio_last, OnRadioLast)
+			EVENT_ID_COMMAND(R.id.chk_order, OnChkOrder)
+			EVENT_ID_COMMAND(R.id.chk_delete, OnChkDelete)
+			EVENT_ID_COMMAND(R.id.chk_trade, OnChkTrade)
 
 			EVENT_MAP_END()
 
@@ -271,6 +289,7 @@ namespace SOUI
 		SImageButton* m_pBtnConn2;
 		SImageButton* m_pBtnStockFilter;
 		SImageButton* m_pBtnTitleSel;
+		SImageButton* m_pBtnFundFlowPriVol;
 		SStatic *m_pTextFilterName;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
@@ -278,6 +297,7 @@ namespace SOUI
 		SFenShiPic* m_pFenShiPic;
 		SKlinePic* m_pKlinePic;
 		SPriceVolPic* m_pPriceVolPic;
+		SFundFlowPriceVol* m_pFundFlowPriVolPic;
 		SImageButton* m_pPreSelBtn;
 		CDlgKbElf* m_pDlgKbElf;
 		CDlgStockFilter *m_pDlgStockFilter;
@@ -288,6 +308,13 @@ namespace SOUI
 		SCheckBox*	  m_pCheckNewStock;
 		SImageButton* m_pBtnRehab;
 		SStatic*	  m_pTextCalcInfo;
+		SWindow*	  m_pWndFfConrtrol;
+		SRadioBox*	  m_pRadioAllTime;
+		SRadioBox*	  m_pRadioLast;
+		SCheckBox*    m_pChkOrder;
+		SCheckBox*    m_pChkDelete;
+		SCheckBox*    m_pChkTrade;
+
 
 		//子类
 	protected:
@@ -323,6 +350,13 @@ namespace SOUI
 		map<int, vector<map<int, map<int, vector<double>>>>>* m_pHisFilterDataMap;
 		map<int, vector<map<int, map<int, vector<double>>>>>* m_pL1IndyHisFilterDataMap;
 		map<int, vector<map<int, map<int, vector<double>>>>>* m_pL2IndyHisFilterDataMap;
+		vector<OrderState> m_OrderStateVec;
+		vector<DeleteState> m_DeleteStateVec;
+		vector<TradeState> m_TradeStateVec;
+		//vector<map<int,OrderVolState>> m_OrderPriceVolVec;
+		//vector<map<int, DeleteVolState>> m_DeletePriceVolVec;
+		//vector<map<int, TradeVolState>> m_TradePriceVolVec;
+
 		strHash<CAInfo>* m_pCallActionHash;
 		strHash<int>* m_pStockPos;
 		strHash<int>* m_pL1IndyIndexPos;

@@ -209,6 +209,9 @@
     <ClCompile Include="SSubTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SFundFlowPriceVol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -388,6 +391,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SSubTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SFundFlowPriceVol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
