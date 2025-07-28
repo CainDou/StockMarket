@@ -7,6 +7,7 @@
 #include<vector>
 #include<unordered_map>
 #include<set>
+#include <mutex>
 using std::map;
 using std::vector;
 using std::unordered_map;
@@ -47,6 +48,17 @@ public:
 	void SetTradeWnd(HWND hWnd);
 	void SetTradeDlgThreadID(unsigned threadID);
 	void SetLpPriceVolWnd(HWND hWnd, unsigned threadID);
+	void SetTradeSysResWnd(HWND hWnd, unsigned threadID);
+	int GetTradingDay() const;
+	map<SStringA, double>GetAccRehabMap() const;
+	void AddSelfSelStock(SStringA strStockID,BOOL bSave = TRUE);
+	void AddSelfSelStock(std::set<SStringA> strStockIDSet);
+	void RomoveSelfSelStock(SStringA strStockID);
+	void RemoveAllSelfSelStock();
+	map<SStringA, SelfSelStockInfo> GetSelfSelStock();
+public:
+	double GetStockLastPrice(SStringA SercurityID);
+
 	//初始化函数
 protected:
 	void InitCommonSetting();
@@ -69,6 +81,7 @@ protected:
 	void InitNetHandleMap();
 	void InitSynHandleMap();
 	void InitTradeSynMap();
+	void InitSelfSelStock();
 	bool CheckInfoRecv();
 	bool CheckCmdLine();
 	bool GetAutoUpdateFile(SStringA strMD5);
@@ -131,6 +144,9 @@ protected:
 	void OnMsgOrderPriceVol(ReceiveInfo &recvInfo);
 	void OnMsgDeletePriceVol(ReceiveInfo &recvInfo);
 	void OnMsgTradePriceVol(ReceiveInfo &recvInfo);
+	void OnMsgTradeSysRes(ReceiveInfo &recvInfo);
+	void OnMsgHisTradeSysRes(ReceiveInfo &recvInfo);
+	void OnMsgAllBackRehab(ReceiveInfo &recvInfo);
 
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
@@ -190,7 +206,12 @@ protected:
 	void OnGetOrderPriceVol(int nMsgLength, const char* info);
 	void OnGetDeletePriceVol(int nMsgLength, const char* info);
 	void OnGetTradePriceVol(int nMsgLength, const char* info);
-
+	void OnTradeSysRes(int nMsgLength, const char* info);
+	void OnHisTradeSysRes(int nMsgLength, const char* info);
+	void OnGetHisTradeSysRes(int nMsgLength, const char* info);
+	void OnReSendRtTradeSysRes(int nMsgLength, const char* info);
+	void OnAllBackRehab(int nMsgLength, const char* info);
+	void OnSelfSelChange(int nMsgLength, const char* info);
 	//交易信息处理
 protected:
 	void PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info);
@@ -229,6 +250,10 @@ public:
 
 	map<string, vector<int>> m_rpsDataNameMap;
 	map<string, vector<int>> m_secDataNameMap;
+	char* m_tmpTradSysRes;
+	int m_nTmpTradeSysSize;
+	map<SStringA, double> m_accRehabMap;
+	map<SStringA, SelfSelStockInfo> m_SelfSelStockMap;
 
 protected:
 	map<int, BOOL> m_NetHandleFlag;
@@ -238,7 +263,7 @@ protected:
 	bool			m_bFirstData;
 	bool			m_bCaUpdate;
 	map<eSubTargetType, int> m_PointGetMsg;
-
+	int m_nTradingDay;
 protected:
 	thread tLogin;
 	thread tRpsCalc;
@@ -251,6 +276,7 @@ protected:
 	UINT m_uTradeMsgThreadID;
 	UINT m_uTradeDlgThreadID;
 	UINT m_uLpPriceVolThreadID;
+	UINT m_uTradeSysResThreadID;
 
 	//处理函数哈希表
 protected:
@@ -284,13 +310,18 @@ protected:
 	vector<int>		m_nIPPort;
 	bool m_bServerReady;
 	bool bExit;
-	CRITICAL_SECTION m_cs;
-	CRITICAL_SECTION m_csFilterData;
+	//CRITICAL_SECTION m_cs;
+	std::mutex m_mx;
+	std::mutex m_mxFilter;
+	std::mutex m_mxSelfSel;
+
+	//CRITICAL_SECTION m_csFilterData;
 	SStringW m_strCmdLine;
 	unordered_map<int, int>m_tradeSynMap;
 	HWND m_hAccWnd;
 	HWND m_hTradeWnd;
 	HWND m_hLpPriceVolWnd;
+	HWND m_TradeSysWnd;
 };
 
 inline void CWndSynHandler::SetMainWnd(HWND hWnd)
@@ -405,5 +436,30 @@ inline void CWndSynHandler::SetLpPriceVolWnd(HWND hWnd, unsigned threadID)
 {
 	m_hLpPriceVolWnd = hWnd;
 	m_uLpPriceVolThreadID = threadID;
+}
+
+inline void CWndSynHandler::SetTradeSysResWnd(HWND hWnd, unsigned threadID)
+{
+	m_TradeSysWnd = hWnd;
+	m_uTradeSysResThreadID = threadID;
+}
+
+inline int CWndSynHandler::GetTradingDay() const
+{
+	return m_nTradingDay;
+}
+
+inline map<SStringA, double> CWndSynHandler::GetAccRehabMap() const
+{
+	return m_accRehabMap;
+}
+
+
+inline double CWndSynHandler::GetStockLastPrice(SStringA SercurityID)
+{
+	std::lock_guard<std::mutex> lk(m_mx);
+	if (m_RtRpsHash[Group_Stock][Period_1Day].hash.count(SercurityID))
+		return m_RtRpsHash[Group_Stock][Period_1Day].hash[SercurityID].fPrice;
+	return 0.0;
 }
 

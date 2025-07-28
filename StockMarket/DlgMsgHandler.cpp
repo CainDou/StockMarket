@@ -107,6 +107,8 @@ void CDlgMsgHandler::InitMsgHandleMap()
 		= &CDlgMsgHandler::OnDeletePriceVol;
 	m_MsgHandleMap[Syn_TradePriceVol]
 		= &CDlgMsgHandler::OnTradePriceVol;
+	m_MsgHandleMap[Syn_SelfSelChange]
+		= &CDlgMsgHandler::OnSelfSelChange;
 
 
 }
@@ -426,4 +428,15 @@ void CDlgMsgHandler::OnTradePriceVol(int nMsgLength, const char * info)
 			SendMsg(m_WndVec[i]->GetThreadID(), WW_TradePriceVol,
 				info, nMsgLength);
 	}
+}
+
+void CDlgMsgHandler::OnSelfSelChange(int nMsgLength, const char * info)
+{
+	int nStart = m_bOnlyStock ? 0 : Group_Stock;
+	for (int i = nStart; i < m_WndVec.size(); ++i)
+	{
+			SendMsg(m_WndVec[i]->GetThreadID(), WW_SelfSelChange,
+				info, nMsgLength);
+	}
+
 }

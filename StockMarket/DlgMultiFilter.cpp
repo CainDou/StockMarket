@@ -174,7 +174,8 @@ void CDlgMultiFilter::InitWorkWnd()
 	InitConfig(infoMap);
 	InitComboStockFilter();
 	SetShowWndNum(m_nShowWndNum, TRUE);
-
+	auto &&accRehabMap = g_WndSyn.GetAccRehabMap();
+	auto&& selSelMap = g_WndSyn.GetSelfSelStock();
 	for (int i = 0; i < MAX_WNDNUM; ++i)
 	{
 		//m_WndHandleMap[m_WndVec[i]->m_hWnd] = i;
@@ -195,7 +196,14 @@ void CDlgMultiFilter::InitWorkWnd()
 		map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
 		m_WndVec[i]->SetDataPoint(pTFMarket, DT_TFMarket);
 		m_WndVec[i]->SetPreClose(preCloseMap);
+
+		m_WndVec[i]->SetRehabMap(accRehabMap);
+		m_WndVec[i]->SetSelfSelStockInfo(selSelMap);
+		m_WndVec[i]->InitSelfSelList();
+
 		m_WndVec[i]->InitList();
+
+
 	}
 	InitListConfig();
 }

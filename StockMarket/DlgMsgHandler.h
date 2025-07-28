@@ -45,6 +45,7 @@ protected:
 	void OnOrderPriceVol(int nMsgLength, const char* info);
 	void OnDeletePriceVol(int nMsgLength, const char* info);
 	void OnTradePriceVol(int nMsgLength, const char* info);
+	void OnSelfSelChange(int nMsgLength, const char* info);
 
 protected:
 	HWND m_hWnd;

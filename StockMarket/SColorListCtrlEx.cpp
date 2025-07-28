@@ -29,6 +29,7 @@ namespace SOUI
 		, m_bHotTrack(FALSE)
 		, m_bCheckBox(FALSE)
 		, m_bMultiSelection(FALSE)
+		, m_bMouseWheel(TRUE)
 	{
 		m_bClipClient = TRUE;
 		m_bFocusable = TRUE;
@@ -36,6 +37,9 @@ namespace SOUI
 		m_evtSet.addEvent(EVENTID(EventLCSelChanged));
 		m_evtSet.addEvent(EVENTID(EventLCDbClick));
 		m_evtSet.addEvent(EVENTID(EventLCItemDeleted));
+		m_evtSet.addEvent(EVENTID(EventLCRClick));
+		m_evtSet.addEvent(EVENTID(EventLCMouseWheel));
+
 	}
 
 	SColorListCtrlEx::~SColorListCtrlEx()
@@ -361,6 +365,11 @@ namespace SOUI
 		Invalidate();
 	}
 
+	void SColorListCtrlEx::SetMouseWheelEnabled(BOOL bEnable)
+	{
+		m_bMouseWheel = bEnable;
+	}
+
 	//更新表头位置
 	void SColorListCtrlEx::UpdateHeaderCtrl()
 	{
@@ -622,7 +631,17 @@ namespace SOUI
 
 	BOOL SColorListCtrlEx::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	{
+		if(m_bMouseWheel)
 		SPanel::OnMouseWheel(nFlags, zDelta, pt);
+		else
+		{
+			EventLCMouseWheel evt1(this);
+			evt1.zDelta = zDelta;
+			evt1.nFlags = nFlags;
+			evt1.pt = pt;
+			FireEvent(evt1);
+
+		}
 		return 0;
 	}
 
@@ -999,6 +1018,20 @@ namespace SOUI
 		else if (m_nHoverItem != -1 || m_nSelectItem != -1)
 			NotifySelChange(m_nSelectItem, m_nHoverItem);
 		int nSelect = GetSelectedItem();
+	}
+
+	void SColorListCtrlEx::OnRButtonUp(UINT nFlags, CPoint pt)
+	{
+		__super::OnRButtonUp(nFlags,pt);
+		m_nHoverItem = HitTest(pt);
+		if (m_nHoverItem != m_nSelectItem)
+			NotifySelChange(m_nSelectItem, m_nHoverItem);
+
+		EventLCRClick evt(this);
+		evt.nCurSel = m_nHoverItem;
+		evt.pt =pt;
+		FireEvent(evt);
+
 	}
 
 	void SColorListCtrlEx::SetHoverSelected()

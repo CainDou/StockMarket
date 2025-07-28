@@ -217,6 +217,7 @@
     <ClCompile Include="DlgStockFilter.cpp" />
     <ClCompile Include="DlgSub.cpp" />
     <ClCompile Include="DlgTradeSetting.cpp" />
+    <ClCompile Include="DlgTradeSysFilter.cpp" />
     <ClCompile Include="DlgTrustConfirm.cpp" />
     <ClCompile Include="DlgUpdateLog.cpp" />
     <ClCompile Include="DragWnd.cpp">
@@ -300,6 +301,7 @@
     <ClInclude Include="DlgStockFilter.h" />
     <ClInclude Include="DlgSub.h" />
     <ClInclude Include="DlgTradeSetting.h" />
+    <ClInclude Include="DlgTradeSysFilter.h" />
     <ClInclude Include="DlgTrustConfirm.h" />
     <ClInclude Include="DlgUpdateLog.h" />
     <ClInclude Include="FrmlCompiler.h" />

@@ -130,7 +130,9 @@ enum RecvMsgType
 	RecvMsg_OrderPriceVol,
 	RecvMsg_DeletePriceVol,
 	RecvMsg_TradePriceVol,
-
+	RecvMsg_TradeSysRes,
+	RecvMsg_HisTradeSysRes,
+	RecvMsg_AllBackRehab
 };
 
 enum SendMsgType
@@ -149,6 +151,7 @@ enum SendMsgType
 	SendType_UnSubIns,
 	SendType_LpPriceVol,
 	SendType_HisTradeVol,
+	SendType_HisTradeSysRes,
 };
 
 enum ComSendMsgType
@@ -233,7 +236,7 @@ typedef struct _ReceiveIDInfo
 	int MsgType;
 	char NoUse1[10];
 	int ClientID;
-	int NoUse2;
+	int TradingDay;
 	unsigned long NoUse3;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
 	unsigned long NoUse4;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceiveIDInfo;
@@ -275,6 +278,26 @@ typedef struct _ReceivePointInfo
 	unsigned long TotalDataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
 	unsigned long FirstDataSize;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceivePointInfo;
+
+
+typedef struct _ReceiveInfoWithDate
+{
+	_ReceiveInfoWithDate() :MsgType(-1), zipDataSize(-1)
+	{
+
+	}
+	_ReceiveInfoWithDate(ReceiveInfo& ri)
+	{
+		memcpy_s(this, sizeof(_ReceiveInfoWithDate),
+			&ri, sizeof(ri));
+	}
+	int MsgType;
+	char Message[10];
+	int nStartDate;
+	int nEndDate;
+	unsigned long zipDataSize;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long srcDataSize;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+}ReceiveInfoWithDate;
 
 typedef struct _ReceiveLpPriVolInfo
 {
@@ -344,6 +367,28 @@ enum SListHead
 	SHead_AvgActBuyNum,
 	SHead_AvgActSellNum,
 	SHead_StockItemCount,
+};
+
+enum SListSelfSelHead
+{
+	SSSH_Num,
+	SSSH_SecurityID,
+	SSSH_SecurityName,
+	SSSH_LastPrice,
+	SSSH_ChgPct,
+	SSSH_Amount,
+	SSSH_Volume,
+	SSSH_AddDate,
+	SSSH_AddPrice,
+	SSSH_ChgPctAdd,
+	SSSH_ClosePoint520,
+	SSSH_ClosePoint2060,
+	SSSH_AmountPoint520,
+	SSSH_AmountPoint2060,
+	SSSH_AmountPoint,
+	SSSH_CAVolPoint,
+	SSSH_CAAmountPoint,
+	SSSH_ItemCount,
 };
 
 enum SBackTestingListHead
@@ -511,6 +556,12 @@ enum SynMsg
 	Syn_OrderPriceVol,
 	Syn_DeletePriceVol,
 	Syn_TradePriceVol,
+	Syn_TradeSysRes,
+	Syn_HisTradeSysRes,
+	Syn_GetHisTradeSysRes,
+	Syn_ReSendRtTradeSysRes,
+	Syn_AllBackRehab,
+	Syn_SelfSelChange,
 
 	//交易的同步信息
 	Syn_GetTradeMarket,
@@ -578,6 +629,7 @@ enum WorkWndMsg
 	WW_OrderPriceVol,
 	WW_DeletePriceVol,
 	WW_TradePriceVol,
+	WW_SelfSelChange,
 	WW_End,
 };
 
@@ -612,6 +664,7 @@ enum WDMSG
 	WDMsg_ChangeHisStockFilter,
 	WDMsg_HisFilterStartCalc,
 	WDMsg_HisFilterEndCalc,
+	WDMsg_ChangeSelfSelStock,
 
 	WDMsg_Exit,
 
@@ -621,6 +674,17 @@ enum LPDMsg
 {
 	LPDMsg_UpdatePic,
 	LPDMsg_ChangeDate,
+};
+
+enum TradeSysResMsg
+{
+	TSRMsg_UpdateRtData,
+	TSRMsg_UpdateHisData,
+	TSRMsg_ChangeShowPara,
+	TSRMSG_ClearRes,
+	TSRMSG_SizeChange,
+	TSRMSG_ChangeItemCount,
+	TSRMSG_SortData,
 };
 
 enum RpsGroup
@@ -1100,6 +1164,22 @@ enum FSMenu
 	FM_FFOrderNum,
 	FM_FFDeleteNum,
 	FM_End,
+};
+
+enum AddSelfSelMenu
+{
+	ASSM_Strat=601,
+	ASSM_AddSel= ASSM_Strat,
+	ASSM_AddAll,
+	ASSM_End,
+};
+
+enum RemoveSelfSelMenu
+{
+	RSSM_Strat = 701,
+	RSSM_RemoveSel = RSSM_Strat,
+	RSSM_RemoveAll,
+	RSSM_End,
 };
 
 enum KlineMenu
@@ -2761,3 +2841,37 @@ typedef struct _DeleteVolState
 	int32_t nDelSM;
 	int32_t nDelSS;
 }DeleteVolState;
+
+typedef struct _TradeInfo
+{
+	double fLongEnterPrice;
+	double fLongExitPrice;
+	double fShortEnterPrice;
+	double fShortExitPrice;
+	int nLongEnterDate;
+	int nLongExitDate;
+	int nShortEnterDate;
+	int nShortExitDate;
+	bool bLong;
+	bool bShort;
+}TradeInfo;
+
+typedef struct _TradSystemResult
+{
+	SecurityID SecurityID;
+	char TsSimple[8];
+	double fEnterPrice;
+	double fExitPrice;
+	int nEnterDate;
+	int nExitDate;
+	int nType;
+	int nPeriod;
+}TradeSysRes;
+
+
+typedef struct _SelfSelStockInfo
+{
+	SecurityID SecurityID;
+	double fAddPrice;
+	int nAddDate;
+}SelfSelStockInfo;

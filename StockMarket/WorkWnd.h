@@ -1,5 +1,6 @@
 #pragma once
 #include<thread>
+#include <mutex>
 using std::thread;
 namespace SOUI
 {
@@ -27,6 +28,7 @@ namespace SOUI
 		void		ClearData();
 		void		ClearAllData();
 		void		InitList();
+		void		InitSelfSelList();
 		void		ReInitList();
 		void		SetDataPoint(void* pData, int DataType);
 		void		SetPicUnHandled();
@@ -51,6 +53,8 @@ namespace SOUI
 
 		void		SetPointInfo(map<int, ShowPointInfo> &infoMap);
 		map<int, int> GetListTitleOrder();
+		void		SetRehabMap(map<SStringA, double>& rehabMap);
+		void		SetSelfSelStockInfo(map<SStringA, SelfSelStockInfo> &selSelMap);
 		// 消息响应
 	protected:
 		void	OnInit(EventArgs *e);
@@ -61,6 +65,7 @@ namespace SOUI
 		void	OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnRehabMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
+		void	OnSelfSleMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnRButtonUp(UINT nFlags, CPoint point);
@@ -78,6 +83,8 @@ namespace SOUI
 		bool OnListHeaderSwap(EventArgs *pEvtBase);
 		bool OnListDbClick(EventArgs *pEvtBase);
 		bool OnListLClick(EventArgs *pEvtBase);
+		bool OnListRClick(EventArgs* arg);
+		bool OnListSelfSelRClick(EventArgs* arg);
 
 		//列表辅助函数
 	public:
@@ -97,6 +104,11 @@ namespace SOUI
 		void SortListData(bool bSortCode=false);
 		void SortCommonData(int nSortHeader,int nFlag);
 		void SortOtherData(int nSortHeader, int nFlag);
+		void InitSelfSelSortItemMapping();
+		void UpdateSelfSelShowStock();
+		void HandleSelfSelListData();
+		void UpdateSelfSelList();
+		void SortSelfSelListData(bool bSortCode = false);
 
 		template<typename T1, typename T2>
 		bool compareData(const T1& data1, const T1& data2, int nOffset, int nFlag);
@@ -139,6 +151,8 @@ namespace SOUI
 		//按钮响应
 	public:
 		void OnBtnMarketClicked();
+		void OnBtnSelfSelClicked();
+		void OnBtnAnalysisClicked();
 		void OnBtnFenShiClicked();
 		void OnBtnM1Clicked();
 		void OnBtnM5Clicked();
@@ -166,7 +180,7 @@ namespace SOUI
 		void SetBtnState(SImageButton* nowBtn, SImageButton** preBtn);
 		void SetBtnState(SImageButton* nowBtn, bool bSelected);
 		void SetBtnState(int nPeriod, bool bSelected);
-		void OnBtnShowTypeChange(bool bFroceList = false, bool bFromPriVol = false);
+		void OnBtnShowTypeChange(bool bFroceList);
 		void OnBtnPeriedChange(int nPeriod);
 		void SetListShowIndyStr(SStatic* pText);
 		void SetFenShiShowData(vector<ShowPointInfo>&infoVec,int nStartWnd = 0);
@@ -210,6 +224,7 @@ namespace SOUI
 		void OnUpdateOrderPriceVol(int nMsgLength, const char* info);
 		void OnUpdateDeletePriceVol(int nMsgLength, const char* info);
 		void OnUpdateTradePriceVol(int nMsgLength, const char* info);
+		void OnChangeSelfSelStock(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -259,6 +274,8 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.chk_order, OnChkOrder)
 			EVENT_ID_COMMAND(R.id.chk_delete, OnChkDelete)
 			EVENT_ID_COMMAND(R.id.chk_trade, OnChkTrade)
+			EVENT_NAME_COMMAND(L"btn_SelfSel", OnBtnSelfSelClicked)
+			EVENT_NAME_COMMAND(L"btn_analysis", OnBtnAnalysisClicked)
 
 			EVENT_MAP_END()
 
@@ -270,6 +287,8 @@ namespace SOUI
 			COMMAND_RANGE_HANDLER_EX(KM_Return, KM_End, OnKlineMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(TSM_Close, TSM_End, OnTarSelMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(RM_NoRehab, RM_End, OnRehabMenuCmd)
+			COMMAND_RANGE_HANDLER_EX(ASSM_Strat, ASSM_End, OnSelfSleMenuCmd)
+			COMMAND_RANGE_HANDLER_EX(RSSM_Strat, RSSM_End, OnSelfSleMenuCmd)
 
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_MOUSEWHEEL(OnMouseWheel)
@@ -290,10 +309,13 @@ namespace SOUI
 		SImageButton* m_pBtnStockFilter;
 		SImageButton* m_pBtnTitleSel;
 		SImageButton* m_pBtnFundFlowPriVol;
+		SImageButton* m_pBtnSelfSel;
+		SImageButton* m_pBtnAnalysis;
 		SStatic *m_pTextFilterName;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
 		SColorListCtrlEx* m_pList;
+		SColorListCtrlEx* m_pListSelfSel;
 		SFenShiPic* m_pFenShiPic;
 		SKlinePic* m_pKlinePic;
 		SPriceVolPic* m_pPriceVolPic;
@@ -330,17 +352,21 @@ namespace SOUI
 		int			m_ListPeriod;
 		bool		m_bShowList;
 		SortPara	m_SortPara;
+		SortPara	m_SelfSelSortPara;
 		SStringA	m_WndName;
 		int			m_nWndNum;
 		BOOL		m_bFilterWnd;	//是否是用在选股上
+		int			m_nShowListType;
 		//列表相关数据
 	protected:
 		bool		m_bListInited;
+		bool		m_bSelfSelListInited;
 		BOOL		m_bUseStockFilter;
 		BOOL		m_bUseHisStockFilter;
 		//vector<vector<SStringA>> m_SubPicShowNameVec;
 		map< eSubTargetType, map<SStringA, vector<SStringA>>>m_SubPicShowNameVec;
 		map<int,SStringA>m_ListPosMap;
+		map<int, SStringA>m_ListSelfSelPosMap;
 		map<int, SStringA>m_MouseWheelMap;
 		map<int, strHash<RtRps>> *m_pListDataMap;
 		map<int, strHash<TickFlowMarket>> *m_pTFMarketHash;
@@ -353,6 +379,8 @@ namespace SOUI
 		vector<OrderState> m_OrderStateVec;
 		vector<DeleteState> m_DeleteStateVec;
 		vector<TradeState> m_TradeStateVec;
+		map<SStringA, SelfSelStockInfo> m_selfSelStock;
+		map<SStringA, double> m_accRehabMap;
 		//vector<map<int,OrderVolState>> m_OrderPriceVolVec;
 		//vector<map<int, DeleteVolState>> m_DeletePriceVolVec;
 		//vector<map<int, TradeVolState>> m_TradePriceVolVec;
@@ -380,14 +408,21 @@ namespace SOUI
 		map<int,int>m_RpsSortMap;
 		map<int, int>m_TFSortMap;
 		map<int, int>m_CASortMap;
+		map<int, int>m_LssComonSortMap;
+		map<int, int>m_LssRpsSortMap;
+		map<int, int>m_LssTFSortMap;
+		map<int, int>m_LssCASortMap;
 
 		int			m_nDate;
 		BOOL		m_bListShowST;
 		BOOL		m_bListShowSBM;
 		BOOL		m_bListShowSTARM;
 		BOOL		m_bListShowNewStock;
-		map<SListHead, eSortDataType> m_ListDataSortMap;
-		map<SListHead, int> m_ListDataDecMap;
+		map<int, eSortDataType> m_ListDataSortMap;
+		map<int, int> m_ListDataDecMap;
+		map<int, eSortDataType> m_ListSelfSelDataSortMap;
+		map<int, int> m_ListSelfSelDataDecMap;
+
 
 		strHash<RtRps> m_ListShowRpsData;
 		strHash<TickFlowMarket> m_ListShowTFData;
@@ -436,6 +471,7 @@ namespace SOUI
 		thread m_workThread;
 		unsigned m_uParWndThreadID;
 		CRITICAL_SECTION m_csClose;
+		std::mutex m_mxSelfSel;
 	};
 }
 
@@ -538,23 +574,72 @@ template<typename T>
 void CWorkWnd::ResetListStockOrder(vector<T>& dataVec)
 {
 	set<SStringA> showStockSet;
-	for (auto &it : m_ListPosMap)
+	auto &ListPosMap = m_nShowListType == eSLT_Market ? m_ListPosMap :
+		m_ListSelfSelPosMap;
+	auto pList = m_nShowListType == eSLT_Market ? m_pList :
+		m_pListSelfSel;
+
+	for (auto &it : ListPosMap)
 		showStockSet.insert(it.second);
+
 	for (int i = 0; i < dataVec.size(); ++i)
 	{
 		auto &stockInfo = m_infoMap.hash[dataVec[i].SecurityID];
-		m_pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID));
-		m_pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName));
-		m_ListPosMap[i] = stockInfo.SecurityID;
+		if (m_selfSelStock.count(stockInfo.SecurityID))
+		{
+			pList->SetSubItemText(i, SHead_ID,
+				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+			pList->SetSubItemText(i, SHead_Name,
+				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+			if (m_nShowListType == eSLT_SelfSel)
+			{
+				SStringW tmp;
+				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+				m_pListSelfSel->SetSubItemText(i, SSSH_AddDate,
+					tmp.Format(L"%d", selInfo.nAddDate));
+				m_pListSelfSel->SetSubItemText(i, SSSH_AddPrice,
+					tmp.Format(L"%.02f", selInfo.fAddPrice));
+			}
+
+		}
+		else
+		{
+			pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+			pList->SetSubItemText(i, SHead_Name,StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+
+		}
+		ListPosMap[i] = stockInfo.SecurityID;
 		showStockSet.erase(stockInfo.SecurityID);
 	}
 	int nCount = dataVec.size();
 	for (auto &it : showStockSet)
 	{
 		auto &stockInfo = m_infoMap.hash[it];
-		m_pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID));
-		m_pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName));
-		m_ListPosMap[nCount++] = stockInfo.SecurityID;
+		if (m_selfSelStock.count(stockInfo.SecurityID))
+		{
+			pList->SetSubItemText(nCount, SHead_ID,
+				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+			pList->SetSubItemText(nCount, SHead_Name,
+				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+			if (m_nShowListType == eSLT_SelfSel)
+			{
+				SStringW tmp;
+				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddDate,
+					tmp.Format(L"%d", selInfo.nAddDate));
+				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddPrice,
+					tmp.Format(L"%.02f", selInfo.fAddPrice));
+			}
+
+		}
+		else
+		{
+			pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+			pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+
+		}
+
+		ListPosMap[nCount++] = stockInfo.SecurityID;
 	}
 
 }
@@ -563,23 +648,69 @@ template<typename T>
 void CWorkWnd::ResetListStockOrder(vector<pair<SStringA,T>>& dataVec)
 {
 	set<SStringA> showStockSet;
-	for (auto &it : m_ListPosMap)
+	auto &ListPosMap = m_nShowListType == eSLT_Market ? m_ListPosMap :
+		m_ListSelfSelPosMap;
+	for (auto &it : ListPosMap)
 		showStockSet.insert(it.second);
+	auto pList = m_nShowListType == eSLT_Market ? m_pList :
+		m_pListSelfSel;
 	for (int i = 0; i < dataVec.size(); ++i)
 	{
 		auto &stockInfo = m_infoMap.hash[dataVec[i].first];
-		m_pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID));
-		m_pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName));
-		m_ListPosMap[i] = stockInfo.SecurityID;
+		if (m_selfSelStock.count(stockInfo.SecurityID))
+		{
+			pList->SetSubItemText(i, SHead_ID,
+				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+			pList->SetSubItemText(i, SHead_Name,
+				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+			if (m_nShowListType == eSLT_SelfSel)
+			{
+				SStringW tmp;
+				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+				m_pListSelfSel->SetSubItemText(i, SSSH_AddDate,
+					tmp.Format(L"%d", selInfo.nAddDate));
+				m_pListSelfSel->SetSubItemText(i, SSSH_AddPrice,
+					tmp.Format(L"%.02f", selInfo.fAddPrice));
+			}
+
+		}
+		else
+		{
+			pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+			pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+
+		}
+		ListPosMap[i] = stockInfo.SecurityID;
 		showStockSet.erase(stockInfo.SecurityID);
 	}
 	int nCount = dataVec.size();
 	for (auto &it : showStockSet)
 	{
 		auto &stockInfo = m_infoMap.hash[it];
-		m_pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID));
-		m_pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName));
-		m_ListPosMap[nCount++] = stockInfo.SecurityID;
+		if (m_selfSelStock.count(stockInfo.SecurityID))
+		{
+			pList->SetSubItemText(nCount, SHead_ID,
+				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+			pList->SetSubItemText(nCount, SHead_Name,
+				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+			if (m_nShowListType == eSLT_SelfSel)
+			{
+				SStringW tmp;
+				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddDate,
+					tmp.Format(L"%d", selInfo.nAddDate));
+				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddPrice,
+					tmp.Format(L"%.02f", selInfo.fAddPrice));
+			}
+
+		}
+		else
+		{
+			pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+			pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+
+		}
+		ListPosMap[nCount++] = stockInfo.SecurityID;
 	}
 }
 
@@ -591,17 +722,18 @@ void CWorkWnd::SortData(strHash<T>& listDataHash, int nSortHeader, int nOffset, 
 	for (auto &it : listDataHash.hash)
 		dataVec.emplace_back(it.second);
 
+	auto &ListDataSortMap = m_nShowListType == eSLT_Market ?
+		m_ListDataSortMap : m_ListSelfSelDataSortMap;
 	sort(dataVec.begin(), dataVec.end(),
 		[&](const T & data1, const T& data2)
 	{
-		int nSortType = m_ListDataSortMap[(SListHead)nSortHeader];
+		int nSortType = ListDataSortMap[nSortHeader];
 		if (eSDT_Int == nSortType)
 			return compareData<T, int>(data1, data2, nOffset, nFlag);
 		else if (eSDT_Double == nSortType || eSDT_BigDouble == nSortType)
 			return compareData<T, double>(data1, data2, nOffset, nFlag);
 		else if(eSDT_Uint64 == nSortType)
 			return compareData<T, uint64_t>(data1, data2, nOffset, nFlag);
-
 		return false;
 	});
 

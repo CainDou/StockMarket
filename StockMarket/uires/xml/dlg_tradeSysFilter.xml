@@ -1,0 +1,85 @@
+﻿<SOUI name="tradeSysFilter" title="交易系统选股器" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="normal" appWnd="0" translucent="0" colorBkgnd="#000000ff">
+	<root cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" name="text_windowName">交易系统选股器</text>
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
+			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
+			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+		</caption>
+		<window pos="0,30,-0,-0" colorBkgnd="#000000ff" cache="1" font="adding:0,face:微软雅黑">
+			<group pos="5,5,@400,-5" align="left" headerHeight="20" text="选股系统操作" colorText="#FFFFFFFF">
+				<color_listctrlex name="ls_filter" cache="1" bkgndBlend="0" pos="5,5,-5,-300" hotTrack="1" itemHeight="20" headerHeight="20" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" checkBox="1">
+					<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="0" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+						<items>
+							<item width="40">序号</item>
+							<item width="230">交易系统</item>
+							<item width="120">适用周期</item>
+						</items>
+					</headerex>
+				</color_listctrlex>
+				<group pos="5,[5,-5,@50" align="left" headerHeight="20" text="周期" colorText="#FFFFFFFF">
+					<check pos="5,[5,@80,@20" name="chk_allperiod" text="全部周期" checked="0"/>
+					<check pos="[2,{0,@35,@20" name="chk_day" text="日" checked="1"/>
+					<check pos="[2,{0,@45,@20" name="chk_1min" text="1分" checked="0"/>
+					<check pos="[2,{0,@45,@20" name="chk_5min" text="5分" checked="0"/>
+					<check pos="[2,{0,@52,@20" name="chk_15min" text="15分" checked="0"/>
+					<check pos="[2,{0,@52,@20" name="chk_30min" text="30分" checked="0"/>
+					<check pos="[2,{0,@52,@20" name="chk_60min" text="60分" checked="0"/>
+				</group>
+				<group pos="5,[5,-5,@50" align="left" headerHeight="20" text="方向" colorText="#FFFFFFFF">
+					<check pos="5,[5,@60,@20" name="chk_alldir" text="全部" checked="1"/>
+					<check pos="[5,{0,@60,@20" name="chk_long" text="多头" checked="1"/>
+					<check pos="[5,{0,@60,@20" name="chk_short" text="空头" checked="1"/>
+				</group>
+				<group pos="5,[5,-5,@80" align="left" headerHeight="20" text="触发日期" colorText="#FFFFFFFF">
+					<radio pos="5,5,@60,@20" name="rad_rt" text="当日" checked="1"/>
+					<radio pos="[5,{0,@60,@20" name="rad_his" text="历史"/>
+					<check pos="5,[5,@60,@20" name="chk_condAll" text="全部" checked="0"/>
+					<check pos="[5,{0,@80,@20" name="chk_today" text="当日触发" checked="1"/>
+					<check pos="[5,{0,@120,@20" name="chk_open" text="已触发未平仓" checked="0"/>
+					<text pos="5,{0,@60,@20" name="txt_start"  visible="0">开始日期</text>
+					<dateTimePicker pos="[5,{0" size="120,20" name="dtp_start" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+						<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+					</dateTimePicker>
+					<text pos="[5,{0,@60,@20" name="txt_end"  visible="0">结束日期</text>
+					<dateTimePicker pos="[5,{0" size="120,20" name="dtp_end" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
+						<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />
+					</dateTimePicker>
+
+				</group>
+			</group>
+		<group pos="[5,5,-5,-5" align="left" headerHeight="20" text="选股结果" colorText="#FFFFFFFF">
+<color_listctrlex name="ls_res" cache="1" bkgndBlend="0" pos="5,5,-5,-45" hotTrack="1" itemHeight="20" headerHeight="20" font="underline:0,face:微软雅黑" sbSkin="skin_default_scrollbar_png" colorItemBkgnd="#101010FF" colorItemBkgnd2="#101010FF" colorText="#FFFF00" align="right" valign="middle" scrollSpeed="120" checkBox="0">
+					<headerex align="left" itemSwapEnable="0" fixWidth="1" sortHeader="1" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
+						<items>
+							<item width="80">序号</item>
+							<item width="80">证券代码</item>
+							<item width="150">证券名称</item>
+							<item width="80">最新价</item>
+							<item width="80">涨跌幅%</item>
+							<item width="120">交易系统</item>
+							<item width="80">方向</item>
+							<item width="80">触发周期</item>
+							<item width="80">进入价格</item>
+							<item width="100">进入日期</item>
+							<item width="80">退出价格</item>
+							<item width="100">退出日期</item>
+							<item width="80">收益率%</item>
+							<item width="80">持仓天数</item>
+						</items>
+					</headerex>
+				</color_listctrlex>		
+			<imgbtn name="btn_pageUp" skin="skin_ButtonGrayBlack" pos="%40,[5,@100,@25" animate="1" text="上一页" />
+			<imgbtn name="btn_pageDown" skin="skin_ButtonGrayBlack" pos="[5,{0,@100,@25" animate="1" text="下一页" />
+			<edit name="edit_page" pos="[5,{2,@60,@21" colorBkgnd="#FFFFFFFF" colorText="#000000FF" text="1" number="1" align="right"/>
+			<text name ="text_totalPage"  pos="[5,{-2,@60,@25">/1页</text>
+			<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="[5,{0,@100,@25" animate="1" text="确定" />
+			<imgbtn name="btn_addSelf" skin="skin_ButtonGrayBlack" pos="-105,{0,@100,@25" animate="1" text="一键加入自选"  visible="0"/>
+         </group>
+
+		</window>
+
+	</root>
+</SOUI>

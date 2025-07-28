@@ -23,6 +23,8 @@ CWndSynHandler::CWndSynHandler()
 	m_bFirstData = true;
 	m_bCaUpdate = false;
 	m_uLpPriceVolThreadID = 0;
+	m_uTradeSysResThreadID = 0;
+	m_tmpTradSysRes = nullptr;
 }
 
 
@@ -52,8 +54,8 @@ CWndSynHandler::~CWndSynHandler()
 
 void CWndSynHandler::Run()
 {
-	InitializeCriticalSection(&m_cs);
-	InitializeCriticalSection(&m_csFilterData);
+	//InitializeCriticalSection(&m_cs);
+	//InitializeCriticalSection(&m_csFilterData);
 
 	InitCommonSetting();
 	InitPointInfo();
@@ -120,7 +122,7 @@ void CWndSynHandler::Run()
 	SStringW Info = L"登陆成功,开始程序初始化";
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 		(WPARAM)Info.GetBuffer(1), LoginMsg_UpdateText);
-
+	InitSelfSelStock();
 	//Info = L"处理当日历史数据，请等待...";
 	//::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 	//	(WPARAM)Info.GetBuffer(1), LoginMsg_UpdateText);
@@ -135,6 +137,138 @@ void CWndSynHandler::Close()
 	::PostMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG,
 		NULL, LoginMsg_Exit);
 }
+
+void CWndSynHandler::AddSelfSelStock(SStringA strStockID, BOOL bSave)
+{
+	vector<SelfSelStockInfo> tmpDataVec;
+	{
+		std::lock_guard<std::mutex> lk(m_mxSelfSel);
+		if (m_SelfSelStockMap.count(strStockID) == 0)
+		{
+			SelfSelStockInfo sssi = { "" };
+			strcpy(sssi.SecurityID, strStockID);
+			double fPrice = GetStockLastPrice(strStockID);
+			if (fPrice == 0)
+				fPrice = m_preCloseMap.hash[strStockID];
+			double fRehab = m_accRehabMap.count(strStockID) ? m_accRehabMap[strStockID] : 1;
+			sssi.fAddPrice = fPrice * fRehab;
+			sssi.nAddDate = m_nTradingDay;
+			m_SelfSelStockMap[strStockID] = sssi;
+			tmpDataVec.reserve(m_SelfSelStockMap.size());
+			for (auto it : m_SelfSelStockMap)
+				tmpDataVec.emplace_back(it.second);
+		}
+	}
+	if (bSave && !tmpDataVec.empty())
+	{
+		auto size = sizeof(SelfSelStockInfo) * tmpDataVec.size();
+		ofstream ofile(".\\config\\SelfSel.DAT", ios::binary);
+		if (ofile.is_open())
+		{
+			ofile.write((char*)&tmpDataVec[0], size);
+			ofile.close();
+		}
+		SendMsg(m_uMsgThreadID, Syn_SelfSelChange, (char*)&tmpDataVec[0], size);
+
+	}
+
+
+}
+
+void CWndSynHandler::AddSelfSelStock(std::set<SStringA> strStockIDSet)
+{
+	vector<SelfSelStockInfo> tmpDataVec;
+	{
+		int nPreSelCount = m_SelfSelStockMap.size();
+		for (auto &it : strStockIDSet)
+			AddSelfSelStock(it, FALSE);
+		std::lock_guard<std::mutex> lk(m_mxSelfSel);
+		if (m_SelfSelStockMap.size() > nPreSelCount)
+		{
+			tmpDataVec.reserve(m_SelfSelStockMap.size());
+			for (auto it : m_SelfSelStockMap)
+				tmpDataVec.emplace_back(it.second);
+
+			ofstream ofile(".\\config\\SelfSel.DAT", ios::binary);
+			if (ofile.is_open())
+			{
+				for (auto &it : m_SelfSelStockMap)
+					ofile.write((char*)&it, sizeof(it));
+				ofile.close();
+			}
+		}
+	}
+	if (!tmpDataVec.empty())
+	{
+		auto size = sizeof(SelfSelStockInfo) * tmpDataVec.size();
+		ofstream ofile(".\\config\\SelfSel.DAT", ios::binary);
+		if (ofile.is_open())
+		{
+			ofile.write((char*)&tmpDataVec[0], size);
+			ofile.close();
+		}
+		SendMsg(m_uMsgThreadID, Syn_SelfSelChange, (char*)&tmpDataVec[0], size);
+
+	}
+
+}
+
+void CWndSynHandler::RomoveSelfSelStock(SStringA strStockID)
+{
+	vector<SelfSelStockInfo> tmpDataVec;
+	{
+		std::lock_guard<std::mutex> lk(m_mxSelfSel);
+		if (m_SelfSelStockMap.count(strStockID))
+		{
+			m_SelfSelStockMap.erase(strStockID);
+			tmpDataVec.reserve(m_SelfSelStockMap.size());
+			for (auto it : m_SelfSelStockMap)
+				tmpDataVec.emplace_back(it.second);
+		}
+
+	}
+	auto size = sizeof(SelfSelStockInfo) * tmpDataVec.size();
+	if (!tmpDataVec.empty())
+	{
+		ofstream ofile(".\\config\\SelfSel.DAT", ios::binary);
+		if (ofile.is_open())
+		{
+			ofile.write((char*)&tmpDataVec[0], size);
+			ofile.close();
+		}
+		SendMsg(m_uMsgThreadID, Syn_SelfSelChange, (char*)&tmpDataVec[0], size);
+	}
+	else
+	{
+		remove(".\\config\\SelfSel.DAT");
+		SendMsg(m_uMsgThreadID, Syn_SelfSelChange, nullptr, 0);
+	}
+
+}
+
+void CWndSynHandler::RemoveAllSelfSelStock()
+{
+	bool bChange = false;
+	{
+		std::lock_guard<std::mutex> lk(m_mxSelfSel);
+		if (!m_SelfSelStockMap.empty())
+		{
+			bChange = true;
+			m_SelfSelStockMap.clear();
+			remove(".\\config\\SelfSel.DAT");
+		}
+	}
+	if (bChange)
+		SendMsg(m_uMsgThreadID, Syn_SelfSelChange, nullptr, 0);
+
+}
+
+map<SStringA, SelfSelStockInfo> CWndSynHandler::GetSelfSelStock()
+{
+	std::lock_guard<std::mutex> lk(m_mxSelfSel);
+	return m_SelfSelStockMap;
+}
+
 
 void CWndSynHandler::InitCommonSetting()
 {
@@ -523,7 +657,7 @@ int CWndSynHandler::GetMarket(SStringA stockID, SStringA oldStockID, int nGroup)
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
-int CWndSynHandler::GetHisData(SStringA stockID, int nPeriod, int nGroup,int nMsgID)
+int CWndSynHandler::GetHisData(SStringA stockID, int nPeriod, int nGroup, int nMsgID)
 {
 	SendInfo info = { 0 };
 	info.MsgType = nMsgID;
@@ -648,6 +782,12 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgDeletePriceVol;
 	m_netHandleMap[RecvMsg_TradePriceVol]
 		= &CWndSynHandler::OnMsgTradePriceVol;
+	m_netHandleMap[RecvMsg_TradeSysRes]
+		= &CWndSynHandler::OnMsgTradeSysRes;
+	m_netHandleMap[RecvMsg_HisTradeSysRes]
+		= &CWndSynHandler::OnMsgHisTradeSysRes;
+	m_netHandleMap[RecvMsg_AllBackRehab]
+		= &CWndSynHandler::OnMsgAllBackRehab;
 
 
 	m_netHandleMap[TradeRecvMsg_Register]
@@ -741,7 +881,18 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnGetDeletePriceVol;
 	m_synHandleMap[Syn_TradePriceVol]
 		= &CWndSynHandler::OnGetTradePriceVol;
-
+	m_synHandleMap[Syn_TradeSysRes]
+		= &CWndSynHandler::OnTradeSysRes;
+	m_synHandleMap[Syn_HisTradeSysRes]
+		= &CWndSynHandler::OnHisTradeSysRes;
+	m_synHandleMap[Syn_GetHisTradeSysRes]
+		= &CWndSynHandler::OnGetHisTradeSysRes;
+	m_synHandleMap[Syn_ReSendRtTradeSysRes]
+		= &CWndSynHandler::OnReSendRtTradeSysRes;
+	m_synHandleMap[Syn_AllBackRehab]
+		= &CWndSynHandler::OnAllBackRehab;
+	m_synHandleMap[Syn_SelfSelChange]
+		= &CWndSynHandler::OnSelfSelChange;
 
 	m_synHandleMap[Syn_GetTradeMarket]
 		= &CWndSynHandler::OnGetTradeMarket;
@@ -789,6 +940,22 @@ void CWndSynHandler::InitTradeSynMap()
 
 }
 
+void CWndSynHandler::InitSelfSelStock()
+{
+	std::lock_guard<std::mutex> lk(m_mxSelfSel);
+	ifstream ifile(".\\config\\SelfSel.DAT", ios::binary);
+	if (ifile.is_open())
+	{
+		SelfSelStockInfo sssi;
+		while (!ifile.eof())
+		{
+			ifile.read((char*)&sssi, sizeof(sssi));
+			m_SelfSelStockMap[sssi.SecurityID] = sssi;
+		}
+	}
+
+}
+
 
 bool CWndSynHandler::CheckInfoRecv()
 {
@@ -821,7 +988,7 @@ bool CWndSynHandler::CheckCmdLine()
 		return true;
 	else
 	{
-		if(!ConnectServer())
+		if (!ConnectServer())
 			return true;
 
 		SStringA strMD5 = "";
@@ -1134,6 +1301,7 @@ void CWndSynHandler::OnMsgClientID(ReceiveInfo & recvInfo)
 {
 	m_NetClient.SetClientID(((ReceiveIDInfo)recvInfo).ClientID);
 	m_NetHandleFlag[RecvMsg_ClientID] = TRUE;
+	m_nTradingDay = ((ReceiveIDInfo)recvInfo).TradingDay;
 	TraceLog("接收客户端ID成功");
 }
 
@@ -1533,7 +1701,6 @@ void CWndSynHandler::OnMsgTodayTFMarket(ReceiveInfo & recvInfo)
 void CWndSynHandler::OnMsgRTFilterData(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	TimeLineData stkInfo = { 0 };
 	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
 	{
 		unsigned long  ulSize = recvInfo.DataSize;
@@ -1669,6 +1836,56 @@ void CWndSynHandler::OnMsgTradePriceVol(ReceiveInfo & recvInfo)
 	int offset = sizeof(recvInfo);
 	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uMsgThreadID, Syn_TradePriceVol, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgTradeSysRes(ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_uMsgThreadID, Syn_TradeSysRes, (char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgHisTradeSysRes(ReceiveInfo & recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char *buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisTradeSysRes, buffer, recvInfo.DataSize);
+	delete[]buffer;
+	buffer = nullptr;
+}
+
+void CWndSynHandler::OnMsgAllBackRehab(ReceiveInfo & recvInfo)
+{
+	char *buffer = new char[recvInfo.DataSize];
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#'))
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char * RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_uMsgThreadID, Syn_AllBackRehab, (char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
 	delete[]buffer;
 	buffer = nullptr;
 
@@ -1904,6 +2121,7 @@ void CWndSynHandler::OnUpdateRtRps(int nMsgLength, const char * info)
 	int dataCount = nMsgLength / sizeof(RtRps);
 	RtRps* dataArr = (RtRps*)info;
 	set<int>periodSet;
+	lock_guard<mutex> lk(m_mx);
 	for (int i = 0; i < dataCount; ++i)
 	{
 		m_RtRpsHash[dataArr[i].nGroup][dataArr[i].nPeriod].hash[dataArr[i].SecurityID] = dataArr[i];
@@ -2069,7 +2287,7 @@ void CWndSynHandler::OnGetMarket(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetKline(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,SendType_HisPeriodKline);
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group, SendType_HisPeriodKline);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
@@ -2090,20 +2308,19 @@ void CWndSynHandler::OnUpdateList(int nMsgLength, const char * info)
 
 	for (auto &it : m_hWndMap)
 		SendMsg(it.second, Syn_ListData, NULL, 0);
-	if(m_uLpPriceVolThreadID != 0)
+	if (m_uLpPriceVolThreadID != 0)
 		SendMsg(m_uLpPriceVolThreadID, Syn_ListData, NULL, 0);
 
 }
 
 void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 {
+	lock_guard<mutex> lk(m_mx);
 	for (auto &wndSub : m_WndPointSubMap)
 	{
 		HWND hWnd = wndSub.first;
 		HWND hParWnd = m_hSubWndMap[hWnd];
 		int nGroup = m_SubWndGroup[hWnd];
-		::EnterCriticalSection(&m_cs);
-
 		for (auto &subInfo : wndSub.second)
 		{
 			vector<RtPointData>subDataVec;
@@ -2154,8 +2371,6 @@ void CWndSynHandler::OnUpdatePoint(int nMsgLength, const char * info)
 				msg = nullptr;
 			}
 		}
-
-		::LeaveCriticalSection(&m_cs);
 
 	}
 	m_bCaUpdate = false;
@@ -2426,7 +2641,7 @@ void CWndSynHandler::OnHisCallAction(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetCallAction(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,SendType_HisCallAction);
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group, SendType_HisCallAction);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
@@ -2535,7 +2750,7 @@ void CWndSynHandler::OnGetLpPriceVol(int nMsgLength, const char * info)
 void CWndSynHandler::OnGetTradeVol(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
-	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,SendType_HisTradeVol);
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group, SendType_HisTradeVol);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 
@@ -2680,6 +2895,66 @@ void CWndSynHandler::OnGetTradePriceVol(int nMsgLength, const char * info)
 				info, nMsgLength);
 	}
 
+}
+
+void CWndSynHandler::OnTradeSysRes(int nMsgLength, const char * info)
+{
+	if (m_uTradeSysResThreadID)
+		SendMsg(m_uTradeSysResThreadID, Syn_TradeSysRes,
+			info, nMsgLength);
+	else
+	{
+		if (m_tmpTradSysRes)
+		{
+			delete[]m_tmpTradSysRes;
+			m_tmpTradSysRes = nullptr;
+			m_nTmpTradeSysSize = 0;
+		}
+		m_tmpTradSysRes = new char[nMsgLength];
+		memcpy(m_tmpTradSysRes, info, nMsgLength);
+		m_nTmpTradeSysSize = nMsgLength;
+	}
+}
+
+void CWndSynHandler::OnHisTradeSysRes(int nMsgLength, const char * info)
+{
+	if (m_uTradeSysResThreadID)
+		SendMsg(m_uTradeSysResThreadID, Syn_HisTradeSysRes,
+			info, nMsgLength);
+}
+
+void CWndSynHandler::OnGetHisTradeSysRes(int nMsgLength, const char * info)
+{
+	m_NetClient.SendData(info, nMsgLength);
+}
+
+void CWndSynHandler::OnReSendRtTradeSysRes(int nMsgLength, const char * info)
+{
+	SendMsg(m_uTradeSysResThreadID, Syn_TradeSysRes,
+		m_tmpTradSysRes, m_nTmpTradeSysSize);
+	delete[]m_tmpTradSysRes;
+	m_tmpTradSysRes = nullptr;
+	m_nTmpTradeSysSize = 0;
+}
+
+void CWndSynHandler::OnAllBackRehab(int nMsgLength, const char * info)
+{
+	std::pair<char[8], double>*pData = (std::pair<char[8], double>*)info;
+	int nDataSize = nMsgLength / sizeof(std::pair<char[8], double>);
+	for (int i = 0; i < nDataSize; ++i)
+		m_accRehabMap[pData[i].first] = pData[i].second;
+}
+
+void CWndSynHandler::OnSelfSelChange(int nMsgLength, const char * info)
+{
+	for (auto &it : m_hWndMap)
+	{
+		SendMsg(it.second, Syn_SelfSelChange,
+			info, nMsgLength);
+	}
+	if (m_uTradeSysResThreadID)
+		SendMsg(m_uTradeSysResThreadID, Syn_SelfSelChange,
+			info, nMsgLength);
 }
 
 void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char * info)

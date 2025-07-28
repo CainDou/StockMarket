@@ -387,6 +387,9 @@ namespace SOUI
 		*/
 		void    OnLButtonDown(UINT nFlags, CPoint pt);
 
+		void    OnRButtonUp(UINT nFlags, CPoint pt);
+
+
 		void	SetHoverSelected();
 
 
@@ -398,6 +401,7 @@ namespace SOUI
 		*/
 		void            UpdateScrollBar();
 
+		void			SetMouseWheelEnabled(BOOL bEnable);
 
 	protected:
 
@@ -582,6 +586,7 @@ namespace SOUI
 		ISkinObj*    m_pCheckSkin; /**< */
 		BOOL        m_bCheckBox;
 		BOOL        m_bMultiSelection;
+		BOOL		m_bMouseWheel;
 
 	protected:
 		typedef SArray<DXLVITEMEX> ArrLvItemEx;  /**< ±£´æitemÊý×é */
@@ -621,6 +626,7 @@ namespace SOUI
 			MSG_WM_LBUTTONDBLCLK(OnLButtonDbClick)
 			MSG_WM_LBUTTONDOWN(OnLButtonDown)
 			MSG_WM_LBUTTONUP(OnLButtonUp)
+			MSG_WM_RBUTTONUP(OnRButtonUp)
 			MSG_WM_MOUSEMOVE(OnMouseMove)
 			MSG_WM_MOUSELEAVE(OnMouseLeave)
 			MSG_WM_MOUSEWHEEL(OnMouseWheel)

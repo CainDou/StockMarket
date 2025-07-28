@@ -28,7 +28,7 @@ public:
 	BOOL   SetClientID(SOCKET s);
 	SOCKET GetClientID() const;
 	BOOL   GetExitState() const;
-	BOOL	SendData(char* msg, int size);
+	BOOL	SendData(const char* msg, int size);
 	BOOL   ReceiveData(char * buffer, int size, char end = 0);
 	int   SendDataWithID(char* msg, int size);
 
@@ -91,7 +91,7 @@ inline BOOL CNetWorkClient::GetExitState() const
 	return m_bExit;
 }
 
-inline BOOL CNetWorkClient::SendData(char * msg, int size)
+inline BOOL CNetWorkClient::SendData(const char * msg, int size)
 {
 	return send(m_socket, msg, size, 0) > 0;
 }
