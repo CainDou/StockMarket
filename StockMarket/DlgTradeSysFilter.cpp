@@ -719,8 +719,8 @@ void SOUI::CDlgTradeSysFilter::UpdateListData(int nIndex,int nID, ShowDataType &
 	m_pListRes->SetSubItemText(nIndex, eRH_EnterDate, strTmp.Format(L"%d", data.nEnterDate));
 	if (data.nExitDate != 0)
 	{
-		m_pListRes->SetSubItemText(nIndex, eRH_EnterPx, strTmp.Format(L"%.03f", data.fExitPrice));
-		m_pListRes->SetSubItemText(nIndex, eRH_EnterDate, strTmp.Format(L"%d", data.nExitDate));
+		m_pListRes->SetSubItemText(nIndex, eRH_ExitPx, strTmp.Format(L"%.03f", data.fExitPrice));
+		m_pListRes->SetSubItemText(nIndex, eRH_ExitDate, strTmp.Format(L"%d", data.nExitDate));
 	}
 	else
 	{
