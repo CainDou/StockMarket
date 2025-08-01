@@ -536,6 +536,7 @@ enum SynMsg
 	Syn_HisKline,
 	Syn_CloseInfo,
 	Syn_Reinit,
+	Syn_ChangeIndy,
 	Syn_FilterData,
 	Syn_GetSecPoint,
 	Syn_HisSecPoint,

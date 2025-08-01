@@ -41,19 +41,19 @@ BOOL CDlgMsgHandler::Stop()
 
 void CDlgMsgHandler::InitMsgHandleMap()
 {
-	m_MsgHandleMap[WW_ListData]
+	m_MsgHandleMap[Syn_ListData]
 		= &CDlgMsgHandler::OnUpdateList;
-	m_MsgHandleMap[WW_GetMarket]
+	m_MsgHandleMap[Syn_GetMarket]
 		= &CDlgMsgHandler::OnGetMarket;
-	m_MsgHandleMap[WW_GetKline]
+	m_MsgHandleMap[Syn_GetKline]
 		= &CDlgMsgHandler::OnGetKline;
-	m_MsgHandleMap[WW_GetPoint]
+	m_MsgHandleMap[Syn_GetPoint]
 		= &CDlgMsgHandler::OnGetPoint;
-	m_MsgHandleMap[WW_GetCallAction]
+	m_MsgHandleMap[Syn_GetCallAction]
 		= &CDlgMsgHandler::OnGetCallAction;
-	m_MsgHandleMap[WW_GetHisTFBase]
+	m_MsgHandleMap[Syn_GetHisTFBase]
 		= &CDlgMsgHandler::OnGetHisTFBase;
-	m_MsgHandleMap[WW_GetTradeVol]
+	m_MsgHandleMap[Syn_GetTradeVol]
 		= &CDlgMsgHandler::OnGetTradeVol;
 
 	m_MsgHandleMap[Syn_Point]
@@ -74,7 +74,7 @@ void CDlgMsgHandler::InitMsgHandleMap()
 		= &CDlgMsgHandler::OnHisKline;
 	m_MsgHandleMap[Syn_CloseInfo]
 		= &CDlgMsgHandler::OnCloseInfo;
-	m_MsgHandleMap[WW_ChangeIndy]
+	m_MsgHandleMap[Syn_ChangeIndy]
 		= &CDlgMsgHandler::OnChangeIndy;
 	m_MsgHandleMap[Syn_HisSecPoint]
 		= &CDlgMsgHandler::OnHisSecPoint;
@@ -121,6 +121,7 @@ void CDlgMsgHandler::MsgProc()
 	while (true)
 	{
 		MsgId = RecvMsg(0, &info, msgLength, 0);
+		OutputDebugStringFormat("窗口接收数据为:%d\n", MsgId);
 		if (MsgId == Msg_Exit)
 		{
 			delete[]info;

@@ -518,6 +518,7 @@ unsigned CWndSynHandler::NetHandle(void * para)
 		if (pMd->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
 		{
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
+			OutputDebugStringFormat("接收数据为:%d\n", recvInfo.MsgType);
 			if (pFuc == nullptr)
 				pFuc = &CWndSynHandler::OnNoDefineMsg;
 			(pMd->*pFuc)(recvInfo);
