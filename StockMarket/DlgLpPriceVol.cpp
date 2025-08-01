@@ -1044,7 +1044,7 @@ BOOL CDlgLpPriceVol::HandleDiffType(map<int, PeriodPriceVolInfo>& ShowDataMap, i
 	if (m_nDiffType == eLPCSDT_Deflate)
 		return HandleShowDeflate(ShowDataMap, nPicWnd);
 
-
+	return FALSE;
 
 }
 
