@@ -284,7 +284,8 @@ void CDlgBackTesting::InitNetHandleMap()
 		&CDlgBackTesting::OnMsgHisIndexKline;
 	m_netHandleMap[RecvMsg_HisMultiDataForHSF] =
 		&CDlgBackTesting::OnMsgHisMultiDataForHSF;
-
+	m_NetClient.ConnectServer();
+	m_NetClient.MacAddrAuth();
 	//m_NetClient.RegisterHandle(NetHandle);
 	m_NetClient.Start(NetHandle, this);
 
