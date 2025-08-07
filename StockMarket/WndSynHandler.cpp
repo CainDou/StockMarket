@@ -86,6 +86,7 @@ void CWndSynHandler::Run()
 	}
 
 
+	if(m_NetClient.GetConnectState())
 	m_NetClient.MacAddrAuth();
 	//m_NetClient.Start(m_uNetThreadID, this);
 	if (!m_NetClient.Start(NetHandle, this))

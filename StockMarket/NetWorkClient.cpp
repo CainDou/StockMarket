@@ -150,10 +150,6 @@ BOOL CNetWorkClient::Start(PFNNETHANDLE pFunc, void *para)
 	m_thread = std::thread(pFunc, para);
 	m_bRun = TRUE;
 
-	//m_hFunc = (HANDLE)_beginthreadex(NULL, 0, m_pFnHandle, para, 0, &m_uThreadID);
-	//if (m_hFunc != INVALID_HANDLE_VALUE)
-	//	m_bRun = TRUE;
-	//ThreadID = m_uThreadID;
 	return TRUE;
 }
 
