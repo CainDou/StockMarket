@@ -58,6 +58,7 @@ CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 	m_bHisFilterChecked = FALSE;
 	m_bHisFitlterDataReady = FALSE;
 	m_bUseHisStockFilter = FALSE;
+	m_pListSelfSel = nullptr;
 }
 
 
@@ -537,7 +538,7 @@ void CWorkWnd::SetPointInfo(map<int, ShowPointInfo>& infoMap)
 	{
 		for (int i = eFullMarketPointStart; i < eFullMarketPointEnd; ++i)
 			m_pointInfoMap[i] = infoMap[i];
-		for (int i = eCAPointStart; i < eCAPointEnd; ++i)
+		for (int i = eCAFullMarketPointStart; i < eCAPointFullMarketEnd; ++i)
 			m_pointInfoMap[i] = infoMap[i];
 
 	}
@@ -1244,7 +1245,7 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 				strcpy_s(GetInfo.StockID, m_strSubStock);
 				GetInfo.Group = m_Group;
 				GetInfo.Period = m_PicPeriod;
-				SendMsg(m_uParWndThreadID, WW_GetHisTFBase,
+				SendMsg(m_uParWndThreadID, Syn_GetHisTFBase,
 					(char*)&GetInfo, sizeof(GetInfo));
 			}
 			else
@@ -1639,7 +1640,7 @@ BOOL CWorkWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 		m_pList->SetFocus();
 		::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdateList, NULL);
 	}
-	else if (m_pListSelfSel->IsVisible())
+	else if (m_pListSelfSel && m_pListSelfSel->IsVisible())
 	{
 		m_pListSelfSel->SetFocus();
 		::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdateList, NULL);
@@ -1690,6 +1691,7 @@ void CWorkWnd::SwitchPic2List()
 	if (m_nShowListType == eSLT_Market)
 	{
 		m_pList->SetVisible(TRUE, TRUE);
+		if(m_pListSelfSel)
 		m_pListSelfSel->SetVisible(FALSE, TRUE);
 		HandleListData();
 		UpdateList();
@@ -1730,7 +1732,8 @@ void CWorkWnd::SwitchPic2List()
 void CWorkWnd::SwitchList2Pic(int nPeriod, int nPriceVolPicType)
 {
 	m_pList->SetVisible(FALSE, TRUE);
-	m_pListSelfSel->SetVisible(FALSE, TRUE);
+	if (m_pListSelfSel)
+		m_pListSelfSel->SetVisible(FALSE, TRUE);
 	m_pFenShiPic->SetVisible(FALSE, TRUE);
 	m_pKlinePic->SetVisible(FALSE, TRUE);
 	m_pPriceVolPic->SetVisible(FALSE, TRUE);
@@ -2197,7 +2200,7 @@ bool CWorkWnd::OnListLClick(EventArgs * pEvtBase)
 	char msg[12] = "";
 	memcpy_s(msg, 12, &nGroup, 4);
 	memcpy_s(msg + 4, 12, strID, strID.GetLength() + 1);
-	SendMsg(m_uParWndThreadID, WW_ChangeIndy, msg, 12);
+	SendMsg(m_uParWndThreadID, Syn_ChangeIndy, msg, 12);
 	return true;
 }
 bool SOUI::CWorkWnd::OnListRClick(EventArgs * arg)
@@ -2318,7 +2321,7 @@ void CWorkWnd::UpdateListShowStock()
 				m_pList->SetSubItemText(nCount, SHead_ID,
 					strID, RGBA(255, 255, 0, 255));
 				m_pList->SetSubItemText(nCount, SHead_Name,
-					StrA2StrW(it.SecurityName) , RGBA(255, 255, 0, 255));
+					StrA2StrW(it.SecurityName), RGBA(255, 255, 0, 255));
 
 			}
 			m_ListPosMap[nCount] = it.SecurityID;
@@ -3165,7 +3168,7 @@ void SOUI::CWorkWnd::UpdateSelfSelList()
 					tmp.Format(L"%.02f", chgPct);
 				else
 					tmp = L"-";
-				m_pListSelfSel->SetSubItemText(it.first, SSSH_ChgPct, tmp,cl);
+				m_pListSelfSel->SetSubItemText(it.first, SSSH_ChgPct, tmp, cl);
 				double fAddPrice = _wtof(m_pListSelfSel->GetSubItemText(it.first, SSSH_AddPrice));
 				if (fAddPrice != 0)
 				{
@@ -4354,14 +4357,14 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 			GetInfo.Period = nPeriod;
 			if (nPeriod == Period_1Day)
 			{
-				SendMsg(m_uParWndThreadID, WW_GetCallAction,
+				SendMsg(m_uParWndThreadID, Syn_GetCallAction,
 					(char*)&GetInfo, sizeof(GetInfo));
-				SendMsg(m_uParWndThreadID, WW_GetTradeVol,
+				SendMsg(m_uParWndThreadID, Syn_GetTradeVol,
 					(char*)&GetInfo, sizeof(GetInfo));
 
 			}
 
-			SendMsg(m_uParWndThreadID, WW_GetKline,
+			SendMsg(m_uParWndThreadID, Syn_GetKline,
 				(char*)&GetInfo, sizeof(GetInfo));
 		}
 		else
@@ -4376,7 +4379,7 @@ void CWorkWnd::SetSelectedPeriod(int nPeriod)
 				strcpy_s(GetInfo.StockID, StockID);
 				GetInfo.Group = m_Group;
 				GetInfo.Period = nPeriod;
-				SendMsg(m_uParWndThreadID, WW_GetHisTFBase,
+				SendMsg(m_uParWndThreadID, Syn_GetHisTFBase,
 					(char*)&GetInfo, sizeof(GetInfo));
 			}
 			else
@@ -4426,7 +4429,7 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 	GetInfo.Group = m_Group;
 	GetInfo.Period = Period_FenShi;
 	m_strSubStock = StockID;
-	SendMsg(m_uParWndThreadID, WW_GetMarket,
+	SendMsg(m_uParWndThreadID, Syn_GetMarket,
 		(char*)&GetInfo, sizeof(GetInfo));
 	vector<ShowPointInfo>infoVec;
 	m_pFenShiPic->GetShowPointInfo(infoVec);
@@ -4440,13 +4443,13 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 		GetInfo.Period = m_PicPeriod;
 		if (Period_1Day == m_PicPeriod)
 		{
-			SendMsg(m_uParWndThreadID, WW_GetCallAction,
+			SendMsg(m_uParWndThreadID, Syn_GetCallAction,
 				(char*)&GetInfo, sizeof(GetInfo));
-			SendMsg(m_uParWndThreadID, WW_GetTradeVol,
+			SendMsg(m_uParWndThreadID, Syn_GetTradeVol,
 				(char*)&GetInfo, sizeof(GetInfo));
 		}
 
-		SendMsg(m_uParWndThreadID, WW_GetKline,
+		SendMsg(m_uParWndThreadID, Syn_GetKline,
 			(char*)&GetInfo, sizeof(GetInfo));
 
 		if (m_pKlinePic->GetIsTFBaseDataUsed())
@@ -4456,7 +4459,7 @@ void CWorkWnd::ShowPicWithNewID(SStringA StockID, bool bForce)
 			strcpy_s(GetInfo.StockID, StockID);
 			GetInfo.Group = m_Group;
 			GetInfo.Period = m_PicPeriod;
-			SendMsg(m_uParWndThreadID, WW_GetHisTFBase,
+			SendMsg(m_uParWndThreadID, Syn_GetHisTFBase,
 				(char*)&GetInfo, sizeof(GetInfo));
 
 		}
@@ -4561,7 +4564,7 @@ void CWorkWnd::GetPointData(ShowPointInfo & info, SStringA StockID, int nPeriod)
 
 		GetInfo.exMsg = new char[strExMsg.GetLength() + 1];
 		strcpy_s(GetInfo.exMsg, strExMsg.GetLength() + 1, strExMsg);
-		SendMsg(m_uParWndThreadID, WW_GetPoint,
+		SendMsg(m_uParWndThreadID, Syn_GetPoint,
 			(char*)&GetInfo, sizeof(GetInfo));
 
 	}

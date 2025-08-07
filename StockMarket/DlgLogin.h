@@ -22,7 +22,7 @@ namespace SOUI
 		void OnBtnChangePsd();
 
 	protected:
-		BOOL ConnectServer();
+		//BOOL ConnectServer();
 		virtual void OnFinalMessage(HWND hWnd);
 		LRESULT  OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 

@@ -3086,9 +3086,9 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 	CPoint pt;
 	GetCursorPos(&pt);
 
-	SStringW strTemp;
-	strTemp.Format(SDECIMAL, m_pAll->data[nLastDataPos].close);
-	pRT->TextOut(x + ZOOMWIDTH + 2, yclose - 5, strTemp, -1);
+	//SStringW strTemp;
+	//strTemp.Format(SDECIMAL, m_pAll->data[nLastDataPos].close);
+	//pRT->TextOut(x + ZOOMWIDTH + 2, yclose - 5, strTemp, -1);
 
 	if (!m_bShowMouseLine || (pt.x > m_rcImage.right || pt.x<m_rcImage.left || pt.y>m_rcImage.bottom || pt.y < m_rcImage.top))
 	{

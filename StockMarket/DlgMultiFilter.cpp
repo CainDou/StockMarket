@@ -268,7 +268,7 @@ void CDlgMultiFilter::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStr
 				if (i == 0)
 					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
 				else
-					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
+					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close + i]);
 			}
 		}
 		initPara.nTSCPointWndNum = nCount;
@@ -313,7 +313,7 @@ void CDlgMultiFilter::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStr
 				if (i == 0)
 					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
 				else
-					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
+					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close + i]);
 			}
 		}
 		initPara.nKlinePointWndNum = nCount;

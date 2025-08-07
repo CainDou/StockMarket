@@ -107,7 +107,7 @@ namespace SOUI
 	protected:
 		static unsigned __stdcall NetHandle(void* para);
 		void InitNetConfig();
-		bool RecvInfoHandle(BOOL & bNeedConnect, int &nOffset, ReceiveInfo &recvInfo);
+		bool RecvInfoHandle(ReceiveInfo &recvInfo);
 		void OnMsgHisMultiData(ReceiveInfo &recvInfo);
 		void OnMsgHisMultiDataForHSF(ReceiveInfo &recvInfo);
 		void OnMsgHisIndexKline(ReceiveInfo &recvInfo);

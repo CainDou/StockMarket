@@ -492,13 +492,10 @@ void CDlgBackTesting::ConditionHandle()
 void CDlgBackTesting::CalcRes()
 {
 	m_bLastIsFinished = FALSE;
-	if (!m_NetClient.GetState())
+	if (!m_NetClient.ConnectServer())
 	{
-		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
-		{
-			SMessageBox(m_hWnd, L"无法与服务器端连接获取数据，请重试!", L"警告", MB_OK | MB_ICONWARNING);
-			return;
-		}
+		SMessageBox(m_hWnd, L"无法与服务器端连接获取数据，请重试!", L"警告", MB_OK | MB_ICONWARNING);
+		return;
 	}
 	m_pBtnExport->EnableWindow(FALSE, TRUE);
 	m_pListDetailRes->DeleteAllItems();
@@ -516,7 +513,7 @@ void CDlgBackTesting::CalcRes()
 	m_nDataGetCount = 0;
 	m_nFinishCount = 0;
 	m_LastTestSf = m_sfSet;
-	::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 0);
+	::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 1);
 
 }
 
@@ -594,13 +591,10 @@ BOOL CDlgBackTesting::CheckCondtionIsSame()
 
 void CDlgBackTesting::CalcHisStockFilter(set<HisStockFilter> hsfSet)
 {
-	if (!m_NetClient.GetState())
+	if (!m_NetClient.ConnectServer())
 	{
-		if (!m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
-		{
-			SMessageBox(m_hWnd, L"无法与服务器端连接获取数据，请重试!", L"警告", MB_OK | MB_ICONWARNING);
-			return;
-		}
+		SMessageBox(m_hWnd, L"无法与服务器端连接获取数据，请重试!", L"警告", MB_OK | MB_ICONWARNING);
+		return;
 	}
 	m_bHisLastIsFinished = FALSE;
 	m_hisSfVec.clear();
@@ -615,7 +609,7 @@ void CDlgBackTesting::CalcHisStockFilter(set<HisStockFilter> hsfSet)
 	m_uHisCalcThreadID = *(unsigned*)&m_tHisCalc.get_id();
 	m_nHisDataGetCount = 0;
 	m_nHisFinishCount = 0;
-	::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 0);
+	::SendMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 1);
 
 }
 
@@ -629,12 +623,19 @@ LRESULT CDlgBackTesting::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 		UpdateList((int)lp);
 		break;
 	case BTM_GetData:
-	{
-		if (m_nDataGetCount < m_StockInfo.size())
+	{		
+		int nRes = (int)wp;
+		if (nRes == 1)
 		{
-			GetTestMultiData(m_StockInfo[m_nDataGetCount].SecurityID);
-			++m_nDataGetCount;
+			if (m_nDataGetCount < m_StockInfo.size())
+			{
+				GetTestMultiData(m_StockInfo[m_nDataGetCount].SecurityID);
+				++m_nDataGetCount;
+			}
 		}
+		else
+			SMessageBox(m_hWnd, L"获取数据失败，请重试!", L"警告", MB_OK | MB_ICONWARNING);
+
 	}
 	break;
 	case BTM_SingleCalcFinish:
@@ -666,10 +667,18 @@ LRESULT CDlgBackTesting::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	}
 	case BTM_GetHisData:
 	{
-		if (m_nHisDataGetCount < m_StockInfo.size())
+		int nRes = (int)wp;
+		if (nRes == 1)
 		{
-			GetHisTestMultiData(m_StockInfo[m_nHisDataGetCount].SecurityID);
-			++m_nHisDataGetCount;
+			if (m_nHisDataGetCount < m_StockInfo.size())
+			{
+				GetHisTestMultiData(m_StockInfo[m_nHisDataGetCount].SecurityID);
+				++m_nHisDataGetCount;
+			}
+		}
+		else
+		{
+			SMessageBox(m_hWnd, L"获取历史数据错误，请重试!", L"警告", MB_OK | MB_ICONWARNING);
 		}
 	}
 	break;
@@ -732,16 +741,16 @@ void CDlgBackTesting::HisConditionHandle()
 
 unsigned CDlgBackTesting::NetHandle(void * para)
 {
-	int nOffset = 0;
+	//int nOffset = 0;
 	ReceiveInfo recvInfo;
-	BOOL bNeedConnect = false;
+	//BOOL bNeedConnect = false;
 	CDlgBackTesting *pDlg = (CDlgBackTesting*)para;
 	auto &NetClient = pDlg->m_NetClient;
 	while (true)
 	{
 		if (NetClient.GetExitState())
 			return 0;
-		if (pDlg->RecvInfoHandle(bNeedConnect, nOffset, recvInfo))
+		if (pDlg->RecvInfoHandle(recvInfo))
 		{
 			auto pFuc = pDlg->m_netHandleMap[recvInfo.MsgType];
 			if (pFuc == nullptr)
@@ -762,26 +771,18 @@ void CDlgBackTesting::InitNetConfig()
 }
 
 
-bool CDlgBackTesting::RecvInfoHandle(BOOL & bNeedConnect, int & nOffset, ReceiveInfo & recvInfo)
+bool CDlgBackTesting::RecvInfoHandle(ReceiveInfo & recvInfo)
 {
-	if (bNeedConnect)
-	{
-		if (m_NetClient.GetExitState())
-			return 0;
-		if (m_NetClient.OnConnect(m_strIPAddr, m_nIPPort))
-			bNeedConnect = false;
-		else
-			return false;
-	}
-
-	int ret = recv(m_NetClient.GetSocket(),
-		(char*)&recvInfo + nOffset,
-		sizeof(recvInfo) - nOffset, 0);
+	//if (!m_NetClient.GetConnectState())
+	//{
+	//	if (m_NetClient.GetExitState())
+	//		return false;
+	//	if (!m_NetClient.ConnectServer())
+	//		bNeedConnect = false;
+	//}
+	int ret = m_NetClient.ReceiveData((char*)&recvInfo,sizeof(recvInfo));
 	if (ret == 0)
 	{
-		nOffset = 0;
-		m_NetClient.OnConnect(NULL, NULL);
-		bNeedConnect = true;
 		TraceLog("与服务器断开连接");
 		return false;
 	}
@@ -792,20 +793,11 @@ bool CDlgBackTesting::RecvInfoHandle(BOOL & bNeedConnect, int & nOffset, Receive
 		if (m_NetClient.GetExitState())
 			return false;
 		int nError = WSAGetLastError();
-		if (nError == WSAECONNRESET)
-		{
-			m_NetClient.OnConnect(NULL, NULL);
-			bNeedConnect = true;
-		}
+		char buffer[1024] = { "" };
+		int nChar = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, nError, 0, buffer, 1024, NULL);
+		TraceLog("网络连接发生错误 代码:%d,原因:%s", buffer);
 		return false;
 	}
-
-	if (ret + nOffset < sizeof(recvInfo))
-	{
-		nOffset += ret;
-		return false;
-	}
-	nOffset = 0;
 
 	return true;
 }
@@ -815,11 +807,16 @@ void CDlgBackTesting::OnMsgHisMultiData(ReceiveInfo & recvInfo)
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
-	m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#');
-	SendMsg(m_uCalcThreadID, BackTesting, buffer, totalSize);
-	delete[]buffer;
-	buffer = nullptr;
-	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 0);
+	if (m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#') == recvInfo.DataSize)
+	{
+		SendMsg(m_uCalcThreadID, BackTesting, buffer, totalSize);
+		delete[]buffer;
+		buffer = nullptr;
+		::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 1);
+	}
+	else
+		::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetData, 0);
+
 }
 
 void SOUI::CDlgBackTesting::OnMsgHisMultiDataForHSF(ReceiveInfo & recvInfo)
@@ -827,25 +824,31 @@ void SOUI::CDlgBackTesting::OnMsgHisMultiDataForHSF(ReceiveInfo & recvInfo)
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
 	char *buffer = new char[totalSize];
 	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
-	m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#');
-	SendMsg(m_uHisCalcThreadID, CheckHisFilterPass, buffer, totalSize);
-	delete[]buffer;
-	buffer = nullptr;
-	::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 0);
+	if (m_NetClient.ReceiveData(buffer + sizeof(recvInfo), recvInfo.DataSize, '#') == recvInfo.DataSize)
+	{
+		SendMsg(m_uHisCalcThreadID, CheckHisFilterPass, buffer, totalSize);
+		delete[]buffer;
+		buffer = nullptr;
+		::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 1);
+	}
+	else
+		::PostMessage(m_hWnd, WM_BACKTESTING_MSG, BTM_GetHisData, 0);
 
 }
 
 void CDlgBackTesting::OnMsgHisIndexKline(ReceiveInfo & recvInfo)
 {
 	char *buffer = new char[recvInfo.DataSize];
-	m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#');
-	KlineType * klineData = (KlineType *)(buffer + sizeof(int));
-	int nDataCount = recvInfo.DataSize / sizeof(KlineType);
-	auto &dataMap = m_IndexData[recvInfo.InsID];
-	for (int i = 0; i < nDataCount; ++i)
-		dataMap[klineData[i].date] = klineData[i];
-	delete[]buffer;
-	buffer = nullptr;
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#') == recvInfo.DataSize)
+	{
+		KlineType * klineData = (KlineType *)(buffer + sizeof(int));
+		int nDataCount = recvInfo.DataSize / sizeof(KlineType);
+		auto &dataMap = m_IndexData[recvInfo.InsID];
+		for (int i = 0; i < nDataCount; ++i)
+			dataMap[klineData[i].date] = klineData[i];
+		delete[]buffer;
+		buffer = nullptr;
+	}
 	SetEvent(m_hEvent);
 
 }
@@ -978,7 +981,7 @@ void CDlgBackTesting::CheckHisFilter(char * msg, int nMsgLength)
 	int nOffset = sizeof(ReceiveInfo);
 	while (nOffset < nMsgLength)
 	{
-		int nMsgOffset = GetDataFromMsg(msg + nOffset, testDataMap,TRUE);
+		int nMsgOffset = GetDataFromMsg(msg + nOffset, testDataMap, TRUE);
 		nOffset += nMsgOffset;
 	}
 	vector<int> dayVec;
@@ -1126,7 +1129,7 @@ int CDlgBackTesting::GetDataFromMsg(char * msg, BackTestingData & data, BOOL bFo
 		{
 			int nDate = crData[i].date;
 			int nTime = crData[i].time;
-			if(bForHSF || (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate))
+			if (bForHSF || (nDate >= m_nLastStartDate && nDate <= m_nLastEndDate))
 				data.dataMap[nDate][nPeriod][nDataIndex][nTime] = crData[i].date;
 
 		}

@@ -24,13 +24,20 @@ public:
 	SOCKET GetSocket() const;
 	BOOL   GetState() const;
 	BOOL   GetConnectState() const;
+	BOOL   ConnectServer();
 	BOOL   SetState(BOOL bState);
 	BOOL   SetClientID(SOCKET s);
 	SOCKET GetClientID() const;
 	BOOL   GetExitState() const;
 	BOOL	SendData(const char* msg, int size);
-	BOOL   ReceiveData(char * buffer, int size, char end = 0);
+	int   ReceiveData(char * buffer, int size, char end = 0);
 	int   SendDataWithID(char* msg, int size);
+	BOOL  MacAddrAuth();
+	BOOL  GetMacAuthRes();
+	BOOL  GetMacAuthState();
+	static void InitServerAddr(vector<string>& strIpVec, vector<int> nPortVec);
+	static void GetLocalMac();
+
 
 protected:
 	SOCKET m_socket;
@@ -45,6 +52,11 @@ protected:
 	//HANDLE m_hFunc;
 	PFNNETHANDLE m_pFnHandle;
 	std::atomic_int m_nAskID;
+	static BYTE m_uMac[8];
+	BOOL m_bMacAuthSend;
+	BOOL m_bMacAuthRes;
+	static 	vector<string> m_strIPAddr;
+	static 	vector<int> m_nIPPort;
 };
 
 inline BOOL CNetWorkClient::SetWndHandle(HWND hWnd)
@@ -68,6 +80,7 @@ inline BOOL CNetWorkClient::GetConnectState() const
 {
 	return m_bConnected;
 }
+
 
 inline BOOL CNetWorkClient::SetState(BOOL bState)
 {
@@ -96,3 +109,18 @@ inline BOOL CNetWorkClient::SendData(const char * msg, int size)
 	return send(m_socket, msg, size, 0) > 0;
 }
 
+inline BOOL CNetWorkClient::GetMacAuthRes()
+{
+	return m_bMacAuthRes;
+}
+
+inline BOOL CNetWorkClient::GetMacAuthState()
+{
+	return m_bMacAuthSend;
+}
+
+inline void CNetWorkClient::InitServerAddr(vector<string>& strIpVec, vector<int> nPortVec)
+{
+	m_strIPAddr = strIpVec;
+	m_nIPPort = nPortVec;
+}
