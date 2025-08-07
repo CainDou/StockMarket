@@ -109,8 +109,8 @@ protected:
 	void ReInit();
 	//Net具体处理
 protected:
-	bool ConnectServer();
-	bool RecvInfoHandle(BOOL & bNeedConnect, int &nOffset, ReceiveInfo &recvInfo);
+	//bool ConnectServer();
+	bool RecvInfoHandle(/*BOOL & bNeedConnect, int &nOffset, */ReceiveInfo &recvInfo);
 	void OnMsgClientID(ReceiveInfo &recvInfo);
 	void OnMsgStockInfo(ReceiveInfo &recvInfo);
 	void OnMsgRTTimeLine(ReceiveInfo &recvInfo);
@@ -306,8 +306,8 @@ protected:
 	map<HWND, set<SStringA>> m_WndPointSubMap; //窗口的打分数据信息
 	map<HWND, int> m_SubWndGroup; //工作窗口的分组
 	map<HWND, set<int>>m_SubWndGetInfoMap;
-	vector<SStringA> m_strIPAddr;
-	vector<int>		m_nIPPort;
+	//vector<SStringA> m_strIPAddr;
+	//vector<int>		m_nIPPort;
 	bool m_bServerReady;
 	bool bExit;
 	//CRITICAL_SECTION m_cs;

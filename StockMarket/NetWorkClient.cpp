@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "NetWorkClient.h"
 #include <process.h>
+#include <iphlpapi.h>
+#pragma comment(lib,"iphlpapi.lib")
+BYTE CNetWorkClient::m_uMac[8] = { 0,0,0,0,0,0,0,0 };
+vector<string> CNetWorkClient::m_strIPAddr = vector<string>();
+vector<int> CNetWorkClient::m_nIPPort = vector<int>();
 
 CNetWorkClient::CNetWorkClient()
 {
@@ -14,6 +19,8 @@ CNetWorkClient::CNetWorkClient()
 	m_bExit = FALSE;
 	m_bRun = FALSE;
 	m_nAskID = 0;
+	m_bMacAuthRes = FALSE;
+	m_bMacAuthSend = FALSE;
 }
 
 
@@ -72,6 +79,8 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 			::closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
 			m_bConnected = FALSE;
+			//m_bMacAuthSend = FALSE;
+			//m_bMacAuthRes = FALSE;
 		}
 
 	}
@@ -82,6 +91,7 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 
 			if (!ConnectInit(lpIP, uPort, m_hWnd))
 			{
+				m_bConnected = FALSE;
 				m_socket = INVALID_SOCKET;
 				return FALSE;
 			}
@@ -93,6 +103,8 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 			::closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
 			m_bConnected = FALSE;
+			//m_bMacAuthSend = FALSE;
+			//m_bMacAuthRes = FALSE;
 		}
 
 	}
@@ -105,11 +117,36 @@ BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
 //	return TRUE;
 //}
 
+BOOL CNetWorkClient::ConnectServer()
+{
+	if (!GetConnectState())
+	{
+		if (!m_bMacAuthSend || m_bMacAuthRes)
+		{
+			int nServerCount = min(m_strIPAddr.size(), m_nIPPort.size());
+			int nServer = 0;
+			for (; nServer < nServerCount; ++nServer)
+			{
+				if (OnConnect(m_strIPAddr[nServer].c_str(), m_nIPPort[nServer]))
+				{
+					if (m_bMacAuthSend)
+						 MacAddrAuth();
+					break;
+
+				}
+			}
+			if (nServer >= nServerCount)
+				return false;
+		}
+	}
+	return m_bConnected;
+}
+
 BOOL CNetWorkClient::Start(PFNNETHANDLE pFunc, void *para)
 {
 	if (!pFunc)
 		return FALSE;
-	
+
 	m_thread = std::thread(pFunc, para);
 	m_bRun = TRUE;
 
@@ -137,19 +174,26 @@ BOOL CNetWorkClient::Stop()
 }
 
 
-BOOL CNetWorkClient::ReceiveData(char * buffer, int size, char end)
+int CNetWorkClient::ReceiveData(char * buffer, int size, char end)
 {
+	if (!m_bConnected && !ConnectServer())
+		return 0;
 	char*p = buffer;
 	int sizeLeft = size;
 	while (sizeLeft > 0)
 	{
 		int ret = recv(m_socket, p, sizeLeft, 0);
+		if (0 == ret)
+		{
+			OnConnect(NULL, NULL);
+			return 0;
+		}
 		if (SOCKET_ERROR == ret)
 		{
-			delete[] buffer;
-			buffer = nullptr;
+			//delete[] buffer;
+			//buffer = nullptr;
 			p = nullptr;
-			return 0;
+			return SOCKET_ERROR;
 		}
 		sizeLeft -= ret;
 		p += ret;
@@ -160,10 +204,10 @@ BOOL CNetWorkClient::ReceiveData(char * buffer, int size, char end)
 		char cEnd;
 		int ret = recv(m_socket, &cEnd, 1, 0);
 		if (cEnd == end)
-			return TRUE;
-		return FALSE;
+			return size;
+		return size - 1;
 	}
-	return TRUE;
+	return size;
 }
 
 int CNetWorkClient::SendDataWithID(char* msg, int size)
@@ -176,4 +220,56 @@ int CNetWorkClient::SendDataWithID(char* msg, int size)
 	if (send(m_socket, newMsg, newSize, 0) > 0)
 		return nID;
 	return -1;
+}
+
+BOOL CNetWorkClient::MacAddrAuth()
+{
+	m_bMacAuthSend = TRUE;
+	SendInfo info = { 0 };
+	info.MsgType = ComSend_MacAddr;
+	for (int i = 0; i < 6; ++i)
+		info.str[i] = (char)m_uMac[i];
+	SendData((char*)&info, sizeof(info));
+	ReceiveInfo recvInfo;
+	if (ReceiveData((char*)&recvInfo, sizeof(recvInfo)) > 0)
+		m_bMacAuthRes = ((ReceiveAuthInfo)recvInfo).Res;
+	else
+		m_bMacAuthRes = FALSE;
+	m_bConnected = m_bMacAuthRes;
+	return m_bMacAuthRes;
+}
+
+void CNetWorkClient::GetLocalMac()
+{
+	std::map < std::string, std::vector<std::string>> result;
+	IP_ADAPTER_INFO* pAdpFree = NULL;
+	IP_ADAPTER_INFO* pIpAdpInfo = (IP_ADAPTER_INFO*)malloc(sizeof(IP_ADAPTER_INFO));
+	unsigned long ulBufLen = sizeof(IP_ADAPTER_INFO);
+	int ret;
+	if ((ret = GetAdaptersInfo(pIpAdpInfo, &ulBufLen)) == ERROR_BUFFER_OVERFLOW) {
+		free(pIpAdpInfo);
+		//分配实际所需要的内存空间
+		pIpAdpInfo = (IP_ADAPTER_INFO*)malloc(ulBufLen);
+		if (NULL == pIpAdpInfo) {
+			return;
+		}
+	}
+	if ((ret = GetAdaptersInfo(pIpAdpInfo, &ulBufLen)) == NO_ERROR) {
+		pAdpFree = pIpAdpInfo;
+
+		for (auto pAdapter = pIpAdpInfo; pAdapter; pAdapter = pAdapter->Next) {
+
+			if (pAdapter->Type != MIB_IF_TYPE_ETHERNET)
+				continue;
+			if (pAdapter->AddressLength != 6)
+				continue;
+			for (int i = 0; i < 8; ++i)
+				m_uMac[i] = pAdapter->Address[i];
+			break;
+		}
+	}
+	if (pAdpFree) {
+		free(pAdpFree);
+	}
+
 }

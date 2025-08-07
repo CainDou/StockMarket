@@ -94,7 +94,7 @@ typedef struct  _TimeLineData
 
 enum RecvMsgType
 {
-	RecvMsg_StockInfo = 182433,
+	RecvMsg_StockInfo = 184000,
 	RecvMsg_RTTimeLine,
 	RecvMsg_TodayTimeLine,
 	RecvMsg_NoUse,
@@ -132,12 +132,30 @@ enum RecvMsgType
 	RecvMsg_TradePriceVol,
 	RecvMsg_TradeSysRes,
 	RecvMsg_HisTradeSysRes,
-	RecvMsg_AllBackRehab
+	RecvMsg_AllBackRehab,
+	RecvMsg_End
 };
+
+
+enum TradeReceiveMsgType
+{
+	TradeRecvMsg_Register = RecvMsg_End +1,
+	TradeRecvMsg_ChangePsd,
+	TradeRecvMsg_Login,
+	TradeRecvMsg_Logout,
+	TradeRecvMsg_AccountInfo,
+	TradeRecvMsg_Position,
+	TradeRecvMsg_Trust,
+	TradeRecvMsg_Deal,
+	TradeRecvMsg_HisTrust,
+	TradeRecvMsg_HisDeal,
+	TradeRecvMsg_SubmitFeedback,
+};
+
 
 enum SendMsgType
 {
-	SendType_MsgNoUse = 100,
+	SendType_MsgNoUse = 4000,
 	SendType_GetHisRpsPoint,
 	SendType_IndexMarket,
 	SendType_StockMarket,
@@ -152,16 +170,38 @@ enum SendMsgType
 	SendType_LpPriceVol,
 	SendType_HisTradeVol,
 	SendType_HisTradeSysRes,
+	SendType_End,
 };
+
+
+enum TradeSendMsgType
+{
+	TradeSendMsg_Start = SendType_End + 1,
+	TradeSendMsg_Register,
+	TradeSendMsg_ChangePsd,
+	TradeSendMsg_Login,
+	TradeSendMsg_Logout,
+	TradeSendMsg_QueryAccountInfo,
+	TradeSendMsg_QueryPostion,
+	TradeSendMsg_QueryHisTrust,
+	TradeSendMsg_QueryHisDeal,
+	TradeSendMsg_SubmitTrade,
+	TradeSendMsg_End,
+};
+
+
 
 enum ComSendMsgType
 {
-	ComSend_Connect = 0,
-	ComSend_ReConnect,
-	ComSend_FileVer = 1000,
+	ComSend_Start = 1000,
+	ComSend_FileVer = ComSend_Start,
 	ComSend_File,
 	ComSend_UpdateFile,
 	ComSend_UpdateFileVer,
+	ComSend_MacAddr,
+	ComSend_AuthMsgStart,
+	ComSend_Connect,
+	ComSend_ReConnect,
 };
 
 enum BackTestingMsgType
@@ -240,6 +280,25 @@ typedef struct _ReceiveIDInfo
 	unsigned long NoUse3;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
 	unsigned long NoUse4;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
 }ReceiveIDInfo;
+
+typedef struct _ReceiveAuthInfo
+{
+	_ReceiveAuthInfo() :MsgType(-1), NoUse3(-1), Res(0)
+	{
+
+	}
+	_ReceiveAuthInfo(ReceiveInfo& ri)
+	{
+		memcpy_s(this, sizeof(_ReceiveAuthInfo),
+			&ri, sizeof(ri));
+	}
+	int MsgType;
+	char NoUse1[10];
+	int Res;
+	int NoUse2;
+	unsigned long NoUse3;		//snap数据时 stockIndex的数据大小;kline数据时 压缩后数据大小
+	unsigned long NoUse4;		//snap数据时 futures的数据大小;kline数据时 原始数据大小
+}ReceiveAuthInfo;
 
 typedef struct _ReceiveStockInfo
 {
@@ -1249,6 +1308,7 @@ enum ReceiveCommonMsgType
 	RecvMsg_ClientFile,
 	RecvMsg_UpdateFile,
 	RecvMsg_UpdateFileVer,
+	RecvMsg_MacAddrAuth,
 };
 
 
@@ -2310,36 +2370,6 @@ enum eAccountOpt
 	eAO_ChangePsd,
 };
 
-enum TradeSendMsgType
-{
-	TradeSendMsg_Start = 200,
-	TradeSendMsg_Register,
-	TradeSendMsg_ChangePsd,
-	TradeSendMsg_Login,
-	TradeSendMsg_Logout,
-	TradeSendMsg_QueryAccountInfo,
-	TradeSendMsg_QueryPostion,
-	TradeSendMsg_QueryHisTrust,
-	TradeSendMsg_QueryHisDeal,
-	TradeSendMsg_SubmitTrade,
-	TradeSendMsg_End,
-};
-
-enum TradeReceiveMsgType
-{
-	TradeRecvMsg_Register = 190000,
-	TradeRecvMsg_ChangePsd,
-	TradeRecvMsg_Login,
-	TradeRecvMsg_Logout,
-	TradeRecvMsg_AccountInfo,
-	TradeRecvMsg_Position,
-	TradeRecvMsg_Trust,
-	TradeRecvMsg_Deal,
-	TradeRecvMsg_HisTrust,
-	TradeRecvMsg_HisDeal,
-	TradeRecvMsg_SubmitFeedback,
-
-};
 
 
 enum TradeSynMsg
