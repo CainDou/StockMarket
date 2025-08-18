@@ -20,6 +20,7 @@
 #include "SPriceVolPic.h"
 #include "SFundFlowPriceVol.h"
 #include "WndSynHandler.h"
+#include "DlgChangePara.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
@@ -28,6 +29,7 @@
 #define FUNDFLOWCOUNT 239
 
 extern CWndSynHandler g_WndSyn;
+
 
 enum _PriceVolPicType
 {
@@ -59,6 +61,7 @@ CWorkWnd::CWorkWnd() :SHostWnd(_T("LAYOUT:wnd_work"))
 	m_bHisFitlterDataReady = FALSE;
 	m_bUseHisStockFilter = FALSE;
 	m_pListSelfSel = nullptr;
+	m_nNowKTParaChange = -1;
 }
 
 
@@ -896,6 +899,7 @@ LRESULT CWorkWnd::OnFSMsg(UINT uMsg, WPARAM wp,
 LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 	LPARAM lp, BOOL & bHandled)
 {
+	BOOL bNeedSaveConfig = TRUE;
 	switch (lp)
 	{
 	case KLINEMSG_UPDATE:
@@ -916,12 +920,59 @@ LRESULT CWorkWnd::OnKlineMsg(UINT uMsg, WPARAM wp,
 		m_pBtnRehab->SetAttribute(L"colorText", L"#00ffffff");
 		::SendMsg(m_uThreadID, WW_FixedTimeRehab, (char*)wp, sizeof(FixedTimeRehab));
 		break;
+	case KLINEMSG_CHANGEPARA:
+	{
+		if (m_nNowKTParaChange >= 0)
+		{
+			std::vector<int>* pPara = (std::vector<int>*)wp;
+			auto ti = m_pKlinePic->GetTargetInfo(m_nNowKTParaChange);
+			if (ti.nParaDefValue.size() == pPara->size())
+			{
+				ti.nUsePara.swap(*pPara);
+				m_pKlinePic->ChangeTargetInfo(m_nNowKTParaChange, ti);
+				::SendMsg(m_uThreadID, WW_ReCalcTarget, NULL, 0);
+				m_nNowKTParaChange = -1;
+			}
+		}
+
+	}
+	break;
+	case KLINEMSG_CHANGEDEFAULTPARA:
+	{
+		bNeedSaveConfig = FALSE;
+		int nIndex = (int)wp;
+		SStringA strTargetName = CKlineTarget::GetTargetOrgInfo(nIndex).strTargetName;
+		CIniFile ini(".\\config\\config.ini");
+		SStringA strPara = ini.GetStringA("DefaultPara", strTargetName, "");
+		if (!strPara.IsEmpty())
+		{
+			vector<int> paraVec;
+			SStringW strTmp;
+			for (int i = 0; i < strPara.GetLength(); ++i)
+			{
+				if (strPara[i] != ',')
+					strTmp += strPara[i];
+				else
+				{
+					paraVec.emplace_back(_wtoi(strTmp));
+					strTmp.Empty();
+				}
+			}
+			if (!strTmp.IsEmpty())
+				paraVec.emplace_back(_wtoi(strTmp));
+			CKlineTarget::ChangeTargetInfoDefPara(nIndex,paraVec);
+		}
+
+	}
+	break;
 	default:
+		bNeedSaveConfig = FALSE;
 		break;
 	}
 
-	::PostMessage(m_hParWnd, WM_WINDOW_MSG,
-		WDMsg_SaveConfig, NULL);
+	if (bNeedSaveConfig)
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
 	return 0;
 }
 
@@ -1037,8 +1088,9 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_MA:
-		m_pKlinePic->SetBandState(false, false);
-		m_pKlinePic->SetMaState();
+		m_pKlinePic->SetMainTarget(eMain_MA,vector<int>());
+		//m_pKlinePic->SetBandState(false, false);
+		//m_pKlinePic->SetMaState();
 		m_pKlinePic->Invalidate();
 		bState = m_pKlinePic->GetMaState();
 
@@ -1046,10 +1098,12 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 			WDMsg_SaveConfig, NULL);
 		break;
 	case KM_Band:
-		m_pKlinePic->SetMaState(false, false);
-		m_pKlinePic->SetBandState();
+		//m_pKlinePic->SetMaState(false, false);
+		//m_pKlinePic->SetBandState();
+		m_pKlinePic->SetMainTarget(eMain_Band, vector<int>());
+
 		m_pKlinePic->Invalidate();
-		bState = m_pKlinePic->GetBandState();
+		//bState = m_pKlinePic->GetBandState();
 
 		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
 			WDMsg_SaveConfig, NULL);
@@ -1087,26 +1141,56 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		pDlg->ShowWindow(SW_SHOWDEFAULT);
 	}
 	break;
-	case KM_BandPara:
+	case KM_NetGrid:
 	{
-		CDlgBandPara *pDlg = new CDlgBandPara(m_Group, m_hWnd);
-		pDlg->Create(NULL);
-		pDlg->CenterWindow(m_hWnd);
-		pDlg->SetEditText(m_pKlinePic->GetBandPara());
-		pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-		pDlg->ShowWindow(SW_SHOWDEFAULT);
+		m_pKlinePic->SetMainTarget(eMain_NetGrid,
+			m_InitPara.KlineMainTargetPara.count(eMain_NetGrid)?
+			m_InitPara.KlineMainTargetPara [eMain_NetGrid]:vector<int>());
+		::SendMsg(m_uThreadID, WW_ReCalcTarget, NULL, 0);
 	}
 	break;
-	case KM_MaPara:
+	case KM_ChangeMainPara:
 	{
-		m_MaParaSet = eMa_Close;
-		CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
-		pDlg->Create(NULL);
-		pDlg->CenterWindow(m_hWnd);
-		pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
-		pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-		pDlg->ShowWindow(SW_SHOWDEFAULT);
-		::EnableWindow(m_hWnd, FALSE);
+		int nMainPara = m_pKlinePic->GetMainTarget();
+		if (nMainPara == eMain_MA)
+		{
+			m_MaParaSet = eMa_Close;
+			CDlgMaPara *pDlg = new CDlgMaPara(m_Group, m_hWnd, m_MaParaSet);
+			pDlg->Create(NULL);
+			pDlg->CenterWindow(m_hWnd);
+			pDlg->SetEditText(m_pKlinePic->GetMaPara(m_MaParaSet));
+			pDlg->SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			pDlg->ShowWindow(SW_SHOWDEFAULT);
+			::EnableWindow(m_hWnd, FALSE);
+		}
+		else if (nMainPara == eMain_Band)
+		{
+			CDlgBandPara *pDlg = new CDlgBandPara(m_Group, m_hWnd);
+			pDlg->Create(NULL);
+			pDlg->CenterWindow(m_hWnd);
+			pDlg->SetEditText(m_pKlinePic->GetBandPara());
+			pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			pDlg->ShowWindow(SW_SHOWDEFAULT);
+
+		}
+		else if (nMainPara >= eMain_NetGrid)
+		{
+			auto ti = m_pKlinePic->GetTargetInfo(0);
+			CDlgChangePara *pDlgPara = new CDlgChangePara(ti, m_hWnd);
+			pDlgPara->Create(NULL);
+			pDlgPara->CenterWindow(m_hParWnd);
+			if (ti.strParaName.size() <= 6)
+				pDlgPara->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			else
+			{
+				int nExLevel = ti.strParaName.size() / 3 - 2;
+				pDlgPara->SetWindowPos(NULL, 0, 0, 365, 200 + nExLevel * 40, SWP_NOMOVE);
+
+			}
+			pDlgPara->ShowWindow(SW_SHOWDEFAULT);
+			::EnableWindow(m_hWnd, FALSE);
+
+		}
 	}
 	break;
 	//case KM_L1RPS:
@@ -1596,6 +1680,10 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 			menu.CheckMenuItem(KM_MA, MF_CHECKED);
 		if (m_pKlinePic->GetBandState())
 			menu.CheckMenuItem(KM_Band, MF_CHECKED);
+		if(m_pKlinePic->GetMainTarget() == eMain_NetGrid)
+			menu.CheckMenuItem(KM_NetGrid, MF_CHECKED);
+
+
 		//int nSubPicNum = m_pKlinePic->GetShowSubPicNum();
 		//for (int i = SP_SWINDYL1; i < nSubPicNum; ++i)
 		//{
@@ -1691,8 +1779,8 @@ void CWorkWnd::SwitchPic2List()
 	if (m_nShowListType == eSLT_Market)
 	{
 		m_pList->SetVisible(TRUE, TRUE);
-		if(m_pListSelfSel)
-		m_pListSelfSel->SetVisible(FALSE, TRUE);
+		if (m_pListSelfSel)
+			m_pListSelfSel->SetVisible(FALSE, TRUE);
 		HandleListData();
 		UpdateList();
 		m_pList->SetFocus();
@@ -1847,6 +1935,8 @@ void CWorkWnd::InitProcFucMap()
 		&CWorkWnd::OnKlineMacd;
 	m_dataHandleMap[WW_KlineBand] =
 		&CWorkWnd::OnKlineBand;
+	m_dataHandleMap[WW_ReCalcTarget] =
+		&CWorkWnd::OnKlineTargetReCalc;
 	m_dataHandleMap[WW_ChangeStockFilter] =
 		&CWorkWnd::OnChangeStockFilter;
 	m_dataHandleMap[WW_SaveStockFilter] =
@@ -5121,6 +5211,12 @@ void CWorkWnd::OnKlineMacd(int nMsgLength, const char * info)
 void CWorkWnd::OnKlineBand(int nMsgLength, const char * info)
 {
 	m_pKlinePic->ReProcBandData();
+	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
+}
+
+void SOUI::CWorkWnd::OnKlineTargetReCalc(int nMsgLength, const char * info)
+{
+	m_pKlinePic->CalcTarget();
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 

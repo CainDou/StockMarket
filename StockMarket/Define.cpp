@@ -594,6 +594,38 @@ void GetInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		para.nVolDiffSumPara[i] = ini.GetIntA(strSection,
 			strKey.Format("VolDiffMAPara%d", i + 1), VolAmoMAPara[i]);
+
+	para.nKlineMainTarget = ini.GetIntA(strSection, "KlineMainTarget", 0);
+	if (para.nKlineMainTarget < eMain_NetGrid)
+	{
+		if (para.bShowMA)
+			para.nKlineMainTarget = eMain_MA;
+		else if (para.bShowBandTarget)
+			para.nKlineMainTarget = eMain_Band;
+	}
+	for (int i = eMain_NetGrid; i < eMain_Count; ++i)
+	{
+		SStringA strTmp;
+		SStringA strPara = ini.GetStringA(strSection, strTmp.Format("MainTarget%d", i), "");
+		if (!strPara.IsEmpty())
+		{
+			SStringW strTmp;
+			para.KlineMainTargetPara[i].clear();
+			for (int j = 0; j < strPara.GetLength(); ++j)
+			{
+				if (strPara[j] != ',')
+					strTmp += strPara[j];
+				else
+				{
+					para.KlineMainTargetPara[i].emplace_back(_wtoi(strTmp));
+					strTmp.Empty();
+				}
+			}
+			if (!strTmp.IsEmpty())
+				para.KlineMainTargetPara[i].emplace_back(_wtoi(strTmp));
+		}
+
+	}
 }
 
 void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
@@ -668,6 +700,22 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 	ini.WriteIntA(strSection, "ShowOrderPriceDetail", para.bShowOrderPriceDetail);
 	ini.WriteIntA(strSection, "ShowDeletePriceDetail", para.bShowDeletePriceDetail);
 	ini.WriteIntA(strSection, "FundFlowShowType", para.nFundFlowShowType);
+	ini.WriteIntA(strSection, "KlineMainTarget", para.nKlineMainTarget);
+	for (int k= eMain_NetGrid;k<eMain_Count;++k)
+	{
+		if (para.KlineMainTargetPara.count(k))
+		{
+			auto userPara = para.KlineMainTargetPara[k];
+			SStringA strRes, strTmp;
+			for (int j = 0; j < userPara.size(); ++j)
+			{
+				strRes += strTmp.Format("%d", userPara[j]);
+				if (j != userPara.size() - 1)
+					strRes += ',';
+			}
+			ini.WriteStringA(strSection, strTmp.Format("MainTarget%d", k), strRes);
+		}
+	}
 
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		ini.WriteIntA(strSection, strKey.Format("VolDiffMAPara%d", i + 1), para.nVolDiffSumPara[i]);

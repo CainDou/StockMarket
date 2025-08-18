@@ -690,6 +690,7 @@ enum WorkWndMsg
 	WW_DeletePriceVol,
 	WW_TradePriceVol,
 	WW_SelfSelChange,
+	WW_ReCalcTarget,
 	WW_End,
 };
 
@@ -1188,6 +1189,8 @@ enum KLINEMSG
 	KLINEMSG_MACD,
 	KLINEMSG_BAND,
 	KLINEMSG_REHAB,
+	KLINEMSG_CHANGEPARA,
+	KLINEMSG_CHANGEDEFAULTPARA,
 };
 
 enum FSMenu
@@ -1253,8 +1256,8 @@ enum KlineMenu
 	//KM_RPS,
 	KM_PonitWndNum,
 	KM_MacdPara,
-	KM_BandPara,
-	KM_MaPara,
+	KM_NetGrid,
+	KM_ChangeMainPara,
 	//KM_L1RPS,
 	//KM_L2RPS,
 	KM_PointWnd0,
@@ -1840,6 +1843,8 @@ typedef struct InitPara
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
 	SStringA strFilterName;
+	int nKlineMainTarget;
+	std::map<int,vector<int>> KlineMainTargetPara;
 
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
@@ -1857,7 +1862,8 @@ typedef struct InitPara
 		nKlineCalcRehabType(0), nKlineFTRehabDate(0),UseHisStockFilter(false), 
 		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName(""),
 		bShowKlineVolDiff(false), nVolDiffSumPara{5,20},bShowOrderPrice(false),
-		bShowOrderPriceDetail(false),bShowDeletePriceDetail(false),nFundFlowShowType(0)
+		bShowOrderPriceDetail(false),bShowDeletePriceDetail(false),nFundFlowShowType(0),
+		nKlineMainTarget(0)
 	{}
 }InitPara_t;
 
@@ -2906,3 +2912,45 @@ typedef struct _SelfSelStockInfo
 	double fAddPrice;
 	int nAddDate;
 }SelfSelStockInfo;
+
+typedef struct _TargetInfo
+{
+	int nTargetIndex;
+	SStringA strTargetName;
+	std::vector<SStringA> strParaName;
+	std::vector<int> nParaDefValue;
+	std::vector<int> nUsePara;
+	std::vector<SStringA> strOutName;
+	std::vector<int> nOutType;
+	std::vector<COLORREF> nOutColor;
+	int nTmpParaCount;
+	int nType;
+	BOOL bHasSignal;
+}TargetInfo;
+
+typedef struct _lastVolAmo
+{
+	int nTime;
+	double perData;
+	double nowData;
+}LastData;
+
+enum eMainTarget
+{
+	eMain_NULL = 0,
+	eMain_MA,
+	eMain_Band,
+	eMain_NetGrid,
+	eMain_Count,
+};
+
+enum eTargetID
+{
+	eTarget_NetGrid = 0,
+};
+
+enum eTargetType
+{
+	eTarget_Main,
+	eTarget_Sub,
+};

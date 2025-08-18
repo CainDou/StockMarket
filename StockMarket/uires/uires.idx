@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -39,6 +39,7 @@
 		<file name="dlg_lpPriceVol" path="xml\dlg_lpPriceVol.xml" />
 		<file name="page_lpPriceVol" path="xml\page_lpPriceVol.xml" />
 		<file name="dlg_tradeSysFilter" path="xml\dlg_tradeSysFilter.xml" />
+		<file name="dlg_changeTargetPara" path="xml\dlg_changeTargetPara.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />

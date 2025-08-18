@@ -5,6 +5,7 @@
 #include <core/swnd.h>
 #include "SKlineTip.h"
 #include <memory>
+#include "KlineTarget.h"
 namespace SOUI
 {
 	class CDealList;
@@ -90,8 +91,9 @@ namespace SOUI
 		void		SetBigVolDiffState(bool bRevesered = true, bool bState = false);
 		//void		SetRpsState(int nWndNum,
 		//			bool bRevesered = true, bool bState = false);
-		void		SetMaState(bool bRevesered = true, bool bState = false);
-		void		SetBandState(bool bRevesered = true, bool bState = false);
+		//void		SetMaState(bool bRevesered = true, bool bState = false);
+		//void		SetBandState(bool bRevesered = true, bool bState = false);
+		void		SetMainTarget(int nMainTargetID, std::vector<int>& usePara);
 		void		SetBandPara(BandPara_t& bandPara);
 		void		SetMaPara(int maPara[], eMaType maType);
 		void		SetMacdPara(int MacdPara[]);
@@ -110,7 +112,10 @@ namespace SOUI
 		bool		GetIsTFBaseDataUsed() const;
 		void		SetTickFlowDataType(int nTFDataType);
 		int 		GetTickFlowDataType() const;
-
+		TargetInfo  GetTargetInfo(int nTargetPos);
+		void		ChangeTargetInfo(int nTargetPos, TargetInfo& targetInfo);
+		int			GetMainTarget();
+		void		CalcTarget();
 		// 图形处理绘制
 	protected:
 		//virtual BOOL CreateChildren(pugi::xml_node xmlNode);
@@ -129,6 +134,7 @@ namespace SOUI
 		void		DrawKline(IRenderTarget * pRT, vector<vector<CPoint>>& MALine, int nPos, int nX);
 		void		DrawBandData(IRenderTarget * pRT, vector<vector<CPoint>>& BandLine, int nPos, int nX, int& nValidNum);
 		void		DrawBandLine(IRenderTarget * pRT, vector<vector<CPoint>>& BandLine, int nValidNum);
+		void		DrawMainTarget(IRenderTarget * pRT, int nOffset, int nCount);
 		void		DrawVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
 			double data, bool bAmo, int nX, int nShowPos);		//画附图vol
 		void		DrawCAVolOrAmoData(IRenderTarget * pRT, vector<vector<CPoint>>& VolAmtMALine,
@@ -157,6 +163,8 @@ namespace SOUI
 		void		DrawMoveTime(IRenderTarget * pRT, int x, int date, int time, bool bNew);
 		void		DrawMovePrice(IRenderTarget * pRT, int y, bool bNew);
 		void		DrawBarInfo(IRenderTarget * pRT, int nDataPos);
+		void		DrawMainTargetInfo(IRenderTarget * pRT, int nDataPos);
+
 
 		//图形参数处理
 	protected:
@@ -301,6 +309,8 @@ namespace SOUI
 		map<int, int>m_VolDiffPosMap;
 		set<int>m_TFDataSet;
 		int		m_nTFDataType;
+		CKlineTarget m_targetHandler;
+		int m_nMainTarget;
 		//调用类
 	protected:
 		std::unique_ptr<CPriceList> m_pPriceList;
@@ -515,16 +525,16 @@ namespace SOUI
 	//	if (bRevesered) m_pbShowSubPic[nWndNum] = !m_pbShowSubPic[nWndNum];
 	//	else m_pbShowSubPic[nWndNum] = bState;
 	//}
-	inline void SKlinePic::SetMaState(bool bRevesered, bool bState)
-	{
-		if (bRevesered) m_bShowMA = !m_bShowMA;
-		else m_bShowMA = bState;
-	}
-	inline void SKlinePic::SetBandState(bool bRevesered, bool bState)
-	{
-		if (bRevesered) m_bShowBandTarget = !m_bShowBandTarget;
-		else m_bShowBandTarget = bState;
-	}
+	//inline void SKlinePic::SetMaState(bool bRevesered, bool bState)
+	//{
+	//	if (bRevesered) m_bShowMA = !m_bShowMA;
+	//	else m_bShowMA = bState;
+	//}
+	//inline void SKlinePic::SetBandState(bool bRevesered, bool bState)
+	//{
+	//	if (bRevesered) m_bShowBandTarget = !m_bShowBandTarget;
+	//	else m_bShowBandTarget = bState;
+	//}
 	inline void SKlinePic::SetMaPara(int maPara[], eMaType maType)
 	{
 		if (maType == eMa_Close)memcpy_s(m_nMAPara, sizeof(m_nMAPara), maPara, sizeof(m_nMAPara));
@@ -594,6 +604,22 @@ namespace SOUI
 	inline int SKlinePic::GetTickFlowDataType() const
 	{
 		return m_nTFDataType;
+	}
+	inline TargetInfo SKlinePic::GetTargetInfo(int nTargetPos)
+	{
+		return m_targetHandler.GetTargetInfo(nTargetPos);
+	}
+	inline void SKlinePic::ChangeTargetInfo(int nTargetPos, TargetInfo& targetInfo)
+	{
+		m_targetHandler.ChangeTarget(nTargetPos, targetInfo);
+	}
+	inline int SKlinePic::GetMainTarget()
+	{
+		return m_nMainTarget;
+	}
+	inline void SKlinePic::CalcTarget()
+	{
+		m_targetHandler.CalcData();
 	}
 	template<typename a, typename b>
 	inline void SKlinePic::SumProc(vector<a>& sumArr, vector<b>&  srcDataArr, int nPos, int nCount)

@@ -215,6 +215,12 @@
     <ClCompile Include="DlgTradeSysFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="KlineTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgChangePara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -400,6 +406,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgTradeSysFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KlineTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgChangePara.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

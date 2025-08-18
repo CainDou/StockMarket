@@ -32,6 +32,13 @@ using std::vector;
 #define MAX_SUBWINDOW 5
 #define INFOHEIGHT 20
 
+
+const vector<COLORREF> defColorVec = { RGBA(0xFF,0xFF,0xFF,0xFF),RGBA(0xFF, 0xFF, 000, 0xFF),RGBA(0xFF, 0, 0xFF, 0xFF),
+RGBA(0, 0xFF, 0, 0xFF) , RGBA(0x7F, 0x7F, 0x7F, 0xFF),RGBA(0x7F, 0x7F, 000, 0xFF),RGBA(0x7F, 0, 0x7F, 0xFF),
+RGBA(0, 0x7F, 0, 0xFF) , RGBA(0xFF, 0x7F, 0, 0xFF),RGBA(0x7F,0,0xFF,0xFF),RGBA(0,0xFF,0x7F,0xFF),
+RGBA(0xFF,0,0x7F,0xFF),RGBA(0,0x7F,0xFF,0xFF) ,RGBA(0x7F,0xFF,0,0xFF) };
+
+
 SKlinePic::SKlinePic()
 {
 
@@ -262,6 +269,14 @@ void SKlinePic::InitShowPara(InitPara_t para)
 		m_nVolDiffSumPara[i] = para.nVolDiffSumPara[i];
 
 	m_nJiange = para.nJiange;
+	m_nMainTarget =para.nKlineMainTarget;
+	if (m_nMainTarget >= eMain_NetGrid)
+	{
+		auto ti = CKlineTarget::GetTargetOrgInfo(m_nMainTarget - eMain_NetGrid);
+		if(para.KlineMainTargetPara.count(m_nMainTarget) && para.KlineMainTargetPara.size() == ti.nParaDefValue.size())
+		ti.nUsePara = para.KlineMainTargetPara[ti.nTargetIndex];
+		m_targetHandler.AddTarget(ti);
+	}
 }
 
 void SKlinePic::OutPutShowPara(InitPara_t & para)
@@ -309,6 +324,9 @@ void SKlinePic::OutPutShowPara(InitPara_t & para)
 		para.nVolDiffSumPara[i] = m_nVolDiffSumPara[i];
 
 	para.nJiange = m_nJiange;
+	para.nKlineMainTarget = m_nMainTarget;
+	if (m_nMainTarget >= eMain_NetGrid)
+		para.KlineMainTargetPara[m_nMainTarget] = m_targetHandler.GetTargetInfo(0).nUsePara;
 
 
 }
@@ -2011,17 +2029,25 @@ void SKlinePic::GetMaxDiff()		//判断坐标最大最小值和k线条数
 		}
 
 	}
+	else if (m_nMainTarget >= eMain_NetGrid)
+	{
+		auto fMaxMin = m_targetHandler.GetMaxAndMin(0, m_nFirst, m_nEnd);
+		if (fMaxMin.first > DBL_MIN)
+			fMax = max(fMax, fMaxMin.first);
+		if (fMaxMin.second < DBL_MAX)
+			fMin = min(fMin, fMaxMin.second);
+
+	}
 
 	m_pAll->fMax = fMax;
 	m_pAll->fMin = fMin;
 
-	if (m_pAll->fMax == fMin || (fMax - fMin) < 0.0001)
-	{
-		m_pAll->fMax = m_pAll->fMax * 1.05;
-		m_pAll->fMin = m_pAll->fMin*0.94;
-	}
-	if (m_pAll->fMax == 0)
-		m_pAll->fMax = 1;
+	double fDiff = 0;
+	fDiff = m_pAll->fMax - m_pAll->fMin;
+	if (fDiff == 0)
+		fDiff = 1;
+	m_pAll->fMax += fDiff / 8;
+	m_pAll->fMin -= fDiff / 8;
 }
 
 void SKlinePic::GetFuTuMaxDiff()		//判断副图坐标最大最小值和k线条数
@@ -3092,21 +3118,22 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 
 	if (!m_bShowMouseLine || (pt.x > m_rcImage.right || pt.x<m_rcImage.left || pt.y>m_rcImage.bottom || pt.y < m_rcImage.top))
 	{
-		DrawMainUpperMarket(pRT, nLastDataPos);
-		if (m_bShowMA)
-			DrawMainUpperMA(pRT, nLastDataPos);
-		if (m_bShowBandTarget)
-			DrawMainUpperBand(pRT, nLastDataPos);
-		if (m_bShowAmount || m_bShowVolume)
-			DrawVolAmoUpperMA(pRT, nLastDataPos);
-		if (m_bShowCAVol || m_bShowCAAmo)
-			DrawCAVolAmoUpperMA(pRT, nLastDataPos);
-		if (m_bShowMacd)
-			DrawMacdUpperMarket(pRT, nLastDataPos);
-		if (m_bUseTFBaseData)
-			DrawTFDataUpperMarket(pRT, nLastDataPos);
-		if (m_bShowVolDiff)
-			DrawVolDiffUpperInfo(pRT, nLastDataPos);
+		DrawBarInfo(pRT, nLastDataPos);
+		//DrawMainUpperMarket(pRT, nLastDataPos);
+		//if (m_bShowMA)
+		//	DrawMainUpperMA(pRT, nLastDataPos);
+		//if (m_bShowBandTarget)
+		//	DrawMainUpperBand(pRT, nLastDataPos);
+		//if (m_bShowAmount || m_bShowVolume)
+		//	DrawVolAmoUpperMA(pRT, nLastDataPos);
+		//if (m_bShowCAVol || m_bShowCAAmo)
+		//	DrawCAVolAmoUpperMA(pRT, nLastDataPos);
+		//if (m_bShowMacd)
+		//	DrawMacdUpperMarket(pRT, nLastDataPos);
+		//if (m_bUseTFBaseData)
+		//	DrawTFDataUpperMarket(pRT, nLastDataPos);
+		//if (m_bShowVolDiff)
+		//	DrawVolDiffUpperInfo(pRT, nLastDataPos);
 	}
 
 	if (m_bShowBandTarget)
@@ -3153,6 +3180,9 @@ void SKlinePic::DrawData(IRenderTarget * pRT)
 			pRT->DrawLines(&TickFlowLine[i][0], TickFlowLine[i].size());
 		}
 	}
+
+	if (m_nMainTarget >= eMain_NetGrid)
+		DrawMainTarget(pRT, m_nFirst, m_nEnd - m_nFirst);
 
 
 	pRT->SelectObject(oldPen);
@@ -3355,6 +3385,88 @@ void SKlinePic::DrawBandLine(IRenderTarget * pRT, vector<vector<CPoint>>& BandLi
 	}
 }
 
+void SOUI::SKlinePic::DrawMainTarget(IRenderTarget * pRT, int nOffset, int nCount)
+{
+	auto&& targetInfo = m_targetHandler.GetTargetInfo(0);
+	auto&& dataVec = m_targetHandler.GetData(0);
+	vector<vector<CPoint>> ptVec(targetInfo.strOutName.size());
+	for (auto &it : ptVec)
+		ptVec.reserve(nCount);
+	for (int i = 0; i < nCount; ++i)
+	{
+		int x = i * (TOTALZOOMWIDTH)+1 + m_rcMain.left + ZOOMWIDTH / 2;
+		int nDataPos = i + nOffset;
+		for (int j = 0; j < dataVec.size(); ++j)
+		{
+			if (dataVec[j].size() > nDataPos && !isnan(dataVec[j][nDataPos]) && !isinf(dataVec[j][nDataPos]))
+				ptVec[j].emplace_back(CPoint{ x,GetYPos(dataVec[j][nDataPos]) });
+		}
+
+	}
+
+	for (int i = 0; i < targetInfo.strOutName.size(); ++i)
+	{
+		int nLineType = targetInfo.nOutType.size() > i ? targetInfo.nOutType[i] : PS_SOLID;
+		auto color = targetInfo.nOutColor.size() > i ? targetInfo.nOutColor[i] : defColorVec[i];
+		CAutoRefPtr<IPen> pen, oldPen;
+		pRT->CreatePen(nLineType, color, 1, &pen);
+		pRT->SelectObject(pen, (IRenderObj**)&oldPen);
+		if (ptVec[i].size() > 1)
+			pRT->DrawLines(&ptVec[i][0], ptVec[i].size());
+	}
+
+	if (targetInfo.bHasSignal)
+	{
+		auto &&tradeMap = m_targetHandler.GetTradeSignal(0);
+		if (!tradeMap.empty())
+		{
+			HDC hdc = pRT->GetDC();
+			CAutoRefPtr<IFont> oldFont;
+			pRT->SelectObject(m_pFont12, (IRenderObj**)&oldFont);
+			auto oldColor = pRT->SetTextColor(RGBA(255, 0, 0, 255));				//字为白色
+			for (int i = 0; i < nCount; ++i)
+			{
+				int nDataPos = i + nOffset;
+				if (tradeMap.count(nDataPos))
+				{
+					int x = i * (TOTALZOOMWIDTH)+1 + m_rcMain.left + ZOOMWIDTH / 2;
+					int y = GetYPos(tradeMap[nDataPos].fTradePrice);
+					if (!tradeMap[nDataPos].bBuy)
+					{
+						pRT->SetTextColor(RGBA(255, 255, 0, 255));
+						pRT->DrawTextW(L"↓", 1, CRect(x - 5, y - 15,
+							x + 5, y), DT_SINGLELINE | DT_CENTER);
+						pRT->SetTextColor(RGBA(255, 255, 255, 255));
+						SStringW strTip = StrA2StrW(tradeMap[nDataPos].strLabel);
+						CSize size;
+						GetTextExtentPoint32(hdc, strTip, strTip.GetLength(), &size);
+						pRT->DrawTextW(strTip, wcslen(strTip), CRect(x - (size.cx / 2), y - 10 - size.cy,
+							x + (size.cx / 2), y - 10), DT_SINGLELINE | DT_CENTER);
+
+					}
+					else
+					{
+						CSize size;
+						SStringW strTip = StrA2StrW(tradeMap[nDataPos].strLabel);
+						GetTextExtentPoint32(hdc, strTip, strTip.GetLength(), &size);
+						pRT->SetTextColor(RGBA(255, 255, 255, 255));
+						pRT->DrawTextW(strTip, wcslen(strTip), CRect(x - (size.cx / 2), y + 10 ,
+							x + (size.cx / 2), y + 10 + size.cy), DT_SINGLELINE | DT_CENTER);
+						pRT->SetTextColor(RGBA(255, 255, 0, 255));
+						pRT->DrawTextW(L"↑", 1, CRect(x - 5, y ,
+							x + 5, y+15), DT_SINGLELINE | DT_CENTER);
+
+					}
+				}
+			}
+			pRT->SelectObject(oldFont);
+			pRT->SetTextColor(oldColor);
+			pRT->ReleaseDC(hdc);
+		}
+	}
+
+}
+
 
 void SKlinePic::DrawMouseKlineInfo(IRenderTarget * pRT, const KlineType  &KlData, CPoint pt, const int &num, const double &fPrePrice)
 {
@@ -3395,6 +3507,7 @@ void SKlinePic::DataProc()
 	DataInit();
 	KlineDataWithHis();
 	KlineDataUpdate();
+	m_targetHandler.UpdateData(m_pAll->data, m_pAll->nTotal);
 	m_nBandCount = 0;
 	m_nMacdCount = 0;
 	m_bDataInited = true;
@@ -3464,6 +3577,34 @@ void SKlinePic::ChangePeriod(int nPeriod, BOOL bNeedReCalc)
 		m_nPeriod = nPeriod;
 		if (bNeedReCalc && GetDataReadyState())
 			DataProc();
+	}
+}
+void SKlinePic::SetMainTarget(int nMainTargetID,std::vector<int>& usePara)
+{
+	if (m_nMainTarget == nMainTargetID)
+	{
+		m_bShowMA = false;
+		m_bShowBandTarget = false;
+		m_nMainTarget = 0;
+		m_targetHandler.RemoveTarget(0);
+	}
+	else
+	{
+		m_nMainTarget = nMainTargetID;
+		if (m_nMainTarget == eMain_MA)
+			m_bShowMA = true;
+		else if (m_nMainTarget == eMain_Band)
+			m_bShowBandTarget = true;
+		else if (m_nMainTarget >= eMain_NetGrid)
+		{
+			m_bShowMA = false;
+			m_bShowBandTarget = false;
+			auto ti = CKlineTarget::GetTargetOrgInfo(m_nMainTarget - eMain_NetGrid);
+			if(!usePara.empty() && usePara.size() == ti.nParaDefValue.size())
+			ti.nUsePara = usePara;
+			m_targetHandler.AddTarget(ti);
+		}
+
 	}
 }
 
@@ -4070,15 +4211,18 @@ void SKlinePic::DrawMovePrice(IRenderTarget * pRT, int y, bool bNew)
 
 void SKlinePic::DrawBarInfo(IRenderTarget * pRT, int nDataPos)
 {
+	CAutoRefPtr<IBrush> oldBrush;
+	pRT->SelectObject(m_bBrushBlack, (IRenderObj**)&oldBrush);
 	pRT->FillRectangle(CRect(m_rcImage.left, m_rcImage.top - INFOHEIGHT, m_rcImage.right, m_rcImage.top));
 	pRT->FillRectangle(CRect(m_rcImage.left + 1, m_rcImage.top + 4, m_rcImage.right, m_rcImage.top + INFOHEIGHT));
-
 	DrawMainUpperMarket(pRT, nDataPos);
 
 	if (m_bShowMA)
 		DrawMainUpperMA(pRT, nDataPos);
 	if (m_bShowBandTarget)
 		DrawMainUpperBand(pRT, nDataPos);
+	else if (m_nMainTarget >= eMain_NetGrid)
+		DrawMainTargetInfo(pRT, nDataPos);
 
 	if (m_bShowVolume || m_bShowAmount)
 	{
@@ -4112,6 +4256,47 @@ void SKlinePic::DrawBarInfo(IRenderTarget * pRT, int nDataPos)
 
 	}
 
+	pRT->SelectObject(oldBrush);
+
+}
+
+void SOUI::SKlinePic::DrawMainTargetInfo(IRenderTarget * pRT, int nDataPos)
+{
+	auto&& info = m_targetHandler.GetTargetInfo(0);
+	auto &&data = m_targetHandler.GetData(0, nDataPos);
+	SStringW strInfo;
+	HDC hdc = pRT->GetDC();
+	strInfo = StrA2StrW(info.strTargetName);
+	int nLeft = 5;
+	CSize size;
+	size.cx = 0; size.cy = 0;
+	if (!info.nUsePara.empty())
+	{
+		strInfo += L"(";
+		for (int i = 0; i < info.nUsePara.size(); ++i)
+		{
+			strInfo += std::to_wstring(info.nUsePara[i]).c_str();
+			if (i != info.nUsePara.size() - 1)
+				strInfo += L",";
+			else
+				strInfo += L")";
+		}
+	}
+	DrawTextonPic(pRT, CRect(m_rcImage.left + nLeft, m_rcImage.top + 4, m_rcImage.right - 1, m_rcImage.top + INFOHEIGHT), strInfo);
+	GetTextExtentPoint32(hdc, strInfo, strInfo.GetLength(), &size);
+	nLeft += size.cx;
+	for (int i = 0; i<info.strOutName.size(); ++i)
+	{
+		if (!isnan(data[i]) && !isinf(data[i]))
+			strInfo.Format(L"%s:%.02f", StrA2StrW(info.strOutName[i]), data[i]);
+		else
+			strInfo.Format(L"%s:-", StrA2StrW(info.strOutName[i]));
+		auto color = i < info.nOutColor.size() ? info.nOutColor[i] : defColorVec[i];
+		DrawTextonPic(pRT, CRect(m_rcImage.left + nLeft, m_rcImage.top + 4, m_rcImage.right - 1, m_rcImage.top + INFOHEIGHT),
+			strInfo, color);
+		GetTextExtentPoint32(hdc, strInfo, strInfo.GetLength(), &size);
+		nLeft += size.cx;
+	}
 
 }
 
@@ -4235,6 +4420,7 @@ void SKlinePic::DataInit()
 	::GetLocalTime(&st);
 	m_nTradingDay = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
 	m_bAddDay = false;
+	m_targetHandler.ClearData();
 
 }
 
@@ -4274,7 +4460,6 @@ void SKlinePic::KlineDataWithHis()
 		AmoMAProc(count);
 	}
 	m_pAll->nTotal = count;
-
 
 
 }
@@ -4957,6 +5142,7 @@ void SKlinePic::UpdateData()
 	if (!m_bDataInited)
 		return;
 	KlineDataUpdate();
+	m_targetHandler.UpdateData(m_pAll->data[m_pAll->nTotal - 1]);
 }
 
 void SKlinePic::ReProcKlineRehabData(eRehabType rehabType)
@@ -4982,6 +5168,7 @@ void SKlinePic::ReProcKlineRehabData(eRehabType rehabType)
 	m_nMacdCount = 0;
 	m_bDataInited = true;
 	KlineDataUpdate();
+	m_targetHandler.UpdateData(m_pAll->data, m_pAll->nTotal);
 }
 
 void SKlinePic::ReProcKlineRehabData(FixedTimeRehab & frt)
@@ -5009,6 +5196,7 @@ void SKlinePic::ReProcKlineRehabData(FixedTimeRehab & frt)
 	m_nMacdCount = 0;
 	m_bDataInited = true;
 	KlineDataUpdate();
+	m_targetHandler.UpdateData(m_pAll->data, m_pAll->nTotal);
 
 }
 

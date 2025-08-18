@@ -468,37 +468,47 @@ void SSubTargetPic::DrawMouseData(IRenderTarget * pRT, int xPos)
 	int right = m_rcImage.right;
 
 
-
-	CoreData* pData = new CoreData[m_nShowDataCount];
-	for (int i = 0; i < m_nShowDataCount; ++i)
-	{
-		if (xPos >= 0 && xPos < m_nEnd)
-			pData[i] = m_pData[i]->at(xPos);
-		else if (xPos <0 && !m_pData[i]->empty() || xPos >=m_nEnd)
-			pData[i] = m_pData[i]->at(m_nEnd - 1);
-	}
 	DrawTextonPic(pRT, m_rcTargetSel, L"¡ñ", RGBA(80, 80, 80, 255), DT_CENTER | DT_VCENTER, 20);
 
 	DrawTextonPic(pRT, CRect(left, top, right, bottom), m_strTitle, m_colorVec[0]);
-
-
-	//if (xPos < 0 || xPos >= m_pData[0]->size())
-	//	return;
 
 	HDC hdc = pRT->GetDC();
 	CSize size = { 0 };
 	GetTextExtentPoint32(hdc, m_strTitle, m_strTitle.GetLength(), &size);
 	left += size.cx;
 
-
+	CoreData* pData = new CoreData[m_nShowDataCount];
 	for (int i = 0; i < m_nShowDataCount; ++i)
 	{
-		sl = StrA2StrW(m_dataNameVec[i]);
-		sl.Format(L"%s:%.02f", sl, pData[i].value);
-		DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, m_colorVec[i]);
-		GetTextExtentPoint32(hdc, sl, sl.GetLength(), &size);
-		left += size.cx;
+		if (!m_pData[i]->empty())
+		{
+			if (xPos >= 0 && xPos < m_nEnd && m_pData[i]->size() >i)
+				pData[i] = m_pData[i]->at(xPos);
+			else if (xPos <0  || xPos >= m_nEnd)
+				pData[i] = m_pData[i]->at(m_nEnd - 1);
+			sl = StrA2StrW(m_dataNameVec[i]);
+			sl.Format(L"%s:%.02f", sl, pData[i].value);
+			DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, m_colorVec[i]);
+			GetTextExtentPoint32(hdc, sl, sl.GetLength(), &size);
+			left += size.cx;
+
+		}
 	}
+
+
+	//if (xPos < 0 || xPos >= m_pData[0]->size())
+	//	return;
+
+
+
+	//for (int i = 0; i < m_nShowDataCount; ++i)
+	//{
+	//	sl = StrA2StrW(m_dataNameVec[i]);
+	//	sl.Format(L"%s:%.02f", sl, pData[i].value);
+	//	DrawTextonPic(pRT, CRect(left, top, right, bottom), sl, m_colorVec[i]);
+	//	GetTextExtentPoint32(hdc, sl, sl.GetLength(), &size);
+	//	left += size.cx;
+	//}
 	delete[]pData;
 	pData = nullptr;
 	pRT->ReleaseDC(hdc);

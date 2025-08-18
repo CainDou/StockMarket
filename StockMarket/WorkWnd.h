@@ -232,6 +232,7 @@ namespace SOUI
 		void OnKlineMa(int nMsgLength, const char* info);
 		void OnKlineMacd(int nMsgLength, const char* info);
 		void OnKlineBand(int nMsgLength, const char* info);
+		void OnKlineTargetReCalc(int nMsgLength, const char* info);
 		void OnChangeStockFilter(int nMsgLength, const char* info);
 		void OnSaveStockFilter(int nMsgLength, const char* info);
 		void OnChangeKlineRehab(int nMsgLength, const char* info);
@@ -357,6 +358,7 @@ namespace SOUI
 		int			m_nWndNum;
 		BOOL		m_bFilterWnd;	//是否是用在选股上
 		int			m_nShowListType;
+		int			m_nNowKTParaChange;
 		//列表相关数据
 	protected:
 		bool		m_bListInited;
