@@ -78,7 +78,7 @@ void CKlineTarget::UpdateData(const KlineType dataArr[], int nCount)
 
 void CKlineTarget::UpdateData(const KlineType & data)
 {
-	int64_t time = (int64_t)(data.date) * 10000 + (int64_t)data.time / 100;
+	int64_t time = (int64_t)(data.date) * 10000 + (int64_t)data.time ;
 	if (m_KlineDateTimeVec.empty() || m_KlineDateTimeVec.back() != time)
 	{
 		m_KlineDateTimeVec.emplace_back(time);
