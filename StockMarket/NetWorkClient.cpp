@@ -259,6 +259,10 @@ void CNetWorkClient::GetLocalMac()
 				continue;
 			if (pAdapter->AddressLength != 6)
 				continue;
+			if (strstr(pAdapter->Description, "Bluetooth") != nullptr)
+				continue;
+			//if (strcmp(pAdapter->IpAddressList.IpAddress.String, "0.0.0.0") == 0)
+			//	continue;
 			for (int i = 0; i < 8; ++i)
 				m_uMac[i] = pAdapter->Address[i];
 			break;
