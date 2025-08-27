@@ -56,13 +56,47 @@ BOOL CNetWorkClient::ConnectInit(LPCSTR pszRemoteAddr, u_short nPort, HWND hWnd)
 	m_remote.sin_addr.S_un.S_addr = uAddr;
 	m_remote.sin_family = AF_INET;
 	m_remote.sin_port = htons(nPort);
-
+	unsigned long mode = 1;
+	if (ioctlsocket(m_socket, FIONBIO, &mode) < 0) //设置为非阻塞
+		return FALSE;
 	int nReturn = ::connect(m_socket, (sockaddr*)&m_remote, sizeof(m_remote));
 
 	if (nReturn == 0)
-		return TRUE;
-	else
+	{
+		mode = 0;
+		if (ioctlsocket(m_socket, FIONBIO, &mode) == 0)
+			return TRUE;
+		else
+			return FALSE;
+	}
+
+	//因为是非阻塞的，这个时候错误码应该是WSAEWOULDBLOCK，Linux下是EINPROGRESS
+	if (nReturn < 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 		return FALSE;
+
+	fd_set writeset;
+	FD_ZERO(&writeset);
+	FD_SET(m_socket, &writeset);
+	timeval tv;
+	tv.tv_sec = 3;
+	tv.tv_usec = 0;
+	nReturn = select(m_socket + 1, NULL, &writeset, NULL, &tv);
+	if (nReturn <= 0) {
+		if (m_socket != INVALID_SOCKET)
+		{
+			WSACleanup();
+			return FALSE;
+		}
+	}
+	else {
+		mode = 0;
+		if (ioctlsocket(m_socket, FIONBIO, &mode) == 0)
+			return TRUE;
+		else
+			return FALSE;
+	}
+	return FALSE;
+
 }
 
 BOOL CNetWorkClient::OnConnect(LPCSTR lpIP, UINT uPort)
@@ -130,7 +164,7 @@ BOOL CNetWorkClient::ConnectServer()
 				if (OnConnect(m_strIPAddr[nServer].c_str(), m_nIPPort[nServer]))
 				{
 					if (m_bMacAuthSend)
-						 MacAddrAuth();
+						MacAddrAuth();
 					break;
 
 				}
