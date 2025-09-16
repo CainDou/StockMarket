@@ -6,6 +6,7 @@
 BYTE CNetWorkClient::m_uMac[8] = { 0,0,0,0,0,0,0,0 };
 vector<string> CNetWorkClient::m_strIPAddr = vector<string>();
 vector<int> CNetWorkClient::m_nIPPort = vector<int>();
+extern const char* ClientName;
 
 CNetWorkClient::CNetWorkClient()
 {
@@ -21,6 +22,8 @@ CNetWorkClient::CNetWorkClient()
 	m_nAskID = 0;
 	m_bMacAuthRes = FALSE;
 	m_bMacAuthSend = FALSE;
+	m_nConnectServer = -1;
+
 }
 
 
@@ -158,19 +161,37 @@ BOOL CNetWorkClient::ConnectServer()
 		if (!m_bMacAuthSend || m_bMacAuthRes)
 		{
 			int nServerCount = min(m_strIPAddr.size(), m_nIPPort.size());
-			int nServer = 0;
-			for (; nServer < nServerCount; ++nServer)
+			if (m_nConnectServer == -1)
 			{
-				if (OnConnect(m_strIPAddr[nServer].c_str(), m_nIPPort[nServer]))
+				int nServer = 0;
+				for (; nServer < nServerCount; ++nServer)
 				{
-					if (m_bMacAuthSend)
-						MacAddrAuth();
-					break;
+					if (OnConnect(m_strIPAddr[nServer].c_str(), m_nIPPort[nServer]))
+					{
+						if (!m_bMacAuthSend)
+							MacAddrAuth();
+						break;
 
+					}
+				}
+				if (nServer >= nServerCount)
+					return false;
+				else
+					m_nConnectServer = nServer;
+			}
+			else
+			{
+				if (OnConnect(m_strIPAddr[m_nConnectServer].c_str(), m_nIPPort[m_nConnectServer]))
+				{
+					if (m_bMacAuthRes)
+						MacAddrAuth();
+					SendInfo info;
+					strcpy(info.str, ClientName);
+					info.MsgType = ComSend_ReConnect;
+					info.Group = m_ClientID;
+					SendData((char*)&info, sizeof(info));
 				}
 			}
-			if (nServer >= nServerCount)
-				return false;
 		}
 	}
 	return m_bConnected;

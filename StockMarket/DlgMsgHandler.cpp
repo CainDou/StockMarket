@@ -121,7 +121,7 @@ void CDlgMsgHandler::MsgProc()
 	while (true)
 	{
 		MsgId = RecvMsg(0, &info, msgLength, 0);
-		OutputDebugStringFormat("窗口接收数据为:%d\n", MsgId);
+		//OutputDebugStringFormat("窗口接收数据为:%d\n", MsgId);
 		if (MsgId == Msg_Exit)
 		{
 			delete[]info;

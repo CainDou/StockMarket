@@ -15,6 +15,8 @@ HANDLE g_hLoginEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 #define MAX_SUBPIC 3
 
 #define MSG_SUCC 0x01010101
+const char* ClientName = "StkMarket";
+
 CWndSynHandler::CWndSynHandler()
 {
 	todayDataBuffer = nullptr;
@@ -102,7 +104,7 @@ void CWndSynHandler::Run()
 	m_NetHandleFlag.clear();
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
-	strcpy(info.str, "StkMarket");
+	strcpy(info.str, ClientName);
 	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
 	while (!m_bServerReady)
@@ -522,12 +524,31 @@ unsigned CWndSynHandler::NetHandle(void * para)
 	ReceiveInfo recvInfo;
 	//BOOL bNeedConnect = false;
 	//int c = 0;
+	size_t time = ::GetTickCount64();
+	size_t recvSize = 0;
+	map<int, std::pair<int,size_t>> dataRecvMap;
 	while (!pMd->bExit)
 	{
 		if (pMd->RecvInfoHandle(/*bNeedConnect, nOffset,*/ recvInfo))
 		{
+			recvSize += (32 + recvInfo.DataSize + 1);
+			size_t newTime = ::GetTickCount64();
+			dataRecvMap[recvInfo.MsgType].first++;
+			dataRecvMap[recvInfo.MsgType].second += (32 + recvInfo.DataSize + 1);
+			if (newTime - time  > 1000)
+			{
+				double fTimeDiff = (newTime - time) / 1000.0;
+				double fDataBand = recvSize / fTimeDiff / 1024 / 1024 *8;
+				OutputDebugStringFormat("当前接收数据带宽为:%.02f\n", fDataBand);
+				for(auto &it: dataRecvMap)
+					OutputDebugStringFormat("消息号%d 数据接收次数:%d 数据带宽为:%.02f\n",
+						it.first, it.second.first,it.second.second / fTimeDiff/1024/1024*8);
+
+				time = newTime;
+				recvSize = 0;
+				dataRecvMap.clear();
+			}
 			auto pFuc = pMd->m_netHandleMap[recvInfo.MsgType];
-			OutputDebugStringFormat("接收数据为:%d\n", recvInfo.MsgType);
 			if (pFuc == nullptr)
 				pFuc = &CWndSynHandler::OnNoDefineMsg;
 			(pMd->*pFuc)(recvInfo);
@@ -3132,7 +3153,7 @@ void CWndSynHandler::ReInit()
 	SendInfo info;
 	info.MsgType = ComSend_Connect;
 
-	strcpy(info.str, "StkMarket");
+	strcpy(info.str, ClientName);
 	m_NetClient.SendData((char*)&info, sizeof(info));
 	WaitForSingleObject(g_hEvent, INFINITE);
 	while (!m_bServerReady)
@@ -3143,7 +3164,7 @@ void CWndSynHandler::ReInit()
 		WaitForSingleObject(g_hLoginEvent, INFINITE);
 		//ResetEvent(g_hLoginEvent);
 		SendInfo info;
-		strcpy(info.str, "StkMarket");
+		strcpy(info.str, ClientName);
 		m_NetClient.SendData((char*)&info, sizeof(info));
 		WaitForSingleObject(g_hEvent, INFINITE);
 	}

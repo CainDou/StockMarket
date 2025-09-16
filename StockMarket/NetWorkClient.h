@@ -57,6 +57,7 @@ protected:
 	BOOL m_bMacAuthRes;
 	static 	vector<string> m_strIPAddr;
 	static 	vector<int> m_nIPPort;
+	int m_nConnectServer;
 };
 
 inline BOOL CNetWorkClient::SetWndHandle(HWND hWnd)
