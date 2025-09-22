@@ -243,6 +243,7 @@ int CNetWorkClient::ReceiveData(char * buffer, int size, char end)
 		{
 			//delete[] buffer;
 			//buffer = nullptr;
+			OnConnect(NULL, NULL);
 			p = nullptr;
 			return SOCKET_ERROR;
 		}
