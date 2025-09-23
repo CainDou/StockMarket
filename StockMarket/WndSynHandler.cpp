@@ -664,7 +664,7 @@ int CWndSynHandler::GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int
 	return m_NetClient.SendDataWithID(msg, nSize);
 }
 
-int CWndSynHandler::GetMarket(SStringA stockID, SStringA oldStockID, int nGroup)
+int CWndSynHandler::GetMarket(SStringA stockID, SStringA oldStockID, int nGroup, BOOL bPriceVol,BOOL bFundFlow)
 {
 	SendInfo info = { 0 };
 	info.Group = nGroup;
@@ -685,6 +685,8 @@ int CWndSynHandler::GetMarket(SStringA stockID, SStringA oldStockID, int nGroup)
 		info.MsgType = SendType_IndexMarket;
 	else
 		info.MsgType = SendType_StockMarket;
+	info.Group = bPriceVol;
+	info.Period = bFundFlow;
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
@@ -2320,7 +2322,7 @@ void CWndSynHandler::OnGetMarket(int nMsgLength, const char * info)
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
 	m_WndSubMap[pDgInfo->hWnd] = pDgInfo->StockID;
 	m_WndPointSubMap[pDgInfo->hWnd].clear();
-	int nID = GetMarket(pDgInfo->StockID, pDgInfo->oldStockID, pDgInfo->Group);
+	int nID = GetMarket(pDgInfo->StockID, pDgInfo->oldStockID, pDgInfo->Group,TRUE,TRUE);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
@@ -2768,7 +2770,7 @@ void CWndSynHandler::OnGetTradeMarket(int nMsgLength, const char * info)
 {
 	DataGetInfo *pDgInfo = (DataGetInfo *)info;
 	m_TradeSubMap[pDgInfo->hWnd] = pDgInfo->StockID;
-	int nID = GetMarket(pDgInfo->StockID, pDgInfo->oldStockID, pDgInfo->Group);
+	int nID = GetMarket(pDgInfo->StockID, pDgInfo->oldStockID, pDgInfo->Group,FALSE,FALSE);
 	if (nID != -1)
 		//m_SubWndGetInfoMap[m_hTradeWnd].insert(nID);
 		m_TradeGetID[nID] = pDgInfo->hWnd;

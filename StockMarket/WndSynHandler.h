@@ -72,7 +72,7 @@ protected:
 	//¸¨Öúº¯Êý
 protected:
 	int GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo);
-	int GetMarket(SStringA stockID, SStringA oldStockID, int nGroup);
+	int GetMarket(SStringA stockID, SStringA oldStockID, int nGroup,BOOL bPriceVol,BOOL FundFlow);
 	int GetHisData(SStringA stockID, int nPeriod, int nGroup,int nMsgID);
 	//int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
 	//int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
