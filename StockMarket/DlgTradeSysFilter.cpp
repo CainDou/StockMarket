@@ -510,7 +510,7 @@ void SOUI::CDlgTradeSysFilter::InitControls()
 	m_pChkCondAll = FindChildByName2<SCheckBox>(L"chk_condAll");
 	m_pChkCondTdOpen = FindChildByName2<SCheckBox>(L"chk_tdOpen");
 	m_pChkCondTdClose = FindChildByName2<SCheckBox>(L"chk_tdClose");
-	m_pChkCondNotClose = FindChildByName2<SCheckBox>(L"chk_open");
+	m_pChkCondNotClose = FindChildByName2<SCheckBox>(L"chk_notClose");
 	m_pChkCondAll->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
 		Subscriber(&CDlgTradeSysFilter::OnChkAllCondClick, this));
 	m_pChkCondTdOpen->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
