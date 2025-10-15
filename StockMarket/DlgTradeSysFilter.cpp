@@ -264,9 +264,14 @@ void CDlgTradeSysFilter::UpdateRtShowDataVec()
 		}
 	}
 	SortShowData();
-	nTotalPage = m_ShowDataVec.size() / nPrePageCount;
-	if (m_ShowDataVec.size() % nPrePageCount != 0)
-		++nTotalPage;
+	if (nPrePageCount != 0)
+	{
+		nTotalPage = m_ShowDataVec.size() / nPrePageCount;
+		if (m_ShowDataVec.size() % nPrePageCount != 0)
+			++nTotalPage;
+	}
+	else
+		nTotalPage = 0;
 	SStringW str;
 	m_pTxtTotalPage->SetWindowTextW(str.Format(L"/%d页", max(1, nTotalPage)));
 }
@@ -323,21 +328,25 @@ void SOUI::CDlgTradeSysFilter::UpdateHisShowDataVec()
 		BOOL bChecked = m_pListTradeSys->GetCheckState(i);
 		if (bChecked)
 		{
-			auto &dataVec = m_TradeResVec[i];
-			for (int j = 0; j < dataVec.size(); ++j)
+			if (m_HisTradeResVec.size() > i)
 			{
-				if (m_StockInfo.hash.count(dataVec[j].SecurityID) == 0)
-					continue;
-				//判断周期
-				if (m_RtShowPeriodSet.count(dataVec[j].nPeriod) == 0)
-					continue;
-				//判断方向
-				if (m_RtShowDirSet.count(dataVec[j].nType) == 0)
-					continue;
-				//判断是否当日触发
-				if ((dataVec[j].nEnterDate >= nStartDate&& dataVec[j].nEnterDate <= nEndDate)
-					|| (dataVec[j].nExitDate >= nStartDate&& dataVec[j].nExitDate <= nEndDate))
-					m_ShowDataVec.emplace_back(ChangeResToShow(dataVec[j]));
+				auto &dataVec = m_HisTradeResVec[i];
+				for (int j = 0; j < dataVec.size(); ++j)
+				{
+					if (m_StockInfo.hash.count(dataVec[j].SecurityID) == 0)
+						continue;
+					//判断周期
+					if (m_HisShowPeriodSet.count(dataVec[j].nPeriod) == 0)
+						continue;
+					//判断方向
+					if (m_HisShowDirSet.count(dataVec[j].nType) == 0)
+						continue;
+					//判断是否当日触发
+					if ((dataVec[j].nEnterDate >= nStartDate&& dataVec[j].nEnterDate <= nEndDate)
+						|| (dataVec[j].nExitDate >= nStartDate&& dataVec[j].nExitDate <= nEndDate))
+						m_ShowDataVec.emplace_back(ChangeResToShow(dataVec[j]));
+				}
+
 			}
 		}
 	}
@@ -576,7 +585,7 @@ void SOUI::CDlgTradeSysFilter::DataHandle()
 			if (nDataCount > 0)
 			{
 				std::lock_guard<std::mutex>lk(m_mxHis);
-				TradeSysRes* pData = (TradeSysRes*)info;
+				TradeSysRes* pData = (TradeSysRes*)(info + sizeof(ReceiveInfoWithDate) +4);
 				SStringA strSmpName = pData[0].TsSimple;
 				if (m_TradeSys.count(strSmpName))
 				{
@@ -1041,7 +1050,7 @@ bool SOUI::CDlgTradeSysFilter::OnDataTimeChanged(EventArgs * arg)
 			nEndDate = nYear * 10000 + nMonth * 100 + nDay;
 		}
 		::PostMessage(m_hWnd, WM_TRADESYSRES_MSG, TSRMSG_ClearRes, NULL);
-		GetHisTradeSysRes(nStartDate, nEndDate, true);
+		GetHisTradeSysRes(nStartDate, nEndDate, false);
 	}
 	else if (nEndDate > nHisRecvEndDate)
 	{
@@ -1065,7 +1074,7 @@ bool SOUI::CDlgTradeSysFilter::OnDataTimeChanged(EventArgs * arg)
 		}
 		nStartDate = nYear * 10000 + nMonth * 100 + nDay;
 		::PostMessage(m_hWnd, WM_TRADESYSRES_MSG, TSRMSG_ClearRes, NULL);
-		GetHisTradeSysRes(nStartDate, nEndDate, true);
+		GetHisTradeSysRes(nStartDate, nEndDate, false);
 
 	}
 	return true;
