@@ -37,8 +37,9 @@
 					<radio pos="5,5,@60,@20" name="rad_rt" text="当日" checked="1"/>
 					<radio pos="[5,{0,@60,@20" name="rad_his" text="历史"/>
 					<check pos="5,[5,@60,@20" name="chk_condAll" text="全部" checked="0"/>
-					<check pos="[5,{0,@80,@20" name="chk_today" text="当日触发" checked="1"/>
-					<check pos="[5,{0,@120,@20" name="chk_open" text="已触发未平仓" checked="0"/>
+					<check pos="[5,{0,@80,@20" name="chk_tdOpen" text="当日开仓" checked="1"/>
+					<check pos="[5,{0,@80,@20" name="chk_tdClose" text="当日平仓" checked="0"/>
+					<check pos="[5,{0,@120,@20" name="chk_notClose" text="已触发未平仓" checked="0"/>
 					<text pos="5,{0,@60,@20" name="txt_start"  visible="0">开始日期</text>
 					<dateTimePicker pos="[5,{0" size="120,20" name="dtp_start" padding="4,0,4,0" dropWidth="300" timeEnable="0" colorText="#FFFFFFFF" visible="0">
 						<calstyle ncSkin="_skin.sys.border" daySkin="_skin.sys.btn.normal" margin="1" />

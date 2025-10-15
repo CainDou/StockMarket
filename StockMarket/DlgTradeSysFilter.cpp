@@ -237,8 +237,10 @@ void CDlgTradeSysFilter::UpdateRtShowDataVec()
 		if (bChecked)
 		{
 			auto &dataVec = m_TradeResVec[i];
-			BOOL bToday = m_pChkCondToday->IsChecked();
-			BOOL bOpen = m_pChkCondOpen->IsChecked();
+			BOOL bTdOpen = m_pChkCondTdOpen->IsChecked();
+			BOOL bTdClose = m_pChkCondTdClose->IsChecked();
+			BOOL bNotClose = m_pChkCondNotClose->IsChecked();
+
 			for (int j = 0; j < dataVec.size(); ++j)
 			{
 				if (m_StockInfo.hash.count(dataVec[j].SecurityID) == 0)
@@ -251,9 +253,11 @@ void CDlgTradeSysFilter::UpdateRtShowDataVec()
 				if (m_RtShowDirSet.count(dataVec[j].nType) == 0)
 					continue;
 				//判断是否当日触发
-				if (bToday && (dataVec[j].nEnterDate == nTradingDay || dataVec[j].nExitDate == nTradingDay))
+				if (bTdOpen && (dataVec[j].nEnterDate == nTradingDay))
 					m_ShowDataVec.emplace_back(ChangeResToShow(dataVec[j]));
-				else if (bOpen && dataVec[j].nExitDate == 0)
+				else if (bTdClose && dataVec[j].nExitDate == nTradingDay)
+					m_ShowDataVec.emplace_back(ChangeResToShow(dataVec[j]));
+				else if (bNotClose && dataVec[j].nExitDate == 0)
 					m_ShowDataVec.emplace_back(ChangeResToShow(dataVec[j]));
 
 			}
@@ -320,8 +324,6 @@ void SOUI::CDlgTradeSysFilter::UpdateHisShowDataVec()
 		if (bChecked)
 		{
 			auto &dataVec = m_TradeResVec[i];
-			BOOL bToday = m_pChkCondToday->IsChecked();
-			BOOL bOpen = m_pChkCondOpen->IsChecked();
 			for (int j = 0; j < dataVec.size(); ++j)
 			{
 				if (m_StockInfo.hash.count(dataVec[j].SecurityID) == 0)
@@ -506,13 +508,16 @@ void SOUI::CDlgTradeSysFilter::InitControls()
 	m_pRadioHis = FindChildByName2<SRadioBox>(L"rad_his");
 
 	m_pChkCondAll = FindChildByName2<SCheckBox>(L"chk_condAll");
-	m_pChkCondToday = FindChildByName2<SCheckBox>(L"chk_today");
-	m_pChkCondOpen = FindChildByName2<SCheckBox>(L"chk_open");
+	m_pChkCondTdOpen = FindChildByName2<SCheckBox>(L"chk_tdOpen");
+	m_pChkCondTdClose = FindChildByName2<SCheckBox>(L"chk_tdClose");
+	m_pChkCondNotClose = FindChildByName2<SCheckBox>(L"chk_open");
 	m_pChkCondAll->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
 		Subscriber(&CDlgTradeSysFilter::OnChkAllCondClick, this));
-	m_pChkCondToday->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
+	m_pChkCondTdOpen->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
 		Subscriber(&CDlgTradeSysFilter::OnChkCondClick, this));
-	m_pChkCondOpen->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
+	m_pChkCondTdClose->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
+		Subscriber(&CDlgTradeSysFilter::OnChkCondClick, this));
+	m_pChkCondNotClose->GetEventSet()->subscribeEvent(EVT_LBUTTONUP,
 		Subscriber(&CDlgTradeSysFilter::OnChkCondClick, this));
 
 
@@ -955,13 +960,15 @@ bool SOUI::CDlgTradeSysFilter::OnChkAllCondClick(EventArgs * arg)
 	BOOL bChecked = m_pChkCondAll->IsChecked();
 	if (bChecked)
 	{
-		m_pChkCondToday->SetCheck(TRUE);
-		m_pChkCondOpen->SetCheck(TRUE);
+		m_pChkCondTdOpen->SetCheck(TRUE);
+		m_pChkCondTdClose->SetCheck(TRUE);
+		m_pChkCondNotClose->SetCheck(TRUE);
 	}
 	else
 	{
-		m_pChkCondToday->SetCheck(FALSE);
-		m_pChkCondOpen->SetCheck(FALSE);
+		m_pChkCondTdOpen->SetCheck(FALSE);
+		m_pChkCondTdClose->SetCheck(FALSE);
+		m_pChkCondNotClose->SetCheck(FALSE);
 	}
 	::PostMessage(m_hWnd, WM_TRADESYSRES_MSG, TSRMsg_ChangeShowPara, NULL);
 	return true;
@@ -977,7 +984,8 @@ bool SOUI::CDlgTradeSysFilter::OnChkCondClick(EventArgs * arg)
 	}
 	else
 	{
-		if (m_pChkCondToday->IsChecked() && m_pChkCondOpen->IsChecked())
+		if (m_pChkCondTdOpen->IsChecked() && m_pChkCondTdClose->IsChecked()
+			&& m_pChkCondNotClose->IsChecked())
 			m_pChkCondAll->SetCheck(TRUE);
 	}
 	::PostMessage(m_hWnd, WM_TRADESYSRES_MSG, TSRMsg_ChangeShowPara, NULL);
@@ -1128,8 +1136,9 @@ void SOUI::CDlgTradeSysFilter::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
 void SOUI::CDlgTradeSysFilter::OnRadioDateRt()
 {
 	m_pChkCondAll->SetVisible(TRUE, TRUE);
-	m_pChkCondToday->SetVisible(TRUE, TRUE);
-	m_pChkCondOpen->SetVisible(TRUE, TRUE);
+	m_pChkCondTdOpen->SetVisible(TRUE, TRUE);
+	m_pChkCondTdClose->SetVisible(TRUE, TRUE);
+	m_pChkCondNotClose->SetVisible(TRUE, TRUE);
 
 	m_pTxtStartDate->SetVisible(FALSE, TRUE);
 	m_pTxtEndDate->SetVisible(FALSE, TRUE);
@@ -1171,8 +1180,9 @@ void SOUI::CDlgTradeSysFilter::OnRadioDateRt()
 void SOUI::CDlgTradeSysFilter::OnRadioDateHis()
 {
 	m_pChkCondAll->SetVisible(FALSE,TRUE);
-	m_pChkCondToday->SetVisible(FALSE, TRUE);
-	m_pChkCondOpen->SetVisible(FALSE, TRUE);
+	m_pChkCondTdOpen->SetVisible(FALSE, TRUE);
+	m_pChkCondTdClose->SetVisible(FALSE, TRUE);
+	m_pChkCondNotClose->SetVisible(FALSE, TRUE);
 
 	m_pTxtStartDate->SetVisible(TRUE, TRUE);
 	m_pTxtEndDate->SetVisible(TRUE, TRUE);

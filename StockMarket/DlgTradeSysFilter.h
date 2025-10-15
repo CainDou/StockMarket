@@ -143,8 +143,9 @@ namespace SOUI
 		SRadioBox* m_pRadioHis;
 
 		SCheckBox* m_pChkCondAll;
-		SCheckBox* m_pChkCondToday;
-		SCheckBox* m_pChkCondOpen;
+		SCheckBox* m_pChkCondTdOpen;
+		SCheckBox* m_pChkCondTdClose;
+		SCheckBox* m_pChkCondNotClose;
 
 		SStatic* m_pTxtStartDate;
 		SDateTimePicker* m_pDtpStartDate;
