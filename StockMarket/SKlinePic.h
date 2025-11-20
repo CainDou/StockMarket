@@ -34,8 +34,8 @@ namespace SOUI
 			map<int, vector<KlineType>>*pHisKlineMap,
 			map<int, vector<TickFlowMarket>>* pRtTFMarketVec,
 			map<int, vector<TFBaseMarket>>* pHisTFBaseVec);
-
-
+		void		SetShowDataTimeRange(int nStartDate,int nStartTime, int nEndDate,int nEndTime,bool bForce=false);
+		void		OutputShowDataTimeRange(int& nStartDate, int& nStartTime, int& nEndDate, int& nEndTime);
 		void		ChangeShowStock(SStringA subIns, SStringA StockName);
 		void		SetSubPicShowData(int nIndex, bool nGroup);
 		void		SetSubPicShowData(int nDataCount[],
@@ -116,6 +116,7 @@ namespace SOUI
 		void		ChangeTargetInfo(int nTargetPos, TargetInfo& targetInfo);
 		int			GetMainTarget();
 		void		CalcTarget();
+		bool		CheckKeyLeftOrRightMoveChange(bool bLeft);
 		// 图形处理绘制
 	protected:
 		//virtual BOOL CreateChildren(pugi::xml_node xmlNode);
@@ -195,6 +196,7 @@ namespace SOUI
 		SStringW	GetTFDataMaxYPrice(int nY);		//获得附图y位置价格
 
 		BOOL        ptIsInKlineRect(CPoint pt, int nDataCount, KlineType &data);
+		void		SetKlinePicWidth(int nPicWidth, int nDataCount);
 		//控制响应
 	protected:
 		void		OnMouseMove(UINT nFlags, CPoint point);
@@ -262,6 +264,8 @@ namespace SOUI
 		KlineType BackRehabCash(KlineType& srcKline, int nDate = 0);
 		KlineType BackRehabReInv(KlineType& srcKline, int nDate = 0);
 
+		int		FindDataPos(int nDate, int nTime);
+
 		//波段优化辅助处理函数
 	protected:
 		double		GetHighPrice(int n, int nPeriod, int nOffset = 0);
@@ -319,11 +323,15 @@ namespace SOUI
 		vector<std::unique_ptr<SSubTargetPic>>	m_pSubPicVec;
 		int m_nSubPicNum;
 		int	m_nChangeNum;
-
+		BOOL m_bShowDataWithRange;
+		int m_nStartDate;
+		int m_nStartTime;
+		int m_nEndDate;
+		int m_nEndTime;
 		//显示和计算参数
 	protected:
 		BandPara_t  m_BandPara;
-		int 		m_nZoomRatio;
+		double 		m_fZoomRatio;
 		int			m_nMAPara[MAX_MA_COUNT];
 		int			m_nVolMaPara[MAX_MA_COUNT];
 		int			m_nAmoMaPara[MAX_MA_COUNT];
@@ -393,10 +401,10 @@ namespace SOUI
 		vector<CAutoRefPtr<IPen>> m_MAPenVec;
 		vector<COLORREF> m_MaColorVec;
 	protected:
-		CRITICAL_SECTION m_cs;
+		std::mutex m_mxData;
 		HWND		m_hParWnd;
 		RpsGroup	m_rgGroup;
-		CRITICAL_SECTION m_csSub;
+		std::mutex m_mxSub;
 
 		SOUI_MSG_MAP_BEGIN()
 			//MESSAGE_HANDLER_EX(WM_KLINE_MSG, OnMsg)

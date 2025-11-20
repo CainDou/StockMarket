@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -40,6 +40,8 @@
 		<file name="page_lpPriceVol" path="xml\page_lpPriceVol.xml" />
 		<file name="dlg_tradeSysFilter" path="xml\dlg_tradeSysFilter.xml" />
 		<file name="dlg_changeTargetPara" path="xml\dlg_changeTargetPara.xml" />
+		<file name="dlg_multiPeriodAnalysis" path="xml\dlg_multiPeriodAnalysis.xml" />
+		<file name="wnd_multiPerAna" path="xml\wnd_multiPerAna.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -56,6 +58,8 @@
 		<file name="png_newscroll" path="image\newscroll.png" />
 		<file name="open_menu_png" path="image\open_menu.png" />
 		<file name="download_png" path="image\download.png" />
+		<file name="png_tab_left" path="image\tab_left.png" />
+
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />

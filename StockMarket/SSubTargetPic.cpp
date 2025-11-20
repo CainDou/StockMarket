@@ -19,8 +19,8 @@ using std::vector;
 #define ZOOMRATIO 1.5
 
 #define RIGHT_BLANK 50
-#define	ZOOMWIDTH (m_nWidth * 1.0 / m_nZoomRatio)
-#define TOTALZOOMWIDTH ((m_nWidth + m_nJiange) * 1.0 / m_nZoomRatio)
+#define	ZOOMWIDTH (m_nWidth * 1.0 / m_fZoomRatio)
+#define TOTALZOOMWIDTH ((m_nWidth + m_nJiange) * 1.0 / m_fZoomRatio)
 
 SSubTargetPic::SSubTargetPic()
 {
@@ -118,6 +118,7 @@ void SSubTargetPic::InitColorAndPen(IRenderTarget *pRT)
 	m_colorVec.emplace_back(RGBA(0, 0, 255, 255));
 	for (int i = 0; i < MAX_LINE; ++i)
 		pRT->CreatePen(PS_SOLID, m_colorVec[i], 1, &m_penVec[i]);
+	m_bPenInit = true;
 }
 
 void SSubTargetPic::Paint(IRenderTarget * pRT)
@@ -719,6 +720,8 @@ void SSubTargetPic::DrawData(IRenderTarget * pRT)
 			int nOffset = i + m_nFirst;
 			if (nOffset < 0)
 				continue;
+			if (nOffset >= m_nEnd)
+				break;
 			x = i * TOTALZOOMWIDTH + 1 + m_rcImage.left;
 			for (int j = 0; j < m_nShowDataCount; ++j)
 				LineVec[j][i].SetPoint(x + ZOOMWIDTH / 2,

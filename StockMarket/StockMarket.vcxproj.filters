@@ -17,6 +17,21 @@
       <UniqueIdentifier>{72e3829b-ef28-40d7-a608-3ca745a764fb}</UniqueIdentifier>
       <Extensions>idx;xml;png;gif;jpg;ico;lua;bmp</Extensions>
     </Filter>
+    <Filter Include="SoUI Resource\menu">
+      <UniqueIdentifier>{4e955aff-93c6-4608-b417-f7cd258b9d03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoUI Resource\xml">
+      <UniqueIdentifier>{ba09b9b9-9191-43e4-8bbb-ccf5ca2e07bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoUI Resource\value">
+      <UniqueIdentifier>{c527b838-d472-4b01-a4ba-588e0a1d7b71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoUI Resource\uidef">
+      <UniqueIdentifier>{edb92310-c611-4cb2-bdde-c00c9b4d2173}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoUI Resource\image">
+      <UniqueIdentifier>{6f2d3e16-cd02-4325-8f72-06d33ab1cd64}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="license.txt" />
@@ -221,6 +236,9 @@
     <ClCompile Include="DlgChangePara.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgMultiPrdAnly.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -414,6 +432,9 @@
     <ClInclude Include="DlgChangePara.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DlgMultiPrdAnly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\soui_res.rc2">
@@ -421,36 +442,198 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="uires\uidef\init.xml">
-      <Filter>SoUI Resource</Filter>
-    </Xml>
     <Xml Include="uires\values\color.xml">
-      <Filter>SoUI Resource</Filter>
-    </Xml>
-    <Xml Include="uires\values\skin.xml">
-      <Filter>SoUI Resource</Filter>
-    </Xml>
-    <Xml Include="uires\values\string.xml">
-      <Filter>SoUI Resource</Filter>
+      <Filter>SoUI Resource\value</Filter>
     </Xml>
     <Xml Include="uires\xml\dlg_main.xml">
-      <Filter>SoUI Resource</Filter>
-    </Xml>
-    <Xml Include="uires\smenu\menu_new.xml">
-      <Filter>SoUI Resource</Filter>
+      <Filter>SoUI Resource\xml</Filter>
     </Xml>
     <Xml Include="uires\xml\dlg_stockFilter.xml">
-      <Filter>SoUI Resource</Filter>
+      <Filter>SoUI Resource\xml</Filter>
     </Xml>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="uires\image\soui.ico">
-      <Filter>SoUI Resource</Filter>
-    </Image>
+    <Xml Include="uires\uidef\init.xml">
+      <Filter>SoUI Resource\uidef</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_new.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\values\skin.xml">
+      <Filter>SoUI Resource\value</Filter>
+    </Xml>
+    <Xml Include="uires\values\string.xml">
+      <Filter>SoUI Resource\value</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_BandPara.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_changeTargetPara.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_comboStockFilter.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_condBackTesting.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_emaPara.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_FilterFrmlEditor.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_FrmlFilter.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_FrmlFind.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_FrmlManage.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_FuncInsert.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_headerSelect.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_keyboardElf.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_limitUpStat.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_login.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_lpPriceVol.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_macdPara.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_maPara.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_messagebox.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_multiFilter.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_multiPeriodAnalysis.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_newWindow.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_openWindow.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_ReadFrmlList.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_register.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_rehabFixedTime.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_SaveFrmlList.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_subWindow.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_targetSelect.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_tradeConfirm.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_tradeSetting.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_TradeSimulate.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_tradeSysFilter.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\dlg_updateLog.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\page_lpPriceVol.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\page_workwnd.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\wnd_multiPerAna.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\xml\wnd_work.xml">
+      <Filter>SoUI Resource\xml</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_addselfsel.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_fenshi.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_filterWndNum.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_kline.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_rehab.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_removeselfsel.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
+    <Xml Include="uires\smenu\menu_target.xml">
+      <Filter>SoUI Resource\menu</Filter>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="uires\uires.idx">
       <Filter>SoUI Resource</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="uires\image\soui.ico">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\btn_help.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\default.scrollbar.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\download.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\hscrollbar.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\lcex_header_arrow.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\newscroll.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\open_menu.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\open_menu_.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\TreeIcon.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
+    <Image Include="uires\image\vscrollbar.png">
+      <Filter>SoUI Resource\image</Filter>
+    </Image>
   </ItemGroup>
 </Project>

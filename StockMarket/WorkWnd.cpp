@@ -180,8 +180,6 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 	m_pDlgCmbStockFilter->SetFilterName(m_InitPara.strFilterName);
 	//if (Group_Stock == m_Group)
 	//{
-	m_pFenShiPic->InitSubPic(m_InitPara.nTSCPointWndNum);
-	m_pKlinePic->InitSubPic(m_InitPara.nKlinePointWndNum);
 	//}
 	//else
 	//{
@@ -193,6 +191,8 @@ void CWorkWnd::InitShowConfig(InitPara initPara)
 	m_pKlinePic->SetRpsGroup(m_Group);
 	m_pKlinePic->SetParentHwnd(m_hWnd);
 	m_pKlinePic->InitShowPara(m_InitPara);
+	//m_pFenShiPic->InitSubPic(m_InitPara.nTSCPointWndNum);
+	//m_pKlinePic->InitSubPic(m_InitPara.nKlinePointWndNum);
 	m_PicPeriod = m_ListPeriod = m_InitPara.Period;
 
 	m_pPreSelBtn = m_pPeriodBtnMap[m_ListPeriod];
@@ -1175,7 +1175,8 @@ void CWorkWnd::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 		}
 		else if (nMainPara >= eMain_NetGrid)
 		{
-			auto ti = m_pKlinePic->GetTargetInfo(0);
+			m_nNowKTParaChange = nMainPara - eMain_NetGrid;
+			auto ti = m_pKlinePic->GetTargetInfo(m_nNowKTParaChange);
 			CDlgChangePara *pDlgPara = new CDlgChangePara(ti, m_hWnd);
 			pDlgPara->Create(NULL);
 			pDlgPara->CenterWindow(m_hParWnd);
@@ -4831,6 +4832,8 @@ void CWorkWnd::OnUpdateIndexMarket(int nMsgLength, const char * info)
 	CommonIndexMarket* pIndexData = (CommonIndexMarket*)info;
 	SStringA SecurityID = pIndexData->SecurityID;
 	m_IndexMarketVec.emplace_back(*pIndexData);
+	m_pFenShiPic->UpdateData();
+	m_pKlinePic->UpdateData();
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 
@@ -4841,6 +4844,8 @@ void CWorkWnd::OnUpdateStockMarket(int nMsgLength, const char * info)
 	m_StockMarketVec.emplace_back(*pStockData);
 	m_pPriceVolPic->UpdateMarket(*pStockData);
 	m_pFundFlowPriVolPic->UpdateMarket(*pStockData);
+	m_pFenShiPic->UpdateData();
+	m_pKlinePic->UpdateData();
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, NULL);
 }
 

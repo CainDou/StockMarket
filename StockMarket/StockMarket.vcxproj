@@ -39,7 +39,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -139,10 +139,10 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;D:\Zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SOUIPATH)\config;$(SOUIPATH)\components;$(SOUIPATH)\SOUI\include;$(SOUIPATH)\utilities\include;D:\Zlib\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_WINDOWS;STRICT;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <BrowseInformation>true</BrowseInformation>
+      <BrowseInformation>false</BrowseInformation>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
@@ -208,6 +208,7 @@
     <ClCompile Include="DlgMaPara.cpp" />
     <ClCompile Include="DlgMsgHandler.cpp" />
     <ClCompile Include="DlgMultiFilter.cpp" />
+    <ClCompile Include="DlgMultiPrdAnly.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
     <ClCompile Include="DlgRegister.cpp" />
@@ -223,23 +224,28 @@
     <ClCompile Include="DlgUpdateLog.cpp" />
     <ClCompile Include="DragWnd.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="FrmlCompiler.cpp" />
     <ClCompile Include="FrmlManager.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="json_reader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="json_value.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="json_writer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="KlineTarget.cpp" />
     <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="MD5.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="NetWorkClient.cpp" />
     <ClCompile Include="PriceList.cpp" />
@@ -294,6 +300,7 @@
     <ClInclude Include="DlgMaPara.h" />
     <ClInclude Include="DlgMsgHandler.h" />
     <ClInclude Include="DlgMultiFilter.h" />
+    <ClInclude Include="DlgMultiPrdAnly.h" />
     <ClInclude Include="DlgOpenWnd.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
     <ClInclude Include="DlgRegister.h" />
@@ -353,16 +360,70 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="uires\smenu\menu_addselfsel.xml" />
+    <Xml Include="uires\smenu\menu_fenshi.xml" />
+    <Xml Include="uires\smenu\menu_filterWndNum.xml" />
+    <Xml Include="uires\smenu\menu_kline.xml" />
     <Xml Include="uires\smenu\menu_new.xml" />
+    <Xml Include="uires\smenu\menu_rehab.xml" />
+    <Xml Include="uires\smenu\menu_removeselfsel.xml" />
+    <Xml Include="uires\smenu\menu_target.xml" />
     <Xml Include="uires\uidef\init.xml" />
     <Xml Include="uires\values\color.xml" />
     <Xml Include="uires\values\skin.xml" />
     <Xml Include="uires\values\string.xml" />
+    <Xml Include="uires\xml\dlg_BandPara.xml" />
+    <Xml Include="uires\xml\dlg_changeTargetPara.xml" />
+    <Xml Include="uires\xml\dlg_comboStockFilter.xml" />
+    <Xml Include="uires\xml\dlg_condBackTesting.xml" />
+    <Xml Include="uires\xml\dlg_emaPara.xml" />
+    <Xml Include="uires\xml\dlg_FilterFrmlEditor.xml" />
+    <Xml Include="uires\xml\dlg_FrmlFilter.xml" />
+    <Xml Include="uires\xml\dlg_FrmlFind.xml" />
+    <Xml Include="uires\xml\dlg_FrmlManage.xml" />
+    <Xml Include="uires\xml\dlg_FuncInsert.xml" />
+    <Xml Include="uires\xml\dlg_headerSelect.xml" />
+    <Xml Include="uires\xml\dlg_keyboardElf.xml" />
+    <Xml Include="uires\xml\dlg_limitUpStat.xml" />
+    <Xml Include="uires\xml\dlg_login.xml" />
+    <Xml Include="uires\xml\dlg_lpPriceVol.xml" />
+    <Xml Include="uires\xml\dlg_macdPara.xml" />
     <Xml Include="uires\xml\dlg_main.xml" />
+    <Xml Include="uires\xml\dlg_maPara.xml" />
+    <Xml Include="uires\xml\dlg_messagebox.xml" />
+    <Xml Include="uires\xml\dlg_multiFilter.xml" />
+    <Xml Include="uires\xml\dlg_multiPeriodAnalysis.xml" />
+    <Xml Include="uires\xml\dlg_newWindow.xml" />
+    <Xml Include="uires\xml\dlg_openWindow.xml" />
+    <Xml Include="uires\xml\dlg_ReadFrmlList.xml" />
+    <Xml Include="uires\xml\dlg_register.xml" />
+    <Xml Include="uires\xml\dlg_rehabFixedTime.xml" />
+    <Xml Include="uires\xml\dlg_SaveFrmlList.xml" />
     <Xml Include="uires\xml\dlg_stockFilter.xml" />
+    <Xml Include="uires\xml\dlg_subWindow.xml" />
+    <Xml Include="uires\xml\dlg_targetSelect.xml" />
+    <Xml Include="uires\xml\dlg_tradeConfirm.xml" />
+    <Xml Include="uires\xml\dlg_tradeSetting.xml" />
+    <Xml Include="uires\xml\dlg_TradeSimulate.xml" />
+    <Xml Include="uires\xml\dlg_tradeSysFilter.xml" />
+    <Xml Include="uires\xml\dlg_updateLog.xml" />
+    <Xml Include="uires\xml\page_lpPriceVol.xml" />
+    <Xml Include="uires\xml\page_workwnd.xml" />
+    <Xml Include="uires\xml\wnd_multiPerAna.xml" />
+    <Xml Include="uires\xml\wnd_work.xml" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="uires\image\btn_help.png" />
+    <Image Include="uires\image\default.scrollbar.png" />
+    <Image Include="uires\image\download.png" />
+    <Image Include="uires\image\hscrollbar.png" />
+    <Image Include="uires\image\lcex_header_arrow.png" />
+    <Image Include="uires\image\newscroll.png" />
+    <Image Include="uires\image\open_menu.png" />
+    <Image Include="uires\image\open_menu_.png" />
     <Image Include="uires\image\soui.ico" />
+    <Image Include="uires\image\TreeIcon.png" />
+    <Image Include="uires\image\vscrollbar.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

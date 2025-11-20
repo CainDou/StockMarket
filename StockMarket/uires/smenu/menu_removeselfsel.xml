@@ -1,4 +1,4 @@
-<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+<menu  itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
   <item id="701">移除自选</item>
   <sep/>
   <item id="702" >移除所有自选</item>

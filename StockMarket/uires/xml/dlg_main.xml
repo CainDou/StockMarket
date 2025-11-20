@@ -10,6 +10,7 @@
 			<imgbtn pos="[20,5" size="50,30" tip="模拟交易" animate="0" text="交易" name="btn_TradSimulate" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" />
 			<imgbtn pos="[20,5" size="80,30" tip="长周期价量分布" animate="0" text="价量分布" name="btn_LpPriceVol" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" visible="1" />
 			<imgbtn pos="[20,5" size="80,30" tip="交易系统选股系统" animate="0" text="系统选股" name="btn_TradSys" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" visible="1" />
+			<imgbtn pos="[20,5" size="80,30" tip="多个周期K线图" animate="0" text="多周期分析" name="btn_MultiPrdAnly" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" visible="1" />
 			<imgbtn pos="[20,5" size="50,30" tip="公式编辑" animate="0" text="公式" name="btn_EditFunc" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" valign="centre" visible="0" />
 
 			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />

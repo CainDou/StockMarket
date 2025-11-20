@@ -539,10 +539,10 @@ unsigned CWndSynHandler::NetHandle(void * para)
 			{
 				double fTimeDiff = (newTime - time) / 1000.0;
 				double fDataBand = recvSize / fTimeDiff / 1024 / 1024 *8;
-				OutputDebugStringFormat("当前接收数据带宽为:%.02f\n", fDataBand);
-				for(auto &it: dataRecvMap)
-					OutputDebugStringFormat("消息号%d 数据接收次数:%d 数据带宽为:%.02f\n",
-						it.first, it.second.first,it.second.second / fTimeDiff/1024/1024*8);
+				//OutputDebugStringFormat("当前接收数据带宽为:%.02f\n", fDataBand);
+				//for(auto &it: dataRecvMap)
+				//	OutputDebugStringFormat("消息号%d 数据接收次数:%d 数据带宽为:%.02f\n",
+				//		it.first, it.second.first,it.second.second / fTimeDiff/1024/1024*8);
 
 				time = newTime;
 				recvSize = 0;
@@ -2145,7 +2145,7 @@ void CWndSynHandler::OnUpdateTFMarket(int nMsgLength, const char * info)
 		}
 
 		if (!dataVec.empty())
-			SendMsg(m_hWndMap[hParWnd], Syn_RTTFMarkt, (char*)&dataVec[0],
+			SendMsg(m_hWndMap[hParWnd], Syn_RTTFMarket, (char*)&dataVec[0],
 				dataVec.size() * sizeof(TickFlowMarket));
 	}
 

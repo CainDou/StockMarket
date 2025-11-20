@@ -1,4 +1,4 @@
-﻿<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+﻿<menu  itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
   <item id="101">盘口信息</item>
   <sep/>
   <item id="102" check="0">成交量</item>

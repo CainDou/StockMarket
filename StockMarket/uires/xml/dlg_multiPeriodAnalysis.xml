@@ -1,0 +1,30 @@
+﻿<?xml version="1.0"?>
+<SOUI name="multiPeriodAnalysis" title="多周期分析" bigIcon="ICON_LOGO:32" smallIcon="ICON_LOGO:16" width="1400" height="850" margin="1,5,5,5" resizable="1" wndType="normal" appWnd="1" translucent="0" colorBkgnd="#000000ff">
+	<root cache="1">
+		<caption pos="0,0,-0,30" show="1" font="adding:0,face:微软雅黑" colorBorder="#000000ff" colorBkgnd="#101010ff" cache="1">
+			<icon pos="10,8" src="ICON_LOGO:16" />
+			<text pos="29,9" colorText="#00FFFF" name="text_windowName">多周期分析</text>
+			<text pos="[30,8" name="txt_Info" colorText="#FFFFFFFF" />
+			<text pos="[10,8,-300,@21" name="txt_Price"  font="adding:0,face:微软雅黑" />
+			<imgbtn pos="-300,{-0" size="35,20" tip="K线复权设置" animate="0" text="复权" name="btn_Rehab" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+			<imgbtn name="btn_close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+			<imgbtn name="btn_max" skin="_skin.sys.btn.maximize" pos="-83,0" animate="1" />
+			<imgbtn name="btn_restore" skin="_skin.sys.btn.restore" pos="-83,0" show="0" animate="1" />
+			<imgbtn name="btn_min" skin="_skin.sys.btn.minimize" pos="-121,0" animate="1" />
+		</caption>
+		<window pos="0,[5,-0,-0" colorBkgnd="#000000ff" cache="1">
+			<window name="wnd1" pos="5,5,%50,%50" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑">
+				<include src="layout:wnd_multiPerAna" />
+			</window>
+			<window name="wnd2" pos="%50,5,-5,%50" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" >
+				<include src="layout:wnd_multiPerAna" />
+			</window>
+			<window name="wnd3" pos="5,%50,%50,-5" colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" >
+				<include src="layout:wnd_multiPerAna" />
+			</window>
+			<window name="wnd4" pos="%50,%50,-5,-5"  colorBkgnd="#000000ff" colorText="#ffffff" colorBorder="#FF0000" margin="1,1,1,1" font="face:微软雅黑" >
+				<include src="layout:wnd_multiPerAna" />
+			</window>
+		</window>
+	</root>
+</SOUI>

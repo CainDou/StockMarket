@@ -1,4 +1,4 @@
-﻿<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+﻿<menu  itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
   <item id="501">前复权(现金分红)</item>
   <item id="502">后复权(现金分红)</item>
   <item id="503">定点复权(现金分红)</item>

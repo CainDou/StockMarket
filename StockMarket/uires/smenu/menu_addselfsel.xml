@@ -1,4 +1,4 @@
-<menu iconSkin="skin_small_icons" itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+<menu  itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
   <item id="601">添加到自选</item>
   <sep/>
   <item id="602" >添加所有股票到自选</item>

@@ -65,7 +65,7 @@
 							<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
 							<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
 						</combobox>
-						<edit name="edit_num" pos="5,{0,-5,@20" align="left" visible="0" colorBkgnd="#FFFFFFFF" number="1" colorText="000000FF" />
+						<edit name="edit_num" pos="5,{0,-5,@20" align="left" visible="0" colorBkgnd="#FFFFFFFF" number="1" colorText="#000000FF" />
 						<imgbtn name="btn_OK" skin="skin_ButtonGrayBlack" pos="50,-40,-50,@25" animate="1" text="确定" />
 					</group>
 				</page>
@@ -126,9 +126,9 @@
 							<listStyle class="cls_edit" itemHeight="30" colorText="#FFFFFF" colorSelText="#FF0000" colorItemBkgnd="#000000" colorItemSelBkgnd="#00FFFF" sbSkin="skin_default_scrollbar_png" />
 							<editStyle inset="5,0,5,0" colorText="#FFFFFF" align="left" colorBkgnd="#FFFFFF" />
 						</combobox>
-						<edit name="edit_numHis" pos="5,{0,-5,@20" align="left" visible="0" colorText="000000FF" colorBkgnd="#FFFFFFFF" number="1" />
+						<edit name="edit_numHis" pos="5,{0,-5,@20" align="left" visible="0" colorText="#000000FF" colorBkgnd="#FFFFFFFF" number="1" />
 						<text pos="5,[5" name="text_countDayFront" colorText="#00FFFF">在过去</text>
-						<edit name="edit_countDay" pos="10,[5,-10,@20" align="left" visible="1" colorText="000000ff" colorBkgnd="#FFFFFFFF" number="1" />
+						<edit name="edit_countDay" pos="10,[5,-10,@20" align="left" visible="1" colorText="#000000ff" colorBkgnd="#FFFFFFFF" number="1" />
 						<text pos="5,[5,-5,@20" name="text_countDayBack" colorText="#00FFFF" align="left">交易日内(数据范围:1-30)</text>
 						<radio name="rdb_exist" pos="5,[5" size="60,20" skin="_skin.sys.radio" checked="1" focusable="0">存在</radio>
 						<radio name="rdb_forall" pos="[10,{0" size="120,20" skin="_skin.sys.radio" focusable="0">全部满足</radio>

@@ -80,7 +80,7 @@ namespace SOUI
 		int			m_nOffset;
 		int			m_nFirst;
 		int			m_nEnd;
-		int			m_nZoomRatio;
+		double		m_fZoomRatio;
 		CRect		m_rcImage;
 		double		m_fMaxL;
 		double		m_fMinL;
@@ -189,7 +189,7 @@ namespace SOUI
 	{
 		m_nWidth = nWidth;
 		m_nJiange = nJiange;
-		m_nZoomRatio = nZoomRatio;
+		m_fZoomRatio = nZoomRatio;
 		m_bUseWidth = true;
 	}
 	inline void SSubTarget::SetOffset(int nOffset)

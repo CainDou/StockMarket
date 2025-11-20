@@ -77,7 +77,7 @@ namespace SOUI
 		void		SetMousePosDefault();
 		void		SetMouseMove();
 		void		SetNowKeyDownLinePos(int nPos);
-		void		SetShowWidth(int width, int nJiange,int nZoomRatio = 1);
+		void		SetShowWidth(int width, int nJiange,double fZoomRatio = 1);
 		void		SetOffset(int nOffset);
 		void		SetShowNum(int nNum);
 		void		DrawKeyDownMouseLine(IRenderTarget * pRT,BOOL bDoubleFlash = FALSE);
@@ -101,7 +101,7 @@ namespace SOUI
 		int			m_nOffset;
 		int			m_nFirst;
 		int			m_nEnd;
-		int			m_nZoomRatio;
+		double		m_fZoomRatio;
 		CRect		m_rcImage;
 		double		m_fMaxL;
 		double		m_fMinL;
@@ -203,11 +203,11 @@ namespace SOUI
 	{
 		m_nNowPosition = nPos;
 	}
-	inline void SSubTargetPic::SetShowWidth(int nWidth, int nJiange,int nZoomRatio)
+	inline void SSubTargetPic::SetShowWidth(int nWidth, int nJiange,double fZoomRatio)
 	{
 		 m_nWidth= nWidth;
 		 m_nJiange = nJiange;
-		 m_nZoomRatio = nZoomRatio;
+		 m_fZoomRatio = fZoomRatio;
 		 m_bUseWidth = true;
 	}
 	inline void SSubTargetPic::SetOffset(int nOffset)

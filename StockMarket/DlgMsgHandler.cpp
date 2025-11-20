@@ -86,7 +86,7 @@ void CDlgMsgHandler::InitMsgHandleMap()
 		= &CDlgMsgHandler::OnHisTFBase;
 	m_MsgHandleMap[Syn_TodayTFMarket]
 		= &CDlgMsgHandler::OnTodayTFMarket;
-	m_MsgHandleMap[Syn_RTTFMarkt]
+	m_MsgHandleMap[Syn_RTTFMarket]
 		= &CDlgMsgHandler::OnRTTFMarket;
 	m_MsgHandleMap[Syn_RTPriceVol]
 		= &CDlgMsgHandler::OnRTPriceVol;

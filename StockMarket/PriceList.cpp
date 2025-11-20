@@ -128,7 +128,7 @@ void CPriceList::DrawStock(IRenderTarget * pRT)
 		CRect(m_rect.left + 20, VPOS(-1),
 			m_rect.left + nWidth * 2 + 80, VPOS(1) - SPACE),
 		DT_CENTER | DT_TOP | DT_SINGLELINE);
-	pRT->SelectObject(m_pFont15, (IRenderObj**)&OldFont);
+	pRT->SelectObject(m_pFont15);
 	strTmp = StrA2StrW(m_strSubIns);
 	pRT->DrawTextW(strTmp, strTmp.GetLength(),
 		CRect(m_rect.left + 20, m_rect.top,
@@ -285,6 +285,7 @@ void CPriceList::DrawStock(IRenderTarget * pRT)
 					else
 						pRT->SetTextColor(RGBA(0, 255, 0, 255));
 					_swprintf(szTmp, L"%+d", diff);
+					CAutoRefPtr<IFont> OldFont;
 					pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 					pRT->DrawTextW(szTmp, wcslen(szTmp),
 						CRect(chgLeft, VPOS((2 + i)), chgRight, VPOS((3 + i))),
@@ -299,6 +300,7 @@ void CPriceList::DrawStock(IRenderTarget * pRT)
 	double preAsk1 = m_preStockTick.AskPrice[0];
 	if (preAsk1 > 0 && m_StockTick.AskPrice[0] > 0)
 	{
+		CAutoRefPtr<IFont> OldFont;
 		pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 		if (m_StockTick.AskPrice[0] < preAsk1)
 		{
@@ -351,6 +353,7 @@ void CPriceList::DrawStock(IRenderTarget * pRT)
 					else
 						pRT->SetTextColor(RGBA(0, 255, 0, 255));
 					_swprintf(szTmp, L"%+d", diff);
+					CAutoRefPtr<IFont> OldFont;
 					pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 					pRT->DrawTextW(szTmp, wcslen(szTmp),
 						CRect(chgLeft, VPOS((12 + i)), chgRight, VPOS((13 + i))),
@@ -366,6 +369,7 @@ void CPriceList::DrawStock(IRenderTarget * pRT)
 	double preBid1 = m_preStockTick.BidPrice[0];
 	if (preBid1 > 0 && m_StockTick.BidPrice[0] > 0)
 	{
+		CAutoRefPtr<IFont> OldFont;
 		pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 		if (m_StockTick.BidPrice[0] < preBid1)
 		{
@@ -620,7 +624,7 @@ void SOUI::CPriceList::DrawStockHalf(IRenderTarget * pRT)
 		CRect(m_rect.left + 20, VPOS(-1),
 			m_rect.left + nWidth * 2 + 80, VPOS(1) - SPACE),
 		DT_CENTER | DT_TOP | DT_SINGLELINE);
-	pRT->SelectObject(m_pFont15, (IRenderObj**)&OldFont);
+	pRT->SelectObject(m_pFont15);
 	strTmp = StrA2StrW(m_strSubIns);
 	pRT->DrawTextW(strTmp, strTmp.GetLength(),
 		CRect(m_rect.left + 20, m_rect.top,
@@ -746,6 +750,7 @@ void SOUI::CPriceList::DrawStockHalf(IRenderTarget * pRT)
 					else
 						pRT->SetTextColor(RGBA(0, 255, 0, 255));
 					_swprintf(szTmp, L"%+d", diff);
+					CAutoRefPtr<IFont> OldFont;
 					pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 					pRT->DrawTextW(szTmp, wcslen(szTmp),
 						CRect(chgLeft, VPOS((2 + i)), chgRight, VPOS((3 + i))),
@@ -760,6 +765,7 @@ void SOUI::CPriceList::DrawStockHalf(IRenderTarget * pRT)
 	double preAsk1 = m_preStockTick.AskPrice[0];
 	if (preAsk1 > 0 && m_StockTick.AskPrice[0] > 0)
 	{
+		CAutoRefPtr<IFont> OldFont;
 		pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 		if (m_StockTick.AskPrice[0] < preAsk1)
 		{
@@ -812,6 +818,7 @@ void SOUI::CPriceList::DrawStockHalf(IRenderTarget * pRT)
 					else
 						pRT->SetTextColor(RGBA(0, 255, 0, 255));
 					_swprintf(szTmp, L"%+d", diff);
+					CAutoRefPtr<IFont> OldFont;
 					pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 					pRT->DrawTextW(szTmp, wcslen(szTmp),
 						CRect(chgLeft, VPOS((7 + i)), chgRight, VPOS((8 + i))),
@@ -827,6 +834,7 @@ void SOUI::CPriceList::DrawStockHalf(IRenderTarget * pRT)
 	double preBid1 = m_preStockTick.BidPrice[0];
 	if (preBid1 > 0 && m_StockTick.BidPrice[0] > 0)
 	{
+		CAutoRefPtr<IFont> OldFont;
 		pRT->SelectObject(m_pFont10, (IRenderObj**)&OldFont);
 		if (m_StockTick.BidPrice[0] < preBid1)
 		{

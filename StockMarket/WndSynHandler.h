@@ -49,6 +49,8 @@ public:
 	void SetTradeDlgThreadID(unsigned threadID);
 	void SetLpPriceVolWnd(HWND hWnd, unsigned threadID);
 	void SetTradeSysResWnd(HWND hWnd, unsigned threadID);
+	void SetMultiPrdAnlyWnd(HWND hWnd, unsigned threadID);
+
 	int GetTradingDay() const;
 	map<SStringA, double>GetAccRehabMap() const;
 	void AddSelfSelStock(SStringA strStockID,BOOL bSave = TRUE);
@@ -277,6 +279,7 @@ protected:
 	UINT m_uTradeDlgThreadID;
 	UINT m_uLpPriceVolThreadID;
 	UINT m_uTradeSysResThreadID;
+	UINT m_uMultiPrdAnlyThreadID;
 
 	//处理函数哈希表
 protected:
@@ -322,6 +325,7 @@ protected:
 	HWND m_hTradeWnd;
 	HWND m_hLpPriceVolWnd;
 	HWND m_TradeSysWnd;
+	HWND m_MultiPrdAnlyWnd;
 };
 
 inline void CWndSynHandler::SetMainWnd(HWND hWnd)
@@ -442,6 +446,15 @@ inline void CWndSynHandler::SetTradeSysResWnd(HWND hWnd, unsigned threadID)
 {
 	m_TradeSysWnd = hWnd;
 	m_uTradeSysResThreadID = threadID;
+}
+
+inline void CWndSynHandler::SetMultiPrdAnlyWnd(HWND hWnd, unsigned threadID)
+{
+	m_MultiPrdAnlyWnd = hWnd;
+	m_uMultiPrdAnlyThreadID = threadID;
+	m_hSubWndMap[hWnd] = hWnd;
+	m_SubWndGroup[hWnd] = Group_Stock;
+	m_hWndMap[hWnd] = threadID;
 }
 
 inline int CWndSynHandler::GetTradingDay() const

@@ -605,7 +605,7 @@ enum SynMsg
 	Syn_HisTFBase,
 	Syn_GetHisTFBase,
 	Syn_TodayTFMarket,
-	Syn_RTTFMarkt,
+	Syn_RTTFMarket,
 	Syn_RTPriceVol,
 	Syn_GetTradeVol,
 	Syn_RTTradeVol,
@@ -636,13 +636,14 @@ enum SynMsg
 	Syn_LpPriceVol,
 	Syn_ReCalcLpPriceVol,
 	Syn_ChangeShowDiff,
+	Syn_End,
 };
 
 
 
 enum WorkWndMsg
 {
-	WW_ListData = Syn_ListData,
+	WW_ListData = Syn_End+1,
 	WW_GetMarket,
 	WW_GetKline,
 	WW_GetPoint,
@@ -692,6 +693,17 @@ enum WorkWndMsg
 	WW_SelfSelChange,
 	WW_ReCalcTarget,
 	WW_End,
+};
+
+enum MultiPrdAnlyMsg
+{
+	MPA_KlineMa = WW_End + 1,
+	MPA_KlineMacd,
+	MPA_KlineBand,
+	MPA_FixedTimeRehab,
+	MPA_ReCalcTarget,
+	MPA_ChangeRehab,
+	MPA_End,
 };
 
 
@@ -1010,7 +1022,7 @@ typedef struct _FENSHI_GROUP {
 
 typedef struct _FENSHI_ALLINFO
 {
-	std::vector<FENSHI_GROUP> d;	//收盘价格
+		//收盘价格
 
 	double			fMax;
 	double			fMin;
@@ -1845,7 +1857,7 @@ typedef struct InitPara
 	SStringA strFilterName;
 	int nKlineMainTarget;
 	std::map<int,vector<int>> KlineMainTargetPara;
-
+	int nKlineZoomRatio;
 	InitPara() :bShowMA(true), bShowBandTarget(false),
 		bShowAverage(true), bShowEMA(true),
 		bShowTSCMACD(true), bShowTSCVolume(false),
@@ -1863,7 +1875,9 @@ typedef struct InitPara
 		bKlineUseTickFlowData(false), nKlineTickFlowDataType(0),strFilterName(""),
 		bShowKlineVolDiff(false), nVolDiffSumPara{5,20},bShowOrderPrice(false),
 		bShowOrderPriceDetail(false),bShowDeletePriceDetail(false),nFundFlowShowType(0),
-		nKlineMainTarget(0)
+		nKlineMainTarget(0),nKlinePointWndNum(0),nTSCPointWndNum(0), nKlineZoomRatio(100),
+		nVolMaPara{ 5,10,0,0,0,0 }, nAmoMaPara{ 5,10,0,0,0,0 }, nCAVolMaPara{ 5,10,0,0,0,0 },
+		nCAAmoMaPara{ 5,10,0,0,0,0 }
 	{}
 }InitPara_t;
 
@@ -2060,6 +2074,8 @@ enum eComboFilterMsg
 
 void GetInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
 void SaveInitPara(CIniFile& ini, InitPara& para, SStringA strSection);
+void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo>& pointMap);
+void SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
 
 typedef struct _TickFlowBaseMarket
 {

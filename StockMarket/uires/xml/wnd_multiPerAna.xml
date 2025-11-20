@@ -1,0 +1,17 @@
+﻿<?xml version="1.0"?>
+<include>
+	<text pos="5,5,@35,@20" font="face:微软雅黑,size:13">周期</text>
+		<combobox name = "cbx_period"  pos = "[5,{0,@100,@20" colorText="#000000FF" margin="0,1,1,1" colorBorder="#A0A0A0FF" align="center" colorBkgnd="#FFFFFFFF"  class="cls_edit"  focusable = "0" curSel="1" font="face:微软雅黑,size:13">
+				<liststyle class="cls_edit" itemSkin="skin_tab_left" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088" font="face:微软雅黑,size:13"/>
+				<items>
+					<item text="1分钟"  />
+					<item text="5分钟" />
+					<item text="15分钟" />
+					<item text="30分钟" />
+					<item text="60分钟" />
+					<item text="1日" />
+				</items>
+		</combobox>
+		<check name="chk_ctrl" pos="[5,{2" checked="0" font="face:微软雅黑,size:13">跟随当前窗口周期变化</check>
+		<klinePic name="klinePic" pos="5,[5,-10,-5" visible="1" colorBKgnd="#000000" font="size:12" />
+</include>

@@ -19,8 +19,8 @@ using std::vector;
 #define ZOOMRATIO 1.5
 
 #define RIGHT_BLANK 50
-#define	ZOOMWIDTH (m_nWidth * 1.0 / m_nZoomRatio)
-#define TOTALZOOMWIDTH ((m_nWidth + m_nJiange) * 1.0 / m_nZoomRatio)
+#define	ZOOMWIDTH (m_nWidth * 1.0 / m_fZoomRatio)
+#define TOTALZOOMWIDTH ((m_nWidth + m_nJiange) * 1.0 / m_fZoomRatio)
 
 SSubTarget::SSubTarget()
 {

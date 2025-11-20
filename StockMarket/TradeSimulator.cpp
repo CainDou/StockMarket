@@ -1049,6 +1049,8 @@ bool CTradeSimulator::OnEditVolChange(EventArgs * e)
 	SStringW str = pEdit->GetWindowTextW();
 	SStatic* pText = m_volTextMap[pEdit];
 	int nLength = str.GetLength();
+	if (nLength <= 0)
+		return true;
 	if (!isdigit(str[nLength - 1]))
 	{
 		SStringW dstStr = L"";

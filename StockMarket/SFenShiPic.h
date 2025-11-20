@@ -16,6 +16,7 @@
 
 #include<set>
 #include<map>
+#include <mutex>
 
 
 //class CDataProc;
@@ -241,7 +242,8 @@ namespace SOUI
 		vector<DeleteState> *m_pDeleteStateVec;
 		vector<TradeState> *m_pTradeStateVec;
 
-		FENSHI_INFO *m_pData;
+		FENSHI_INFO *m_pDataInfo;
+		std::vector<FENSHI_GROUP> m_dataVec;
 		SStringA    m_strSubIns;
 		SStringA	m_strStockName;
 		SStringA	m_strL1Indy;
@@ -249,7 +251,9 @@ namespace SOUI
 		int			m_nTradingDay;
 		int			m_nLastVolume;	//上一个时段结束的交易量
 		RpsGroup	m_rgGroup;
-		CRITICAL_SECTION m_csSub;
+		std::mutex m_mxData;
+		std::mutex m_mxSub;
+
 	//private:
 	//	static RpsGroup m_rgClickGroup;
 
