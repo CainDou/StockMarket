@@ -92,6 +92,7 @@ void CDlgAddNew::OnBtnOK()
 			str.Format("%d", nNameCount - 1), m_strNewWndName);
 		LPARAM lp = MAKELPARAM(nNameCount - 1, m_nWndType);
 		::PostMessageW(m_hParWnd, WM_WINDOW_MSG, WDMsg_NewWindow, lp);
+		CSimpleWnd::DestroyWindow();
 	}
 	else if(m_nWndType == WT_SetFliterName)
 	{

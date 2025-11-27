@@ -44,14 +44,21 @@ enum eTimer
 
 SOUI::CDlgMultiPrdAnly::CDlgMultiPrdAnly(vector<StockInfo>& stockInfoVec) :SHostWnd(_T("LAYOUT:dlg_multiPeriodAnalysis")),
 m_bIsValid(TRUE), m_bLayoutInited(FALSE), m_StockInfoVec(stockInfoVec), m_rehabType(eRT_FrontRehab_Cash),
-m_nCurMsgWnd(-1), m_bCAInfoGet(FALSE), m_Group(Group_Stock),
+m_nCurMsgWnd(-1), m_bCAInfoGet(FALSE), m_Group(Group_Stock), m_pKlinePic{ nullptr,nullptr,nullptr,nullptr },
 m_nPeriod{ Period_5Min,Period_15Min,Period_60Min,Period_1Day }, m_nNowKTParaChange(-1),
-m_nLongestPrdWnd(-1), m_nNowCtrlWnd(-1)
+m_nLongestPrdWnd(-1), m_nNowCtrlWnd(-1), m_pDlgKbElf(nullptr)
 {
 }
 
 SOUI::CDlgMultiPrdAnly::~CDlgMultiPrdAnly()
 {
+	OutputDebugStringFormat("多周期析构\n");
+	if (m_pDlgKbElf)
+	{
+		m_pDlgKbElf->DestroyWindow();
+		//delete m_pDlgKbElf;
+		m_pDlgKbElf = NULL;
+	}
 }
 
 
@@ -88,7 +95,7 @@ void SOUI::CDlgMultiPrdAnly::OnSize(UINT nType, CSize size)
 		pBtnRestore->SetVisible(FALSE, TRUE);
 		pBtnMax->SetVisible(TRUE, TRUE);
 	}
-	SetTimer(eTimer_DelayUpdate,1000);
+	SetTimer(eTimer_DelayUpdate, 1000);
 }
 
 int		SOUI::CDlgMultiPrdAnly::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -101,7 +108,7 @@ BOOL	SOUI::CDlgMultiPrdAnly::OnInitDialog(EventArgs* e)
 	m_bLayoutInited = TRUE;
 	InitControls();
 	m_pointInfoMap = g_WndSyn.GetPointInfo();
-	SStringA strSubStockID =InitShowConfig(m_pointInfoMap);
+	SStringA strSubStockID = InitShowConfig(m_pointInfoMap);
 	m_accRehabMap = g_WndSyn.GetAccRehabMap();
 	InitDatas();
 	m_pDlgKbElf = new CDlgKbElf(m_hWnd);
@@ -114,20 +121,22 @@ BOOL	SOUI::CDlgMultiPrdAnly::OnInitDialog(EventArgs* e)
 	m_dataProcThread = thread(&CDlgMultiPrdAnly::ProcData, this);
 	m_uThreadID = *(unsigned*)&m_dataProcThread.get_id();
 	g_WndSyn.SetMultiPrdAnlyWnd(m_hWnd, m_uThreadID);
-	if(strSubStockID !="")
-		ChangeShowStock(strSubStockID);
+	Sleep(100);
+	if (strSubStockID != "")
+		SendMsg(m_uThreadID, MPA_SetStock, strSubStockID, strSubStockID.GetLength() + 1);
 	return FALSE;
 }
 
 LRESULT SOUI::CDlgMultiPrdAnly::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled)
 {
+	int Msg = (int)wp;
 	return 0;
 }
 
 LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled)
 {
 	int Msg = (int)wp;
-	switch (wp)
+	switch (Msg)
 	{
 	case WDMsg_UpdatePic:
 	{
@@ -135,7 +144,7 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOO
 		int64_t nNowTick = GetTickCount64();
 		if (lp < MAX_PIC_NUM && m_nNowCtrlWnd != lp)
 		{
-			if (m_pKlinePic[lp]->IsVisible())
+			if (m_pKlinePic[lp] && m_pKlinePic[lp]->IsVisible())
 				m_pKlinePic[lp]->Invalidate();
 		}
 		else
@@ -143,10 +152,12 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOO
 			if (lp == MAX_PIC_NUM && nNowTick - nTick < 500)
 				break;
 			nTick = nNowTick;
-			m_pKlinePic[m_nNowCtrlWnd]->OutputShowDataTimeRange(m_nStartDate, m_nStartTime, m_nEndDate, m_nEndTime);
+			if (m_pKlinePic[m_nNowCtrlWnd])
+				m_pKlinePic[m_nNowCtrlWnd]->OutputShowDataTimeRange(m_nStartDate, m_nStartTime, m_nEndDate, m_nEndTime);
+			else break;
 			for (int i = 0; i < MAX_PIC_NUM; ++i)
 			{
-				if (m_nNowCtrlWnd != i)
+				if (m_nNowCtrlWnd != i && m_pKlinePic[i])
 				{
 					int nDstStartTime = m_nStartTime, nDstEndTime = m_nEndTime;
 					ChangeShowTimeRangeByPeriod(nDstStartTime, nDstEndTime, m_nPeriod[m_nNowCtrlWnd], m_nPeriod[i]);
@@ -158,10 +169,11 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOO
 			if (!m_StockMarketVec.empty())
 			{
 				auto lastMarket = m_StockMarketVec.back();
-				double fChg = lastMarket.LastPrice - lastMarket.PreCloPrice;
+				double fChg = lastMarket.LastPrice !=0? lastMarket.LastPrice - lastMarket.PreCloPrice:0;
 				SStringW str;
-				str.Format(L"%.02f %.02f %.02f%%", lastMarket.LastPrice, fChg, fChg / lastMarket.PreCloPrice*100);
-				m_pTxtPrice->SetAttribute(L"colorText", fChg > 0 ? L"#FF0000FF" : fChg < 0 ? L"#00FF00FF" : L"FFFFFFFF");
+				str.Format(L"%.02f %+.02f %+.02f%%", lastMarket.LastPrice!=0? lastMarket.LastPrice: lastMarket.PreCloPrice, 
+					fChg, fChg / lastMarket.PreCloPrice * 100);
+				m_pTxtPrice->SetAttribute(L"colorText", fChg > 0 ? L"#FF0000FF" : fChg < 0 ? L"#00FF00FF" : L"#FFFFFFFF");
 				m_pTxtPrice->SetWindowTextW(str);
 
 			}
@@ -174,7 +186,10 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOO
 	break;
 	case WDMsg_SubIns:
 		if (m_pDlgKbElf->GetShowPicInfo() != m_strSubStockID)
-			ChangeShowStock(m_pDlgKbElf->GetShowPicInfo());
+		{
+			SStringA strStockID = m_pDlgKbElf->GetShowPicInfo();
+			SendMsg(m_uThreadID, MPA_SetStock, strStockID, strStockID.GetLength() + 1);
+		}
 		break;
 	case WDMsg_SetFocus:
 		CSimpleWnd::SetFocus();
@@ -219,13 +234,22 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOO
 		}
 
 
-		if (m_pKlinePic[m_nCurMsgWnd]->IsVisible())
+		if (m_pKlinePic[m_nCurMsgWnd] && m_pKlinePic[m_nCurMsgWnd]->IsVisible())
 		{
 			m_pKlinePic[m_nCurMsgWnd]->SetSelPointWndInfo(info, strTitle);
 			m_pKlinePic[m_nCurMsgWnd]->SetSubPicShowData(dataCount, tmpDataArr,
 				rightVec, dataNameVec, m_strSubStockID,
 				m_StockName.hash[m_strSubStockID]);
 		}
+	}
+	break;
+	case WDMsg_ChangeShowTitle:
+	{
+		SStringW str;
+		str.Format(L"%s %s", m_strStockName, StrA2StrW(m_strSubStockID));
+		m_pTxtInfo->SetWindowTextW(str);
+		CIniFile ini(".\\config\\MultiPrdAnly.ini");
+		ini.WriteStringA("Overall", "SubStockID", m_strSubStockID);
 	}
 	break;
 	default:
@@ -236,6 +260,7 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnWindowMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOO
 
 LRESULT SOUI::CDlgMultiPrdAnly::OnKlineMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled)
 {
+	return 0;
 	BOOL bNeedSaveConfig = TRUE;
 	switch (lp)
 	{
@@ -320,20 +345,43 @@ LRESULT SOUI::CDlgMultiPrdAnly::OnKlineMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL
 	return 0;
 }
 
+void	SOUI::CDlgMultiPrdAnly::OnClose()
+{
+	SetMsgHandled(FALSE);
+	m_bIsValid = FALSE;
+	ShowWindow(SW_HIDE);
+	if (_access(".\\config\\MultiPrdAnly.position", 0) == 0)
+		remove(".\\config\\MultiPrdAnly.position");
+	g_WndSyn.RemoveMultiPrdAnlyWnd(m_hWnd);
+	::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveMultiPrdAnlyWnd, NULL);
+}
+
 
 void	SOUI::CDlgMultiPrdAnly::OnDestroy()
 {
 	SetMsgHandled(FALSE);
+	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
+	if (m_dataProcThread.joinable())
+		m_dataProcThread.join();
+	if (m_bIsValid)
+	{
+		SStringA strPosFile;
+		strPosFile.Format(".\\config\\MultiPrdAnly.position");
+		std::ofstream ofile(strPosFile);
+		if (ofile.is_open())
+		{
+			WINDOWPLACEMENT wp = { sizeof(wp) };
+			::GetWindowPlacement(m_hWnd, &wp);
+
+			ofile.write((char*)&wp, sizeof(wp));
+			ofile.close();
+		}
+	}
 
 }
 void	SOUI::CDlgMultiPrdAnly::OnBtnClose()
 {
-	m_bIsValid = FALSE;
-	ShowWindow(SW_HIDE);
-	//SStringA strPosFile;
-	//strPosFile.Format(".\\config\\MultiPrdAnly.position");
-	//if (_access(strPosFile, 0) == 0)
-	//	remove(strPosFile);
+	GetNative()->SendMessage(WM_CLOSE);
 
 }
 void	SOUI::CDlgMultiPrdAnly::OnBtnRehab()
@@ -360,8 +408,8 @@ void SOUI::CDlgMultiPrdAnly::OnButtonDown(UINT nFlags, CPoint point)
 			break;
 		}
 	}
-	if(nWndIndex >=0)
-	m_nCurMsgWnd = nWndIndex;
+	if (nWndIndex >= 0)
+		m_nCurMsgWnd = nWndIndex;
 
 }
 
@@ -470,6 +518,7 @@ void	SOUI::CDlgMultiPrdAnly::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	if (nChar >= VK_LEFT && nChar <= VK_DOWN)
 	{
 		int nWndIndex = m_nCurMsgWnd != -1 ? m_nCurMsgWnd : m_nNowCtrlWnd;
+		if (!m_pKlinePic[nWndIndex]) return;
 		bool bNeedRePaint = (nChar == VK_LEFT || nChar == VK_RIGHT) ? false : true;
 		if (!bNeedRePaint)
 			bNeedRePaint = m_pKlinePic[nWndIndex]->CheckKeyLeftOrRightMoveChange(nChar == VK_LEFT);
@@ -576,7 +625,7 @@ bool SOUI::CDlgMultiPrdAnly::OnCmbPrdChange(EventArgs* e)
 {
 	EventCBSelChange* pEvt = dynamic_cast<EventCBSelChange*>(e);
 	int nWndIndex = -1;
-	for(int i=0;i<MAX_PIC_NUM;++i)
+	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
 		if (m_pCbxPeriod[i] == pEvt->sender)
 		{
@@ -584,12 +633,13 @@ bool SOUI::CDlgMultiPrdAnly::OnCmbPrdChange(EventArgs* e)
 			break;
 		}
 	}
-	if(nWndIndex ==-1)
-	return FALSE;
+	if (nWndIndex == -1)
+		return FALSE;
 	int nPeriod = PrdVec[pEvt->nCurSel];
 	if (nPeriod == m_nPeriod[nWndIndex])
 		return FALSE;
 	m_nPeriod[nWndIndex] = nPeriod;
+	if (!m_pKlinePic[nWndIndex]) return false;
 	if (m_KlineGetMap.count(nPeriod) == 0)
 	{
 		m_pKlinePic[nWndIndex]->SetHisKlineState(false);
@@ -632,17 +682,17 @@ bool SOUI::CDlgMultiPrdAnly::OnCmbPrdChange(EventArgs* e)
 	for (auto& info : infoVec)
 		GetPointData(info, m_strSubStockID, nPeriod);
 
-	SetKlineShowData(nWndIndex,infoVec, nPeriod, TRUE);
+	SetKlineShowData(nWndIndex, infoVec, nPeriod, TRUE);
 	int nDstStartTime = m_nStartTime, nDstEndTime = m_nEndTime;
 	ChangeShowTimeRangeByPeriod(nDstStartTime, nDstEndTime, m_nPeriod[m_nNowCtrlWnd], m_nPeriod[nWndIndex]);
-	m_pKlinePic[nWndIndex]->SetShowDataTimeRange(m_nStartDate, nDstStartTime, m_nEndDate, nDstEndTime,true);
+	m_pKlinePic[nWndIndex]->SetShowDataTimeRange(m_nStartDate, nDstStartTime, m_nEndDate, nDstEndTime, true);
 	m_pKlinePic[nWndIndex]->Invalidate();
 	return FALSE;
 }
 
 bool SOUI::CDlgMultiPrdAnly::OnChkClicked(EventArgs* e)
 {
-	EventLButtonUp *pEvt = dynamic_cast<EventLButtonUp*>(e);
+	EventLButtonUp* pEvt = dynamic_cast<EventLButtonUp*>(e);
 	int nWndIndex = -1;
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
@@ -682,28 +732,6 @@ void	SOUI::CDlgMultiPrdAnly::InitWindowPos()
 
 }
 
-void	SOUI::CDlgMultiPrdAnly::CloseWnd()
-{
-	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
-	if (m_dataProcThread.joinable())
-		m_dataProcThread.join();
-	if (m_bIsValid)
-	{
-		SStringA strPosFile;
-		strPosFile.Format(".\\config\\MultiPrdAnly.position");
-		std::ofstream ofile(strPosFile);
-		if (ofile.is_open())
-		{
-			WINDOWPLACEMENT wp = { sizeof(wp) };
-			::GetWindowPlacement(m_hWnd, &wp);
-
-			ofile.write((char*)&wp, sizeof(wp));
-			ofile.close();
-		}
-		ShowWindow(SW_HIDE);
-	}
-
-}
 
 
 void	SOUI::CDlgMultiPrdAnly::InitControls()
@@ -774,6 +802,8 @@ void SOUI::CDlgMultiPrdAnly::InitDataProcFucMap()
 		&CDlgMultiPrdAnly::OnUpdateHisKline;
 	//m_dataHandleMap[MPA_CloseInfo] =
 	//	&CDlgMultiPrdAnly::OnUpdateCloseInfo;
+	m_dataHandleMap[MPA_SetStock] =
+		&CDlgMultiPrdAnly::OnKlineChangeStock;
 	m_dataHandleMap[MPA_KlineMa] =
 		&CDlgMultiPrdAnly::OnKlineMa;
 	m_dataHandleMap[MPA_KlineMacd] =
@@ -901,6 +931,7 @@ void SOUI::CDlgMultiPrdAnly::OnRehabMenuCmd(UINT uNotifyCode, int nID, HWND wndC
 void SOUI::CDlgMultiPrdAnly::OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 {
 	bool bState = false;
+	return;
 	switch (nID)
 	{
 	case KM_Deal:
@@ -1307,17 +1338,12 @@ void	SOUI::CDlgMultiPrdAnly::SetKlineShowData(int nWndIndex, vector<ShowPointInf
 	}
 
 	m_pKlinePic[nWndIndex]->ChangePeriod(nPeriod, bNeedReCalc);
-	if (nWndIndex != m_nNowCtrlWnd)
-	{
-
-	}
-
 
 }
 
 void SOUI::CDlgMultiPrdAnly::SetStockInfo(vector<StockInfo>& infoVec, strHash<SStringA>& StockNameMap)
 {
-	m_StockPassHisVec.resize(infoVec.size());
+	m_StockPassSet.resize(infoVec.size());
 	for (auto& it : infoVec)
 		m_infoMap.hash[it.SecurityID] = it;
 	m_StockName = StockNameMap;
@@ -1335,7 +1361,8 @@ void SOUI::CDlgMultiPrdAnly::ChangeShowStock(SStringA StockID)
 	SetDataFlagFalse();
 	SStringA StockName = m_StockName.hash[StockID];
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
-		m_pKlinePic[i]->ChangeShowStock(StockID, StockName);
+		if (m_pKlinePic[i])
+			m_pKlinePic[i]->ChangeShowStock(StockID, StockName);
 	//获取分时数据
 	DataGetInfo GetInfo;
 	GetInfo.hWnd = m_hWnd;
@@ -1345,11 +1372,7 @@ void SOUI::CDlgMultiPrdAnly::ChangeShowStock(SStringA StockID)
 	GetInfo.Period = Period_FenShi;
 	m_strSubStockID = StockID;
 	m_strStockName = StrA2StrW(m_StockName.hash[m_strSubStockID]);
-	SStringW str;
-	str.Format(L"%s %s", m_strStockName,StrA2StrW(StockID));
-	m_pTxtInfo->SetWindowTextW(str);
-	CIniFile ini(".\\config\\MultiPrdAnly.ini");
-	ini.WriteStringA("Overall", "SubStockID", m_strSubStockID);
+	PostMessage(WM_WINDOW_MSG, WDMsg_ChangeShowTitle, NULL);
 	SendMsg(g_WndSyn.GetThreadID(), Syn_GetMarket,
 		(char*)&GetInfo, sizeof(GetInfo));
 	vector<ShowPointInfo>infoVec;
@@ -1357,6 +1380,8 @@ void SOUI::CDlgMultiPrdAnly::ChangeShowStock(SStringA StockID)
 
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
+		if (!m_pKlinePic[i])
+			continue;
 		GetInfo.Period = m_nPeriod[i];
 		if (Period_1Day == m_nPeriod[i])
 		{
@@ -1405,11 +1430,15 @@ void	SOUI::CDlgMultiPrdAnly::SetDataFlagFalse()
 	m_KlineGetMap.clear();
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
-		m_pKlinePic[i]->SetTodayMarketState(false);
-		m_pKlinePic[i]->SetHisKlineState(false);
-		m_pKlinePic[i]->SetHisPointState(false);
-		m_pKlinePic[i]->SetHisCAInfoState(false);
-		m_pKlinePic[i]->SetTFMarketState(false);
+		if (m_pKlinePic[i])
+		{
+			m_pKlinePic[i]->SetTodayMarketState(false);
+			m_pKlinePic[i]->SetHisKlineState(false);
+			m_pKlinePic[i]->SetHisPointState(false);
+			m_pKlinePic[i]->SetHisCAInfoState(false);
+			m_pKlinePic[i]->SetTFMarketState(false);
+
+		}
 	}
 }
 
@@ -1654,9 +1683,12 @@ void CDlgMultiPrdAnly::OnUpdateHisStockMarket(int nMsgLength, const char* info)
 	m_bMarketGet = TRUE;
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
-		m_pKlinePic[i]->SetTodayMarketState(true);
-		if (m_pKlinePic[i]->GetDataReadyState())
-			m_pKlinePic[i]->DataProc();
+		if (m_pKlinePic[i])
+		{
+			m_pKlinePic[i]->SetTodayMarketState(true);
+			if (m_pKlinePic[i]->GetDataReadyState())
+				m_pKlinePic[i]->DataProc();
+		}
 	}
 	::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, MAX_PIC_NUM);
 }
@@ -1716,7 +1748,8 @@ void CDlgMultiPrdAnly::OnUpdateRehabInfo(int nMsgLength, const char* info)
 	memcpy_s(&rehabInfoVec[0], pRecvInfo->SrcDataSize,
 		dataArr, pRecvInfo->SrcDataSize);
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
-		m_pKlinePic[i]->SetRehabInfo(rehabInfoVec);
+		if (m_pKlinePic[i])
+			m_pKlinePic[i]->SetRehabInfo(rehabInfoVec);
 
 }
 
@@ -1737,9 +1770,12 @@ void SOUI::CDlgMultiPrdAnly::OnUpdateHisCallAction(int nMsgLength, const char* i
 	m_bCAInfoGet = TRUE;
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
-		m_pKlinePic[i]->SetHisCAInfoState(true);
-		if (m_nPeriod[i] == Period_1Day)
-			::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, i);
+		if (m_pKlinePic[i])
+		{
+			m_pKlinePic[i]->SetHisCAInfoState(true);
+			if (m_nPeriod[i] == Period_1Day)
+				::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, i);
+		}
 	}
 }
 
@@ -1780,7 +1816,7 @@ void CDlgMultiPrdAnly::OnUpdateTodayTFMarket(int nMsgLength, const char* info)
 	{
 		for (int i = 0; i < MAX_PIC_NUM; ++i)
 		{
-			if (m_nPeriod[i] == nPeriod)
+			if (m_nPeriod[i] == nPeriod && m_pKlinePic[i])
 			{
 				m_pKlinePic[i]->SetTFMarketState(true);
 				m_pKlinePic[i]->UpdateData();
@@ -1838,7 +1874,7 @@ void SOUI::CDlgMultiPrdAnly::OnUpdateRTTradeVol(int nMsgLength, const char* info
 	}
 
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
-		if (m_pKlinePic[i]->GetBigVolDiffState() && m_nPeriod[i] == Period_1Day)
+		if (m_pKlinePic[i] && m_pKlinePic[i]->GetBigVolDiffState() && m_nPeriod[i] == Period_1Day)
 			::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, i);
 
 }
@@ -1859,7 +1895,7 @@ void SOUI::CDlgMultiPrdAnly::OnUpdateHisTradeVol(int nMsgLength, const char* inf
 	m_bTradeVolGet = TRUE;
 	for (int i = 0; i < MAX_PIC_NUM; ++i)
 	{
-		if (m_nPeriod[i] == Period_1Day)
+		if (m_nPeriod[i] == Period_1Day && m_pKlinePic[i])
 		{
 			m_pKlinePic[i]->SetHisVolDiffState(true);
 			::PostMessage(m_hWnd, WM_WINDOW_MSG, WDMsg_UpdatePic, i);
@@ -1867,6 +1903,12 @@ void SOUI::CDlgMultiPrdAnly::OnUpdateHisTradeVol(int nMsgLength, const char* inf
 		}
 	}
 
+}
+
+void SOUI::CDlgMultiPrdAnly::OnKlineChangeStock(int nMsgLength, const char* info)
+{
+	SStringA strStockID = info;
+	ChangeShowStock(strStockID);
 }
 
 void CDlgMultiPrdAnly::OnKlineMa(int nMsgLength, const char* info)

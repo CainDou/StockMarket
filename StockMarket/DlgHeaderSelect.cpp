@@ -269,7 +269,7 @@ void CDlgHeaderSelect::OnBtnOK()
 {
 	CAdpterFixTitle* pAdpter = (CAdpterFixTitle*)m_pLvTitle->GetAdapter();
 	m_bShowMap = pAdpter->GetTitleShowMap();
-	::SendMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_ChangeShowTilte, (LPARAM)&m_bShowMap);
+	::SendMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_ChangeShowTitle, (LPARAM)&m_bShowMap);
 	OnBtnClose();
 }
 

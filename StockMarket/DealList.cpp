@@ -19,6 +19,7 @@ CDealList::CDealList()
 
 CDealList::~CDealList()
 {
+	OutputDebugStringFormat("~CDealList()\n");
 }
 
 

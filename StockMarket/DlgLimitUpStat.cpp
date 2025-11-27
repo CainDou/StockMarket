@@ -18,16 +18,17 @@ CDlgLimitUpStat::CDlgLimitUpStat() :SHostWnd(_T("LAYOUT:dlg_LimitUpStat"))
 	m_bLayoutInited = FALSE;
 	m_bClose = FALSE;
 	m_ShowPlate = "";
+	m_bIsValid = TRUE;
 }
 
 
 CDlgLimitUpStat::~CDlgLimitUpStat()
 {
-	if (!m_bClose)
-		CloseWnd();
+	//if (!m_bClose)
+	//	CloseWnd();
 }
 
-BOOL CDlgLimitUpStat::OnInitDialog(EventArgs * e)
+BOOL CDlgLimitUpStat::OnInitDialog(EventArgs* e)
 {
 	m_bLayoutInited = TRUE;
 	for (int i = 0; i < DAYCOUNT; ++i)
@@ -59,43 +60,6 @@ BOOL CDlgLimitUpStat::OnInitDialog(EventArgs * e)
 	return 0;
 }
 
-BOOL CDlgLimitUpStat::CloseWnd()
-{
-	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
-	if (m_thread.joinable())
-		m_thread.join();
-
-	SYSTEMTIME st;
-	::GetLocalTime(&st);
-	int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
-	for (int i = 0; i < m_dayVec.size(); ++i)
-	{
-		for (auto&it : m_bUpdateMap)
-		{
-			if (it.first != nToday)
-				SaveHisData(it.first);
-		}
-	}
-	if (IsWindowVisible())
-	{
-		WINDOWPLACEMENT wp = { sizeof(wp) };
-		::GetWindowPlacement(m_hWnd, &wp);
-		std::ofstream ofile;
-		ofile.open(".\\config\\LimitUp.position",
-			std::ios::out | std::ios::binary);
-		if (ofile.is_open())
-			ofile.write((char*)&wp, sizeof(wp));
-		ofile.close();
-	}
-	else
-	{
-		if (_access(".\\config\\LimitUp.position", 0) == 0)
-			remove(".\\config\\LimitUp.position");
-	}
-	m_bClose = TRUE;
-
-	return TRUE;
-}
 
 void CDlgLimitUpStat::InitWindowPos()
 {
@@ -207,7 +171,7 @@ void CDlgLimitUpStat::InitData()
 		if (nDayOfWeek < 0)
 			nDayOfWeek = 6;
 	}
-	for (auto &it : m_dayVec)
+	for (auto& it : m_dayVec)
 	{
 		if (SavedDaySet.count(it) == 0)
 		{
@@ -222,7 +186,8 @@ void CDlgLimitUpStat::InitData()
 
 void CDlgLimitUpStat::OnBtnClose()
 {
-	ShowWindow(SW_HIDE);
+	//ShowWindow(SW_HIDE);
+	SendMessage(WM_CLOSE);
 }
 
 void CDlgLimitUpStat::OnMaximize()
@@ -244,8 +209,8 @@ void CDlgLimitUpStat::OnSize(UINT nType, CSize size)
 {
 	SetMsgHandled(FALSE);
 	if (!m_bLayoutInited) return;
-	SWindow *pBtnMax = FindChildByName(L"btn_max");
-	SWindow *pBtnRestore = FindChildByName(L"btn_restore");
+	SWindow* pBtnMax = FindChildByName(L"btn_max");
+	SWindow* pBtnRestore = FindChildByName(L"btn_restore");
 	if (!pBtnMax || !pBtnRestore) return;
 
 	if (nType == SIZE_MAXIMIZED)
@@ -295,12 +260,12 @@ void CDlgLimitUpStat::SaveHisData(int nDate)
 	std::ofstream ofile(strFileName, std::ios::binary);
 	if (ofile.is_open())
 	{
-		auto &plateVec = m_dayPlateMap[nDate];
-		for (auto &plInfo : plateVec)
+		auto& plateVec = m_dayPlateMap[nDate];
+		for (auto& plInfo : plateVec)
 		{
 			ofile.write((char*)&plInfo, sizeof(plInfo));
-			auto &luStockVec = m_LimitUpMap[nDate][plInfo.strPlateID];
-			for (auto &luStock : luStockVec)
+			auto& luStockVec = m_LimitUpMap[nDate][plInfo.strPlateID];
+			for (auto& luStock : luStockVec)
 				ofile.write((char*)&luStock, sizeof(luStock));
 		}
 		ofile.close();
@@ -319,7 +284,7 @@ void CDlgLimitUpStat::ReadHisData(int nDate)
 		while (ifile.read((char*)&plInfo, sizeof(plInfo)))
 		{
 			m_dayPlateMap[nDate].emplace_back(plInfo);
-			auto &limitUpVec = m_LimitUpMap[nDate][plInfo.strPlateID];
+			auto& limitUpVec = m_LimitUpMap[nDate][plInfo.strPlateID];
 			int nCount = 0;
 			while (nCount < plInfo.nCount)
 			{
@@ -351,7 +316,7 @@ void CDlgLimitUpStat::SaveHisDataList(int nToday)
 	set<SStringA> valuedFileName;
 	if (ofile.is_open())
 	{
-		for (auto &nDate : m_dayVec)
+		for (auto& nDate : m_dayVec)
 			if (nToday != nDate)
 			{
 				ofile.write((char*)&nDate, sizeof(nDate));
@@ -376,7 +341,7 @@ void CDlgLimitUpStat::SaveHisDataList(int nToday)
 
 }
 
-LRESULT CDlgLimitUpStat::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
+LRESULT CDlgLimitUpStat::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled)
 {
 	int nMsgId = (int)wp;
 	switch (nMsgId)
@@ -408,10 +373,10 @@ LRESULT CDlgLimitUpStat::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	return 0;
 }
 
-bool CDlgLimitUpStat::OnListPlateLClick(EventArgs * pEvtBase)
+bool CDlgLimitUpStat::OnListPlateLClick(EventArgs* pEvtBase)
 {
-	EventHeaderClick *pEvt = (EventHeaderClick*)pEvtBase;
-	SColorListCtrlEx *pList = (SColorListCtrlEx*)pEvt->sender;
+	EventHeaderClick* pEvt = (EventHeaderClick*)pEvtBase;
+	SColorListCtrlEx* pList = (SColorListCtrlEx*)pEvt->sender;
 	int nSel = pList->GetSelectedItem();
 	if (nSel < 0)
 		return false;
@@ -466,7 +431,7 @@ void CDlgLimitUpStat::UpdateShowLimitUpStock(int nDataPos, SStringA strPlate)
 
 	if (plateStockMap.count(strPlate))
 	{
-		auto &StockVec = plateStockMap[strPlate];
+		auto& StockVec = plateStockMap[strPlate];
 		if (!StockVec.empty())
 		{
 			for (int i = 0; i < StockVec.size(); ++i)
@@ -668,7 +633,7 @@ int CDlgLimitUpStat::GetPlateLimitUpStock(int nPos, int nDate, SStringA strPlate
 
 }
 
-void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & str, SStringA strPlateID)
+void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string& str, SStringA strPlateID)
 {
 	std::stringstream ss(str);
 	string buffer;
@@ -740,11 +705,11 @@ void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & s
 	}
 	std::stable_sort(limitUpVec.begin(), limitUpVec.end(),
 		[&](const LimitUpStock& data1, const LimitUpStock& data2)
-	{
-		if (data1.nLimitUpDay == data2.nLimitUpDay)
-			return data1.nCountDay < data2.nCountDay;
-		return data1.nLimitUpDay > data2.nLimitUpDay;
-	});
+		{
+			if (data1.nLimitUpDay == data2.nLimitUpDay)
+				return data1.nCountDay < data2.nCountDay;
+			return data1.nLimitUpDay > data2.nLimitUpDay;
+		});
 	::EnterCriticalSection(&m_cs[nPos]);
 	m_LimitUpMap[nDate][strPlateID] = limitUpVec;
 	::LeaveCriticalSection(&m_cs[nPos]);
@@ -754,7 +719,7 @@ void CDlgLimitUpStat::GetPlateLimitUpDataFromMsg(int nPos, int nDate, string & s
 void CDlgLimitUpStat::DataGet()
 {
 	int MsgId;
-	char *info;
+	char* info;
 	int msgLength;
 	InitData();
 	SetTimer(1, 10000);
@@ -810,7 +775,7 @@ void CDlgLimitUpStat::DataGet()
 			for (int i = 0; i < m_dayVec.size(); ++i)
 			{
 				int nDate = m_dayVec[i];
-				auto &plateStockMap = m_LimitUpMap[nDate];
+				auto& plateStockMap = m_LimitUpMap[nDate];
 				if (plateStockMap.count(strPlateID) == 0)
 				{
 					PlateInfo plInfo;
@@ -844,7 +809,49 @@ void CDlgLimitUpStat::OnTimer(char cTimerID)
 
 }
 
-SStringW CDlgLimitUpStat::Unescape(const string & input)
+void CDlgLimitUpStat::OnClose()
+{
+	SetMsgHandled(FALSE);
+	m_bIsValid = FALSE;
+	SStringA strPosFile;
+	strPosFile.Format(".\\config\\LimitUp.position");
+	if (_access(strPosFile, 0) == 0)
+		remove(strPosFile);
+	::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveLimitUpWnd, NULL);
+}
+
+void	CDlgLimitUpStat::OnDestroy()
+{
+	SetMsgHandled(FALSE);
+	SendMsg(m_uThreadID, Msg_Exit, NULL, 0);
+	if (m_thread.joinable())
+		m_thread.join();
+
+	SYSTEMTIME st;
+	::GetLocalTime(&st);
+	int nToday = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
+	for (int i = 0; i < m_dayVec.size(); ++i)
+	{
+		for (auto& it : m_bUpdateMap)
+		{
+			if (it.first != nToday)
+				SaveHisData(it.first);
+		}
+	}
+	if (m_bIsValid)
+	{
+		WINDOWPLACEMENT wp = { sizeof(wp) };
+		::GetWindowPlacement(m_hWnd, &wp);
+		std::ofstream ofile;
+		ofile.open(".\\config\\LimitUp.position",
+			std::ios::out | std::ios::binary);
+		if (ofile.is_open())
+			ofile.write((char*)&wp, sizeof(wp));
+		ofile.close();
+	}
+}
+
+SStringW CDlgLimitUpStat::Unescape(const string& input)
 {
 	SStringW result;
 	for (size_t i = 0; i < input.length(); ) {

@@ -42,12 +42,15 @@ CDlgLpPriceVol::~CDlgLpPriceVol()
 
 void CDlgLpPriceVol::OnClose()
 {
+	SetMsgHandled(FALSE);
 	m_bIsValid = FALSE;
-	ShowWindow(SW_HIDE);
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\LpPriceVol.position");
 	if (_access(strPosFile, 0) == 0)
 		remove(strPosFile);
+	//ShowWindow(SW_HIDE);
+	g_WndSyn.RemoveLpPriceVolWnd();
+	::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveLpPriceWnd, NULL);
 }
 
 int CDlgLpPriceVol::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -59,13 +62,13 @@ int CDlgLpPriceVol::OnCreate(LPCREATESTRUCT lpCreateStruct)
 BOOL CDlgLpPriceVol::OnInitDialog(EventArgs* e)
 {
 	m_bLayoutInited = TRUE;
-	SStatic *pTitl = FindChildByID2<SStatic>(R.id.text_windowName);
+	SStatic* pTitl = FindChildByID2<SStatic>(R.id.text_windowName);
 	m_SynThreadID = g_WndSyn.GetThreadID();
 	//InitWindowPos();
 	InitControls();
 	InitConfig();
 	InitDataHandleMap();
-	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
+	vector<map<int, strHash<RtRps>>>* pListData = g_WndSyn.GetListData();
 	m_pShowRpsData = &(pListData->at(Group_Stock)[Period_1Day]);
 	m_thread = thread(&CDlgLpPriceVol::DataHandle, this);
 	m_uMsgThreadID = *(unsigned*)&m_thread.get_id();
@@ -73,7 +76,7 @@ BOOL CDlgLpPriceVol::OnInitDialog(EventArgs* e)
 	SetTimer(TIMER_AUTOSAVE, 5000);
 	return 0;
 }
-LRESULT CDlgLpPriceVol::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
+LRESULT CDlgLpPriceVol::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled)
 {
 	int Msg = (int)wp;
 	switch (wp)
@@ -121,7 +124,7 @@ void CDlgLpPriceVol::OnDestroy()
 			ofile.write((char*)&wp, sizeof(wp));
 			ofile.close();
 		}
-		ShowWindow(SW_HIDE);
+		//ShowWindow(SW_HIDE);
 	}
 }
 
@@ -133,7 +136,7 @@ void CDlgLpPriceVol::OnTimer(UINT_PTR nIDEvent)
 }
 
 
-bool CDlgLpPriceVol::OnEditStockIDChange(EventArgs * e)
+bool CDlgLpPriceVol::OnEditStockIDChange(EventArgs* e)
 {
 	EventRENotify* pEvt = (EventRENotify*)e;
 	SEdit* pEdit = (SEdit*)pEvt->sender;
@@ -235,7 +238,7 @@ void CDlgLpPriceVol::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
 					for (int i = 0; i < m_nShowPicNum; ++i)
 						DataGetSet.insert(make_pair(m_nPicPeriod[i], m_nPicDate[i]));
 
-					for (auto &it : DataGetSet)
+					for (auto& it : DataGetSet)
 						GetLpPriceData(it.first, it.second);
 					nTick = GetTickCount() - nTick;
 					OutputDebugStringFormat("处理耗时:%dms\n", nTick);
@@ -262,7 +265,7 @@ void CDlgLpPriceVol::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
 
 }
 
-bool CDlgLpPriceVol::OnLbStockIDLButtonDown(EventArgs * e)
+bool CDlgLpPriceVol::OnLbStockIDLButtonDown(EventArgs* e)
 {
 	EventLButtonDown* pEvt = (EventLButtonDown*)e;
 	SListBox* pList = (SListBox*)pEvt->sender;
@@ -291,26 +294,26 @@ bool CDlgLpPriceVol::OnLbStockIDLButtonDown(EventArgs * e)
 		for (int i = 0; i < m_nShowPicNum; ++i)
 			DataGetSet.insert(make_pair(m_nPicPeriod[i], m_nPicDate[i]));
 
-		for (auto &it : DataGetSet)
+		for (auto& it : DataGetSet)
 			GetLpPriceData(it.first, it.second);
 	}
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxPicNumChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxPicNumChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	int nSel = pEvt->nCurSel;
 	SetShowPicNum(pCbx->GetItemData(nSel));
 	pCbx->KillFocus();
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxDataTypeChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxDataTypeChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	int nSel = pEvt->nCurSel;
 	int nDataType = pCbx->GetItemData(nSel);
 	if (nDataType == m_nDataType)
@@ -329,10 +332,10 @@ bool CDlgLpPriceVol::OnCbxDataTypeChange(EventArgs * e)
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxDataLevelChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxDataLevelChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	int nSel = pEvt->nCurSel;
 	int nDataLevel = pCbx->GetItemData(nSel);
 	pCbx->KillFocus();
@@ -350,10 +353,10 @@ bool CDlgLpPriceVol::OnCbxDataLevelChange(EventArgs * e)
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxBasePriceChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxBasePriceChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	int nSel = pEvt->nCurSel;
 	int  nBasePrice = pCbx->GetItemData(nSel);
 	pCbx->KillFocus();
@@ -384,7 +387,7 @@ bool CDlgLpPriceVol::OnCbxBasePriceChange(EventArgs * e)
 	return true;
 }
 
-bool CDlgLpPriceVol::OnEditBasePriceChange(EventArgs * e)
+bool CDlgLpPriceVol::OnEditBasePriceChange(EventArgs* e)
 {
 	EventRENotify* pEvt = (EventRENotify*)e;
 	SEdit* pEdit = (SEdit*)pEvt->sender;
@@ -409,17 +412,17 @@ bool CDlgLpPriceVol::OnEditBasePriceChange(EventArgs * e)
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxDiffTypeChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxDiffTypeChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	if (m_nDiffType != pEvt->nCurSel)
 	{
 		m_nDiffType = pEvt->nCurSel;
 		if (m_nDiffType > eLPCSDT_NULL)
 		{
-			m_pTextBaseWnd->SetVisible(TRUE,TRUE);
-			m_pCbxBaseWnd->SetVisible(TRUE,TRUE);
+			m_pTextBaseWnd->SetVisible(TRUE, TRUE);
+			m_pCbxBaseWnd->SetVisible(TRUE, TRUE);
 		}
 		else
 		{
@@ -433,10 +436,10 @@ bool CDlgLpPriceVol::OnCbxDiffTypeChange(EventArgs * e)
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxBaseWndChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxBaseWndChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	if (m_nBaseWnd != pEvt->nCurSel)
 	{
 		m_nBaseWnd = pEvt->nCurSel;
@@ -446,10 +449,10 @@ bool CDlgLpPriceVol::OnCbxBaseWndChange(EventArgs * e)
 	return true;
 }
 
-bool CDlgLpPriceVol::OnCbxPeriodChange(EventArgs * e)
+bool CDlgLpPriceVol::OnCbxPeriodChange(EventArgs* e)
 {
-	EventCBSelChange *pEvt = (EventCBSelChange*)e;
-	SComboBox *pCbx = (SComboBox *)pEvt->sender;
+	EventCBSelChange* pEvt = (EventCBSelChange*)e;
+	SComboBox* pCbx = (SComboBox*)pEvt->sender;
 	int nSel = pEvt->nCurSel;
 	int nPeriod = pCbx->GetItemData(nSel);
 	int nPic = -1;
@@ -497,10 +500,10 @@ bool CDlgLpPriceVol::OnCbxPeriodChange(EventArgs * e)
 	return false;
 }
 
-bool CDlgLpPriceVol::OnDtpDateChange(EventArgs * e)
+bool CDlgLpPriceVol::OnDtpDateChange(EventArgs* e)
 {
-	EventDateTimeChanged *pEvt = (EventDateTimeChanged*)e;
-	SDateTimePicker *pDtp = (SDateTimePicker *)pEvt->sender;
+	EventDateTimeChanged* pEvt = (EventDateTimeChanged*)e;
+	SDateTimePicker* pDtp = (SDateTimePicker*)pEvt->sender;
 	//int nChildCount = pDtp->GetChildrenCount();
 	//for (int i = 0; i < nChildCount; ++i)
 	//{
@@ -874,7 +877,7 @@ map<int, PeriodPriceVolInfo> CDlgLpPriceVol::CalcShowPic(vector<PeriodPriceVolIn
 	map<int, PeriodPriceVolInfo> ShowDataMap;
 	if (m_nDataLevel == 9999)
 	{
-		for (auto &it : dataVec)
+		for (auto& it : dataVec)
 			ShowDataMap[it.nPriceMulti100] = it;
 	}
 	else
@@ -890,7 +893,7 @@ map<int, PeriodPriceVolInfo> CDlgLpPriceVol::CalcShowPic(vector<PeriodPriceVolIn
 			int nIndex = 0;
 			for (int i = 0; i < nLevel; ++i)
 			{
-				int nPriceMax = m_nMinPrice + (i + 1) *fPerDiff + 0.5;
+				int nPriceMax = m_nMinPrice + (i + 1) * fPerDiff + 0.5;
 				ShowDataMap[nPriceMax - 1] = PeriodPriceVolInfo(nPriceMax - 1, dataVec[0].nPeriodType);
 				for (; nIndex < dataVec.size(); ++nIndex)
 				{
@@ -920,7 +923,7 @@ map<int, PeriodPriceVolInfo> CDlgLpPriceVol::CalcShowPic(vector<PeriodPriceVolIn
 			vector<PeriodPriceVolInfo> lowerVec;
 			vector<PeriodPriceVolInfo> upperVec;
 
-			for (auto &it : dataVec)
+			for (auto& it : dataVec)
 			{
 				if (it.nPriceMulti100 >= nBasePrice)
 					upperVec.emplace_back(it);
@@ -932,9 +935,9 @@ map<int, PeriodPriceVolInfo> CDlgLpPriceVol::CalcShowPic(vector<PeriodPriceVolIn
 
 			for (int i = 0; i < nLevel; ++i)
 			{
-				int nPriceMax = nBasePrice + (i + 1) *fPerDiff + 0.5;
-				int nPriceMinShow = nBasePrice - i *fPerDiff + 0.5;
-				int nPriceMin = nBasePrice - (i + 1) *fPerDiff + 0.5;
+				int nPriceMax = nBasePrice + (i + 1) * fPerDiff + 0.5;
+				int nPriceMinShow = nBasePrice - i * fPerDiff + 0.5;
+				int nPriceMin = nBasePrice - (i + 1) * fPerDiff + 0.5;
 				for (; nIndexUp < upperVec.size(); ++nIndexUp)
 				{
 					if (dataVec[nIndexUp].nPriceMulti100 < nPriceMax)
@@ -973,7 +976,7 @@ void CDlgLpPriceVol::HandleShowPicWithDataType(map<int, PeriodPriceVolInfo>& Sho
 	{
 		double fTotalOrder = 0;
 		double fTotalVol = 0;
-		for (auto &it : ShowDataMap)
+		for (auto& it : ShowDataMap)
 		{
 			fTotalVol += it.second.fActBigBuyVol + it.second.fActMidBuyVol + it.second.fActSmallBuyVol +
 				it.second.fPasBigBuyVol + it.second.fPasMidBuyVol + it.second.fPasSmallBuyVol;
@@ -982,7 +985,7 @@ void CDlgLpPriceVol::HandleShowPicWithDataType(map<int, PeriodPriceVolInfo>& Sho
 				it.second.fPasBigBuyOrder + it.second.fPasMidBuyOrder + it.second.fPasSmallBuyOrder;
 		}
 
-		for (auto &it : ShowDataMap)
+		for (auto& it : ShowDataMap)
 		{
 			it.second.fActBigBuyVol /= (fTotalVol / 100);
 			it.second.fActMidBuyVol /= (fTotalVol / 100);
@@ -1018,7 +1021,7 @@ void CDlgLpPriceVol::HandleShowPicWithDataType(map<int, PeriodPriceVolInfo>& Sho
 BOOL CDlgLpPriceVol::HandleMaxPiantData(map<int, PeriodPriceVolInfo>& ShowDataMap)
 {
 	BOOL bChange = FALSE;
-	for (auto&it : ShowDataMap)
+	for (auto& it : ShowDataMap)
 	{
 		double tmpMax = max(it.second.fActBigBuyVol + it.second.fActMidBuyVol + it.second.fActSmallBuyVol,
 			it.second.fPasBigBuyVol + it.second.fPasMidBuyVol + it.second.fPasSmallBuyVol);
@@ -1052,7 +1055,7 @@ BOOL CDlgLpPriceVol::HandleShowDiff(map<int, PeriodPriceVolInfo>& ShowDataMap, i
 {
 	if (m_nBaseWnd == 0)
 	{
-		for (auto &it : ShowDataMap)
+		for (auto& it : ShowDataMap)
 		{
 			BOOL bIsSame = TRUE;
 			for (int i = 0; i < m_nShowPicNum; ++i)
@@ -1073,7 +1076,7 @@ BOOL CDlgLpPriceVol::HandleShowDiff(map<int, PeriodPriceVolInfo>& ShowDataMap, i
 	{
 		if (m_nBaseWnd == nPicWnd + 1)
 			return TRUE;
-		for (auto &it : ShowDataMap)
+		for (auto& it : ShowDataMap)
 		{
 			if (it.second.IsDataSame(m_LpShowData[m_nBaseWnd - 1][it.first]))
 				it.second = PeriodPriceVolInfo(it.second.nPriceMulti100,
@@ -1099,7 +1102,7 @@ BOOL CDlgLpPriceVol::HandleShowDeflate(map<int, PeriodPriceVolInfo>& ShowDataMap
 		return FALSE;
 	if (m_nBaseWnd == nPicWnd + 1)
 		return TRUE;
-	for (auto &it : ShowDataMap)
+	for (auto& it : ShowDataMap)
 		it.second.AbsDiff(m_LpShowData[m_nBaseWnd - 1][it.first]);
 	return FALSE;
 }
@@ -1120,7 +1123,7 @@ void CDlgLpPriceVol::InitDataHandleMap()
 void CDlgLpPriceVol::DataHandle()
 {
 	int MsgId;
-	char *info;
+	char* info;
 	int msgLength;
 	while (true)
 	{
@@ -1142,7 +1145,7 @@ void CDlgLpPriceVol::DataHandle()
 	}
 }
 
-void CDlgLpPriceVol::OnUpdateLpPriceVol(int nMsgLength, const char * info)
+void CDlgLpPriceVol::OnUpdateLpPriceVol(int nMsgLength, const char* info)
 {
 	ReceiveLpPriVolInfo* pLpInfo = (ReceiveLpPriVolInfo*)info;
 	if (m_StockID != pLpInfo->Message)
@@ -1192,21 +1195,21 @@ void CDlgLpPriceVol::OnUpdateLpPriceVol(int nMsgLength, const char * info)
 	if (m_nDataType == eLPCDT_Num)
 		bMaxVolChange = HandleMaxPiantData(ShowDatMap);
 
-	for (auto &nPic : PicSet)
+	for (auto& nPic : PicSet)
 	{
 		m_LpShowData[nPic] = ShowDatMap;
 		m_LpDataVec[nPic].assign(dataVec.begin(), dataVec.end());
 	}
 
 
-	for (auto &nPic : PicSet)
+	for (auto& nPic : PicSet)
 	{
 		auto tmpShowDataMap = ShowDatMap;
 		bDiffChange = HandleDiffType(tmpShowDataMap, nPic);
 		m_pLpPriceVolPic[nPic]->SetCalcPara(m_nDataType, m_nDataLevel, m_fBasePrice);
-		if(m_nDiffType != eLPCSDT_Overlapping)
+		if (m_nDiffType != eLPCSDT_Overlapping)
 			m_pLpPriceVolPic[nPic]->UpdateData(tmpShowDataMap, m_nMaxPrice, m_nMinPrice, m_fMaxVol);
-		else 
+		else
 		{
 			m_pLpPriceVolPic[nPic]->UpdateData(m_LpShowData[nPic], m_nMaxPrice, m_nMinPrice, m_fMaxVol);
 			if (m_nBaseWnd != nPic + 1)
@@ -1254,7 +1257,7 @@ void CDlgLpPriceVol::OnUpdateLpPriceVol(int nMsgLength, const char * info)
 
 }
 
-void CDlgLpPriceVol::ReCalcShowData(int nMsgLength, const char * info)
+void CDlgLpPriceVol::ReCalcShowData(int nMsgLength, const char* info)
 {
 	int nCalcWndType = *(int*)info;
 	set<int> calcWndSet;
@@ -1268,7 +1271,7 @@ void CDlgLpPriceVol::ReCalcShowData(int nMsgLength, const char * info)
 			calcWndSet.insert(i);
 
 	BOOL bMaxVolChange = FALSE;
-	for (auto &it : calcWndSet)
+	for (auto& it : calcWndSet)
 	{
 		m_LpShowData[it] = CalcShowPic(m_LpDataVec[it]);
 		if (m_nDataType == eLPCDT_Num)
@@ -1276,10 +1279,10 @@ void CDlgLpPriceVol::ReCalcShowData(int nMsgLength, const char * info)
 	}
 
 	BOOL bDiffChange = FALSE;
-	for (auto &it : calcWndSet)
+	for (auto& it : calcWndSet)
 	{
 		auto tmpShowDataMap = m_LpShowData[it];
-		bDiffChange =HandleDiffType(tmpShowDataMap, it);
+		bDiffChange = HandleDiffType(tmpShowDataMap, it);
 		if (m_nDiffType != eLPCSDT_Overlapping)
 			m_pLpPriceVolPic[it]->UpdateData(tmpShowDataMap, m_nMaxPrice, m_nMinPrice, m_fMaxVol);
 		else
@@ -1329,7 +1332,7 @@ void CDlgLpPriceVol::ReCalcShowData(int nMsgLength, const char * info)
 	}
 }
 
-void SOUI::CDlgLpPriceVol::OnUpdateListData(int nMsgLength, const char * info)
+void SOUI::CDlgLpPriceVol::OnUpdateListData(int nMsgLength, const char* info)
 {
 	if (m_nBasePriceType == eLPCBPT_LastPx)
 	{
@@ -1341,12 +1344,12 @@ void SOUI::CDlgLpPriceVol::OnUpdateListData(int nMsgLength, const char * info)
 		if (m_fBasePrice != fPrice)
 		{
 			int nCalcWndType = eLPCW_ShowWnd;
-			ReCalcShowData(sizeof(nCalcWndType), (char*)& nCalcWndType);
+			ReCalcShowData(sizeof(nCalcWndType), (char*)&nCalcWndType);
 		}
 	}
 }
 
-void CDlgLpPriceVol::ChangeShowDiff(int nMsgLength, const char * info)
+void CDlgLpPriceVol::ChangeShowDiff(int nMsgLength, const char* info)
 {
 	int nCalcWndType = *(int*)info;
 	set<int> calcWndSet;
@@ -1359,7 +1362,7 @@ void CDlgLpPriceVol::ChangeShowDiff(int nMsgLength, const char * info)
 		for (int i = 0; i < MAX_PICNUM; ++i)
 			calcWndSet.insert(i);
 	BOOL bDiffChange = FALSE;
-	for (auto &it : calcWndSet)
+	for (auto& it : calcWndSet)
 	{
 		auto tmpShowDataMap = m_LpShowData[it];
 		bDiffChange = HandleDiffType(tmpShowDataMap, it);
@@ -1508,7 +1511,7 @@ BOOL CDlgLpPriceVol::SetShowPicNum(int nNum)
 		m_pGrpPic[i]->SetVisible(TRUE, TRUE);
 	}
 
-	for (auto &it : DataGetSet)
+	for (auto& it : DataGetSet)
 		GetLpPriceData(it.first, it.second);
 
 	for (int i = nNum; i < MAX_PICNUM; ++i)
@@ -1522,9 +1525,9 @@ BOOL CDlgLpPriceVol::SetShowPicNum(int nNum)
 		if (nCount < m_nShowPicNum + 1)
 		{
 			for (int i = nCount; i < m_nShowPicNum + 1; ++i)
-				m_pCbxBaseWnd->InsertItem(i,str.Format(L"窗口%d", i), NULL, i);
+				m_pCbxBaseWnd->InsertItem(i, str.Format(L"窗口%d", i), NULL, i);
 		}
-		else if(nCount >m_nShowPicNum + 1)
+		else if (nCount > m_nShowPicNum + 1)
 		{
 			for (int i = nCount - 1; i > m_nShowPicNum; --i)
 				m_pCbxBaseWnd->DeleteString(i);
@@ -1586,8 +1589,8 @@ void CDlgLpPriceVol::OnSize(UINT nType, CSize size)
 {
 	SetMsgHandled(FALSE);
 	if (!m_bLayoutInited) return;
-	SWindow *pBtnMax = FindChildByName(L"btn_max");
-	SWindow *pBtnRestore = FindChildByName(L"btn_restore");
+	SWindow* pBtnMax = FindChildByName(L"btn_max");
+	SWindow* pBtnRestore = FindChildByName(L"btn_restore");
 	if (!pBtnMax || !pBtnRestore) return;
 
 	if (nType == SIZE_MAXIMIZED)

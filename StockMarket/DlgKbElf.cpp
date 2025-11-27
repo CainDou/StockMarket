@@ -15,6 +15,7 @@ CDlgKbElf::CDlgKbElf(HWND hParWnd) : SHostWnd(_T("LAYOUT:dlg_keyboardElf"))
 
 CDlgKbElf::~CDlgKbElf()
 {
+	OutputDebugStringFormat("KBElf析构,当前的hwnd:%X 指针:%X\n",m_hWnd,this);
 }
 
 void CDlgKbElf::OnClose()
@@ -41,7 +42,8 @@ void CDlgKbElf::OnInit(EventArgs * e)
 	}
 
 	m_pEdit->SetWindowTextW(L"");
-	SetTimer(2, 500);
+	//SetTimer(2, 500);
+	OutputDebugStringFormat("kbelf hwnd:%x ptr:%x\n", m_hWnd, this);
 
 }
 
@@ -69,6 +71,7 @@ void CDlgKbElf::SetEditInput(SStringW wstrInput)
 		m_bFromSet = true;
 		m_wstrInput = wstrInput;
 	}
+	SetTimer(2, 500);
 }
 
 bool CDlgKbElf::OnEditChange(EventArgs * e)
@@ -208,9 +211,12 @@ void CDlgKbElf::OnTimer(UINT_PTR cTimerID)
 			{
 
 				ShowWindow(SW_HIDE);
+				KillTimer(2);
 				//::PostMessage(m_hParWnd, WM_WINDOW_MSG, WDMsg_SetFocus, NULL);
 			}
 		}
+		else
+			KillTimer(2);
 	}
 }
 

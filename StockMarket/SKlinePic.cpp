@@ -120,6 +120,10 @@ SKlinePic::SKlinePic()
 
 SKlinePic::~SKlinePic()
 {
+
+	OutputDebugStringFormat("KÏßÍ¼Îö¹¹\n");
+	if (m_pTip)
+	m_pTip->DestroyWindow();
 	//if (m_pAll)
 	//	delete m_pAll;
 	//if (m_pPriceList)
@@ -225,7 +229,7 @@ vector<ShowPointInfo> SKlinePic::GetSubPicDataToGet(int nNum, map<int, ShowPoint
 
 void SKlinePic::InitShowPara(InitPara_t para)
 {
-	m_pTip.reset(new SKlineTip(m_hParWnd));
+	m_pTip = new SKlineTip(m_hParWnd);
 	m_pTip->Create();
 
 	m_bShowBandTarget = para.bShowBandTarget;
@@ -506,7 +510,7 @@ void SOUI::SKlinePic::OutputShowDataTimeRange(int& nStartDate, int& nStartTime, 
 
 void SKlinePic::ChangeShowStock(SStringA subIns, SStringA StockName)
 {
-	KillTimer(1);
+	//KillTimer(1);
 	m_bDataInited = false;
 	m_strSubIns = subIns;
 	m_strStockName = StockName;
@@ -3936,9 +3940,14 @@ void SKlinePic::DrawVolOrAmoData(IRenderTarget* pRT, vector<vector<CPoint>>& Vol
 				pRT->SelectObject(m_penGreen);
 			else
 			{
-				auto& preKline = m_pAll->data[nDataOffset - 1];
-				if (kline.close >= preKline.close)
-					pRT->SelectObject(m_penRed);
+				if (nDataOffset >= 1)
+				{
+					auto& preKline = m_pAll->data[nDataOffset - 1];
+					if (kline.close >= preKline.close)
+						pRT->SelectObject(m_penRed);
+					else
+						pRT->SelectObject(m_penGreen);
+				}
 				else
 					pRT->SelectObject(m_penGreen);
 

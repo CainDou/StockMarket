@@ -59,6 +59,7 @@ SSubTargetPic::SSubTargetPic()
 
 SSubTargetPic::~SSubTargetPic()
 {
+	OutputDebugStringFormat("SSubTargetPic::~SSubTargetPic()\n");
 	delete[]m_pData;
 }
 

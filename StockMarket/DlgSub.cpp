@@ -29,14 +29,17 @@ CDlgSub::~CDlgSub()
 
 void CDlgSub::OnClose()
 {
-	m_bIsValid = FALSE;
 	ShowWindow(SW_HIDE);
+	m_bIsValid = FALSE;
+	KillTimer(TIMER_AUTOSAVE);
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\%s.position", m_strWindowName);
 	if (_access(strPosFile, 0) == 0)
 		remove(strPosFile);
 
 	StopAndClearData();
+	::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveSubWnd, (LPARAM)this);
+	CSimpleWnd::DestroyWindow();
 }
 
 int CDlgSub::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -48,18 +51,18 @@ int CDlgSub::OnCreate(LPCREATESTRUCT lpCreateStruct)
 BOOL CDlgSub::OnInitDialog(EventArgs* e)
 {
 	m_bLayoutInited = TRUE;
-	SStatic *pTitl = FindChildByID2<SStatic>(R.id.text_windowName);
+	SStatic* pTitl = FindChildByID2<SStatic>(R.id.text_windowName);
 	pTitl->SetWindowTextW(StrA2StrW(m_strWindowName));
 	CSimpleWnd::SetWindowTextW(StrA2StrW(m_strWindowName));
 	m_SynThreadID = g_WndSyn.GetThreadID();
 	//InitWindowPos();
 	InitWorkWnd();
-	UINT uMsgThreadID = m_MsgHandler.Init(m_hWnd, m_WndVec, m_SynThreadID,FALSE);
+	UINT uMsgThreadID = m_MsgHandler.Init(m_hWnd, m_WndVec, m_SynThreadID, FALSE);
 	g_WndSyn.AddWnd(m_hWnd, uMsgThreadID);
 	SetTimer(TIMER_AUTOSAVE, 5000);
 	return 0;
 }
-LRESULT CDlgSub::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
+LRESULT CDlgSub::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled)
 {
 	int Msg = (int)wp;
 	switch (wp)
@@ -138,20 +141,20 @@ void CDlgSub::InitWindowPos()
 void CDlgSub::InitWorkWnd()
 {
 	m_WndVec.resize(Group_Count);
-	SRealWnd * pRealWnd = FindChildByName2<SRealWnd>(L"wnd_SWL1");
-	m_WndVec[Group_SWL1] = (CWorkWnd *)pRealWnd->GetData();
+	SRealWnd* pRealWnd = FindChildByName2<SRealWnd>(L"wnd_SWL1");
+	m_WndVec[Group_SWL1] = (CWorkWnd*)pRealWnd->GetData();
 	m_WndVec[Group_SWL1]->SetGroup(Group_SWL1, m_hWnd);
 	pRealWnd = FindChildByName2<SRealWnd>(L"wnd_SWL2");
-	m_WndVec[Group_SWL2] = (CWorkWnd *)pRealWnd->GetData();
+	m_WndVec[Group_SWL2] = (CWorkWnd*)pRealWnd->GetData();
 	m_WndVec[Group_SWL2]->SetGroup(Group_SWL2, m_hWnd);
 	pRealWnd = FindChildByName2<SRealWnd>(L"wnd_Stock");
-	m_WndVec[Group_Stock] = (CWorkWnd *)pRealWnd->GetData();
+	m_WndVec[Group_Stock] = (CWorkWnd*)pRealWnd->GetData();
 	m_WndVec[Group_Stock]->SetGroup(Group_Stock, m_hWnd);
 	vector<vector<StockInfo>> ListInsVec;
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
-	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
-	auto pFilterData =g_WndSyn.GetFilterData();
+	vector<map<int, strHash<RtRps>>>* pListData = g_WndSyn.GetListData();
+	auto pFilterData = g_WndSyn.GetFilterData();
 	auto pStockPos = g_WndSyn.GetStockPos();
 
 	strHash<double> preCloseMap(g_WndSyn.GetCloseMap());
@@ -178,7 +181,7 @@ void CDlgSub::InitWorkWnd()
 			m_WndVec[i]->SetDataPoint(&pStockPos->at(j), DT_L1IndyIndexPos + j);
 		if (i == Group_Stock)
 		{
-			map<int, strHash<TickFlowMarket>> *pTFMarket = g_WndSyn.GetTFMarket();
+			map<int, strHash<TickFlowMarket>>* pTFMarket = g_WndSyn.GetTFMarket();
 			m_WndVec[i]->SetDataPoint(pTFMarket, DT_TFMarket);
 		}
 		m_WndVec[i]->SetPreClose(preCloseMap);
@@ -243,111 +246,111 @@ void CDlgSub::InitComboStockFilter()
 
 }
 
-void CDlgSub::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
-{
-	vector<SStringA> strRangeVec;
-	strRangeVec.emplace_back("");
-	strRangeVec.emplace_back("L1");
-	strRangeVec.emplace_back("L2");
-	vector<SStringA> strShowNameVec;
-	strShowNameVec.emplace_back("");
-	strShowNameVec.emplace_back("一级行业");
-	strShowNameVec.emplace_back("二级行业");
-	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
-	if (initPara.nTSCPointWndNum == -1)
-	{
-		int nCount = 0;
-		for (int i = 0; i < 3; ++i)
-		{
-			if (initPara.bShowTSCRPS[i])
-			{
-				++nCount;
-				if (i == 0)
-					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
-				else
-					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
-			}
-		}
-		initPara.nTSCPointWndNum = nCount;
-	}
-	else if (initPara.nTSCPointWndNum > 0)
-	{
-		for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
-		{
-			SStringA tmp;
-			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
-			if (overallType == -1)
-			{
-				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
-				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
-				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
-				for (auto &it : pointMap)
-				{
-					if (it.first > eIndyMarketPointEnd)
-						continue;
-					if (it.second.type == type &&
-						it.second.dataInRange == dataInRange &&
-						it.second.srcDataName == srcDataName)
-					{
-						initPara.TSCPonitWndInfo.emplace_back(it.second);
-						break;
-					}
-				}
-			}
-			else
-				initPara.TSCPonitWndInfo.emplace_back(pointMap[overallType]);
-		}
-	}
-	initPara.nKlinePointWndNum = ini.GetIntA(strSection, "KlinePointWndNum", -1);
-	if (initPara.nKlinePointWndNum == -1)
-	{
-		int nCount = 0;
-		for (int i = 0; i < 3; ++i)
-		{
-			if (initPara.bShowKlineRPS[i])
-			{
-				++nCount;
-				if (i == 0)
-					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
-				else
-					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
-			}
-		}
-		initPara.nKlinePointWndNum = nCount;
-	}
-	else if (initPara.nKlinePointWndNum > 0)
-	{
-		for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
-		{
-			SStringA tmp;
-			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
-			if (overallType == -1)
-			{
-				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
-				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
-				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
-				for (auto &it : pointMap)
-				{
-					if (it.first > eIndyMarketPointEnd)
-						continue;
-					if (it.second.type == type &&
-						it.second.dataInRange == dataInRange &&
-						it.second.srcDataName == srcDataName)
-					{
-						initPara.KlinePonitWndInfo.emplace_back(it.second);
-						break;
-					}
-				}
-			}
-			else
-				initPara.KlinePonitWndInfo.emplace_back(pointMap[overallType]);
-		}
-	}
+//void CDlgSub::InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo>& pointMap)
+//{
+//	vector<SStringA> strRangeVec;
+//	strRangeVec.emplace_back("");
+//	strRangeVec.emplace_back("L1");
+//	strRangeVec.emplace_back("L2");
+//	vector<SStringA> strShowNameVec;
+//	strShowNameVec.emplace_back("");
+//	strShowNameVec.emplace_back("一级行业");
+//	strShowNameVec.emplace_back("二级行业");
+//	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
+//	if (initPara.nTSCPointWndNum == -1)
+//	{
+//		int nCount = 0;
+//		for (int i = 0; i < 3; ++i)
+//		{
+//			if (initPara.bShowTSCRPS[i])
+//			{
+//				++nCount;
+//				if (i == 0)
+//					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+//				else
+//					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
+//			}
+//		}
+//		initPara.nTSCPointWndNum = nCount;
+//	}
+//	else if (initPara.nTSCPointWndNum > 0)
+//	{
+//		for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
+//		{
+//			SStringA tmp;
+//			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
+//			if (overallType == -1)
+//			{
+//				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
+//				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
+//				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
+//				for (auto& it : pointMap)
+//				{
+//					if (it.first > eIndyMarketPointEnd)
+//						continue;
+//					if (it.second.type == type &&
+//						it.second.dataInRange == dataInRange &&
+//						it.second.srcDataName == srcDataName)
+//					{
+//						initPara.TSCPonitWndInfo.emplace_back(it.second);
+//						break;
+//					}
+//				}
+//			}
+//			else
+//				initPara.TSCPonitWndInfo.emplace_back(pointMap[overallType]);
+//		}
+//	}
+//	initPara.nKlinePointWndNum = ini.GetIntA(strSection, "KlinePointWndNum", -1);
+//	if (initPara.nKlinePointWndNum == -1)
+//	{
+//		int nCount = 0;
+//		for (int i = 0; i < 3; ++i)
+//		{
+//			if (initPara.bShowKlineRPS[i])
+//			{
+//				++nCount;
+//				if (i == 0)
+//					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+//				else
+//					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_L1_Close + i]);
+//			}
+//		}
+//		initPara.nKlinePointWndNum = nCount;
+//	}
+//	else if (initPara.nKlinePointWndNum > 0)
+//	{
+//		for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
+//		{
+//			SStringA tmp;
+//			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
+//			if (overallType == -1)
+//			{
+//				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
+//				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
+//				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
+//				for (auto& it : pointMap)
+//				{
+//					if (it.first > eIndyMarketPointEnd)
+//						continue;
+//					if (it.second.type == type &&
+//						it.second.dataInRange == dataInRange &&
+//						it.second.srcDataName == srcDataName)
+//					{
+//						initPara.KlinePonitWndInfo.emplace_back(it.second);
+//						break;
+//					}
+//				}
+//			}
+//			else
+//				initPara.KlinePonitWndInfo.emplace_back(pointMap[overallType]);
+//		}
+//	}
+//
+//}
 
-}
 
-
-void CDlgSub::InitConfig(map<int, ShowPointInfo> &pointMap)
+void CDlgSub::InitConfig(map<int, ShowPointInfo>& pointMap)
 {
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\%s.ini", m_strWindowName);
@@ -451,7 +454,7 @@ void CDlgSub::InitListConfig()
 
 }
 
-void CDlgSub::SavePointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection)
+void CDlgSub::SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection)
 {
 	ini.WriteIntA(strSection, "TSCPointWndNum", initPara.nTSCPointWndNum);
 	for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
@@ -502,9 +505,9 @@ void CDlgSub::SaveListConfig()
 		strSection.Format("Group%d", i);
 		ini.WriteIntA(strSection, "ShowItemCount", showTitleMap.size());
 		SStringA strKey;
-		for (auto &it : showTitleMap)
+		for (auto& it : showTitleMap)
 			ini.WriteIntA(strSection, strKey.Format("Show%d", it.first), it.second);
-		for (auto &it : titleOrderMap)
+		for (auto& it : titleOrderMap)
 			ini.WriteIntA(strSection, strKey.Format("Order%d", it.first), it.second);
 
 	}
@@ -538,7 +541,7 @@ void CDlgSub::ReInitWorkWnd()
 	vector<vector<StockInfo>> ListInsVec;
 	strHash<SStringA> StockName;
 	g_WndSyn.GetListInsVec(ListInsVec, StockName);
-	vector<map<int, strHash<RtRps>>> *pListData = g_WndSyn.GetListData();
+	vector<map<int, strHash<RtRps>>>* pListData = g_WndSyn.GetListData();
 	for (int i = Group_SWL1; i < Group_Count; ++i)
 	{
 		m_WndVec[i]->SetListInfo(ListInsVec[i], StockName);
@@ -553,6 +556,7 @@ void CDlgSub::OnFinalMessage(HWND hWnd)
 {
 	__super::OnFinalMessage(hWnd);
 	delete this;
+	OutputDebugStringFormat("副窗口最终消息处理完成\n");
 }
 
 //TODO:消息映射
@@ -568,7 +572,7 @@ void CDlgSub::SaveStockFilterPara(int nGroup)
 	if (!sfPlan.condVec.empty())
 	{
 		SStringA strPath;
-		strPath.Format(".//filter//%s_SF_%d.sfl", m_strWindowName,nGroup);
+		strPath.Format(".//filter//%s_SF_%d.sfl", m_strWindowName, nGroup);
 		std::ofstream ofile(strPath);
 		if (ofile.is_open())
 		{
@@ -624,10 +628,24 @@ void CDlgSub::StopAndClearData()
 
 	SavePicConfig();
 	SaveListConfig();
-
 	for (int i = 0; i < Group_Count; ++i)
-		m_WndVec[i]->DestroyWindow();
+	{
+		if (m_WndVec[i])
+		{
+			m_WndVec[i]->CloseWnd();
+			//m_WndVec[i]->DestroyWindow();
+			m_WndVec[i] = nullptr;
+		}
+	}
 
+}
+void	CDlgSub::OnMouseMove(WPARAM wParam, CPoint ptPos)
+{
+	OutputDebugStringFormat("触发Move\n");
+	if (m_bIsValid)
+		SetMsgHandled(FALSE);
+	else
+		SetMsgHandled(TRUE);
 }
 
 void CDlgSub::OnMaximize()
@@ -647,8 +665,8 @@ void CDlgSub::OnSize(UINT nType, CSize size)
 {
 	SetMsgHandled(FALSE);
 	if (!m_bLayoutInited) return;
-	SWindow *pBtnMax = FindChildByName(L"btn_max");
-	SWindow *pBtnRestore = FindChildByName(L"btn_restore");
+	SWindow* pBtnMax = FindChildByName(L"btn_max");
+	SWindow* pBtnRestore = FindChildByName(L"btn_restore");
 	if (!pBtnMax || !pBtnRestore) return;
 
 	if (nType == SIZE_MAXIMIZED)

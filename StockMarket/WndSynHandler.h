@@ -45,11 +45,14 @@ public:
 	map<int, ShowPointInfo> GetPointInfo();
 	void SetSubWndInfo(HWND hSubWnd, HWND hWnd, int nGroup);
 	void SetAccountWnd(HWND hwnd);
-	void SetTradeWnd(HWND hWnd);
-	void SetTradeDlgThreadID(unsigned threadID);
+	void SetTradeWnd(HWND hWnd, unsigned threadID);
+	void RemoveTradeWnd(HWND hWnd);
 	void SetLpPriceVolWnd(HWND hWnd, unsigned threadID);
+	void RemoveLpPriceVolWnd();
 	void SetTradeSysResWnd(HWND hWnd, unsigned threadID);
+	void RemoveTradeSysResWnd();
 	void SetMultiPrdAnlyWnd(HWND hWnd, unsigned threadID);
+	void RemoveMultiPrdAnlyWnd(HWND hWnd);
 
 	int GetTradingDay() const;
 	map<SStringA, double>GetAccRehabMap() const;
@@ -198,6 +201,7 @@ protected:
 	void OnLpPriceVol(int nMsgLength, const char* info);
 	void OnGetTradeMarket(int nMsgLength, const char* info);
 	void OnReLogin(int nMsgLength, const char* info);
+	void OnRemoveTradeWnd(int nMsgLength, const char* info);
 	void OnGetLpPriceVol(int nMsgLength, const char* info);
 	void OnGetTradeVol(int nMsgLength, const char* info);
 	void OnRTTradeVol(int nMsgLength, const char* info);
@@ -313,6 +317,7 @@ protected:
 	//vector<int>		m_nIPPort;
 	bool m_bServerReady;
 	bool bExit;
+	bool bLoginExit;
 	//CRITICAL_SECTION m_cs;
 	std::mutex m_mx;
 	std::mutex m_mxFilter;
@@ -342,6 +347,19 @@ inline void CWndSynHandler::RemoveWnd(HWND hWnd)
 {
 	m_hWndMap.erase(hWnd);
 	m_WndSubMap.erase(hWnd);
+	std::set<HWND> SubWndSet;
+	for (auto& it : m_hSubWndMap)
+	{
+		if (it.second == hWnd)
+			SubWndSet.insert(it.first);
+	}
+	for (auto& it : SubWndSet)
+	{
+		m_hSubWndMap.erase(it);
+		m_WndPointSubMap.erase(it);
+		m_SubWndGroup.erase(it);
+		m_SubWndGetInfoMap.erase(it);
+	}
 }
 
 inline void CWndSynHandler::GetListInsVec(
@@ -426,14 +444,18 @@ inline void CWndSynHandler::SetAccountWnd(HWND hwnd)
 	m_hAccWnd = hwnd;
 }
 
-inline void CWndSynHandler::SetTradeWnd(HWND hWnd)
+inline void CWndSynHandler::SetTradeWnd(HWND hWnd,unsigned threadID)
 {
 	m_hTradeWnd = hWnd;
+	m_uTradeDlgThreadID = threadID;
+
 }
 
-inline void CWndSynHandler::SetTradeDlgThreadID(unsigned threadID)
+inline void CWndSynHandler::RemoveTradeWnd(HWND hWnd)
 {
-	m_uTradeDlgThreadID = threadID;
+	m_hTradeWnd = 0;
+	m_uTradeDlgThreadID = 0;
+	SendMsg(m_uMsgThreadID, Syn_RemoveTradeWnd, (char*)&hWnd, sizeof(hWnd));
 }
 
 inline void CWndSynHandler::SetLpPriceVolWnd(HWND hWnd, unsigned threadID)
@@ -442,10 +464,22 @@ inline void CWndSynHandler::SetLpPriceVolWnd(HWND hWnd, unsigned threadID)
 	m_uLpPriceVolThreadID = threadID;
 }
 
+inline void CWndSynHandler::RemoveLpPriceVolWnd()
+{
+	m_hLpPriceVolWnd = 0;
+	m_uLpPriceVolThreadID = 0;
+}
+
 inline void CWndSynHandler::SetTradeSysResWnd(HWND hWnd, unsigned threadID)
 {
 	m_TradeSysWnd = hWnd;
 	m_uTradeSysResThreadID = threadID;
+}
+
+inline void CWndSynHandler::RemoveTradeSysResWnd()
+{
+	m_TradeSysWnd = 0;
+	m_uTradeSysResThreadID = 0;
 }
 
 inline void CWndSynHandler::SetMultiPrdAnlyWnd(HWND hWnd, unsigned threadID)
@@ -455,6 +489,13 @@ inline void CWndSynHandler::SetMultiPrdAnlyWnd(HWND hWnd, unsigned threadID)
 	m_hSubWndMap[hWnd] = hWnd;
 	m_SubWndGroup[hWnd] = Group_Stock;
 	m_hWndMap[hWnd] = threadID;
+}
+
+inline void CWndSynHandler::RemoveMultiPrdAnlyWnd(HWND hWnd)
+{
+	m_MultiPrdAnlyWnd = 0;
+	m_uMultiPrdAnlyThreadID = 0;
+	SendMsg(m_uMsgThreadID, Syn_RemoveWnd, (char*)&hWnd, sizeof(hWnd));
 }
 
 inline int CWndSynHandler::GetTradingDay() const

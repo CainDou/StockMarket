@@ -630,6 +630,7 @@ enum SynMsg
 	Syn_HisBuyStockMarket,
 	Syn_HisSellStockMarket,
 	Syn_ReLogin,
+	Syn_RemoveTradeWnd,
 
 	//长周期的资金流
 	Syn_GetLpPriceVol,
@@ -692,12 +693,14 @@ enum WorkWndMsg
 	WW_TradePriceVol,
 	WW_SelfSelChange,
 	WW_ReCalcTarget,
+	WW_UpdateListShowStock,
 	WW_End,
 };
 
 enum MultiPrdAnlyMsg
 {
-	MPA_KlineMa = WW_End + 1,
+	MPA_SetStock = WW_End + 1,
+	MPA_KlineMa ,
 	MPA_KlineMacd,
 	MPA_KlineBand,
 	MPA_FixedTimeRehab,
@@ -730,7 +733,7 @@ enum WDMSG
 	WDMsg_ChangeStockFilter,
 	WDMsg_SaveStockFilter,
 	WDMsg_ChangePointTarget,
-	WDMsg_ChangeShowTilte,
+	WDMsg_ChangeShowTitle,
 	WDMsg_SaveListConfig,
 	WDMsg_UpdateList,
 	WDMsg_SetFilterName,
@@ -738,7 +741,13 @@ enum WDMSG
 	WDMsg_HisFilterStartCalc,
 	WDMsg_HisFilterEndCalc,
 	WDMsg_ChangeSelfSelStock,
-
+	WDMsg_RemoveSubWnd,
+	WDMsg_RemoveMultiFilterWnd,
+	WDMsg_RemoveLimitUpWnd,
+	WDMsg_RemoveTradeSimluator,
+	WDMsg_RemoveLpPriceWnd,
+	WDMsg_RemoveTradeSysResWnd,
+	WDMsg_RemoveMultiPrdAnlyWnd,
 	WDMsg_Exit,
 
 };
@@ -1175,6 +1184,7 @@ enum LoginMsg
 	LoginMsg_Reinit,
 	LoginMsg_TradeLoginFeedBack,
 	LoginMsg_ReLogin,
+	LoginMsg_DestroyWnd,
 
 };
 

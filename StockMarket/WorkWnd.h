@@ -91,15 +91,16 @@ namespace SOUI
 		void InitSortItemMapping();
 		void SetListDataIsShow();
 		void SetListDataOrder();
-		void UpdateListShowStock();
+		//void UpdateListShowStock();
 		void HandleListData();
-		void UpdateList();
+		void UpdateList(BOOL bNeedChangeShow);
 		void SetPriceListHalf(bool bHalf);
 		void UpdateListRpsData(int nRow, sRps &rps, int nStart, int nEnd);
 		void UpdateListSecData(int nRow, sSection &sec, int nStart, int nEnd);
 		void UpdateListCAData(int nRow, CAInfo& caData);
 		void UpdateListTFData(int nRow, TickFlowMarket& tfData,double fPreClose);
-		void UpdateListFilterShowStock();
+		//void UpdateListFilterShowStock();
+		BOOL CalcListShowStock();
 		void SortList(SColorListCtrlEx* pList, bool bSortCode = false);
 		void SortListData(bool bSortCode=false);
 		void SortCommonData(int nSortHeader,int nFlag);
@@ -225,6 +226,7 @@ namespace SOUI
 		void OnUpdateDeletePriceVol(int nMsgLength, const char* info);
 		void OnUpdateTradePriceVol(int nMsgLength, const char* info);
 		void OnChangeSelfSelStock(int nMsgLength, const char* info);
+		void OnUpdateListShowStock(int nMsgLength, const char* info);
 
 		//内部消息处理
 		void OnFenShiEma(int nMsgLength, const char* info);
@@ -378,9 +380,6 @@ namespace SOUI
 		map<int, vector<map<int, map<int, vector<double>>>>>* m_pHisFilterDataMap;
 		map<int, vector<map<int, map<int, vector<double>>>>>* m_pL1IndyHisFilterDataMap;
 		map<int, vector<map<int, map<int, vector<double>>>>>* m_pL2IndyHisFilterDataMap;
-		vector<OrderState> m_OrderStateVec;
-		vector<DeleteState> m_DeleteStateVec;
-		vector<TradeState> m_TradeStateVec;
 		map<SStringA, SelfSelStockInfo> m_selfSelStock;
 		map<SStringA, double> m_accRehabMap;
 		//vector<map<int,OrderVolState>> m_OrderPriceVolVec;
@@ -434,11 +433,14 @@ namespace SOUI
 		BOOL m_bHisFilterChecked;
 		BOOL m_bHisFilterCalcing;
 
-		vector<BOOL> m_StockPassHisVec;
+		set<int> m_StockPassSet;
 		BOOL m_bHisFitlterDataReady;
 		map<HisStockFilter, vector<BOOL>> m_SingleHsfRes;
 		//分析图数据
 	protected:
+		vector<OrderState> m_OrderStateVec;
+		vector<DeleteState> m_DeleteStateVec;
+		vector<TradeState> m_TradeStateVec;
 		map<int, map<SStringA, vector<CoreData>>> m_PointData;
 		map<int, map<SStringA, vector<CoreData>>> m_L1IndyPointData;
 		map<int, map<SStringA, vector<CoreData>>> m_L2IndyPointData;
@@ -587,29 +589,29 @@ void CWorkWnd::ResetListStockOrder(vector<T>& dataVec)
 	for (int i = 0; i < dataVec.size(); ++i)
 	{
 		auto &stockInfo = m_infoMap.hash[dataVec[i].SecurityID];
-		if (m_selfSelStock.count(stockInfo.SecurityID))
-		{
-			pList->SetSubItemText(i, SHead_ID,
-				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
-			pList->SetSubItemText(i, SHead_Name,
-				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
-			if (m_nShowListType == eSLT_SelfSel)
-			{
-				SStringW tmp;
-				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
-				m_pListSelfSel->SetSubItemText(i, SSSH_AddDate,
-					tmp.Format(L"%d", selInfo.nAddDate));
-				m_pListSelfSel->SetSubItemText(i, SSSH_AddPrice,
-					tmp.Format(L"%.02f", selInfo.fAddPrice));
-			}
+		//if (m_selfSelStock.count(stockInfo.SecurityID))
+		//{
+		//	pList->SetSubItemText(i, SHead_ID,
+		//		StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+		//	pList->SetSubItemText(i, SHead_Name,
+		//		StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+		//	if (m_nShowListType == eSLT_SelfSel)
+		//	{
+		//		SStringW tmp;
+		//		auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+		//		m_pListSelfSel->SetSubItemText(i, SSSH_AddDate,
+		//			tmp.Format(L"%d", selInfo.nAddDate));
+		//		m_pListSelfSel->SetSubItemText(i, SSSH_AddPrice,
+		//			tmp.Format(L"%.02f", selInfo.fAddPrice));
+		//	}
 
-		}
-		else
-		{
-			pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
-			pList->SetSubItemText(i, SHead_Name,StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+		//}
+		//else
+		//{
+		//	pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+		//	pList->SetSubItemText(i, SHead_Name,StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
 
-		}
+		//}
 		ListPosMap[i] = stockInfo.SecurityID;
 		showStockSet.erase(stockInfo.SecurityID);
 	}
@@ -617,29 +619,29 @@ void CWorkWnd::ResetListStockOrder(vector<T>& dataVec)
 	for (auto &it : showStockSet)
 	{
 		auto &stockInfo = m_infoMap.hash[it];
-		if (m_selfSelStock.count(stockInfo.SecurityID))
-		{
-			pList->SetSubItemText(nCount, SHead_ID,
-				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
-			pList->SetSubItemText(nCount, SHead_Name,
-				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
-			if (m_nShowListType == eSLT_SelfSel)
-			{
-				SStringW tmp;
-				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
-				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddDate,
-					tmp.Format(L"%d", selInfo.nAddDate));
-				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddPrice,
-					tmp.Format(L"%.02f", selInfo.fAddPrice));
-			}
+		//if (m_selfSelStock.count(stockInfo.SecurityID))
+		//{
+		//	pList->SetSubItemText(nCount, SHead_ID,
+		//		StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+		//	pList->SetSubItemText(nCount, SHead_Name,
+		//		StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+		//	if (m_nShowListType == eSLT_SelfSel)
+		//	{
+		//		SStringW tmp;
+		//		auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+		//		m_pListSelfSel->SetSubItemText(nCount, SSSH_AddDate,
+		//			tmp.Format(L"%d", selInfo.nAddDate));
+		//		m_pListSelfSel->SetSubItemText(nCount, SSSH_AddPrice,
+		//			tmp.Format(L"%.02f", selInfo.fAddPrice));
+		//	}
 
-		}
-		else
-		{
-			pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
-			pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+		//}
+		//else
+		//{
+		//	pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+		//	pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
 
-		}
+		//}
 
 		ListPosMap[nCount++] = stockInfo.SecurityID;
 	}
@@ -659,29 +661,29 @@ void CWorkWnd::ResetListStockOrder(vector<pair<SStringA,T>>& dataVec)
 	for (int i = 0; i < dataVec.size(); ++i)
 	{
 		auto &stockInfo = m_infoMap.hash[dataVec[i].first];
-		if (m_selfSelStock.count(stockInfo.SecurityID))
-		{
-			pList->SetSubItemText(i, SHead_ID,
-				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
-			pList->SetSubItemText(i, SHead_Name,
-				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
-			if (m_nShowListType == eSLT_SelfSel)
-			{
-				SStringW tmp;
-				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
-				m_pListSelfSel->SetSubItemText(i, SSSH_AddDate,
-					tmp.Format(L"%d", selInfo.nAddDate));
-				m_pListSelfSel->SetSubItemText(i, SSSH_AddPrice,
-					tmp.Format(L"%.02f", selInfo.fAddPrice));
-			}
+		//if (m_selfSelStock.count(stockInfo.SecurityID))
+		//{
+		//	pList->SetSubItemText(i, SHead_ID,
+		//		StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+		//	pList->SetSubItemText(i, SHead_Name,
+		//		StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+		//	if (m_nShowListType == eSLT_SelfSel)
+		//	{
+		//		SStringW tmp;
+		//		auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+		//		m_pListSelfSel->SetSubItemText(i, SSSH_AddDate,
+		//			tmp.Format(L"%d", selInfo.nAddDate));
+		//		m_pListSelfSel->SetSubItemText(i, SSSH_AddPrice,
+		//			tmp.Format(L"%.02f", selInfo.fAddPrice));
+		//	}
 
-		}
-		else
-		{
-			pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
-			pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+		//}
+		//else
+		//{
+		//	pList->SetSubItemText(i, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+		//	pList->SetSubItemText(i, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
 
-		}
+		//}
 		ListPosMap[i] = stockInfo.SecurityID;
 		showStockSet.erase(stockInfo.SecurityID);
 	}
@@ -689,29 +691,29 @@ void CWorkWnd::ResetListStockOrder(vector<pair<SStringA,T>>& dataVec)
 	for (auto &it : showStockSet)
 	{
 		auto &stockInfo = m_infoMap.hash[it];
-		if (m_selfSelStock.count(stockInfo.SecurityID))
-		{
-			pList->SetSubItemText(nCount, SHead_ID,
-				StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
-			pList->SetSubItemText(nCount, SHead_Name,
-				StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
-			if (m_nShowListType == eSLT_SelfSel)
-			{
-				SStringW tmp;
-				auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
-				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddDate,
-					tmp.Format(L"%d", selInfo.nAddDate));
-				m_pListSelfSel->SetSubItemText(nCount, SSSH_AddPrice,
-					tmp.Format(L"%.02f", selInfo.fAddPrice));
-			}
+		//if (m_selfSelStock.count(stockInfo.SecurityID))
+		//{
+		//	pList->SetSubItemText(nCount, SHead_ID,
+		//		StrA2StrW(stockInfo.SecurityID), RGBA(0, 225, 225, 255));
+		//	pList->SetSubItemText(nCount, SHead_Name,
+		//		StrA2StrW(stockInfo.SecurityName), RGBA(0, 225, 225, 255));
+		//	if (m_nShowListType == eSLT_SelfSel)
+		//	{
+		//		SStringW tmp;
+		//		auto &selInfo = m_selfSelStock[stockInfo.SecurityID];
+		//		m_pListSelfSel->SetSubItemText(nCount, SSSH_AddDate,
+		//			tmp.Format(L"%d", selInfo.nAddDate));
+		//		m_pListSelfSel->SetSubItemText(nCount, SSSH_AddPrice,
+		//			tmp.Format(L"%.02f", selInfo.fAddPrice));
+		//	}
 
-		}
-		else
-		{
-			pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
-			pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+		//}
+		//else
+		//{
+		//	pList->SetSubItemText(nCount, SHead_ID, StrA2StrW(stockInfo.SecurityID), RGBA(255, 255, 0, 255));
+		//	pList->SetSubItemText(nCount, SHead_Name, StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
 
-		}
+		//}
 		ListPosMap[nCount++] = stockInfo.SecurityID;
 	}
 }

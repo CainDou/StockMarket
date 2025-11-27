@@ -57,6 +57,7 @@ void CPriceList::SetIndyName(vector<SStringA>& nameVec)
 
 CPriceList::~CPriceList()
 {
+	OutputDebugStringFormat("CPriceList::~CPriceList()\n");
 }
 
 void SOUI::CPriceList::Paint(IRenderTarget * pRT)

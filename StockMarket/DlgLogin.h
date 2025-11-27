@@ -70,6 +70,9 @@ namespace SOUI
 		SCheckBox * m_pChkRember;
 		SCheckBox * m_pChkAutoLogin;
 		SListBox* m_pLbIDList;
+		SButton* m_pBtnLogin;
+		SButton* m_pBtnCancel;
+		SButton* m_pBtnMarket;
 
 	};
 

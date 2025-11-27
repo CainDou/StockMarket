@@ -32,7 +32,7 @@ namespace SOUI
 		bool	OnCmbPrdChange(EventArgs* e);
 		bool	OnChkClicked(EventArgs* e);
 		void	InitWindowPos();
-		void	CloseWnd();
+		//void	CloseWnd();
 		UINT	GetThreadID() const { return m_uThreadID; }
 
 	protected:
@@ -54,7 +54,7 @@ namespace SOUI
 		void		ChangeShowTimeRangeByPeriod(int& nStartTime,int& nEndTime,int nSrcPrd,int nDstPrd);
 		int			GetTradeMinCount(int nTime);
 		int			TradeMinCountToTime(int nTradeMinCount);
-
+		void 		OnClose();	
 		//消息处理函数
 	protected:
 		//外部消息
@@ -77,6 +77,7 @@ namespace SOUI
 		void OnUpdateHisTradeVol(int nMsgLength, const char* info);
 
 		//内部消息
+		void OnKlineChangeStock(int nMsgLength, const char* info);
 		void OnKlineMa(int nMsgLength, const char* info);
 		void OnKlineMacd(int nMsgLength, const char* info);
 		void OnKlineBand(int nMsgLength, const char* info);
@@ -116,7 +117,7 @@ namespace SOUI
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_KEYUP(OnKeyUp)
 			MSG_WM_MOUSEMOVE(OnMouseMove)
-			MSG_WM_CLOSE(OnBtnClose)
+			MSG_WM_CLOSE(OnClose)
 			MSG_WM_DESTROY(OnDestroy)
 			MSG_WM_SIZE(OnSize)
 			MSG_WM_WINDOWPOSCHANGED(OnExitSizeMove)
@@ -181,7 +182,7 @@ namespace SOUI
 		SStringA m_strSubStockID;
 		SStringW m_strStockName;
 		strHash<SStringA> m_StockName;
-		vector<BOOL> m_StockPassHisVec;
+		vector<BOOL> m_StockPassSet;
 		RpsGroup m_Group;
 		UINT m_nLastChar;
 		int m_nNowKTParaChange;

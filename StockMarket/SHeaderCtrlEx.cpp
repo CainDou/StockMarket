@@ -109,7 +109,7 @@ int SHeaderCtrlEx::InsertItem(int iItem, LPCTSTR pszText, int nWidth, SLayoutSiz
 	return iItem;
 }
 
-void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
+void SHeaderCtrlEx::OnPaint(IRenderTarget* pRT)
 {
 	SPainter painter;
 	BeforePaint(pRT, painter);
@@ -182,7 +182,7 @@ void SHeaderCtrlEx::OnPaint(IRenderTarget * pRT)
 	AfterPaint(pRT, painter);
 }
 
-void SHeaderCtrlEx::DrawItem(IRenderTarget * pRT, CRect rcItem, const LPSHDITEM pItem)
+void SHeaderCtrlEx::DrawItem(IRenderTarget* pRT, CRect rcItem, const LPSHDITEM pItem)
 {
 	if (!pItem->bVisible) return;
 	CRect rcClient;
@@ -190,7 +190,7 @@ void SHeaderCtrlEx::DrawItem(IRenderTarget * pRT, CRect rcItem, const LPSHDITEM 
 	if (m_pSkinItem) m_pSkinItem->Draw(pRT, rcItem, pItem->state);
 	if (rcItem.right > rcClient.right)
 	{
-		pRT->DrawText(L"...",3, rcItem, DT_LEFT);
+		pRT->DrawText(L"...", 3, rcItem, DT_LEFT);
 		return;
 	}
 
@@ -204,7 +204,7 @@ void SHeaderCtrlEx::DrawItem(IRenderTarget * pRT, CRect rcItem, const LPSHDITEM 
 	CPoint ptSort;
 	ptSort.y = rcItem.top + (rcItem.Height() - szSort.cy) / 2;
 
-	if (uTextAlign&DT_RIGHT)
+	if (uTextAlign & DT_RIGHT)
 		ptSort.x = rcItem.left + 2;
 	else
 		ptSort.x = rcItem.right - szSort.cx - 2;
@@ -287,11 +287,11 @@ void SHeaderCtrlEx::OnLButtonUp(UINT nFlags, CPoint pt)
 
 void SHeaderCtrlEx::OnMouseMove(UINT nFlags, CPoint pt)
 {
-	if (m_bDragging || nFlags&MK_LBUTTON)
+	if (m_bDragging || nFlags & MK_LBUTTON)
 	{
 		if (!m_bDragging)
 		{
-			if (IsItemHover(m_dwHitTest) && m_bItemSwapEnable &&LOWORD(m_dwHitTest) >= m_nNoMoveCol)
+			if (IsItemHover(m_dwHitTest) && m_bItemSwapEnable && LOWORD(m_dwHitTest) >= m_nNoMoveCol)
 			{
 				m_dwDragTo = m_dwHitTest;
 				CRect rcItem = GetItemRect(LOWORD(m_dwHitTest));
@@ -331,7 +331,7 @@ void SHeaderCtrlEx::OnMouseMove(UINT nFlags, CPoint pt)
 
 				Invalidate();
 				GetContainer()->UpdateWindow();//立即更新窗口
-											   //发出调节宽度消息
+				//发出调节宽度消息
 				EventHeaderItemChanging evt(this);
 				evt.iItem = LOWORD(m_dwHitTest);
 				evt.nWidth = cxNew;
@@ -392,7 +392,7 @@ void SHeaderCtrlEx::OnActivateApp(BOOL bActive, DWORD dwThreadID)
 void SHeaderCtrlEx::RedrawItem(int iItem)
 {
 	CRect rcItem = GetItemRect(iItem);
-	IRenderTarget *pRT = GetRenderTarget(rcItem, OLEDC_PAINTBKGND);
+	IRenderTarget* pRT = GetRenderTarget(rcItem, OLEDC_PAINTBKGND);
 	DrawItem(pRT, rcItem, m_arrItems.GetData() + iItem);
 	ReleaseRenderTarget(pRT);
 }
@@ -450,7 +450,8 @@ bool SHeaderCtrlEx::isItemShowVisble(UINT iItem)
 
 void SHeaderCtrlEx::SetItemShowVisible(int iItem, bool visible)
 {
-	SASSERT(iItem >= 0 && iItem < (int)m_arrItems.GetCount());
+	if (iItem < 0 || iItem >= (int)m_arrItems.GetCount())
+		return;
 	//if (!m_bInitText)
 	//	InitText();
 	m_arrItems[iItem].bVisible = visible;

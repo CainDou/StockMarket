@@ -17,7 +17,9 @@ namespace SOUI
 
 	SKlineTip::~SKlineTip()
 	{
-		if (m_font) DeleteObject(m_font);
+		OutputDebugStringFormat("~SKlineTip\r\n");
+		//KillTimer(TIMERID_DELAY);
+		//KillTimer(TIMERID_SPAN);
 	}
 
 	BOOL SKlineTip::Create()

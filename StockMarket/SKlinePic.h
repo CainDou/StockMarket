@@ -319,7 +319,7 @@ namespace SOUI
 	protected:
 		std::unique_ptr<CPriceList> m_pPriceList;
 		std::unique_ptr<CDealList>  m_pDealList;
-		std::unique_ptr<SKlineTip>  m_pTip;
+		SKlineTip*  m_pTip;
 		vector<std::unique_ptr<SSubTargetPic>>	m_pSubPicVec;
 		int m_nSubPicNum;
 		int	m_nChangeNum;

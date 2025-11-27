@@ -37,6 +37,7 @@ CDlgMultiFilter::~CDlgMultiFilter()
 
 void CDlgMultiFilter::OnClose()
 {
+	SetMsgHandled(FALSE);
 	m_bIsValid = FALSE;
 	ShowWindow(SW_HIDE);
 	SStringA strPosFile;
@@ -45,6 +46,7 @@ void CDlgMultiFilter::OnClose()
 		remove(strPosFile);
 
 	StopAndClearData();
+	::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveMultiFilterWnd, (LPARAM)this);
 	//CSimpleWnd::DestroyWindow();
 }
 
@@ -246,108 +248,108 @@ void CDlgMultiFilter::InitComboStockFilter()
 
 }
 
-void CDlgMultiFilter::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
-{
-	vector<SStringA> strRangeVec;
-	strRangeVec.emplace_back("");
-	strRangeVec.emplace_back("L1");
-	strRangeVec.emplace_back("L2");
-	vector<SStringA> strShowNameVec;
-	strShowNameVec.emplace_back("");
-	strShowNameVec.emplace_back("一级行业");
-	strShowNameVec.emplace_back("二级行业");
-	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
-	if (initPara.nTSCPointWndNum == -1)
-	{
-		int nCount = 0;
-		for (int i = 0; i < 3; ++i)
-		{
-			if (initPara.bShowTSCRPS[i])
-			{
-				++nCount;
-				if (i == 0)
-					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
-				else
-					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close + i]);
-			}
-		}
-		initPara.nTSCPointWndNum = nCount;
-	}
-	else if (initPara.nTSCPointWndNum > 0)
-	{
-		for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
-		{
-			SStringA tmp;
-			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
-			if (overallType == -1)
-			{
-				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
-				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
-				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
-				for (auto &it : pointMap)
-				{
-					if (it.first > eIndyMarketPointEnd)
-						continue;
-					if (it.second.type == type &&
-						it.second.dataInRange == dataInRange &&
-						it.second.srcDataName == srcDataName)
-					{
-						initPara.TSCPonitWndInfo.emplace_back(it.second);
-						break;
-					}
-				}
-			}
-			else
-				initPara.TSCPonitWndInfo.emplace_back(pointMap[overallType]);
-		}
-	}
-	initPara.nKlinePointWndNum = ini.GetIntA(strSection, "KlinePointWndNum", -1);
-	if (initPara.nKlinePointWndNum == -1)
-	{
-		int nCount = 0;
-		for (int i = 0; i < 3; ++i)
-		{
-			if (initPara.bShowKlineRPS[i])
-			{
-				++nCount;
-				if (i == 0)
-					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
-				else
-					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close + i]);
-			}
-		}
-		initPara.nKlinePointWndNum = nCount;
-	}
-	else if (initPara.nKlinePointWndNum > 0)
-	{
-		for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
-		{
-			SStringA tmp;
-			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
-			if (overallType == -1)
-			{
-				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
-				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
-				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
-				for (auto &it : pointMap)
-				{
-					if (it.first > eIndyMarketPointEnd)
-						continue;
-					if (it.second.type == type &&
-						it.second.dataInRange == dataInRange &&
-						it.second.srcDataName == srcDataName)
-					{
-						initPara.KlinePonitWndInfo.emplace_back(it.second);
-						break;
-					}
-				}
-			}
-			else
-				initPara.KlinePonitWndInfo.emplace_back(pointMap[overallType]);
-		}
-	}
-
-}
+//void CDlgMultiFilter::InitPointWndInfo(CIniFile & ini, InitPara & initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap)
+//{
+//	vector<SStringA> strRangeVec;
+//	strRangeVec.emplace_back("");
+//	strRangeVec.emplace_back("L1");
+//	strRangeVec.emplace_back("L2");
+//	vector<SStringA> strShowNameVec;
+//	strShowNameVec.emplace_back("");
+//	strShowNameVec.emplace_back("一级行业");
+//	strShowNameVec.emplace_back("二级行业");
+//	initPara.nTSCPointWndNum = ini.GetIntA(strSection, "TSCPointWndNum", -1);
+//	if (initPara.nTSCPointWndNum == -1)
+//	{
+//		int nCount = 0;
+//		for (int i = 0; i < 3; ++i)
+//		{
+//			if (initPara.bShowTSCRPS[i])
+//			{
+//				++nCount;
+//				if (i == 0)
+//					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+//				else
+//					initPara.TSCPonitWndInfo.emplace_back(pointMap[eRpsPoint_Close + i]);
+//			}
+//		}
+//		initPara.nTSCPointWndNum = nCount;
+//	}
+//	else if (initPara.nTSCPointWndNum > 0)
+//	{
+//		for (int i = 0; i < initPara.nTSCPointWndNum; ++i)
+//		{
+//			SStringA tmp;
+//			int overallType = ini.GetIntA(strSection, tmp.Format("TSCPoint%dOverallType", i), -1);
+//			if (overallType == -1)
+//			{
+//				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("TSCPoint%dType", i), 0);
+//				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("TSCPoint%dSrcName", i), "");
+//				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("TSCPoint%dRange", i), "");
+//				for (auto &it : pointMap)
+//				{
+//					if (it.first > eIndyMarketPointEnd)
+//						continue;
+//					if (it.second.type == type &&
+//						it.second.dataInRange == dataInRange &&
+//						it.second.srcDataName == srcDataName)
+//					{
+//						initPara.TSCPonitWndInfo.emplace_back(it.second);
+//						break;
+//					}
+//				}
+//			}
+//			else
+//				initPara.TSCPonitWndInfo.emplace_back(pointMap[overallType]);
+//		}
+//	}
+//	initPara.nKlinePointWndNum = ini.GetIntA(strSection, "KlinePointWndNum", -1);
+//	if (initPara.nKlinePointWndNum == -1)
+//	{
+//		int nCount = 0;
+//		for (int i = 0; i < 3; ++i)
+//		{
+//			if (initPara.bShowKlineRPS[i])
+//			{
+//				++nCount;
+//				if (i == 0)
+//					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close]);
+//				else
+//					initPara.KlinePonitWndInfo.emplace_back(pointMap[eRpsPoint_Close + i]);
+//			}
+//		}
+//		initPara.nKlinePointWndNum = nCount;
+//	}
+//	else if (initPara.nKlinePointWndNum > 0)
+//	{
+//		for (int i = 0; i < initPara.nKlinePointWndNum; ++i)
+//		{
+//			SStringA tmp;
+//			int overallType = ini.GetIntA(strSection, tmp.Format("KlinePoint%dOverallType", i), -1);
+//			if (overallType == -1)
+//			{
+//				int type = (eSubTargetType)ini.GetIntA(strSection, tmp.Format("KlinePoint%dType", i), 0);
+//				SStringA srcDataName = ini.GetStringA(strSection, tmp.Format("KlinePoint%dSrcName", i), "");
+//				SStringA dataInRange = ini.GetStringA(strSection, tmp.Format("KlinePoint%dRange", i), "");
+//				for (auto &it : pointMap)
+//				{
+//					if (it.first > eIndyMarketPointEnd)
+//						continue;
+//					if (it.second.type == type &&
+//						it.second.dataInRange == dataInRange &&
+//						it.second.srcDataName == srcDataName)
+//					{
+//						initPara.KlinePonitWndInfo.emplace_back(it.second);
+//						break;
+//					}
+//				}
+//			}
+//			else
+//				initPara.KlinePonitWndInfo.emplace_back(pointMap[overallType]);
+//		}
+//	}
+//
+//}
 
 
 void CDlgMultiFilter::InitConfig(map<int, ShowPointInfo> &pointMap)
@@ -710,7 +712,7 @@ BOOL CDlgMultiFilter::SetShowWndNum(int nNum, BOOL bFromInit)
 	}
 	if (!bFromInit)
 		for (int i = m_nShowWndNum; i < nNum; ++i)
-			m_WndVec[i]->UpdateList();
+			m_WndVec[i]->UpdateList(FALSE);
 
 
 	m_nShowWndNum = nNum;

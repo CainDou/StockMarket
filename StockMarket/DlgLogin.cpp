@@ -65,6 +65,10 @@ void CDlgLogin::OnClickButtonLogin()
 	pButton->EnableWindow(FALSE, TRUE);
 	pButton = FindChildByName2<SButton>(L"btn_market");
 	pButton->EnableWindow(FALSE, TRUE);
+	pButton = FindChildByName2<SButton>(L"btn_IDList");
+	pButton->EnableWindow(FALSE, TRUE);
+	pButton = FindChildByName2<SButton>(L"btn_changePsd");
+	pButton->EnableWindow(FALSE, TRUE);
 
 	SendMsg(m_SynThreadID, TradeSyn_Login,
 		strLoginInfo.GetBuffer(0), strLoginInfo.GetLength() + 1);
@@ -88,6 +92,13 @@ void CDlgLogin::OnClickButtonMarket()
 	pButton->EnableWindow(FALSE, TRUE);
 	pButton = FindChildByName2<SButton>(L"btn_market");
 	pButton->EnableWindow(FALSE, TRUE);
+	pButton = FindChildByName2<SButton>(L"btn_register");
+	pButton->EnableWindow(FALSE, TRUE);
+	pButton = FindChildByName2<SButton>(L"btn_IDList");
+	pButton->EnableWindow(FALSE, TRUE);
+	pButton = FindChildByName2<SButton>(L"btn_changePsd");
+	pButton->EnableWindow(FALSE, TRUE);
+
 	SetEvent(g_hLoginEvent);
 
 }
@@ -107,7 +118,9 @@ void CDlgLogin::OnClickButtonCancel()
 	}
 	else
 	{
-		ShowWindow(SW_HIDE);
+		EndDialog(0);
+
+		//ShowWindow(SW_HIDE);
 	}
 	//exit(0);
 }
@@ -131,6 +144,9 @@ void CDlgLogin::OnInit(EventArgs * e)
 	m_pLbIDList = FindChildByName2<SListBox>(L"lb_IDList");
 	m_pLbIDList->GetEventSet()->subscribeEvent(EventLButtonDown::EventID,
 		Subscriber(&CDlgLogin::OnLbIDLButtonDown, this));
+	m_pBtnLogin = FindChildByName2<SButton>(L"btn_login");
+	m_pBtnCancel = FindChildByName2<SButton>(L"btn_quit");
+	m_pBtnMarket = FindChildByName2<SButton>(L"btn_market");
 	InitConfig();
 	for (auto &it : m_IDSet)
 		m_pLbIDList->InsertString(0, StrA2StrW(it));
@@ -199,9 +215,10 @@ LRESULT CDlgLogin::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 			}
 			else
 			{
-				ShowWindow(SW_HIDE);
-				SButton * pButton = FindChildByName2<SButton>(L"btn_login");
-				pButton->EnableWindow(TRUE, TRUE);
+				//ShowWindow(SW_HIDE);
+				//SButton * pButton = FindChildByName2<SButton>(L"btn_login");
+				//pButton->EnableWindow(TRUE, TRUE);
+				EndDialog(0);
 
 			}
 
@@ -218,8 +235,14 @@ LRESULT CDlgLogin::OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL & bHandled)
 	}
 	else if (nMsg == LoginMsg_ReLogin)
 	{
-		ShowWindow(SW_SHOW);
+		//ShowWindow(SW_SHOW);
+		m_pBtnMarket->EnableWindow(FALSE, TRUE);
 		m_bRelogin = TRUE;
+
+	}
+	else if (nMsg == LoginMsg_DestroyWnd)
+	{
+		EndDialog(0);
 	}
 	return 0;
 }

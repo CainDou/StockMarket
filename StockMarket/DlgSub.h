@@ -11,7 +11,7 @@ namespace SOUI
 
 	public:
 		CDlgSub(SStringA strWndName);
-		~CDlgSub();
+		virtual  ~CDlgSub();
 		void	OnClose();
 		void	OnMaximize();
 		void	OnRestore();
@@ -26,6 +26,7 @@ namespace SOUI
 		void	SaveStockFilterPara(int nGroup);
 		void	SaveComboStockFilterPara(int nGroup);
 		void	StopAndClearData();
+		void	OnMouseMove(WPARAM wParam, CPoint ptPos);
 		BOOL	WindowIsValid();
 		SStringA GetWindowName();
 
@@ -34,7 +35,7 @@ namespace SOUI
 		void InitWorkWnd();
 		void InitStockFilter();
 		void InitComboStockFilter();
-		void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap);
+		//void InitPointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection, map<int, ShowPointInfo> &pointMap);
 		void InitConfig(map<int, ShowPointInfo> &pointMap);
 		void InitListConfig();
 		void SavePointWndInfo(CIniFile& ini, InitPara& initPara, SStringA strSection);
@@ -68,6 +69,7 @@ namespace SOUI
 			MSG_WM_CLOSE(OnClose)
 			MSG_WM_DESTROY(OnDestroy)
 			MSG_WM_SIZE(OnSize)
+			//MSG_WM_MOUSEMOVE(OnMouseMove)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()

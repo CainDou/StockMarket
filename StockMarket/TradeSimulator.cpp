@@ -15,6 +15,7 @@
 #define PRICELIMIT 0.02
 
 extern CWndSynHandler g_WndSyn;
+extern HWND g_MainWnd;
 
 const wchar_t* strNumOfDigital[] = { L"亿",L"仟",L"佰",L"拾",L"万",L"仟",L"佰",L"拾",L"" };
 const wchar_t* strBigNum[] = { L"零",L"壹",L"贰",L"叁",L"肆",L"伍",L"陆",L"柒",L"捌",L"玖" };
@@ -53,10 +54,9 @@ BOOL CTradeSimulator::OnInitDialog(EventArgs * e)
 	::InitializeCriticalSection(&m_csTrust);
 	::InitializeCriticalSection(&m_csMarket);
 
-	g_WndSyn.SetTradeWnd(m_hWnd);
 	tDataProc = thread(&CTradeSimulator::DataMsgProc, this);
 	m_DataThreadID = *(unsigned*)&tDataProc.get_id();
-	g_WndSyn.SetTradeDlgThreadID(m_DataThreadID);
+	g_WndSyn.SetTradeWnd(m_hWnd,m_DataThreadID);
 
 	GetTradeSetting();
 	InitControls();
@@ -312,15 +312,7 @@ void CTradeSimulator::InitDataHandleMap()
 
 void CTradeSimulator::OnBtnClose()
 {
-	if (SMessageBox(m_hWnd, _T("确定要退出交易么？"), _T("警告"), MB_OKCANCEL) == IDOK)
-	{
-		LogOut();
-		m_bLogin = FALSE;
-		ShowWindow(SW_HIDE);
-		ClearData();
-	}
-	else
-		return;
+	GetNative()->SendMessageW(WM_CLOSE);
 
 }
 
@@ -1631,6 +1623,25 @@ void CTradeSimulator::OnTimer(UINT_PTR nID)
 	}
 }
 
+void  CTradeSimulator::OnClose()
+{
+	SetMsgHandled(TRUE);
+	if (SMessageBox(m_hWnd, _T("确定要退出交易么？"), _T("警告"), MB_OKCANCEL) == IDOK)
+	{
+		::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveTradeSimluator, 0);
+		SendMsg(m_SynThreadID, Syn_RemoveTradeWnd,
+			(char*)&m_hWnd, sizeof(m_hWnd));
+		LogOut();
+		m_bLogin = FALSE;
+		ShowWindow(SW_HIDE);
+		ClearData();
+		DestroyWindow();
+	}
+	else
+		return;
+
+}
+
 void CTradeSimulator::DataMsgProc()
 {
 	int MsgId;
@@ -1742,6 +1753,7 @@ void CTradeSimulator::OnTradeLogin(int nMsgLength, const char * info)
 {
 	m_bLogin = TRUE;
 	::SendMessage(m_hWnd, WM_TRADE_MSG, NULL, TSMsg_ShowWindow);
+	OutputDebugStringFormat("交易登陆成功\n");
 }
 
 void CTradeSimulator::OnTradeLogout(int nMsgLength, const char * info)

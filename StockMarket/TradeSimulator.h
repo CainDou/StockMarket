@@ -78,6 +78,7 @@ namespace SOUI
 		void OnMouseMove(UINT nFlags, CPoint pt);
 		void OnSize(UINT nType, CSize size);
 		void OnTimer(UINT_PTR nID);
+		void OnClose();
 
 	protected:
 		void DataMsgProc();
@@ -164,6 +165,7 @@ namespace SOUI
 			MESSAGE_HANDLER(WM_TRADE_MSG, OnMsg)
 			MSG_WM_TIMER(OnTimer)
 			MSG_WM_SIZE(OnSize)
+			MSG_WM_CLOSE(OnClose)
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_MOUSEMOVE(OnMouseMove)
 			CHAIN_MSG_MAP(SHostWnd)

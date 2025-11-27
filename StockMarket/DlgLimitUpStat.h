@@ -31,7 +31,7 @@ namespace SOUI
 		CDlgLimitUpStat();
 		~CDlgLimitUpStat();
 		BOOL	OnInitDialog(EventArgs* e);
-		BOOL	CloseWnd();
+		//BOOL	CloseWnd();
 		void	InitWindowPos();
 		void	InitNet(BOOL bReinit = FALSE);
 		void	InitData();
@@ -56,6 +56,8 @@ namespace SOUI
 		void	GetPlateLimitUpDataFromMsg(int nPos, int nDate, string& str, SStringA strPlateID);
 		void	DataGet();
 		void	OnTimer(char cTimerID);
+		void	OnClose();
+		void	OnDestroy();
 		SStringW Unescape(const string& input);
 		virtual void OnFinalMessage(HWND hWnd);
 	protected:
@@ -74,7 +76,8 @@ namespace SOUI
 			//MESSAGE_HANDLER(WM_BACKTESTING_MSG, OnMsg)
 			MSG_WM_TIMER_EX(OnTimer);
 			MSG_WM_SIZE(OnSize)
-			MSG_WM_DESTROY(OnBtnClose)
+			MSG_WM_CLOSE(OnClose)
+			MSG_WM_DESTROY(OnDestroy)
 			CHAIN_MSG_MAP(SHostWnd)
 			REFLECT_NOTIFICATIONS_EX()
 			END_MSG_MAP()
@@ -101,6 +104,7 @@ namespace SOUI
 
 		CRITICAL_SECTION m_cs[DAYCOUNT];
 		CRITICAL_SECTION m_csShowPlate;
+		BOOL m_bIsValid;
 	};
 
 }

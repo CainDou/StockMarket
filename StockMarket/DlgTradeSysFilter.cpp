@@ -89,12 +89,14 @@ CDlgTradeSysFilter::~CDlgTradeSysFilter()
 
 void SOUI::CDlgTradeSysFilter::OnClose()
 {
+	SetMsgHandled(FALSE);
 	m_bIsValid = FALSE;
-	ShowWindow(SW_HIDE);
 	SStringA strPosFile;
 	strPosFile.Format(".\\config\\TradeSys.position");
 	if (_access(strPosFile, 0) == 0)
 		remove(strPosFile);
+	g_WndSyn.RemoveTradeSysResWnd();
+	::PostMessage(g_MainWnd, WM_WINDOW_MSG, WDMsg_RemoveTradeSysResWnd, NULL);
 }
 
 void SOUI::CDlgTradeSysFilter::OnMaximize()
