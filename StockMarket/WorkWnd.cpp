@@ -2565,16 +2565,16 @@ void CWorkWnd::UpdateList(BOOL bNeedChangeShow)
 		m_pList->SetSelectedItem(nSelect < nNewItemCount ? nSelect : -1);
 	}
 	SetListShowIndyStr(m_pTextIndy);
-	if (m_ListShowRpsData.hash.empty())
-	{
-		for (auto& it : m_ListPosMap)
-		{
-			m_pList->SetSubItemText(it.first, SHead_LastPx, L"-");
-			for (int i = SHead_ChangePct; i < SHead_CommonItmeCount; ++i)
-				m_pList->SetSubItemText(it.first, i, L"-");
-		}
-		return;
-	}
+	//if (m_ListShowRpsData.hash.empty())
+	//{
+	//	for (auto& it : m_ListPosMap)
+	//	{
+	//		m_pList->SetSubItemText(it.first, SHead_LastPx, L"-");
+	//		for (int i = SHead_ChangePct; i < SHead_CommonItmeCount; ++i)
+	//			m_pList->SetSubItemText(it.first, i, L"-");
+	//	}
+	//	return;
+	//}
 	int nFirstIndex = m_pList->GetTopIndex();
 	int nPerPageCount = m_pList->GetCountPerPage(TRUE);
 	int nLastIndex = nFirstIndex + nPerPageCount;
