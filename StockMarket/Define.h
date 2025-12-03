@@ -2174,6 +2174,7 @@ typedef struct _TrustInfo
 	char SecurityName[16];
 	int Date;
 	int Time;
+	int CancelTime;
 	int TrustID;
 	int ApplyID;
 	int Direct;
@@ -2240,6 +2241,7 @@ enum STrustHead
 	STH_DealVol,
 	STH_DealPrice,
 	STH_DealAmo,
+	STH_CancelTime,
 	STH_CancelVol,
 	STH_CancelSign,
 	STH_TrustID,

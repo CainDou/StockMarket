@@ -129,6 +129,7 @@
 									<item width="100">成交数量</item>
 									<item width="100">成交价格</item>
 									<item width="100">成交金额</item>
+									<item width="100">撤单时间</item>
 									<item width="100">已撤数量</item>
 									<item width="65">撤单标志</item>
 									<item width="65">委托编号</item>
@@ -237,6 +238,7 @@
 									<item width="100">成交价格</item>
 									<item width="100">成交数量</item>
 									<item width="100">成交金额</item>
+									<item width="100">撤单时间</item>
 									<item width="100">已撤数量</item>
 									<item width="65">撤单标志</item>
 									<item width="65">委托编号</item>

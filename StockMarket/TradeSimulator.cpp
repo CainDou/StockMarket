@@ -2098,6 +2098,8 @@ void CTradeSimulator::UpdateTrustList(SStringW str)
 			m_pLsTrust->SetSubItemText(nPos, STH_DealPrice, str.Format(L"%.02f", TrustInfo.DealPrice.GetDouble()));
 			m_pLsTrust->SetSubItemText(nPos, STH_DealVol, str.Format(L"%.0f", TrustInfo.DealVol.GetDouble()));
 			m_pLsTrust->SetSubItemText(nPos, STH_DealAmo, str.Format(L"%.03f", TrustInfo.DealAmo.GetDouble()));
+			m_pLsTrust->SetSubItemText(nPos, STH_CancelTime, TrustInfo.CancelTime == 0 ? L"-" : str.Format(L"%02d:%02d:%02d",
+				TrustInfo.CancelTime / 10000, TrustInfo.CancelTime / 100 % 100, TrustInfo.CancelTime % 100));
 			m_pLsTrust->SetSubItemText(nPos, STH_CancelVol, str.Format(L"%.0f", TrustInfo.CancelVol.GetDouble()));
 			m_pLsTrust->SetSubItemText(nPos, STH_CancelSign, m_cancelSignStrMap[TrustInfo.CancelSign]);
 			m_pLsTrust->SetSubItemText(nPos, STH_TrustID, str.Format(L"%d", TrustInfo.TrustID));
@@ -2307,6 +2309,8 @@ void CTradeSimulator::UpdateHisTrustList(SStringW str)
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_DealPrice, str.Format(L"%.02f", TrustInfo.DealPrice.GetDouble()));
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_DealVol, str.Format(L"%.0f", TrustInfo.DealVol.GetDouble()));
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_DealAmo, str.Format(L"%.03f", TrustInfo.DealAmo.GetDouble()));
+			m_pLsTrust->SetSubItemText(nPos, STH_CancelTime, TrustInfo.CancelTime == 0 ? L"-" : str.Format(L"%02d:%02d:%02d",
+				TrustInfo.CancelTime / 10000, TrustInfo.CancelTime / 100 % 100, TrustInfo.CancelTime % 100));
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_CancelVol, str.Format(L"%.0f", TrustInfo.CancelVol.GetDouble()));
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_CancelSign, m_cancelSignStrMap[TrustInfo.CancelSign]);
 			m_pLsHisTrust->SetSubItemText(nPos, SHTH_TrustID, str.Format(L"%d", TrustInfo.TrustID));
