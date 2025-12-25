@@ -70,7 +70,7 @@ CDlgTradeSysFilter::CDlgTradeSysFilter() :SHostWnd(_T("LAYOUT:dlg_tradeSysFilter
 {
 	m_bLayoutInited = FALSE;
 	m_bIsValid = TRUE;
-	m_bExit = FALSE;
+	//m_bExit = FALSE;
 	nHisRecvStartDate = 99999999;
 	nHisRecvEndDate = 0;
 	nPrePageCount = 0;
@@ -82,7 +82,8 @@ CDlgTradeSysFilter::CDlgTradeSysFilter() :SHostWnd(_T("LAYOUT:dlg_tradeSysFilter
 
 CDlgTradeSysFilter::~CDlgTradeSysFilter()
 {
-	m_bExit = TRUE;
+	//m_bExit = TRUE;
+	SendMsg(m_uMsgThreadID, Msg_Exit, NULL, 0);
 	if (m_thread.joinable())
 		m_thread.join();
 }
@@ -148,8 +149,8 @@ BOOL SOUI::CDlgTradeSysFilter::OnInitDialog(EventArgs * e)
 	InitTradeSysName();
 	InitControls();
 	m_thread = std::thread(&CDlgTradeSysFilter::DataHandle, this);
-	int uMsgThreadID = *(unsigned*)&m_thread.get_id();
-	g_WndSyn.SetTradeSysResWnd(m_hWnd, uMsgThreadID);
+	m_uMsgThreadID = *(unsigned*)&m_thread.get_id();
+	g_WndSyn.SetTradeSysResWnd(m_hWnd, m_uMsgThreadID);
 	SendMsg(m_uParWndThreadID, Syn_ReSendRtTradeSysRes, nullptr, 0);
 	return 0;
 }
@@ -556,9 +557,15 @@ void SOUI::CDlgTradeSysFilter::DataHandle()
 	int MsgId;
 	char *info;
 	int msgLength;
-	while (!m_bExit)
+	while (true)
 	{
 		MsgId = RecvMsg(0, &info, msgLength, 0);
+		if (MsgId == Msg_Exit)
+		{
+			delete[]info;
+			info = nullptr;
+			break;
+		}
 		switch (MsgId)
 		{
 		case Syn_TradeSysRes:

@@ -180,13 +180,14 @@ namespace SOUI
 		int nSortState;
 	protected:
 		std::thread m_thread;
+		int m_uMsgThreadID;
 		std::mutex m_mxRT;
 		std::mutex m_mxHis;
 		unsigned m_uParWndThreadID;
 	protected:
 		BOOL m_bIsValid;
 		BOOL m_bLayoutInited;
-		BOOL m_bExit;
+		//BOOL m_bExit;
 	};
 	inline void SOUI::CDlgTradeSysFilter::SetMainMsgThreadID(unsigned nID)
 	{
