@@ -43,7 +43,6 @@ void CDlgKbElf::OnInit(EventArgs * e)
 
 	m_pEdit->SetWindowTextW(L"");
 	//SetTimer(2, 500);
-	OutputDebugStringFormat("kbelf hwnd:%x ptr:%x\n", m_hWnd, this);
 
 }
 

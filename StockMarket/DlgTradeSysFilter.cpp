@@ -437,7 +437,7 @@ void CDlgTradeSysFilter::InitTradeSysName()
 				int nPeriod = atoi(strTmpPeriod);
 				tsi.Period.insert(nPeriod);
 			}
-			m_TradeSys[tsi.strSimpleName] = m_TradeSys.size();
+			m_TradeSys[tsi.strSimpleName] = m_TradeSysInfoVec.size();
 			m_TradeSysInfoVec.emplace_back(tsi);
 		}
 	}
@@ -882,10 +882,10 @@ bool SOUI::CDlgTradeSysFilter::OnChkAllPeriodClick(EventArgs * arg)
 		m_pChkPeriod30Min->SetCheck(TRUE);
 		m_pChkPeriod60Min->SetCheck(TRUE);
 		if (m_pRadioRt->IsChecked())
-			m_RtShowPeriodSet = set<int>{ Period_FenShi,Period_1Min,Period_5Min,Period_15Min,
+			m_RtShowPeriodSet = set<int>{ Period_1Min,Period_5Min,Period_15Min,
 			Period_30Min,Period_60Min,Period_1Day };
 		else
-			m_HisShowPeriodSet = set<int>{ Period_FenShi,Period_1Min,Period_5Min,Period_15Min,
+			m_HisShowPeriodSet = set<int>{ Period_1Min,Period_5Min,Period_15Min,
 			Period_30Min,Period_60Min,Period_1Day };
 
 	}
