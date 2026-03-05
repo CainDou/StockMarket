@@ -2604,6 +2604,12 @@ void CWorkWnd::UpdateList(BOOL bNeedChangeShow)
 					cl = RGBA(255, 0, 0, 255);
 				else if (rtData.fPrice < fPreClose)
 					cl = RGBA(0, 255, 0, 255);
+				auto& stockInfo = m_infoMap.hash[StockID];
+				m_pList->SetSubItemText(nPos, SHead_ID,
+					StrA2StrW(StockID), RGBA(255, 255, 0, 255));
+				m_pList->SetSubItemText(nPos, SHead_Name,
+					StrA2StrW(stockInfo.SecurityName), RGBA(255, 255, 0, 255));
+
 				tmp.Format(L"%.2f", rtData.fPrice);
 				m_pList->SetSubItemText(nPos, SHead_LastPx, tmp, cl);
 				double chgPct = (rtData.fPrice - fPreClose) / fPreClose * 100;
