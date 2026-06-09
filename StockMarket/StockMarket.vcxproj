@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
@@ -188,11 +188,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AdpterFixTitle.cpp" />
+    <ClCompile Include="BrickPic.cpp" />
     <ClCompile Include="DealList.cpp" />
     <ClCompile Include="Define.cpp" />
     <ClCompile Include="DlgAddNew.cpp" />
     <ClCompile Include="DlgBackTesting.cpp" />
     <ClCompile Include="DlgBandPara.cpp" />
+    <ClCompile Include="DlgBrickPara.cpp" />
     <ClCompile Include="DlgChangePara.cpp" />
     <ClCompile Include="DlgComboStockFilter.cpp" />
     <ClCompile Include="DlgEmaPara.cpp" />
@@ -280,11 +282,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AdpterFixTitle.h" />
+    <ClInclude Include="BrickPic.h" />
     <ClInclude Include="DealList.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="DlgAddNew.h" />
     <ClInclude Include="DlgBackTesting.h" />
     <ClInclude Include="DlgBandPara.h" />
+    <ClInclude Include="DlgBrickPara.h" />
     <ClInclude Include="DlgChangePara.h" />
     <ClInclude Include="DlgComboStockFilter.h" />
     <ClInclude Include="DlgEmaPara.h" />

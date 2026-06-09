@@ -152,6 +152,7 @@ protected:
 	void OnMsgTradeSysRes(ReceiveInfo &recvInfo);
 	void OnMsgHisTradeSysRes(ReceiveInfo &recvInfo);
 	void OnMsgAllBackRehab(ReceiveInfo &recvInfo);
+	void OnMsgHisRenko(ReceiveInfo& recvInfo);
 
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
@@ -218,6 +219,9 @@ protected:
 	void OnReSendRtTradeSysRes(int nMsgLength, const char* info);
 	void OnAllBackRehab(int nMsgLength, const char* info);
 	void OnSelfSelChange(int nMsgLength, const char* info);
+	void OnHisRenko(int nMsgLength, const char* info);
+	void OnGetRenko(int nMsgLength, const char* info);
+
 	//交易信息处理
 protected:
 	void PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info);

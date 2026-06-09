@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <resource>
 	<UIDEF>
 		<file name="XML_INIT" path="uidef\init.xml" />
@@ -42,6 +42,7 @@
 		<file name="dlg_changeTargetPara" path="xml\dlg_changeTargetPara.xml" />
 		<file name="dlg_multiPeriodAnalysis" path="xml\dlg_multiPeriodAnalysis.xml" />
 		<file name="wnd_multiPerAna" path="xml\wnd_multiPerAna.xml" />
+		<file name="dlg_brickPara" path="xml\dlg_brickPara.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />
@@ -59,7 +60,6 @@
 		<file name="open_menu_png" path="image\open_menu.png" />
 		<file name="download_png" path="image\download.png" />
 		<file name="png_tab_left" path="image\tab_left.png" />
-
 	</IMG>
 	<ICON>
 		<file name="ICON_LOGO" path="image\soui.ico" />
@@ -67,6 +67,7 @@
 	<smenu>
 		<file name="menu_fenshi" path="smenu\menu_fenshi.xml" />
 		<file name="menu_kline" path="smenu\menu_kline.xml" />
+		<file name="menu_brick" path="smenu\menu_brick.xml" />
 		<file name="menu_new" path="smenu\menu_new.xml" />
 		<file name="menu_target" path="smenu\menu_target.xml" />
 		<file name="menu_rehab" path="smenu\menu_rehab.xml" />

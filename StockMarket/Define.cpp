@@ -203,6 +203,15 @@ TimePreiod & operator++(TimePreiod & tp)
 	{
 		switch (tp)
 		{
+		case Period_30Sec:
+			tp = Period_15Sec;
+			break;
+		case Period_15Sec:
+			tp = Period_5Sec;
+			break;
+		case Period_5Sec:
+			tp = Period_1Min;
+			break;
 		case Period_FenShi:
 			tp = Period_1Min;
 			break;
@@ -221,6 +230,10 @@ TimePreiod & operator++(TimePreiod & tp)
 		case Period_60Min:
 			tp = Period_1Day;
 			break;
+		case Period_1Day:
+			tp = Period_Brick;
+			break;
+
 		default:
 			tp = Period_End;
 			break;
@@ -628,6 +641,14 @@ void GetInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 		}
 
 	}
+
+	para.nBrickJiange = ini.GetIntA(strSection, "BrickJiange", 2);
+	para.nBrickWidth = ini.GetIntA(strSection, "BrickWidth", 15);
+	para.fBrickZoomRatio = atof(ini.GetStringA(strSection, "BrickZoomRatio", "1.00"));
+	para.nBrickType = ini.GetIntA(strSection, "BrickType", 0);
+	para.fBrickSetting = atof(ini.GetStringA(strSection, "BrickSetting", "50"));
+	para.bShowBrickDeal = ini.GetIntA(strSection, "ShowBrickDeal", 0);
+
 }
 
 void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
@@ -723,6 +744,14 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 
 	for (int i = 0; i < MAX_MA_COUNT; ++i)
 		ini.WriteIntA(strSection, strKey.Format("VolDiffMAPara%d", i + 1), para.nVolDiffSumPara[i]);
+
+	SStringA strTmp;
+	ini.WriteIntA(strSection, "BrickJiange", para.nBrickJiange);
+	ini.WriteIntA(strSection, "BrickWidth", para.nBrickWidth);
+	ini.WriteStringA(strSection, "BrickZoomRatio", strTmp.Format("%g", para.fBrickZoomRatio));
+	ini.WriteIntA(strSection, "BrickType", para.nBrickType);
+	ini.WriteStringA(strSection, "BrickSetting", strTmp.Format("%g", para.fBrickSetting));
+	ini.WriteIntA(strSection, "ShowBrickDeal", para.bShowBrickDeal);
 
 }
 
@@ -1152,3 +1181,93 @@ BOOL _PeridoPriceVol::IsDataSame(const _PeridoPriceVol & other)
 	return memcmp(pThis, pOther, nSzie) == 0;
 }
 
+OperVec OperVec::operator=(const OperVec& other)
+{
+	if (this->empty())
+		this->assign(other.begin(), other.end());
+	else if (this->size() == other.size())
+		this->back() = other.back();
+	else if (this->size() == other.size() - 1)
+		this->emplace_back(other.back());
+	return *this;
+}
+
+OperVec OperVec::operator+(const  OperVec& other)
+{
+	if (this->size() == 0 || this->size() != other.size())
+		return OperVec();
+	OperVec res;
+	size_t size = this->size();
+	res.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		if (isnan((*this)[i]) || isnan(other[i]))
+			res.emplace_back(NAN);
+		else if (isinf((*this)[i]) || isinf(other[i]))
+			res.emplace_back(INFINITE);
+		else
+			res.emplace_back((*this)[i] + other[i]);
+	}
+	return res;
+}
+
+
+OperVec OperVec::operator-(const OperVec& other)
+{
+	if (this->size() == 0 || this->size() != other.size())
+		return OperVec();
+	OperVec res;
+	size_t size = this->size();
+	res.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		if (isnan((*this)[i]) || isnan(other[i]))
+			res.emplace_back(NAN);
+		else if (isinf((*this)[i]) || isinf(other[i]))
+			res.emplace_back(INFINITE);
+		else
+			res.emplace_back((*this)[i] - other[i]);
+	}
+	return res;
+}
+
+OperVec OperVec::operator*(const OperVec& other)
+{
+	if (this->size() == 0 || this->size() != other.size())
+		return OperVec();
+	OperVec res;
+	size_t size = this->size();
+	res.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		if (isnan((*this)[i]) || isnan(other[i]))
+			res.emplace_back(NAN);
+		else if (isinf((*this)[i]) || isinf(other[i]))
+			res.emplace_back(INFINITE);
+		else
+			res.emplace_back((*this)[i] * other[i]);
+	}
+	return res;
+}
+
+OperVec OperVec::operator/(const OperVec& other)
+{
+	if (this->size() == 0 || this->size() != other.size())
+		return OperVec();
+	OperVec res;
+	size_t size = this->size();
+	res.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		if (isnan((*this)[i]) || isnan(other[i]))
+			res.emplace_back(NAN);
+		else if (isinf((*this)[i]) || other[i] == 0)
+			res.emplace_back(INFINITE);
+		else if (isinf(other[i]))
+			res.emplace_back(0);
+		else
+			res.emplace_back((*this)[i] / other[i]);
+	}
+	return res;
+
+}

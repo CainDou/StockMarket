@@ -14,6 +14,10 @@
 			<imgbtn pos="[0,{0" size="35,20" tip="30分钟图" animate="0" text="30M" name="btn_M30" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,{0" size="35,20" tip="60分钟图" animate="0" text="60M" name="btn_M60" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,{0" size="25,20" tip="日频图" animate="0" text="日" name="btn_Day" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+			<imgbtn pos="[0,{0" size="30,20" tip="5秒K线" animate="0" text="5S" name="btn_5S" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+			<imgbtn pos="[0,{0" size="30,20" tip="15秒K线" animate="0" text="15S" name="btn_15S" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+			<imgbtn pos="[0,{0" size="30,20" tip="30秒K线" animate="0" text="30S" name="btn_30S" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
+			<imgbtn pos="[0,{0" size="25,20" tip="砖型图" animate="0" text="砖" name="btn_Brick" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,{0" size="45,20" tip="资金流价量分布" animate="0" text="资金流" name="btn_ffPriVol" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,{0" size="25,20" tip="申万1级行情列表联动" animate="0" text="联1" name="btn_ListConnect1" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
 			<imgbtn pos="[0,{0" size="25,20" tip="申万2级行情列表联动" animate="0" text="联2" name="btn_ListConnect2" skin="skin_ButtonGrayBlack" msgTransparent="0" colorText="#c0c0c0ff" font="face:微软雅黑,size:13" valign="bottom" />
@@ -104,7 +108,7 @@
 			<klinePic name="klinePic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#000000" font="size:12">
 				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
 			</klinePic>
-
+			<brickPic name="brickPic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#000000" font="size:12" />
 			<priceVolPic name="priceVolPic" pos="5,{0,-10,-5" visible="0" colorBKgnd="#101010" font="size:12,face:微软雅黑">
 				<!--	<subPic  pos="5,%75,-0,-40" visible="1" colorBKgnd="#000000" font="size:12"/> -->
 			</priceVolPic>

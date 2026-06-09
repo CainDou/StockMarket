@@ -824,6 +824,8 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgHisTradeSysRes;
 	m_netHandleMap[RecvMsg_AllBackRehab]
 		= &CWndSynHandler::OnMsgAllBackRehab;
+	m_netHandleMap[RecvMsg_HisRenko]
+		= &CWndSynHandler::OnMsgHisRenko;
 
 
 	m_netHandleMap[TradeRecvMsg_Register]
@@ -929,6 +931,10 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnAllBackRehab;
 	m_synHandleMap[Syn_SelfSelChange]
 		= &CWndSynHandler::OnSelfSelChange;
+	m_synHandleMap[Syn_HisRenko]
+		= &CWndSynHandler::OnHisRenko;
+	m_synHandleMap[Syn_GetRenko]
+		= &CWndSynHandler::OnGetRenko;
 
 	m_synHandleMap[Syn_GetTradeMarket]
 		= &CWndSynHandler::OnGetTradeMarket;
@@ -1940,6 +1946,18 @@ void CWndSynHandler::OnMsgAllBackRehab(ReceiveInfo& recvInfo)
 
 }
 
+void CWndSynHandler::OnMsgHisRenko(ReceiveInfo& recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char* buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisRenko, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+}
+
 void CWndSynHandler::OnMsgAccountRegister(ReceiveInfo& recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
@@ -2336,7 +2354,9 @@ void CWndSynHandler::OnGetMarket(int nMsgLength, const char* info)
 void CWndSynHandler::OnGetKline(int nMsgLength, const char* info)
 {
 	DataGetInfo* pDgInfo = (DataGetInfo*)info;
-	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group, SendType_HisPeriodKline);
+	
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group,
+		pDgInfo->Period >= Period_1Min ?SendType_HisPeriodKline :SendType_HisSecKline);
 	if (nID != -1)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
@@ -3020,6 +3040,39 @@ void CWndSynHandler::OnSelfSelChange(int nMsgLength, const char* info)
 	if (m_uTradeSysResThreadID)
 		SendMsg(m_uTradeSysResThreadID, Syn_SelfSelChange,
 			info, nMsgLength);
+}
+
+void CWndSynHandler::OnHisRenko(int nMsgLength, const char* info)
+{
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo*)info;
+	SStringA strStock = pRecvInfo->Message;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	for (auto& it : m_SubWndGetInfoMap)
+	{
+		auto& hWnd = it.first;
+		HWND hParWnd = m_hSubWndMap[hWnd];
+		if (it.second.count(nMsgID))
+		{
+			int nNewSize = sizeof(HWND) + nMsgLength;
+			char* msgWithHandle = new char[nNewSize];
+			memcpy_s(msgWithHandle, nNewSize, &hWnd, sizeof(HWND));
+			int nOffset = sizeof(HWND);
+			memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+			SendMsg(m_hWndMap[hParWnd], Syn_HisRenko,
+				msgWithHandle, nNewSize);
+			delete[]msgWithHandle;
+			break;
+
+		}
+	}
+}
+
+void CWndSynHandler::OnGetRenko(int nMsgLength, const char* info)
+{
+	DataGetInfo* pDgInfo = (DataGetInfo*)info;
+	int nID = GetHisData(pDgInfo->StockID, pDgInfo->Period, pDgInfo->Group, SendType_HisRenko);
+	if (nID != -1)
+		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
 void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info)

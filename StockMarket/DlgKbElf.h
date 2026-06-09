@@ -59,7 +59,7 @@ namespace SOUI
 			EVENT_MAP_END()
 
 			//HostWnd真实窗口消息处理
-			BEGIN_MSG_MAP_EX(CDlgTickFlowKbElf)
+			BEGIN_MSG_MAP_EX(CDlgKbElf)
 			MSG_WM_TIMER(OnTimer)
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_KEYUP(OnKeyUp)

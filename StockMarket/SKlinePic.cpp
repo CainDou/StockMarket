@@ -123,7 +123,7 @@ SKlinePic::~SKlinePic()
 
 	OutputDebugStringFormat("K线图析构\n");
 	if (m_pTip)
-	m_pTip->DestroyWindow();
+		m_pTip->DestroyWindow();
 	//if (m_pAll)
 	//	delete m_pAll;
 	//if (m_pPriceList)
@@ -734,10 +734,21 @@ void SKlinePic::DrawMainUpperMarket(IRenderTarget* pRT, int nPos)
 {
 	SStringW strMarket;
 	auto& data = m_pAll->data[nPos];
-	strMarket.Format(L"%s 日期:%04d-%02d-%02d 时间:%02d:%02d 开:%.02f 高:%.02f 低:%.02f 收:%.02f",
-		StrA2StrW(m_strStockName), data.date / 10000, data.date % 10000 / 100, data.date % 100,
-		data.time / 100, data.time % 100,
-		data.open, data.high, data.low, data.close);
+	if (m_nPeriod >= Period_1Min)
+	{
+		strMarket.Format(L"%s 日期:%04d-%02d-%02d 时间:%02d:%02d 开:%.02f 高:%.02f 低:%.02f 收:%.02f",
+			StrA2StrW(m_strStockName), data.date / 10000, data.date % 10000 / 100, data.date % 100,
+			data.time / 100, data.time % 100,
+			data.open, data.high, data.low, data.close);
+	}
+	else
+	{
+		strMarket.Format(L"%s 日期:%04d-%02d-%02d 时间:%02d:%02d:%02d 开:%.02f 高:%.02f 低:%.02f 收:%.02f",
+			StrA2StrW(m_strStockName), data.date / 10000, data.date % 10000 / 100, data.date % 100,
+			data.time / 10000, data.time / 100 % 100, data.time % 100,
+			data.open, data.high, data.low, data.close);
+
+	}
 	SStringW strVol;
 	if (data.vol > 1'000'000'000)
 		strVol.Format(L"%.01f亿", data.vol / 100'000'000);
@@ -3168,12 +3179,14 @@ void SKlinePic::DrawTime(IRenderTarget* pRT, BOOL bFromOnPaint) //画竖线时间轴时
 			SStringW strDate;
 			if (m_nPeriod != Period_1Day)
 			{
+				int nTime = m_nPeriod >= Period_1Min ? m_pAll->data[i + m_nFirst].time :
+					m_pAll->data[i + m_nFirst].time / 100;
 				strDate.Format(L"%02d/%02d/%02d %02d:%02d",
 					m_pAll->data[i + m_nFirst].date / 10000 % 100,
 					m_pAll->data[i + m_nFirst].date % 10000 / 100,
 					m_pAll->data[i + m_nFirst].date % 100,
-					m_pAll->data[i + m_nFirst].time / 100,
-					m_pAll->data[i + m_nFirst].time % 100);
+					nTime / 100,
+					nTime % 100);
 				DrawTextonPic(pRT, CRect(x, m_rcImage.bottom + 5, x + 120, m_rcImage.bottom + 20), strDate);
 			}
 			else
@@ -3924,8 +3937,8 @@ void SKlinePic::DrawVolOrAmoData(IRenderTarget* pRT, vector<vector<CPoint>>& Vol
 			}
 			else
 			{
-					pRT->FillSolidRect(CRect(nX, GetFuTuYPos(data, bAmo),
-						nX + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
+				pRT->FillSolidRect(CRect(nX, GetFuTuYPos(data, bAmo),
+					nX + ZOOMWIDTH, m_rcVolume.bottom), RGBA(0, 255, 255, 255));
 			}
 
 		}
@@ -3934,9 +3947,9 @@ void SKlinePic::DrawVolOrAmoData(IRenderTarget* pRT, vector<vector<CPoint>>& Vol
 			CPoint pts[2];
 			pts[0].SetPoint(nX + ZOOMWIDTH / 2, GetFuTuYPos(data, bAmo));
 			pts[1].SetPoint(nX + ZOOMWIDTH / 2, m_rcVolume.bottom);
-			if(kline.close > kline.open)
+			if (kline.close > kline.open)
 				pRT->SelectObject(m_penRed);
-			else if(kline.close < kline.open)
+			else if (kline.close < kline.open)
 				pRT->SelectObject(m_penGreen);
 			else
 			{
@@ -4430,12 +4443,22 @@ void SKlinePic::DrawMoveTime(IRenderTarget* pRT, int x, int date, int time, bool
 		if (date == 0)
 			return;
 		SStringW str;
-		if (m_nPeriod != Period_1Day)
+		if (m_nPeriod < Period_1Day && m_nPeriod >= Period_1Min)
 		{
 			str.Format(L"%02d/%02d/%02d  %02d:%02d", date / 10000 % 100,
 				date % 10000 / 100,
 				date % 100,
 				time / 100,
+				time % 100);
+
+		}
+		else if (m_nPeriod <= Period_5Sec)
+		{
+			str.Format(L"%02d/%02d/%02d %02d:%02d:%02d", date / 10000 % 100,
+				date % 10000 / 100,
+				date % 100,
+				time / 10000,
+				time / 100 % 100,
 				time % 100);
 
 		}
@@ -4713,10 +4736,16 @@ void SKlinePic::KlineDataWithHis()
 	SYSTEMTIME st;
 	::GetLocalTime(&st);
 	int nDate = st.wYear * 10000 + st.wMonth * 100 + st.wDay;
-	auto& dataVec = m_pHisKlineMap->at(m_nPeriod);
+	auto& dataVec = m_nPeriod >= Period_5Sec ?
+		m_pHisKlineMap->at(m_nPeriod) : GetMultiSecHisKline();;
 	int count = 0;
-	for (auto& data : dataVec)
+	int nTodayDataCount = max(500, m_nPeriod < 0 ? 240 * 60 / abs(m_nPeriod) : 240 / m_nPeriod);
+	int nStart = dataVec.size() -(MAX_DATA_COUNT - nTodayDataCount);
+	if (nStart < 0)
+		nStart = 0;
+	for (int i= nStart;i<dataVec.size();++i)
 	{
+		auto& data = dataVec[i];
 		m_pAll->srcData[count] = data;
 		if (!m_bIsStockIndex)
 		{
@@ -4733,7 +4762,8 @@ void SKlinePic::KlineDataWithHis()
 		}
 		else
 			m_pAll->data[count] = m_pAll->srcData[count];
-		uint64_t u64DateTime = (uint64_t)data.date * 10000 + (uint64_t)data.time;
+		uint64_t u64DateTime = (uint64_t)data.date *
+			(m_nPeriod <= Period_5Sec ? 1000000 : 10000) + (uint64_t)data.time;
 		m_DataTimeMap[u64DateTime] = count;
 		++count;
 		KlineMAProc(count);
@@ -4745,16 +4775,52 @@ void SKlinePic::KlineDataWithHis()
 
 }
 
+std::vector<KlineType>& SOUI::SKlinePic::GetMultiSecHisKline()
+{
+	if (m_pHisKlineMap->count(m_nPeriod) == 0)
+		m_pHisKlineMap->insert(std::make_pair(m_nPeriod, std::vector<KlineType>()));
+	auto& dstKlineVec = m_pHisKlineMap->at(m_nPeriod);
+	if (m_pHisKlineMap->count(Period_5Sec))
+	{
+		auto& Sec5KlineVec = m_pHisKlineMap->at(Period_5Sec);
+		for (auto& kline : Sec5KlineVec)
+		{
+			int nBarTime = GetSecBarTime(kline.time, m_nPeriod, false);
+			if (dstKlineVec.empty() || nBarTime != dstKlineVec.back().time)
+			{
+				dstKlineVec.emplace_back(kline);
+				dstKlineVec.back().time = nBarTime;
+
+			}
+			else
+			{
+				auto& dstKline = dstKlineVec.back();
+				dstKline.close = kline.close;
+				dstKline.high = max(dstKline.close, dstKline.high);
+				dstKline.low = min(dstKline.close, dstKline.low);
+				dstKline.amount += kline.amount;
+				dstKline.vol += kline.vol;
+			}
+		}
+
+	}
+	return dstKlineVec;
+	// TODO: 在此处插入 return 语句
+}
+
 void SKlinePic::KlineDataUpdate()
 {
 	if (!m_bIsStockIndex)
 	{
 		if (m_nPeriod == 1)
 			StockMarket1MinUpdate();
-		else if (m_nPeriod != 1440)
+		else if (m_nPeriod < Period_1Day && m_nPeriod > Period_1Min)
 			StockMarketMultMinUpdate(m_nPeriod);
-		else
+		else if (m_nPeriod == Period_1Day)
 			StockMarketDayUpdate();
+		else if (m_nPeriod <= Period_5Sec)
+			StockMarketSecUpdate(m_nPeriod);
+
 	}
 	else
 	{
@@ -4863,6 +4929,44 @@ void SKlinePic::TFDataUpdate()
 
 	}
 	m_nTFCalcCount = nDataCount;
+}
+
+int SOUI::SKlinePic::GetSecBarTime(int nTime, int nPeriod, bool bBaseData)
+{
+	if (bBaseData)
+	{
+		if (nTime < 92500)
+			return -1;
+		nTime += 1;
+		if (nTime % 100 == 60)
+			nTime += 40;
+		if (nTime <= 93000)
+			nTime = 93000;
+		else if (nTime > 150000 && nTime <= 151500)
+			nTime = 150000;
+		else if (nTime > 113000 && nTime <= 113100)
+			nTime = 113000;
+
+		if (nTime > 113000 && nTime <= 130000)
+			return -1;
+		else if (nTime > 150000)
+			return -1;
+	}
+
+	nPeriod = abs(nPeriod);
+	int nSec = nTime % 100;
+	int nLeft = nSec % nPeriod;
+	if (nLeft != 0)
+		nTime += (nPeriod - nLeft);
+	nSec = nTime % 100;
+	if (nSec != 0 && nSec % 60 == 0)
+		nTime += 40;
+	int nMin = nTime / 100 % 100;
+	if (nMin != 0 && nMin % 60 == 0)
+		nTime += 40 * 100;
+	if (nTime >= 240000)
+		nTime -= 240000;
+	return nTime;
 }
 
 
@@ -5026,6 +5130,47 @@ void SKlinePic::StockTickToDayKline(int nCount, CommonStockMarket& tick)
 	kline.amount = tick.Turnover;
 	kline.date = m_nTradingDay;
 	kline.time = 0;
+}
+
+void SOUI::SKlinePic::StockMarketSecUpdate(int nPeriod)
+{
+	vector<CommonStockMarket> TickVec(m_pStkMarketVec->begin() + m_nUsedTickCount, m_pStkMarketVec->end());
+	for (size_t i = 0; i < TickVec.size(); ++i)
+	{
+		++m_nUsedTickCount;
+		if (TickVec[i].LastPrice == 0)
+			continue;
+		int ntime = GetSecBarTime(TickVec[i].UpdateTime, nPeriod, true);
+		if (ntime < 0)
+			continue;
+		if (m_pAll->nTotal == 0 || ntime > m_pAll->data[m_pAll->nTotal - 1].time ||
+			m_nTradingDay > m_pAll->data[m_pAll->nTotal - 1].date)
+		{
+			StockTickToKline(m_pAll->nTotal, TickVec[i], true, ntime);
+			uint64_t u64DateTime = (uint64_t)m_nTradingDay * 1000000 + (uint64_t)ntime;
+			m_DataTimeMap[u64DateTime] = m_pAll->nTotal;
+			m_pAll->nTotal++;
+		}
+		else if (ntime >= m_pAll->data[m_pAll->nTotal - 1].time &&
+			m_nTradingDay == m_pAll->data[m_pAll->nTotal - 1].date) //最后一条K线并不完整
+			StockTickToKline(m_pAll->nTotal - 1, TickVec[i]);
+		if (eRT_NoRehab == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = m_pAll->srcData[m_pAll->nTotal - 1];
+		else if (eRT_FrontRehab_Cash == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = FrontRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_FrontRehab_ReInv == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = FrontRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_BackRehab_Cash == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = BackRehabCash(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+		else if (eRT_BackRehab_ReInv == m_calcRehabType)
+			m_pAll->data[m_pAll->nTotal - 1] = BackRehabReInv(m_pAll->srcData[m_pAll->nTotal - 1], m_nFTRehabTime);
+
+		KlineMAProc(m_pAll->nTotal);
+		VolMAProc(m_pAll->nTotal);
+		AmoMAProc(m_pAll->nTotal);
+
+	}
+
 }
 
 void SKlinePic::IndexMarket1MinUpdate()

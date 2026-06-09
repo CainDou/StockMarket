@@ -1,0 +1,9 @@
+﻿<menu  itemHeight="26" iconMargin="4" textMargin="8" maxWidth="190" contextHelpId="1">
+  <item id="801">盘口信息</item>
+  <sep/>
+    <item id="802"  text="修改参数"  contextHelpId="2">
+    <item id="803">砖型图参数</item>
+  </item>
+  <sep/>
+  <item id="800" >返回</item>
+</menu>

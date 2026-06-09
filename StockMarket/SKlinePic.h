@@ -218,15 +218,20 @@ namespace SOUI
 	protected:
 		void DataInit();
 		void KlineDataWithHis();
+		std::vector<KlineType>& GetMultiSecHisKline();
 		void KlineDataUpdate();
 		void CallActionDataUpdate();
 		void TFDataUpdate();
+
+		int GetSecBarTime(int nTime, int nPeriod, bool bBaseData);
+
 
 		void StockMarket1MinUpdate();
 		void StockMarketMultMinUpdate(int nPeriod);
 		void StockMarketDayUpdate();
 		void StockTickToKline(int nCount, CommonStockMarket & tick, bool bNewLine = false, int time = 0);
 		void StockTickToDayKline(int nCount, CommonStockMarket & tick);
+		void StockMarketSecUpdate(int nPeriod);
 
 		void IndexMarket1MinUpdate();
 		void IndexMarketMultMinUpdate(int nPeriod);

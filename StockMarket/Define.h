@@ -91,6 +91,12 @@ typedef struct  _TimeLineData
 //typedef unordered_map<SStringA, map<SStringA, CoreData>, hash_SStringA> TimeLineMap;
 //typedef unordered_map<SStringA, map<SStringA, vector<CoreData>>, hash_SStringA> TimeLineArrMap;
 
+enum eBrickType
+{
+	eBT_Tick,
+	eBT_Ratio,
+	eBT_Price,
+};
 
 enum RecvMsgType
 {
@@ -133,6 +139,7 @@ enum RecvMsgType
 	RecvMsg_TradeSysRes,
 	RecvMsg_HisTradeSysRes,
 	RecvMsg_AllBackRehab,
+	RecvMsg_HisRenko,
 	RecvMsg_End
 };
 
@@ -170,6 +177,8 @@ enum SendMsgType
 	SendType_LpPriceVol,
 	SendType_HisTradeVol,
 	SendType_HisTradeSysRes,
+	SendType_HisSecKline,
+	SendType_HisRenko,
 	SendType_End,
 };
 
@@ -622,6 +631,8 @@ enum SynMsg
 	Syn_ReSendRtTradeSysRes,
 	Syn_AllBackRehab,
 	Syn_SelfSelChange,
+	Syn_HisRenko,
+	Syn_GetRenko,
 
 	//交易的同步信息
 	Syn_GetTradeMarket,
@@ -694,6 +705,8 @@ enum WorkWndMsg
 	WW_SelfSelChange,
 	WW_ReCalcTarget,
 	WW_UpdateListShowStock,
+	WW_HisRenko,
+	WW_ReCalcBrick,
 	WW_End,
 };
 
@@ -1160,6 +1173,9 @@ typedef struct _PARAM_TICK_INFO {
 
 enum TimePreiod
 {
+	Period_30Sec =-30,
+	Period_15Sec =-15,
+	Period_5Sec=-5,
 	Period_FenShi = 0,
 	Period_1Min = 1,
 	Period_5Min = 5,
@@ -1167,7 +1183,10 @@ enum TimePreiod
 	Period_30Min = 30,
 	Period_60Min = 60,
 	Period_1Day = 1440,
-	Period_End = 65535,
+	Period_Brick = INT16_MAX,
+	Period_End = INT_MAX,
+	Period_Count = 11,
+
 };
 
 TimePreiod& operator ++(TimePreiod &tp);
@@ -1213,6 +1232,14 @@ enum KLINEMSG
 	KLINEMSG_REHAB,
 	KLINEMSG_CHANGEPARA,
 	KLINEMSG_CHANGEDEFAULTPARA,
+};
+
+
+enum BRICKMSG
+{
+	BRICKMSG_UPDATE = 0,
+	BRICKMSG_REHAB,
+	BRICKMSG_CHANGEPARA,
 };
 
 enum FSMenu
@@ -1308,6 +1335,15 @@ enum KlineMenu
 	KM_VolDiff,
 	KM_VolDiffPara,
 	KM_End,
+};
+
+enum BrickMenu
+{
+	BM_Return=800,
+	BM_Deal,
+	BM_ChangePara,
+	BM_BrickPara,
+	BM_End,
 };
 
 enum WDMenu
@@ -1862,6 +1898,13 @@ typedef struct InitPara
 	bool bShowOrderPriceDetail;
 	bool bShowDeletePriceDetail;
 	int nFundFlowShowType;
+	int nBrickJiange;
+	double fBrickZoomRatio;
+	int  nBrickWidth;
+	int	 nBrickType;
+	double fBrickSetting;
+	bool bShowBrickDeal;
+
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
 	SStringA strFilterName;
@@ -1887,7 +1930,8 @@ typedef struct InitPara
 		bShowOrderPriceDetail(false),bShowDeletePriceDetail(false),nFundFlowShowType(0),
 		nKlineMainTarget(0),nKlinePointWndNum(0),nTSCPointWndNum(0), nKlineZoomRatio(100),
 		nVolMaPara{ 5,10,0,0,0,0 }, nAmoMaPara{ 5,10,0,0,0,0 }, nCAVolMaPara{ 5,10,0,0,0,0 },
-		nCAAmoMaPara{ 5,10,0,0,0,0 }
+		nCAAmoMaPara{ 5,10,0,0,0,0 }, nBrickJiange(2), fBrickZoomRatio(1), nBrickWidth(9),
+		nBrickType(eBT_Tick), fBrickSetting(50), bShowBrickDeal(false)
 	{}
 }InitPara_t;
 
@@ -2982,3 +3026,78 @@ enum eTargetType
 	eTarget_Main,
 	eTarget_Sub,
 };
+
+typedef struct sRekkoData
+{
+	int date;
+	int time;
+	double fStart;
+	double fEnd;
+}RenkoData;
+
+enum eRekkoType
+{
+	eRenko_Null,
+	eRenko_Up,
+	eRenko_Down,
+};
+
+class OperVec :public std::vector<double>
+{
+public:
+	OperVec operator =(const OperVec& other);
+	OperVec operator + (const OperVec& other);
+	OperVec operator - (const OperVec& other);
+	OperVec operator * (const OperVec& other);
+	OperVec operator / (const OperVec& other);
+	template <typename T>
+	OperVec operator + (T para);
+	template <typename T>
+	OperVec operator - (T para);
+	template <typename T>
+	OperVec operator * (T para);
+	template <typename T>
+	OperVec operator / (T para);
+
+};
+
+template<typename T>
+OperVec OperVec::operator+(T para)
+{
+
+	OperVec res(*this);
+	for (auto& it : res)
+		if (!isnan(it) && !isinf(it))
+			it += para;
+	return res;
+}
+
+template<typename T>
+OperVec OperVec::operator-(T para)
+{
+	OperVec res(*this);
+	for (auto& it : res)
+		if (!isnan(it) && !isinf(it))
+			it -= para;
+	return res;
+}
+
+template<typename T>
+OperVec OperVec::operator*(T para)
+{
+	OperVec res(*this);
+	for (auto& it : res)
+		if (!isnan(it) && !isinf(it))
+			it *= para;
+	return res;
+}
+
+template<typename T>
+OperVec OperVec::operator/(T para)
+{
+	OperVec res(*this);
+	for (auto& it : ress)
+		if (!isnan(it) && !isinf(it))
+			it /= para;
+	return res;
+}

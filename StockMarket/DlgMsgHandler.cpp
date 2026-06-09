@@ -109,6 +109,10 @@ void CDlgMsgHandler::InitMsgHandleMap()
 		= &CDlgMsgHandler::OnTradePriceVol;
 	m_MsgHandleMap[Syn_SelfSelChange]
 		= &CDlgMsgHandler::OnSelfSelChange;
+	m_MsgHandleMap[Syn_HisRenko]
+		= &CDlgMsgHandler::OnHisRenko;
+	m_MsgHandleMap[Syn_GetRenko]
+		= &CDlgMsgHandler::OnGetRenko;
 
 
 }
@@ -440,4 +444,18 @@ void CDlgMsgHandler::OnSelfSelChange(int nMsgLength, const char * info)
 				info, nMsgLength);
 	}
 
+}
+
+void CDlgMsgHandler::OnHisRenko(int nMsgLength, const char* info)
+{
+	HWND hWnd = *(HWND*)info;
+	ReceivePointInfo* pRecvInfo = (ReceivePointInfo*)info;
+	SendMsg(m_WndVec[m_WndHandleMap[hWnd]]->GetThreadID(), WW_HisRenko,
+		info + sizeof(hWnd), nMsgLength - sizeof(hWnd));
+
+}
+
+void CDlgMsgHandler::OnGetRenko(int nMsgLength, const char* info)
+{
+	SendMsg(m_SynThreadID, Syn_GetRenko, info, nMsgLength);
 }

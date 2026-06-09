@@ -553,7 +553,7 @@ double CKlineTarget::ATR(int nCount, int nOffset)
 	return fATR / nCount;
 }
 
-CKlineTarget::OperVec CKlineTarget::CrossAbove(OperVec & data1, OperVec & data2)
+OperVec CKlineTarget::CrossAbove(OperVec & data1, OperVec & data2)
 {
 	OperVec res;
 	res.reserve(data1.size());
@@ -568,7 +568,7 @@ CKlineTarget::OperVec CKlineTarget::CrossAbove(OperVec & data1, OperVec & data2)
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::CrossDown(OperVec & data1, OperVec & data2)
+OperVec CKlineTarget::CrossDown(OperVec & data1, OperVec & data2)
 {
 	OperVec res;
 	res.reserve(data1.size());
@@ -583,7 +583,7 @@ CKlineTarget::OperVec CKlineTarget::CrossDown(OperVec & data1, OperVec & data2)
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::TryBuy(OperVec && cond, int nSize, OperVec& LimitPrice)
+OperVec CKlineTarget::TryBuy(OperVec && cond, int nSize, OperVec& LimitPrice)
 {
 	OperVec res;
 	res.reserve(cond.size());
@@ -611,7 +611,7 @@ CKlineTarget::OperVec CKlineTarget::TryBuy(OperVec && cond, int nSize, OperVec& 
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::TrySell(OperVec && cond, int nSize, OperVec& LimitPrice)
+OperVec CKlineTarget::TrySell(OperVec && cond, int nSize, OperVec& LimitPrice)
 {
 	OperVec res;
 	res.reserve(cond.size());
@@ -639,7 +639,7 @@ CKlineTarget::OperVec CKlineTarget::TrySell(OperVec && cond, int nSize, OperVec&
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::TrySellShort(OperVec && cond, int nSize, OperVec & LimitPrice)
+OperVec CKlineTarget::TrySellShort(OperVec && cond, int nSize, OperVec & LimitPrice)
 {
 	OperVec res;
 	res.reserve(cond.size());
@@ -667,7 +667,7 @@ CKlineTarget::OperVec CKlineTarget::TrySellShort(OperVec && cond, int nSize, Ope
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::TryBuyToCover(OperVec && cond, int nSize, OperVec & LimitPrice)
+OperVec CKlineTarget::TryBuyToCover(OperVec && cond, int nSize, OperVec & LimitPrice)
 {
 	OperVec res;
 	res.reserve(cond.size());
@@ -695,7 +695,7 @@ CKlineTarget::OperVec CKlineTarget::TryBuyToCover(OperVec && cond, int nSize, Op
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::EMA(OperVec & data, int nCount)
+OperVec CKlineTarget::EMA(OperVec & data, int nCount)
 {
 	OperVec res;
 	res.reserve(data.size());
@@ -705,7 +705,7 @@ CKlineTarget::OperVec CKlineTarget::EMA(OperVec & data, int nCount)
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::SMA(OperVec & data, int nCount, int nWeight)
+OperVec CKlineTarget::SMA(OperVec & data, int nCount, int nWeight)
 {
 	OperVec res;
 	res.reserve(data.size());
@@ -715,7 +715,7 @@ CKlineTarget::OperVec CKlineTarget::SMA(OperVec & data, int nCount, int nWeight)
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::MA(OperVec & data, int nCount)
+OperVec CKlineTarget::MA(OperVec & data, int nCount)
 {
 	OperVec res;
 	if (data.size() < nCount)
@@ -744,7 +744,7 @@ CKlineTarget::OperVec CKlineTarget::MA(OperVec & data, int nCount)
 }
 
 
-CKlineTarget::OperVec CKlineTarget::HHV(OperVec & data, int nCount)
+OperVec CKlineTarget::HHV(OperVec & data, int nCount)
 {
 	OperVec res;
 	if (data.size() < nCount)
@@ -773,7 +773,7 @@ CKlineTarget::OperVec CKlineTarget::HHV(OperVec & data, int nCount)
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::LLV(OperVec & data, int nCount)
+OperVec CKlineTarget::LLV(OperVec & data, int nCount)
 {
 	OperVec res;
 	if (data.size() < nCount)
@@ -803,7 +803,7 @@ CKlineTarget::OperVec CKlineTarget::LLV(OperVec & data, int nCount)
 }
 
 
-CKlineTarget::OperVec CKlineTarget::STD(OperVec & data, int nCount)
+OperVec CKlineTarget::STD(OperVec & data, int nCount)
 {
 	OperVec res;
 	if (nCount < 2 || data.size() < nCount)
@@ -838,12 +838,12 @@ CKlineTarget::OperVec CKlineTarget::STD(OperVec & data, int nCount)
 	return res;
 }
 
-CKlineTarget::OperVec CKlineTarget::ADX(OperVec & data, int nCount)
+OperVec CKlineTarget::ADX(OperVec & data, int nCount)
 {
 	return OperVec();
 }
 
-CKlineTarget::OperVec CKlineTarget::RSI(OperVec & data, int nCount)
+OperVec CKlineTarget::RSI(OperVec & data, int nCount)
 {
 	OperVec res;
 	if (data.size() < 2)
@@ -872,7 +872,7 @@ CKlineTarget::OperVec CKlineTarget::RSI(OperVec & data, int nCount)
 }
 
 
-vector<CKlineTarget::OperVec> CKlineTarget::GetData(int nPos)
+vector<OperVec> CKlineTarget::GetData(int nPos)
 {
 	std::lock_guard<std::mutex> lk(m_mx);
 	if (m_targetInfoMap.size() <= nPos)
@@ -932,93 +932,3 @@ double CKlineTarget::EMA(LastData & preEMA, double data, int nCount, int nTime)
 	return preEMA.nowData;
 }
 
-CKlineTarget::OperVec CKlineTarget::OperVec::operator=(const OperVec & other)
-{
-	if (this->empty())
-		this->assign(other.begin(), other.end());
-	else if (this->size() == other.size())
-		this->back() = other.back();
-	else if (this->size() == other.size() - 1)
-		this->emplace_back(other.back());
-	return *this;
-}
-
-CKlineTarget::OperVec CKlineTarget::OperVec::operator+(const  CKlineTarget::OperVec & other)
-{
-	if (this->size() == 0 || this->size() != other.size())
-		return OperVec();
-	OperVec res;
-	size_t size = this->size();
-	res.reserve(size);
-	for (size_t i = 0; i < size; ++i)
-	{
-		if (isnan((*this)[i]) || isnan(other[i]))
-			res.emplace_back(NAN);
-		else if (isinf((*this)[i]) || isinf(other[i]))
-			res.emplace_back(INFINITE);
-		else
-			res.emplace_back((*this)[i] + other[i]);
-	}
-	return res;
-}
-
-
-CKlineTarget::OperVec CKlineTarget::OperVec::operator-(const OperVec & other)
-{
-	if (this->size() == 0 || this->size() != other.size())
-		return OperVec();
-	OperVec res;
-	size_t size = this->size();
-	res.reserve(size);
-	for (size_t i = 0; i < size; ++i)
-	{
-		if (isnan((*this)[i]) || isnan(other[i]))
-			res.emplace_back(NAN);
-		else if (isinf((*this)[i]) || isinf(other[i]))
-			res.emplace_back(INFINITE);
-		else
-			res.emplace_back((*this)[i] - other[i]);
-	}
-	return res;
-}
-
-CKlineTarget::OperVec CKlineTarget::OperVec::operator*(const OperVec & other)
-{
-	if (this->size() == 0 || this->size() != other.size())
-		return OperVec();
-	OperVec res;
-	size_t size = this->size();
-	res.reserve(size);
-	for (size_t i = 0; i < size; ++i)
-	{
-		if (isnan((*this)[i]) || isnan(other[i]))
-			res.emplace_back(NAN);
-		else if (isinf((*this)[i]) || isinf(other[i]))
-			res.emplace_back(INFINITE);
-		else
-			res.emplace_back((*this)[i] * other[i]);
-	}
-	return res;
-}
-
-CKlineTarget::OperVec CKlineTarget::OperVec::operator/(const OperVec & other)
-{
-	if (this->size() == 0 || this->size() != other.size())
-		return OperVec();
-	OperVec res;
-	size_t size = this->size();
-	res.reserve(size);
-	for (size_t i = 0; i < size; ++i)
-	{
-		if (isnan((*this)[i]) || isnan(other[i]))
-			res.emplace_back(NAN);
-		else if (isinf((*this)[i]) || other[i] == 0)
-			res.emplace_back(INFINITE);
-		else if (isinf(other[i]))
-			res.emplace_back(0);
-		else
-			res.emplace_back((*this)[i] / other[i]);
-	}
-	return res;
-
-}

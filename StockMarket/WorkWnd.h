@@ -12,6 +12,7 @@ namespace SOUI
 	class CDlgComboStockFilter;
 	class SPriceVolPic;
 	class SFundFlowPriceVol;
+	class BrickPic;
 
 	class CWorkWnd : public SHostWnd
 	{
@@ -61,11 +62,15 @@ namespace SOUI
 		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 		LRESULT OnFSMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
 		LRESULT OnKlineMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
+		LRESULT OnBrickMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled);
+
 		void	OnFSMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnKlineMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnTarSelMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnRehabMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
 		void	OnSelfSleMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
+		void	OnBrickMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl);
+
 		void	OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 		void	OnRButtonUp(UINT nFlags, CPoint point);
@@ -161,6 +166,10 @@ namespace SOUI
 		void OnBtnM30Clicked();
 		void OnBtnM60Clicked();
 		void OnBtnDayClicked();
+		void OnBtnS5Clicked();
+		void OnBtnS15Clicked();
+		void OnBtnS30Clicked();
+		void OnBtnBrickClicked();
 		void OnBtnListConnect1Clicked();
 		void OnBtnListConnect2Clicked();
 		void OnBtnStockFilterClicked();
@@ -226,6 +235,8 @@ namespace SOUI
 		void OnUpdateDeletePriceVol(int nMsgLength, const char* info);
 		void OnUpdateTradePriceVol(int nMsgLength, const char* info);
 		void OnChangeSelfSelStock(int nMsgLength, const char* info);
+		void OnUpdateHisRenko(int nMsgLength, const char* info);
+
 		void OnUpdateListShowStock(int nMsgLength, const char* info);
 
 		//内部消息处理
@@ -237,11 +248,12 @@ namespace SOUI
 		void OnKlineTargetReCalc(int nMsgLength, const char* info);
 		void OnChangeStockFilter(int nMsgLength, const char* info);
 		void OnSaveStockFilter(int nMsgLength, const char* info);
-		void OnChangeKlineRehab(int nMsgLength, const char* info);
+		void OnChangeRehab(int nMsgLength, const char* info);
 		void OnFixedTimeRehab(int nMsgLength, const char* info);
 		void OnChangeHisStockFilter(int nMsgLength, const char* info);
 		void OnHisFilterStartCalc(int nMsgLength, const char* info);
 		void OnHisFilterEndCalc(int nMsgLength, const char* info);
+		void OnBrickRecalc(int nMsgLength, const char* info);
 
 		//辅助函数
 		BOOL GetAttPara(char * msg, map<SStringA, SStringA>& paraMap);
@@ -262,6 +274,10 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.btn_M30, OnBtnM30Clicked)
 			EVENT_ID_COMMAND(R.id.btn_M60, OnBtnM60Clicked)
 			EVENT_ID_COMMAND(R.id.btn_Day, OnBtnDayClicked)
+			EVENT_ID_COMMAND(R.id.btn_5S, OnBtnS5Clicked)
+			EVENT_ID_COMMAND(R.id.btn_15S, OnBtnS15Clicked)
+			EVENT_ID_COMMAND(R.id.btn_30S, OnBtnS30Clicked)
+			EVENT_ID_COMMAND(R.id.btn_Brick, OnBtnBrickClicked)
 			EVENT_ID_COMMAND(R.id.btn_ListConnect1, OnBtnListConnect1Clicked)
 			EVENT_ID_COMMAND(R.id.btn_ListConnect2, OnBtnListConnect2Clicked)
 			EVENT_ID_COMMAND(R.id.btn_StockFilter, OnBtnStockFilterClicked)
@@ -279,19 +295,20 @@ namespace SOUI
 			EVENT_ID_COMMAND(R.id.chk_trade, OnChkTrade)
 			EVENT_NAME_COMMAND(L"btn_SelfSel", OnBtnSelfSelClicked)
 			EVENT_NAME_COMMAND(L"btn_analysis", OnBtnAnalysisClicked)
-
 			EVENT_MAP_END()
 
 			BEGIN_MSG_MAP_EX(CWorkWnd)
 			MESSAGE_HANDLER(WM_WINDOW_MSG, OnMsg)
 			MESSAGE_HANDLER(WM_FENSHI_MSG, OnFSMsg)
 			MESSAGE_HANDLER(WM_KLINE_MSG, OnKlineMsg)
+			MESSAGE_HANDLER(WM_BRICK_MSG, OnBrickMsg)
 			COMMAND_RANGE_HANDLER_EX(FM_Return, FM_End, OnFSMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(KM_Return, KM_End, OnKlineMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(TSM_Close, TSM_End, OnTarSelMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(RM_NoRehab, RM_End, OnRehabMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(ASSM_Strat, ASSM_End, OnSelfSleMenuCmd)
 			COMMAND_RANGE_HANDLER_EX(RSSM_Strat, RSSM_End, OnSelfSleMenuCmd)
+			COMMAND_RANGE_HANDLER_EX(BM_Return, BM_End, OnBrickMenuCmd)
 
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_MOUSEWHEEL(OnMouseWheel)
@@ -314,6 +331,7 @@ namespace SOUI
 		SImageButton* m_pBtnFundFlowPriVol;
 		SImageButton* m_pBtnSelfSel;
 		SImageButton* m_pBtnAnalysis;
+
 		SStatic *m_pTextFilterName;
 		SStatic *m_pTextIndy;
 		SStatic *m_pTextTitle;
@@ -321,6 +339,7 @@ namespace SOUI
 		SColorListCtrlEx* m_pListSelfSel;
 		SFenShiPic* m_pFenShiPic;
 		SKlinePic* m_pKlinePic;
+		BrickPic* m_pBrickPic;
 		SPriceVolPic* m_pPriceVolPic;
 		SFundFlowPriceVol* m_pFundFlowPriVolPic;
 		SImageButton* m_pPreSelBtn;
@@ -448,14 +467,17 @@ namespace SOUI
 		vector<CommonStockMarket>m_StockMarketVec;
 		//map<int, PriceVolInfo>m_PriceVolMap;
 		map<int, vector<KlineType>>m_KlineMap;
+		vector<RenkoData> m_BrickVec;
 		map<int, vector<TFBaseMarket>>m_TFBaseMap;
 		map<int, vector<TickFlowMarket>>m_RtTFMarketVec;
 		vector<CAInfo>m_CallAction;
 		vector<TradeVol> m_TradeVolData;
+		vector<RenkoData> m_RenkoVec;
 
 		bool m_bMarketGet;
 		bool m_bCAInfoGet;
 		bool m_bTradeVolGet;
+		bool m_bRenkoGet;
 		map<int, map<SStringA,BOOL>>m_PointGetMap;
 		map<int, map<SStringA, BOOL>>m_L1IndyPointGetMap;
 		map<int, map<SStringA, BOOL>>m_L2IndyPointGetMap;

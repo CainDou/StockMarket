@@ -8,24 +8,7 @@
 class CKlineTarget
 {
 #define REF(data,pos) (* (double*)((char*)&(data) + (pos)))
-	class OperVec :public std::vector<double>
-	{
-	public:
-		OperVec operator =(const OperVec& other);
-		OperVec operator + (const OperVec& other);
-		OperVec operator - (const OperVec& other);
-		OperVec operator * (const OperVec& other);
-		OperVec operator / (const OperVec& other);
-		template <typename T>
-		OperVec operator + (T para);
-		template <typename T>
-		OperVec operator - (T para);
-		template <typename T>
-		OperVec operator * (T para);
-		template <typename T>
-		OperVec operator / (T para);
 
-	};
 
 	typedef struct _TradeInfo
 	{
@@ -154,46 +137,6 @@ inline void CKlineTarget::UpdateData(std::vector<double >& dataVec, double fData
 		dataVec[nDataPos] = fData;
 }
 
-template<typename T>
-CKlineTarget::OperVec CKlineTarget::OperVec::operator+(T para)
-{
-
-	OperVec res(*this);
-	for (auto &it : res)
-		if(!isnan(it) && !isinf(it))
-		it += para;
-	return res;
-}
-
-template<typename T>
-CKlineTarget::OperVec CKlineTarget::OperVec::operator-(T para)
-{
-	OperVec res(*this);
-	for (auto &it : res)
-		if (!isnan(it) && !isinf(it))
-			it -= para;
-	return res;
-}
-
-template<typename T>
-CKlineTarget::OperVec CKlineTarget::OperVec::operator*(T para)
-{
-	OperVec res(*this);
-	for (auto &it : res)
-		if (!isnan(it) && !isinf(it))
-			it *= para;
-	return res;
-}
-
-template<typename T>
-CKlineTarget::OperVec CKlineTarget::OperVec::operator/(T para)
-{
-	OperVec res(*this);
-	for (auto &it : ress)
-		if (!isnan(it) && !isinf(it))
-			it /= para;
-	return res;
-}
 
 inline TargetInfo CKlineTarget::GetTargetInfo(int nIndex)
 {

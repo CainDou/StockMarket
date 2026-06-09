@@ -239,6 +239,12 @@
     <ClCompile Include="DlgMultiPrdAnly.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BrickPic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgBrickPara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -433,6 +439,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgMultiPrdAnly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BrickPic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgBrickPara.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
