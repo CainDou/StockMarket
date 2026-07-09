@@ -648,6 +648,9 @@ void GetInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 	para.nBrickType = ini.GetIntA(strSection, "BrickType", 0);
 	para.fBrickSetting = atof(ini.GetStringA(strSection, "BrickSetting", "50"));
 	para.bShowBrickDeal = ini.GetIntA(strSection, "ShowBrickDeal", 0);
+	para.bShowBrickGenTime = ini.GetIntA(strSection, "ShowBricGentime", 1);
+	para.nBrickMainTarget = ini.GetIntA(strSection, "BrickMainTarget", 1);
+	para.fBrickPendantPara = atof(ini.GetStringA(strSection, "BrickPendantPara", "2"));
 
 }
 
@@ -752,6 +755,9 @@ void SaveInitPara(CIniFile & ini, InitPara & para, SStringA strSection)
 	ini.WriteIntA(strSection, "BrickType", para.nBrickType);
 	ini.WriteStringA(strSection, "BrickSetting", strTmp.Format("%g", para.fBrickSetting));
 	ini.WriteIntA(strSection, "ShowBrickDeal", para.bShowBrickDeal);
+	ini.WriteIntA(strSection, "ShowBricGentime", para.bShowBrickGenTime);
+	ini.WriteIntA(strSection, "BrickMainTarget", para.nBrickMainTarget);
+	ini.WriteStringA(strSection, "BrickPendantPara", strTmp.Format("%g", para.fBrickPendantPara));
 
 }
 

@@ -140,6 +140,8 @@ enum RecvMsgType
 	RecvMsg_HisTradeSysRes,
 	RecvMsg_AllBackRehab,
 	RecvMsg_HisRenko,
+	RecvMsg_RTEtfMarket,
+	RecvMsg_EtfMarket,
 	RecvMsg_End
 };
 
@@ -157,6 +159,8 @@ enum TradeReceiveMsgType
 	TradeRecvMsg_HisTrust,
 	TradeRecvMsg_HisDeal,
 	TradeRecvMsg_SubmitFeedback,
+	TradeRecvMsg_AllLastPrice,
+	TradeRecvMsg_EtfList,
 };
 
 
@@ -179,6 +183,7 @@ enum SendMsgType
 	SendType_HisTradeSysRes,
 	SendType_HisSecKline,
 	SendType_HisRenko,
+	SendType_EtfMarket,
 	SendType_End,
 };
 
@@ -256,6 +261,13 @@ typedef struct _StockInfo
 	char ScaleID[8];
 	int	 IPODate;
 }StockInfo;
+
+typedef struct EtfInfo
+{
+	SecurityID SecurityID;
+	char SecurityName[40];
+	char ExchangeID[8];
+};
 
 typedef struct _ReceiveInfo
 {
@@ -633,6 +645,8 @@ enum SynMsg
 	Syn_SelfSelChange,
 	Syn_HisRenko,
 	Syn_GetRenko,
+	Syn_RTEtfMarket,
+	Syn_HisEtfMarket,
 
 	//交易的同步信息
 	Syn_GetTradeMarket,
@@ -642,6 +656,7 @@ enum SynMsg
 	Syn_HisSellStockMarket,
 	Syn_ReLogin,
 	Syn_RemoveTradeWnd,
+	Syn_GetTradeEtfMarket,
 
 	//长周期的资金流
 	Syn_GetLpPriceVol,
@@ -1240,6 +1255,8 @@ enum BRICKMSG
 	BRICKMSG_UPDATE = 0,
 	BRICKMSG_REHAB,
 	BRICKMSG_CHANGEPARA,
+	BRICKMSG_CHANGEPENDANT,
+
 };
 
 enum FSMenu
@@ -1343,7 +1360,12 @@ enum BrickMenu
 	BM_Deal,
 	BM_ChangePara,
 	BM_BrickPara,
-	BM_End,
+	BM_PendantPara,
+	BM_GenTime =820,
+	BM_MainTarget =850,
+	BM_MTNull,
+	BM_MTPendant,
+	BM_End=899,
 };
 
 enum WDMenu
@@ -1904,6 +1926,9 @@ typedef struct InitPara
 	int	 nBrickType;
 	double fBrickSetting;
 	bool bShowBrickDeal;
+	bool bShowBrickGenTime;
+	int nBrickMainTarget;
+	double fBrickPendantPara;
 
 	vector<ShowPointInfo> TSCPonitWndInfo;
 	vector<ShowPointInfo> KlinePonitWndInfo;
@@ -1931,7 +1956,8 @@ typedef struct InitPara
 		nKlineMainTarget(0),nKlinePointWndNum(0),nTSCPointWndNum(0), nKlineZoomRatio(100),
 		nVolMaPara{ 5,10,0,0,0,0 }, nAmoMaPara{ 5,10,0,0,0,0 }, nCAVolMaPara{ 5,10,0,0,0,0 },
 		nCAAmoMaPara{ 5,10,0,0,0,0 }, nBrickJiange(2), fBrickZoomRatio(1), nBrickWidth(9),
-		nBrickType(eBT_Tick), fBrickSetting(50), bShowBrickDeal(false)
+		nBrickType(eBT_Tick), fBrickSetting(50), bShowBrickDeal(false), bShowBrickGenTime(true),
+		nBrickMainTarget(1), fBrickPendantPara(2)
 	{}
 }InitPara_t;
 
@@ -2418,6 +2444,7 @@ enum TradeSimulatorMsg
 	TSMsg_ShowWindow,
 	TSMsg_ChangeSetting,
 	TSMsg_ShowDeal,
+	TSMsg_SetTradeEtf,
 
 };
 
@@ -2473,6 +2500,8 @@ enum TradeSynMsg
 	TradeSyn_OnHisTrust,
 	TradeSyn_OnHisDeal,
 	TradeSyn_OnSubmitFeedback,
+	TradeSyn_AllLastPrice,
+	TradeSyn_EtfList,
 };
 
 enum TradeMsg

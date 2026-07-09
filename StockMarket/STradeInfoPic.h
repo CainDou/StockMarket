@@ -10,7 +10,8 @@ namespace SOUI
 	public:
 		STradeInfoPic();
 		~STradeInfoPic();
-		void	ChangeShowStock(SStringA StockID, SStringA StockName);
+		void	ChangeShowStock(SStringA StockID, SStringA StockName,
+			bool bEtf, double fMaxLimit = 0, double fMinLimit = 0);
 		void	SetDataPoint(vector<CommonStockMarket>* pStkMarketVec);
 		void	OnPaint(IRenderTarget *pRT);
 	protected:
@@ -44,6 +45,9 @@ namespace SOUI
 
 		CAutoRefPtr<IFont> m_pFont15, m_pFont20, m_pFont10;
 		CAutoRefPtr<IPen> m_penRed;
+		bool m_bIsEtf;
+		double m_fMaxLimit;
+		double m_fMinLimit;
 
 	};
 

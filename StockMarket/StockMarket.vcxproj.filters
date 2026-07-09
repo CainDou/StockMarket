@@ -245,6 +245,9 @@
     <ClCompile Include="DlgBrickPara.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgPendantPara.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StockMarket.rc">
@@ -445,6 +448,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DlgBrickPara.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgPendantPara.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

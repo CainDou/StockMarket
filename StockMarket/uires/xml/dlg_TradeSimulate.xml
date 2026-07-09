@@ -13,17 +13,17 @@
 			<group pos="0,0,@250,%50" align="left" headerHeight="20" text="下单">
 				<tabctrl name="tab_ctrl" pos="5,5,-5,-5" tabAlign="top" tabSkin="skin_TabRect" tabInterSize="2" tabWidth="120" tabHeight="20" colorText="#FFFFFF" focusable="0" show="1" curSel="0" interpolator="Decelerate">
 					<page title="买入">
-						<text pos="10,20,@50,@20">证券</text>
-						<edit name="edit_buyId" number="1" pos="[5,{0,@130,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="6" />
+						<text pos="10,20,@40,@20">证券</text>
+						<edit name="edit_buyId" number="1" pos="[5,{0,@170,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="6" />
 						<imgbtn name="btn_buyCon" skin="skin_ButtonTransparent" pos="[5,{0,@30,@20" animate="1"  visible="0"/>
 						<imgbtn name="btn_buyUnCon" skin="skin_ButtonTransparent" pos="{0,{0,@30,@20" animate="1"  visible="0"/>
-						<text pos="10,[20,@50,@20">价格</text>
-						<edit name="edit_buyPrice" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" notifyChange="1" align="center" maxBuf="8"/>
+						<text pos="10,[20,@40,@20">价格</text>
+						<edit name="edit_buyPrice" pos="[5,{0,@120,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" notifyChange="1" align="center" maxBuf="8"/>
 						<spinButtonEx name="spin_buyPrice" pos="[0,{0,@20,@20" min="0" value="" step="1" max="999999999" buddy="" />
 						<text pos="[5,{0,@30,@20">元</text>
 
-						<text pos="10,[20,@50,@20">数量</text>
-						<edit name="edit_buyVol" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" notifyChange="1" align="center" maxBuf="9"/>
+						<text pos="10,[20,@40,@20">数量</text>
+						<edit name="edit_buyVol" pos="[5,{0,@120,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" number="1" notifyChange="1" align="center" maxBuf="9"/>
 						<spinButton name="spin_buy" pos="[0,{0,@20,@20" min="0" value="" step="100" max="999999999" buddy="edit_buyVol" />
 						<text pos="[5,{0,@30,@20">股</text>
 						<text pos="10,[20" name="text_maxBuy">最大可买--</text>
@@ -34,20 +34,20 @@
 						<text pos="10,[5,-10,@50" name="txt_buyVolInBig" multiLines="1" wordWrap="1" />
 						<imgbtn pos="10,[22,@50,@20" name="btn_buySetting" skin="skin_ButtonTrans" text="设置" colorText="#5070F0FF" transparent="1"/>
 						<imgbtn pos="70,{-2,@100,@25" name="btn_buy" skin="skin_ButtonRed" text="买入" colorText="#ffffff" />
-						<listbox name="lb_buyID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" />
+						<listbox name="lb_buyID" pos="55,45,@170,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0" />
 					</page>
 					<page title="卖出">
-						<text pos="10,20,@50,@20">证券</text>
-						<edit name="edit_sellId" pos="[5,{0,@130,@20" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="0" number="1" notifyChange="1" align="center"  maxBuf="6" />
+						<text pos="10,20,@40,@20">证券</text>
+						<edit name="edit_sellId" pos="[5,{0,@170,@20" colorBkgnd="#ffffffff" colorText="#000000ff" readOnly="0" number="1" notifyChange="1" align="center"  maxBuf="6" />
 						<imgbtn name="btn_sellCon" skin="skin_ButtonTransparent" pos="[5,{0,@30,@20" animate="1"  visible="0"/>
 						<imgbtn name="btn_sellUnCon" skin="skin_ButtonTransparent" pos="{0,{0,@30,@20" animate="1" visible="0" />
-						<text pos="10,[20,@50,@20">价格</text>
-						<edit name="edit_sellPrice" number="1" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="8" />
+						<text pos="10,[20,@40,@20">价格</text>
+						<edit name="edit_sellPrice" number="1" pos="[5,{0,@120,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="8" />
 						<spinButtonEx name="spin_sellPrice" pos="[0,{0,@20,@20" min="0" value="" step="1" max="999999999" buddy="" />
 						<text pos="[5,{0,@30,@20">元</text>
 
-						<text pos="10,[20,@50,@20">数量</text>
-						<edit name="edit_sellVol" number="1" pos="[5,{0,@110,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="9" />
+						<text pos="10,[20,@40,@20">数量</text>
+						<edit name="edit_sellVol" number="1" pos="[5,{0,@120,@20" multiLines="0" colorBkgnd="#ffffffff" colorText="#000000ff" notifyChange="1" align="center"  maxBuf="9" />
 						<spinButton name="spin_sell" pos="[0,{0,@20,@20" min="0" value="" step="100" max="999999999" buddy="edit_sellVol" />
 						<text pos="[5,{0,@30,@20">股</text>
 						<text pos="10,[20" name="text_maxSell">最大可卖--</text>
@@ -58,7 +58,7 @@
 						<text pos="10,[5,-10,@50" name="txt_sellVolInBig" multiLines="1" wordWrap="1" />
 						<imgbtn pos="10,[22,@50,@20" name="btn_sellSetting" skin="skin_ButtonTrans" text="设置" colorText="#5070F0FF" />
 						<imgbtn pos="70,{-2,@100,@25" name="btn_sell" skin="skin_ButtonBlue" text="卖出" colorText="#ffffff" />
-						<listbox name="lb_sellID" pos="65,45,@130,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0"  />
+						<listbox name="lb_sellID" pos="55,45,@170,@200" hotTrack="1" itemHeight="20" colorText="#000000FF" colorSelText="#FFFFFFFF" colorItemSelBkgnd="rgb(234,128,16)" text-x="0" colorBkgnd="#FFFFFFFF" visible="0"  />
 					</page>
 				</tabctrl>
 			</group>
@@ -89,7 +89,7 @@
 					<headerex align="right" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 						<items>
 							<item width="65">证券代码</item>
-							<item width="110">证券名称</item>
+							<item width="130">证券名称</item>
 							<item width="100">昨日持股</item>
 							<item width="100">参考持股</item>
 							<item width="100">可用股份</item>
@@ -121,7 +121,7 @@
 									<item width="75">委托时间</item>
 									<item width="65">申请编号</item>
 									<item width="65">证券代码</item>
-									<item width="110">证券名称</item>
+									<item width="130">证券名称</item>
 									<item width="50">买卖</item>
 									<item width="75">委托状态</item>
 									<item width="100">委托数量</item>
@@ -149,7 +149,7 @@
 									<item width="100">委托时间</item>
 									<item width="65">申请编号</item>
 									<item width="65">证券代码</item>
-									<item width="110">证券名称</item>
+									<item width="130">证券名称</item>
 									<item width="50">买卖</item>
 									<item width="75">委托状态</item>
 									<item width="100">委托价格</item>
@@ -178,7 +178,7 @@
 									<item width="75">成交时间</item>
 									<item width="65">申请编号</item>
 									<item width="65">证券代码</item>
-									<item width="110">证券名称</item>
+									<item width="130">证券名称</item>
 									<item width="50">买卖</item>
 									<item width="100">成交价格</item>
 									<item width="100">成交数量</item>
@@ -199,7 +199,7 @@
 							<headerex align="right" itemSwapEnable="1" fixWidth="0" sortHeader="1" colorBkgnd="#00000000" colorText="#00ffffff" itemSkin="skin_ButtonPureBlack" sortSkin="skin_lcex_header_arrow">
 								<items>
 									<item width="65">证券代码</item>
-									<item width="110">证券名称</item>
+									<item width="130">证券名称</item>
 									<item width="50">买卖</item>
 									<item width="100">成交数量</item>
 									<item width="100">成交均价</item>
@@ -230,7 +230,7 @@
 									<item width="75">委托时间</item>
 									<item width="65">申请编号</item>
 									<item width="65">证券代码</item>
-									<item width="110">证券名称</item>
+									<item width="130">证券名称</item>
 									<item width="50">买卖</item>
 									<item width="75">委托状态</item>
 									<item width="100">委托价格</item>
@@ -268,7 +268,7 @@
 									<item width="75">成交时间</item>
 									<item width="65">申请编号</item>
 									<item width="65">证券代码</item>
-									<item width="110">证券名称</item>
+									<item width="130">证券名称</item>
 									<item width="50">买卖</item>
 									<item width="100">成交价格</item>
 									<item width="100">成交数量</item>

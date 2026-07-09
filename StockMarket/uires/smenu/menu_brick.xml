@@ -2,8 +2,18 @@
   <item id="801">盘口信息</item>
   <sep/>
     <item id="802"  text="修改参数"  contextHelpId="2">
-    <item id="803">砖型图参数</item>
-  </item>
+	<item id="803">砖型图参数</item>
+	<item id="804">吊灯止损</item>
+    </item>
   <sep/>
+   <item   text="主图指标" id="850" check="0"  contextHelpId="2">
+	<item id="851" check="0">无</item>
+	<sep/>
+	<item id="852" check="0">吊灯止损</item>
+	<sep/>
+	</item>
+  <sep/>
+<item id="820" check="0">生成时间</item>
+<sep/>
   <item id="800" >返回</item>
 </menu>

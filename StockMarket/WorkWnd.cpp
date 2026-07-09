@@ -23,6 +23,7 @@
 #include "DlgChangePara.h"
 #include "BrickPic.h"
 #include "DlgBrickPara.h"
+#include "DlgPendantPara.h"
 
 #define MAX_SUBPIC 3
 #define SHOWDATACOUNT 2
@@ -1053,6 +1054,16 @@ LRESULT SOUI::CWorkWnd::OnBrickMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandl
 
 	}
 	break;
+	case BRICKMSG_CHANGEPENDANT:
+	{
+		double fWidth = (double)wp;
+		m_pBrickPic->SetMainTargetPara({ fWidth });
+		m_pBrickPic->Invalidate();
+		//::SendMsg(m_uThreadID, WW_ReCalcBrick, NULL, 0);
+
+	}
+	break;
+
 	default:
 		bNeedSaveConfig = FALSE;
 		break;
@@ -1565,6 +1576,35 @@ void SOUI::CWorkWnd::OnBrickMenuCmd(UINT uNotifyCode, int nID, HWND wndCtl)
 
 	}
 	break;
+	case BM_PendantPara:
+	{
+		DlgPendantPara* pDlg = new DlgPendantPara(m_hWnd);
+		pDlg->Create(NULL);
+		pDlg->CenterWindow(m_hWnd);
+		pDlg->SetPara( m_pBrickPic->GetMainTargetPara()[0]);
+		pDlg->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		pDlg->ShowWindow(SW_SHOWDEFAULT);
+	}
+	break;
+	case BM_GenTime:
+		m_pBrickPic->SetSubTargetState(eBST_Time);
+		m_pBrickPic->Invalidate();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case BM_MTNull:
+		m_pBrickPic->SetMainTarget(eBMT_Null);
+		m_pBrickPic->Invalidate();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+	case BM_MTPendant:
+		m_pBrickPic->SetMainTarget(eBMT_Pendant);
+		m_pBrickPic->Invalidate();
+		::PostMessage(m_hParWnd, WM_WINDOW_MSG,
+			WDMsg_SaveConfig, NULL);
+		break;
+
 	default:
 		break;
 	}
@@ -1821,7 +1861,10 @@ void CWorkWnd::OnRButtonUp(UINT nFlags, CPoint point)
 		menu.LoadMenuW(L"smenu:menu_brick");
 		if (m_pBrickPic->GetDealState())
 			menu.CheckMenuItem(BM_Deal, MF_CHECKED);
-
+		int nMainTarget = m_pBrickPic->GetMainTarget();
+		menu.CheckMenuItem(BM_MTNull + nMainTarget, MF_CHECKED);
+		if(m_pBrickPic->GetSubTargetState(eBST_Time))
+			menu.CheckMenuItem(BM_GenTime, MF_CHECKED);
 		ClientToScreen(&point);
 		menu.TrackPopupMenu(0, point.x, point.y, m_hWnd);
 		return;

@@ -7,7 +7,7 @@ namespace SOUI
 	class STradeInfoPic;
 	class CTradeSimulator :public SHostWnd
 	{
-		typedef void(CTradeSimulator::*PDATAHANDLEFUNC)(int, const char*);
+		typedef void(CTradeSimulator::* PDATAHANDLEFUNC)(int, const char*);
 
 	public:
 		CTradeSimulator();
@@ -55,13 +55,15 @@ namespace SOUI
 		void	OnBtnHisDealDownload();
 		bool	OnListLDoubleClicked(EventArgs* e);
 		bool	OnListCancelLBClicked(EventArgs* e);
-		bool	OnEditSearchChange(EventArgs *e);
-		bool	OnEditTradeIDChange(EventArgs *e);
-		bool	OnEditVolChange(EventArgs *e);
-		bool	OnEditPriceChange(EventArgs *e);
-		bool	OnLbIDLButtonDown(EventArgs *e);
+		bool	OnEditSearchChange(EventArgs* e);
+		bool	OnEditTradeIDChange(EventArgs* e);
+		bool	OnEditVolChange(EventArgs* e);
+		bool	OnEditPriceChange(EventArgs* e);
+		bool	OnLbIDLButtonDown(EventArgs* e);
 		void	SetTradeStock(SStringA strStock);
-		void	UpdateTradeInfo(BOOL bFirst,BOOL bBuy);
+		void	SetTradeEtf(SStringA strEtf);
+
+		void	UpdateTradeInfo(BOOL bFirst, BOOL bBuy);
 		void	UpdateSubmitFeedback(SubmitFeedback sfb);
 		void	UpdateDealInfo(int nCount);
 		void	SaveTradeSetting();
@@ -72,14 +74,14 @@ namespace SOUI
 		void	OnSpinSellPrice();
 		void	OnBtnTradeSetting();
 		void	OnTab();
+		void	SetParWnd(HWND hParWnd);
 	protected:
-		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL &bHandled);
+		LRESULT OnMsg(UINT uMsg, WPARAM wp, LPARAM lp, BOOL& bHandled);
 		void OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags);
 		void OnMouseMove(UINT nFlags, CPoint pt);
 		void OnSize(UINT nType, CSize size);
 		void OnTimer(UINT_PTR nID);
 		void OnClose();
-
 	protected:
 		void DataMsgProc();
 		void OnUpdateHisBuyStockMarket(int nMsgLength, const char* info);
@@ -97,9 +99,13 @@ namespace SOUI
 		void OnHisTrust(int nMsgLength, const char* info);
 		void OnHisDeal(int nMsgLength, const char* info);
 		void OnSubmitFeedback(int nMsgLength, const char* info);
-		void SaveListData(SColorListCtrlEx* pList,std::ofstream &ofile);
+		void OnAllLastPrice(int nMsgLength, const char* info);
+		void OnEtfList(int nMsgLength, const char* info);
+
+		void SaveListData(SColorListCtrlEx* pList, std::ofstream& ofile);
 		SStringW NumberWithSeparator(SStringW str);
 		bool CheckPriceIsLeagal(int nDirect, long long llPrice);
+		void CopyEtfNameToDst(char* strDst, SStringA strSecurityID);
 	protected:
 		void SetEditVol(SEdit* pEdit, int nDivisor);
 		void UpdateListData(SColorListCtrlEx* pList, SStringW str);
@@ -165,7 +171,6 @@ namespace SOUI
 			MESSAGE_HANDLER(WM_TRADE_MSG, OnMsg)
 			MSG_WM_TIMER(OnTimer)
 			MSG_WM_SIZE(OnSize)
-			MSG_WM_CLOSE(OnClose)
 			MSG_WM_KEYDOWN(OnKeyDown)
 			MSG_WM_MOUSEMOVE(OnMouseMove)
 			CHAIN_MSG_MAP(SHostWnd)
@@ -247,8 +252,10 @@ namespace SOUI
 
 		vector<StockInfo> m_stockVec;
 		strHash<StockInfo> m_stockHash;
-		map<int, strHash<RtRps>> *m_pListDataMap;
+		strHash<double> m_StockLastPriceHash;
 		strHash<double> m_preCloseMap;
+		vector<EtfInfo> m_EtfVec;
+		strHash<EtfInfo> m_EtfHash;
 		//显示对照数据
 	protected:
 		map<int, SStringW>m_tradeDirectStrMap;
@@ -259,7 +266,7 @@ namespace SOUI
 		//交易数据
 	protected:
 		AccInfo m_accInfo;
-		map<SStringA,PositionInfo> m_PosInfoMap;
+		map<SStringA, PositionInfo> m_PosInfoMap;
 		vector<TrustInfo> m_TrustVec;
 		vector<DealInfo> m_DealVec;
 		map<SStringA, map<int, DealInfo>> m_DealSumMap;
@@ -293,6 +300,8 @@ namespace SOUI
 
 		long long m_llMaxBuy;
 		long long m_llMaxSell;
+		bool m_bBuyIsEtf;
+		bool m_bSellIsEtf;
 
 	protected:
 		BOOL m_bLogin;
@@ -314,6 +323,7 @@ namespace SOUI
 		BOOL m_bLayoutInited;
 		BOOL m_bSetFirst;
 		CPoint m_ptMouse;
+		HWND m_hParWnd;
 
 	};
 	inline BOOL CTradeSimulator::IsLogin()

@@ -78,6 +78,7 @@ protected:
 protected:
 	int GetHisPoint(int nMsgType, SStringA stockID, int nPeriod, int nGroup, SStringA attInfo);
 	int GetMarket(SStringA stockID, SStringA oldStockID, int nGroup,BOOL bPriceVol,BOOL FundFlow);
+	int GetEtfMarket(SStringA stockID, SStringA oldStockID, int nGroup);
 	int GetHisData(SStringA stockID, int nPeriod, int nGroup,int nMsgID);
 	//int GetHisCallAction(SStringA stockID, int nPeriod, int nGroup);
 	//int GetHisTFBase(SStringA stockID, int nPeriod, int nGroup);
@@ -153,6 +154,8 @@ protected:
 	void OnMsgHisTradeSysRes(ReceiveInfo &recvInfo);
 	void OnMsgAllBackRehab(ReceiveInfo &recvInfo);
 	void OnMsgHisRenko(ReceiveInfo& recvInfo);
+	void OnMsgRTEtfMarket(ReceiveInfo& recvInfo);
+	void OnMsgHisEtfMarket(ReceiveInfo& recvInfo);
 
 	void OnMsgAccountRegister(ReceiveInfo &recvInfo);
 	void OnMsgChangePsd(ReceiveInfo &recvInfo);
@@ -165,6 +168,8 @@ protected:
 	void OnMsgHisTrust(ReceiveInfo &recvInfo);
 	void OnMsgHisDeal(ReceiveInfo &recvInfo);
 	void OnMsgSubmitFeedback(ReceiveInfo &recvInfo);
+	void OnMsgAllLastPrice(ReceiveInfo& recvInfo);
+	void OnMsgEtfList(ReceiveInfo& recvInfo);
 	void OnNoDefineMsg(ReceiveInfo &recvInfo);
 
 	//接收到的数据处理
@@ -201,6 +206,7 @@ protected:
 	void OnRTPriceVol(int nMsgLength, const char* info);
 	void OnLpPriceVol(int nMsgLength, const char* info);
 	void OnGetTradeMarket(int nMsgLength, const char* info);
+	void OnGetTradeEtfMarket(int nMsgLength, const char* info);
 	void OnReLogin(int nMsgLength, const char* info);
 	void OnRemoveTradeWnd(int nMsgLength, const char* info);
 	void OnGetLpPriceVol(int nMsgLength, const char* info);
@@ -221,6 +227,8 @@ protected:
 	void OnSelfSelChange(int nMsgLength, const char* info);
 	void OnHisRenko(int nMsgLength, const char* info);
 	void OnGetRenko(int nMsgLength, const char* info);
+	void OnRTEtfMarket(int nMsgLength, const char* info);
+	void OnHisEtfMarket(int nMsgLength, const char* info);
 
 	//交易信息处理
 protected:
@@ -236,6 +244,8 @@ protected:
 	void OnHisTrust(int nMsgLength, const char* info);
 	void OnHisDeal(int nMsgLength, const char* info);
 	void OnSubmitFeedBack(int nMsgLength, const char* info);
+	void OnAllLastPrice(int nMsgLength, const char* info);
+	void OnEtfList(int nMsgLength, const char* info);
 
 public:
 	vector<SStringA> m_dataNameVec;

@@ -22,20 +22,29 @@ STradeInfoPic::~STradeInfoPic()
 {
 }
 
-void STradeInfoPic::ChangeShowStock(SStringA StockID, SStringA StockName)
+void STradeInfoPic::ChangeShowStock(SStringA StockID, SStringA StockName, bool bIsEtf,
+	double fMaxLimit, double fMinLimit)
 {
 	m_bInsInited = FALSE;
 	m_strStock = StockID;
 	m_strStockName = StockName;
-	if (m_strStockName.Find("ST") != -1)
-		m_fMaxChgPct = 0.05;
-	else if (m_strStock[0] == '3' || m_strStock.Find("688") != -1)
-		m_fMaxChgPct = 0.2;
+	m_fMaxChgPct = 0.1;
+	if (fMaxLimit == 0)
+	{
+		if (m_strStockName.Find("ST") != -1)
+			m_fMaxChgPct = 0.05;
+		else if (m_strStock[0] == '3' || (m_strStock[0] == '6' && m_strStock[1] == '8'))
+			m_fMaxChgPct = 0.2;
+		m_fMaxLimit = m_fMinLimit = 0;
+	}
 	else
-		m_fMaxChgPct = 0.1;
+	{
+		m_fMaxLimit = fMaxLimit;
+		m_fMinLimit = fMinLimit;
+	}
 
-		m_bInsInited = TRUE;
-
+	m_bInsInited = TRUE;
+	m_bIsEtf = bIsEtf;
 }
 
 void STradeInfoPic::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec)
@@ -46,7 +55,7 @@ void STradeInfoPic::SetDataPoint(vector<CommonStockMarket>* pStkMarketVec)
 
 
 
-void STradeInfoPic::OnPaint(IRenderTarget * pRT)
+void STradeInfoPic::OnPaint(IRenderTarget* pRT)
 {
 	SPainter pa;
 	SWindow::BeforePaint(pRT, pa);
@@ -94,7 +103,7 @@ void STradeInfoPic::OnPaint(IRenderTarget * pRT)
 
 }
 
-void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
+void STradeInfoPic::DrawPrice(IRenderTarget* pRT)
 {
 	CPoint point[5];
 	wchar_t szTmp[100] = { 0 };
@@ -255,7 +264,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 			if (fPrice > 0)
 			{
 				pRT->SetTextColor(GetTextColor(fPrice));
-				_swprintf(szTmp, L"%.02f", fPrice);
+				_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", fPrice);
 				pRT->DrawTextW(szTmp, wcslen(szTmp),
 					CRect(pxLeft, VPOS((2 + i)), pxRight, VPOS((3 + i))),
 					DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
@@ -321,7 +330,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 			if (fPrice > 0)
 			{
 				pRT->SetTextColor(GetTextColor(fPrice));
-				_swprintf(szTmp, L"%.02f", fPrice);
+				_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", fPrice);
 				pRT->DrawTextW(szTmp, wcslen(szTmp),
 					CRect(pxLeft, VPOS((12 + i)), pxRight, VPOS((13 + i))),
 					DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
@@ -378,7 +387,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 	if (BidVol + AskVol > 0)
 	{
 		int diff = BidVol - AskVol;
-		double diffRatio = diff*100.0 / (BidVol + AskVol);
+		double diffRatio = diff * 100.0 / (BidVol + AskVol);
 
 		if (diff > 0)
 			pRT->SetTextColor(RGBA(255, 31, 31, 255));
@@ -484,11 +493,11 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 	}
 	else
 	{
-		_swprintf(szTmp, L"%.02f", m_StockTick.LastPrice);	//最新
+		_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", m_StockTick.LastPrice);	//最新
 		pRT->DrawTextW(szTmp, wcslen(szTmp),
 			CRect(left, VPOS(22), right, VPOS(23)),
 			DT_RIGHT);
-		_swprintf(szTmp, L"%.02f",
+		_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f",
 			m_StockTick.LastPrice - m_StockTick.PreCloPrice);	//涨跌
 		pRT->DrawTextW(szTmp, wcslen(szTmp),
 			CRect(left, VPOS(23), right, VPOS(24)),
@@ -501,8 +510,10 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 			DT_RIGHT);
 	}
 	pRT->SetTextColor(RGBA(255, 31, 31, 255));
-	_swprintf(szTmp, L"%.02f",
-		m_StockTick.PreCloPrice * (1 + m_fMaxChgPct));	//涨停r
+	if (m_fMaxLimit == 0)
+		m_fMaxLimit = m_StockTick.PreCloPrice * (1 + m_fMaxChgPct);
+	_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f",
+		m_fMaxLimit);	//涨停r
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
 		CRect(left, VPOS(25), right, VPOS(26)),
 		DT_RIGHT);
@@ -518,7 +529,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 		CRect(left, VPOS(26), right, VPOS(27)),
 		DT_RIGHT);
 
-	_swprintf(szTmp, L"%.02f", m_StockTick.PreCloPrice);	//昨收
+	_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", m_StockTick.PreCloPrice);	//昨收
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
 		CRect(left, VPOS(27), right, VPOS(28)),
 		DT_RIGHT);
@@ -530,7 +541,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 	if (m_StockTick.OpenPrice > 10000000 || m_StockTick.OpenPrice < 0)
 		_swprintf(szTmp, L"—");
 	else
-		_swprintf(szTmp, L"%.02f", m_StockTick.OpenPrice);	//开盘
+		_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", m_StockTick.OpenPrice);	//开盘
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
 		CRect(left, VPOS(22), right, VPOS(23)),
 		DT_RIGHT);
@@ -540,7 +551,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 	if (m_StockTick.HighPrice > 10000000 || m_StockTick.HighPrice < 0)
 		_swprintf(szTmp, L"—");
 	else
-		_swprintf(szTmp, L"%.02f", m_StockTick.HighPrice);
+		_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", m_StockTick.HighPrice);
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
 		CRect(left, VPOS(23), right, VPOS(24)),
 		DT_RIGHT);
@@ -550,13 +561,15 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 	if (m_StockTick.LowPrice > 10000000 || m_StockTick.LowPrice < 0)
 		_swprintf(szTmp, L"—");
 	else
-		_swprintf(szTmp, L"%.02f", m_StockTick.LowPrice);
+		_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", m_StockTick.LowPrice);
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
 		CRect(left, VPOS(24), right, VPOS(25)),
 		DT_RIGHT);
 	pRT->SetTextColor(RGBA(0, 255, 0, 255));
-	_swprintf(szTmp, L"%.02f",
-		m_StockTick.PreCloPrice * (1 - m_fMaxChgPct));	//跌停
+	if (m_fMinLimit == 0)
+		m_fMinLimit = m_StockTick.PreCloPrice * (1 - m_fMaxChgPct);
+	_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f",
+		m_fMinLimit);	//跌停
 	pRT->DrawTextW(szTmp, wcslen(szTmp),
 		CRect(left, VPOS(25), right, VPOS(26)),
 		DT_RIGHT);
@@ -586,7 +599,7 @@ void STradeInfoPic::DrawPrice(IRenderTarget * pRT)
 
 }
 
-void STradeInfoPic::DrawDeal(IRenderTarget * pRT)		//画单个合约
+void STradeInfoPic::DrawDeal(IRenderTarget* pRT)		//画单个合约
 {
 	wchar_t szTmp[100] = { 0 };
 	int nHeightTotal = m_rectDeal.Height();
@@ -618,10 +631,10 @@ void STradeInfoPic::DrawDeal(IRenderTarget * pRT)		//画单个合约
 		vector<CommonStockMarket> MarketVec;
 		for (int i = m_pStkMarketVec->size() - 1; i >= 0; --i)
 		{
-			auto &tick = m_pStkMarketVec->at(i);
+			auto& tick = m_pStkMarketVec->at(i);
 			if (i != 0)
 			{
-				auto &preTick = m_pStkMarketVec->at(i - 1);
+				auto& preTick = m_pStkMarketVec->at(i - 1);
 				if (tick.Volume == preTick.Volume
 					|| tick.Volume < preTick.Volume)
 					continue;
@@ -654,7 +667,7 @@ void STradeInfoPic::DrawDeal(IRenderTarget * pRT)		//画单个合约
 			else
 				pRT->SetTextColor(RGBA(255, 255, 255, 255));
 			ZeroMemory(szTmp, sizeof(wchar_t) * 100);
-			_swprintf(szTmp, L"%.02f", MarketVec[j].LastPrice);
+			_swprintf(szTmp, !m_bIsEtf ? L"%.02f" : L"%.03f", MarketVec[j].LastPrice);
 			pRT->DrawTextW(szTmp, wcslen(szTmp),
 				CRect(m_rectDeal.left + nWidth,
 					m_rectDeal.top + RC_HEIGHT * (i + 1),
@@ -665,7 +678,7 @@ void STradeInfoPic::DrawDeal(IRenderTarget * pRT)		//画单个合约
 			if (j != MarketVec.size() - 1)
 				_swprintf(szTmp, L"%.0f",
 					ceil((MarketVec[j].Volume -
-						MarketVec[j + 1].Volume) *1.0 / 100));
+						MarketVec[j + 1].Volume) * 1.0 / 100));
 			else
 				_swprintf(szTmp, L"%d", MarketVec[j].Volume / 100);
 			pRT->DrawTextW(szTmp, wcslen(szTmp), CRect(m_rectDeal.left + nWidth * 2,

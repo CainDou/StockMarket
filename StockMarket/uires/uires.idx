@@ -43,6 +43,7 @@
 		<file name="dlg_multiPeriodAnalysis" path="xml\dlg_multiPeriodAnalysis.xml" />
 		<file name="wnd_multiPerAna" path="xml\wnd_multiPerAna.xml" />
 		<file name="dlg_brickPara" path="xml\dlg_brickPara.xml" />
+		<file name="dlg_pendantPara" path="xml\dlg_pendantPara.xml" />
 	</LAYOUT>
 	<values>
 		<file name="string" path="values\string.xml" />

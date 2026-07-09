@@ -4,7 +4,7 @@
 		<window pos="0,0,-0,-0" colorBkgnd="rgb(70,70,70)" colorText="#ffffff">
 			<caption pos="0,0,-0,30" focusable="1" drawfocusrect="0">
 				<text pos="5,4" name="txt_title">砖型图参数</text>
-				<imgbtn name="btn_MaClose" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
+				<imgbtn name="btn_Close" skin="_skin.sys.btn.close" pos="-45,0" tip="close" animate="1" />
 			</caption>
 			<text pos="40,88" size="40, 24">单位</text>
 			<edit name="edit_para" pos="[20,88" size="120, 24" colorBkgnd="#FFFFFF" cueText="" colorText="#000000" />

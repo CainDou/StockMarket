@@ -18,7 +18,9 @@ void CDlgTrustConfirm::OnInit(EventArgs * e)
 	if (pText)
 	{
 		SStringW str;
-		str.Format(L"交易信息:\n股票代码:%s\n股票名称:%s\n方向:%s\n委托价格:%.02f\n委托数量:%lld\n确定要进行委托吗？",
+		str.Format(L"交易信息:\n股票代码:%%s\n股票名称:%%s\n方向:%%s\n委托价格:%%.0%df\n委托数量:%%lld\n确定要进行委托吗？",
+			m_trustInfo.TrustPrice.digital);
+		str.Format(str,
 			StrA2StrW(m_trustInfo.SecurityID),
 			StrA2StrW(m_trustInfo.SecurityName),
 			m_trustInfo.Direct == eTD_Buy ? L"买入" : L"卖出",

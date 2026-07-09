@@ -26,7 +26,7 @@ void CPriceList::ChangeShowStock(SStringA StockID, SStringA StockName)
 	{
 		if (m_strStockName.Find("ST") != -1)
 			m_fMaxChgPct = 0.05;
-		else if (m_strSubIns[0] == '3' || m_strSubIns.Find("688") != -1)
+		else if (m_strSubIns[0] == '3' || (m_strSubIns[0] == '6' && m_strSubIns[1] == '8'))
 			m_fMaxChgPct = 0.2;
 		else
 			m_fMaxChgPct = 0.1;

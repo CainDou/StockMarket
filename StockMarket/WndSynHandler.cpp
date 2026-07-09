@@ -693,6 +693,27 @@ int CWndSynHandler::GetMarket(SStringA stockID, SStringA oldStockID, int nGroup,
 	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
 }
 
+int CWndSynHandler::GetEtfMarket(SStringA stockID, SStringA oldStockID, int nGroup)
+{
+	SendInfo info = { 0 };
+	info.Group = nGroup;
+	//发送订阅数据
+	if (oldStockID != "")
+	{
+		strcpy_s(info.str, oldStockID);
+		info.MsgType = SendType_UnSubIns;
+		m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+
+	}
+
+	strcpy_s(info.str, stockID);
+	info.MsgType = SendType_SubIns;
+	m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+	//发送获取数据请求
+	info.MsgType = SendType_EtfMarket;
+	return m_NetClient.SendDataWithID((char*)&info, sizeof(info));
+}
+
 int CWndSynHandler::GetHisData(SStringA stockID, int nPeriod, int nGroup, int nMsgID)
 {
 	SendInfo info = { 0 };
@@ -826,6 +847,10 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgAllBackRehab;
 	m_netHandleMap[RecvMsg_HisRenko]
 		= &CWndSynHandler::OnMsgHisRenko;
+	m_netHandleMap[RecvMsg_RTEtfMarket]
+		= &CWndSynHandler::OnMsgRTEtfMarket;
+	m_netHandleMap[RecvMsg_EtfMarket]
+		= &CWndSynHandler::OnMsgHisEtfMarket;
 
 
 	m_netHandleMap[TradeRecvMsg_Register]
@@ -850,7 +875,10 @@ void CWndSynHandler::InitNetHandleMap()
 		= &CWndSynHandler::OnMsgHisDeal;
 	m_netHandleMap[TradeRecvMsg_SubmitFeedback]
 		= &CWndSynHandler::OnMsgSubmitFeedback;
-
+	m_netHandleMap[TradeRecvMsg_AllLastPrice]
+		= &CWndSynHandler::OnMsgAllLastPrice;
+	m_netHandleMap[TradeRecvMsg_EtfList]
+		= &CWndSynHandler::OnMsgEtfList;
 }
 
 void CWndSynHandler::InitSynHandleMap()
@@ -935,6 +963,10 @@ void CWndSynHandler::InitSynHandleMap()
 		= &CWndSynHandler::OnHisRenko;
 	m_synHandleMap[Syn_GetRenko]
 		= &CWndSynHandler::OnGetRenko;
+	m_synHandleMap[Syn_RTEtfMarket]
+		= &CWndSynHandler::OnRTEtfMarket;
+	m_synHandleMap[Syn_HisEtfMarket]
+		= &CWndSynHandler::OnHisEtfMarket;
 
 	m_synHandleMap[Syn_GetTradeMarket]
 		= &CWndSynHandler::OnGetTradeMarket;
@@ -945,7 +977,8 @@ void CWndSynHandler::InitSynHandleMap()
 
 	m_synHandleMap[Syn_GetLpPriceVol]
 		= &CWndSynHandler::OnGetLpPriceVol;
-
+	m_synHandleMap[Syn_GetTradeEtfMarket]
+		= &CWndSynHandler::OnGetTradeEtfMarket;
 }
 
 void CWndSynHandler::InitTradeSynMap()
@@ -982,7 +1015,10 @@ void CWndSynHandler::InitTradeSynMap()
 		= &CWndSynHandler::OnHisDeal;
 	m_tradeSynHandleMap[TradeSyn_OnSubmitFeedback]
 		= &CWndSynHandler::OnSubmitFeedBack;
-
+	m_tradeSynHandleMap[TradeSyn_AllLastPrice]
+		= &CWndSynHandler::OnAllLastPrice;
+	m_tradeSynHandleMap[TradeSyn_EtfList]
+		= &CWndSynHandler::OnEtfList;
 }
 
 void CWndSynHandler::InitSelfSelStock()
@@ -1958,6 +1994,28 @@ void CWndSynHandler::OnMsgHisRenko(ReceiveInfo& recvInfo)
 	buffer = nullptr;
 }
 
+void CWndSynHandler::OnMsgRTEtfMarket(ReceiveInfo& recvInfo)
+{
+	char* buffer = new char[recvInfo.DataSize];
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#') == recvInfo.DataSize)
+		SendMsg(m_uMsgThreadID, Syn_RTEtfMarket, buffer, recvInfo.DataSize);
+	delete[]buffer;
+	buffer = nullptr;
+}
+
+void CWndSynHandler::OnMsgHisEtfMarket(ReceiveInfo& recvInfo)
+{
+	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
+	char* buffer = new char[totalSize];
+	memcpy_s(buffer, totalSize, &recvInfo, sizeof(recvInfo));
+	int offset = sizeof(recvInfo);
+	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
+		SendMsg(m_uMsgThreadID, Syn_HisEtfMarket, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
 void CWndSynHandler::OnMsgAccountRegister(ReceiveInfo& recvInfo)
 {
 	int totalSize = recvInfo.DataSize + sizeof(recvInfo);
@@ -2096,6 +2154,35 @@ void CWndSynHandler::OnMsgSubmitFeedback(ReceiveInfo& recvInfo)
 	int offset = sizeof(recvInfo);
 	if (m_NetClient.ReceiveData(buffer + offset, recvInfo.DataSize, '#'))
 		SendMsg(m_uTradeMsgThreadID, TradeSyn_OnSubmitFeedback, buffer, totalSize);
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgAllLastPrice(ReceiveInfo& recvInfo)
+{
+	char* buffer = new char[recvInfo.DataSize];
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#') == recvInfo.DataSize)
+	{
+		unsigned long  ulSize = recvInfo.DataSize;
+		unsigned long ulRawDataSize = recvInfo.SrcDataSize;
+		unsigned char* RawData = new unsigned char[ulRawDataSize];
+		int nReturn = uncompress(RawData, &ulRawDataSize, (Bytef*)buffer, ulSize);
+		if (nReturn == Z_OK)
+			SendMsg(m_uTradeMsgThreadID, TradeSyn_AllLastPrice, (char*)RawData, ulRawDataSize);
+		delete[]RawData;
+		RawData = nullptr;
+	}
+	delete[]buffer;
+	buffer = nullptr;
+
+}
+
+void CWndSynHandler::OnMsgEtfList(ReceiveInfo& recvInfo)
+{
+	char* buffer = new char[recvInfo.DataSize];
+	if (m_NetClient.ReceiveData(buffer, recvInfo.DataSize, '#') == recvInfo.DataSize)
+		SendMsg(m_uTradeMsgThreadID, TradeSyn_EtfList, buffer, recvInfo.DataSize);
 	delete[]buffer;
 	buffer = nullptr;
 
@@ -2807,6 +2894,16 @@ void CWndSynHandler::OnGetTradeMarket(int nMsgLength, const char* info)
 
 }
 
+void CWndSynHandler::OnGetTradeEtfMarket(int nMsgLength, const char* info)
+{
+	DataGetInfo* pDgInfo = (DataGetInfo*)info;
+	m_TradeSubMap[pDgInfo->hWnd] = pDgInfo->StockID;
+	int nID = GetEtfMarket(pDgInfo->StockID, pDgInfo->oldStockID, pDgInfo->Group);
+	if (nID != -1)
+		//m_SubWndGetInfoMap[m_hTradeWnd].insert(nID);
+		m_TradeGetID[nID] = pDgInfo->hWnd;
+}
+
 void CWndSynHandler::OnReLogin(int nMsgLength, const char* info)
 {
 	if(tLogin.joinable())
@@ -3075,6 +3172,47 @@ void CWndSynHandler::OnGetRenko(int nMsgLength, const char* info)
 		m_SubWndGetInfoMap[pDgInfo->hWnd].insert(nID);
 }
 
+void CWndSynHandler::OnRTEtfMarket(int nMsgLength, const char* info)
+{
+	SStringA strStock = ((CommonStockMarket*)info)->SecurityID;
+	for (auto& it : m_TradeSubMap)
+	{
+		if (it.second == strStock)
+		{
+			if (it.first == (HWND)0)
+				SendMsg(m_uTradeDlgThreadID, Syn_RTBuyStockMarket,
+					info, nMsgLength);
+			else if (it.first == (HWND)1)
+				SendMsg(m_uTradeDlgThreadID, Syn_RTSellStockMarket,
+					info, nMsgLength);
+		}
+	}
+
+}
+
+void CWndSynHandler::OnHisEtfMarket(int nMsgLength, const char* info)
+{
+	ReceiveInfo* pRecvInfo = (ReceiveInfo*)info;
+	SStringA strStock = pRecvInfo->InsID;
+	int nMsgID = *(int*)(info + sizeof(ReceivePointInfo));
+	if (m_TradeGetID.count(nMsgID))
+	{
+		int nNewSize = sizeof(HWND) + nMsgLength;
+		char* msgWithHandle = new char[nNewSize];
+		memcpy_s(msgWithHandle, nNewSize, &m_hTradeWnd, sizeof(HWND));
+		int nOffset = sizeof(HWND);
+		memcpy_s(msgWithHandle + nOffset, nNewSize, info, nMsgLength);
+		if (m_TradeGetID[nMsgID] == (HWND)0)
+			SendMsg(m_uTradeDlgThreadID, Syn_HisBuyStockMarket,
+				msgWithHandle, nNewSize);
+		else if (m_TradeGetID[nMsgID] == (HWND)1)
+			SendMsg(m_uTradeDlgThreadID, Syn_HisSellStockMarket,
+				msgWithHandle, nNewSize);
+		delete[]msgWithHandle;
+	}
+
+}
+
 void CWndSynHandler::PostTradeSendMsg(int nMsgType, int nMsgLength, const char* info)
 {
 	SendInfo sendInfo = { 0 };
@@ -3112,7 +3250,7 @@ void CWndSynHandler::OnTradeLogin(int nMsgLength, const char* info)
 	int nOffset = sizeof(*pRecvInfo);
 	int nFeedback = *(int*)(info + nOffset);
 	::SendMessage(m_pLoginDlg->m_hWnd, WM_LOGIN_MSG, nFeedback, LoginMsg_TradeLoginFeedBack);
-	if (nFeedback == AFB_RegisterSuccess)
+	if (nFeedback == TLFB_Success)
 	{
 		SendMsg(m_uTradeDlgThreadID, TradeSyn_OnLogin, NULL, 0);
 	}
@@ -3186,7 +3324,17 @@ void CWndSynHandler::OnSubmitFeedBack(int nMsgLength, const char* info)
 
 }
 
+void CWndSynHandler::OnAllLastPrice(int nMsgLength, const char* info)
+{
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_AllLastPrice,
+		info, nMsgLength);
+}
 
+void CWndSynHandler::OnEtfList(int nMsgLength, const char* info)
+{
+	SendMsg(m_uTradeDlgThreadID, TradeSyn_EtfList,
+		info, nMsgLength);
+}
 
 void CWndSynHandler::SetVectorSize()
 {

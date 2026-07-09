@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
@@ -212,6 +212,7 @@
     <ClCompile Include="DlgMultiFilter.cpp" />
     <ClCompile Include="DlgMultiPrdAnly.cpp" />
     <ClCompile Include="DlgOpenWnd.cpp" />
+    <ClCompile Include="DlgPendantPara.cpp" />
     <ClCompile Include="DlgReadFrmlList.cpp" />
     <ClCompile Include="DlgRegister.cpp" />
     <ClCompile Include="DlgRehabFixedTime.cpp" />
@@ -244,7 +245,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="KlineTarget.cpp" />
-    <ClCompile Include="MainDlg.cpp" />
+    <ClCompile Include="MainDlg.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
+    </ClCompile>
     <ClCompile Include="MD5.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -306,6 +309,7 @@
     <ClInclude Include="DlgMultiFilter.h" />
     <ClInclude Include="DlgMultiPrdAnly.h" />
     <ClInclude Include="DlgOpenWnd.h" />
+    <ClInclude Include="DlgPendantPara.h" />
     <ClInclude Include="DlgReadFrmlList.h" />
     <ClInclude Include="DlgRegister.h" />
     <ClInclude Include="DlgRehabFixedTime.h" />

@@ -2,6 +2,19 @@
 #include <core/swnd.h>
 #include <memory>
 #include <set>
+
+enum eBrickMainTarget
+{
+	eBMT_Null,
+	eBMT_Pendant,
+
+};
+
+enum eBrickSubTarget
+{
+	eBST_Time,
+};
+
 namespace SOUI
 {
 	class CDealList;
@@ -18,6 +31,19 @@ namespace SOUI
 		void		SetBrickPara(int nType, double fSetting);
 		void		SetDataPoint(vector<CommonStockMarket>* pStkMarketVec,
 			vector<RenkoData>* pHisRenkoVec);
+
+		int GetMainTarget() const;
+		void SetMainTarget(int nTargetID);
+		std::vector<double> GetMainTargetPara() const;
+		void SetMainTargetPara(const std::vector<double>& paraVec);
+
+		void SetSubTargetState(int nTargetID);
+		bool GetSubTargetState(int nTargetID)const;
+		void SetSubTargetPara(int nTargetID, const std::vector<int>& paraVec);
+		std::vector<int> GetSubTargetPara(int nTargetID)const;
+
+		void SetGenTimeState(bool bRevesered = true, bool bState = false);
+
 
 		void		DataProc();
 		void		ReProcData();
@@ -47,11 +73,20 @@ namespace SOUI
 		void 		ReSetData(int nCount);
 		void		AddData(const RenkoData& data, int64_t time);
 		void		AddData(double fPrice, int64_t time, bool bJump);
+		void		CalcData();
 		void		AddBrickDataToEmpty(const RenkoData& data, int64_t time);
 		double		GetBrickStep(double fClose) const;
 		void		UpdatePrice(double fPrice, int64_t time, double& fUpper, double& fLower,
-			double& fUpperStart, double& fLowerStart, bool bJump);
+			double& fUpperStart, double& fLowerStart, bool bJump, int64_t& preTime);
 		void		ChangeLastDataTime(int64_t time);
+		void		CalcPendant(int nID);
+
+		void		ReProcMainTarget();
+		void		ReProcPendant();
+		double		GetGenTime(int64_t nowTime, int64_t preTime);
+		time_t		GetUtcTime(int64_t time);
+		std::wstring FormatTime(int64_t  time);
+
 		RenkoData FrontRehabCash(RenkoData& srcKline, int nDate = 0);
 		RenkoData FrontRehabReInv(RenkoData& srcKline, int nDate = 0);
 		RenkoData BackRehabCash(RenkoData& srcKline, int nDate = 0);
@@ -63,19 +98,23 @@ namespace SOUI
 		double BackRehabReInv(double fPrice, int nDate = 0);
 
 	protected:
+		void		SetWindowRect();
 		void		CalcShowRange();
 		void        SetPicBarWidth(int nPicWidth, int nDataCount);
 		void		OnPaint(IRenderTarget* pRT);
 		void		DrawArrow(IRenderTarget* pRT);
+		void		DrawVolAmoArrow(IRenderTarget* pRT, CRect& rc);
 		void		DrawMouse(IRenderTarget* pRT, CPoint p, BOOL bFromOnPaint = FALSE);
 		void		DrawTime(IRenderTarget* pRT, BOOL bFromOnPaint = FALSE);	//画时间纵轴
 		void		GetMaxDiff();		//判断坐标最大最小值和k线条数
 		BOOL		IsInRect(int x, int y, int nMode = 0);	//是否在坐标中,0为全部,1为上方,2为下方
 		SStringW	GetYPrice(int nY);
+		SStringW	GetPosGenTime(int nY);		//
 		void		DrawData(IRenderTarget* pRT);
 		int			GetXData(int nx); 	//获取鼠标下的数据id
 		int			GetXPos(int nx);
 		int			GetYPos(double fDiff);
+		int			GetYPos(double fY, const CRect& rc, double fMax, double fMin, int nInfoCount);
 		void		OnMouseMove(UINT nFlags, CPoint point);
 		void		OnMouseLeave();
 		void		OnSize(UINT nType, CSize size);
@@ -86,11 +125,20 @@ namespace SOUI
 		CRect		GetTextDrawRect(IRenderTarget* pRT, SStringW str, CRect rc);
 		void		DrawMoveTime(IRenderTarget* pRT, int x, int date, int time, bool bNew);
 		void        DrawPrice(IRenderTarget* pRT);
+		void		DrawVolAmoPrice(IRenderTarget* pRT, CRect& rc);
 		void		DrawMovePrice(IRenderTarget* pRT, int y, bool bNew);
 		void		DrawBarInfo(IRenderTarget* pRT, int nDataPos);
 		void		DrawUpperMarket(IRenderTarget* pRT, int nX);
+		void		DrawMainUpperPendant(IRenderTarget* pRT, int nX, const vector<double>& data);
+		void		DrawGenTimeUppaerInfo(IRenderTarget* pRT, double fVol);
 		void		DrawBrick(IRenderTarget* pRT, int nPos, int nX);
-
+		void		SetMainLineSize(std::vector<std::vector<CPoint>>& MainLine, int nDataCount);
+		void		AddDataToMainTargetLine(std::vector<std::vector<CPoint>>& MainLine, int nPos, int nX);
+		void		DrawBarChartData(IRenderTarget* pRT,
+			const CRect& rc, double data,
+			double fMax, double fMin, int nX, int nShowPos);
+		void		DrawPendant(IRenderTarget* pRT,
+			std::vector<std::vector<CPoint>>& MaLine);
 
 	protected:
 		std::unique_ptr<CPriceList> m_pPriceList;
@@ -103,6 +151,7 @@ namespace SOUI
 		CRect       m_rcAll;		//上下框相加
 		CRect		m_rcImage;
 		CRect		m_rcMain;
+		CRect		m_rcGenTime;
 
 		bool		m_bShowDeal;
 		std::vector<int64_t> m_DateTimeVec;
@@ -139,6 +188,12 @@ namespace SOUI
 		bool m_bTodayMarketReady;
 		bool m_bHisRenkoReady;
 		bool		m_bHalfPrice;
+		int m_nMainTarget;
+		bool m_bShowGenTime;
+		std::vector<double> m_fPendantPara;
+		bool m_bPrePendantState;
+		bool m_bPendantState;
+		bool m_bPendantStateChange;
 
 	protected:
 
@@ -150,6 +205,11 @@ namespace SOUI
 		OperVec High;
 		OperVec Low;
 		OperVec Close;
+		OperVec GenTime;
+
+		std::vector<std::vector<double>> m_PendantDataVec;
+
+
 		vector<RehabInfo> m_RehabInfo;
 		vector<CommonStockMarket>* m_pStkMarketVec;
 		vector<RenkoData>* m_pHisRenkoVec;
@@ -162,6 +222,8 @@ namespace SOUI
 		int m_nMinVol;
 		int m_nDecimal;
 		bool m_bTodayFirst;
+		double m_fMaxGenTime;
+		double m_fMinGenTime;
 
 	protected:
 		SOUI_MSG_MAP_BEGIN()
@@ -230,6 +292,62 @@ namespace SOUI
 	{
 		return m_fBrickSetting;
 	}
+
+	inline int BrickPic::GetMainTarget() const
+	{
+		return m_nMainTarget;
+	}
+
+
+	inline void BrickPic::SetMainTarget(int nTargetID)
+	{
+		m_nMainTarget = nTargetID;
+		ReProcMainTarget();
+	}
+
+	inline std::vector<double> BrickPic::GetMainTargetPara() const
+	{
+		if (m_nMainTarget == eBMT_Pendant)
+			return m_fPendantPara;
+		return vector<double>();
+	}
+
+	inline void BrickPic::SetMainTargetPara(const std::vector<double>& paraVec)
+	{
+		if (m_nMainTarget == eBMT_Pendant)
+			m_fPendantPara = paraVec;
+		ReProcMainTarget();
+	}
+
+	inline void BrickPic::SetSubTargetState(int nTargetID)
+	{
+		if (nTargetID == eBST_Time)
+			SetGenTimeState();
+	}
+
+	inline bool BrickPic::GetSubTargetState(int nTargetID) const
+	{
+		if (nTargetID == eBST_Time)
+			return m_bShowGenTime;
+		return false;
+	}
+
+	inline void BrickPic::SetSubTargetPara(int nTargetID, const std::vector<int>& paraVec)
+	{
+
+	}
+
+	inline std::vector<int> BrickPic::GetSubTargetPara(int nTargetID) const
+	{
+		return std::vector<int>();
+	}
+
+	inline void BrickPic::SetGenTimeState(bool bRevesered, bool bState)
+	{
+		if (bRevesered) m_bShowGenTime = !m_bShowGenTime;
+		else m_bShowGenTime = bState;
+	}
+
 
 }
 
