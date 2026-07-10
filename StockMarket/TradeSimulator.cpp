@@ -1275,7 +1275,8 @@ void CTradeSimulator::UpdateTradeInfo(BOOL bFirst, BOOL bBuy)
 		if (bBuy)
 		{
 			::EnterCriticalSection(&m_csMarket);
-			market = m_buyMarketVec.back();
+			if (!m_buyMarketVec.empty())
+				market = m_buyMarketVec.back();
 			::LeaveCriticalSection(&m_csMarket);
 			double fPrice = 0;
 			if (m_setting.buyPriceType < eBPT_LastPrice)
@@ -1318,7 +1319,8 @@ void CTradeSimulator::UpdateTradeInfo(BOOL bFirst, BOOL bBuy)
 		else
 		{
 			::EnterCriticalSection(&m_csMarket);
-			market = m_sellMarketVec.back();
+			if (!m_sellMarketVec.empty())
+				market = m_sellMarketVec.back();
 			::LeaveCriticalSection(&m_csMarket);
 			double fPrice = 0;
 			if (m_setting.sellPriceType < eSPT_LastPrice)
