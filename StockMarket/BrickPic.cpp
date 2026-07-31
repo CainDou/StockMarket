@@ -329,7 +329,7 @@ void SOUI::BrickPic::RenkoDataWithHis()
 	//	m_nLastDataPos = m_nNowDataPos;
 	//}
 	m_nLastDataPos = 0;
-	m_nNowDataPos = m_DateTimeVec.size() -1;
+	m_nNowDataPos = m_DateTimeVec.size() - 1;
 	CalcData();
 	m_nLastDataPos = m_nNowDataPos;
 
@@ -386,6 +386,7 @@ void SOUI::BrickPic::ReSetData(int nCount)
 	Low.clear();
 	Close.clear();
 	GenTime.clear();
+	BarState.clear();
 	m_BrickJumpPos.clear();
 	m_fPreStart = 0;
 
@@ -395,6 +396,7 @@ void SOUI::BrickPic::ReSetData(int nCount)
 	Low.reserve(nCount + 600);
 	Close.reserve(nCount + 600);
 	GenTime.reserve(nCount + 600);
+	BarState.reserve(nCount + 600);
 
 	if (m_nMainTarget == eBMT_Pendant)
 	{
@@ -485,6 +487,7 @@ void SOUI::BrickPic::AddBrickDataToEmpty(const RenkoData& data, int64_t time)
 	High.emplace_back(fOpen);
 	Low.emplace_back(fOpen);
 	GenTime.emplace_back(0);
+	BarState.emplace_back(0);
 	m_DateTimeVec.emplace_back(time);
 	double fUpperStart = fOpen;
 	double fLowerStart = fOpen;
@@ -528,6 +531,7 @@ void SOUI::BrickPic::UpdatePrice(double fPrice, int64_t time, double& fUpper, do
 			Close.back() = fUpper;
 			High.back() = fUpper;
 			GenTime.back() = GetGenTime(time, preTime);
+			BarState.back() = 1;
 			preTime = time;
 			if (bJump || GenTime.back() == 0)
 				m_BrickJumpPos.insert(m_DateTimeVec.size() - 1);
@@ -541,6 +545,7 @@ void SOUI::BrickPic::UpdatePrice(double fPrice, int64_t time, double& fUpper, do
 			High.emplace_back(max(fPrice, fUpperStart));
 			Low.emplace_back(fUpperStart);
 			GenTime.emplace_back(0);
+			BarState.emplace_back(0);
 			fUpperDiff = fPrice - fUpper;
 		}
 	}
@@ -561,6 +566,7 @@ void SOUI::BrickPic::UpdatePrice(double fPrice, int64_t time, double& fUpper, do
 			Open.back() = fLowerStart;
 			Close.back() = fLower;
 			Low.back() = fLower;
+			BarState.back() = 1;
 			fUpperStart = fLowerStart;
 			fUpper = fUpperStart + GetBrickStep(fUpperStart);
 			fLowerStart = fLower;
@@ -571,6 +577,7 @@ void SOUI::BrickPic::UpdatePrice(double fPrice, int64_t time, double& fUpper, do
 			Low.emplace_back(min(fPrice, fLowerStart));
 			High.emplace_back(fLowerStart);
 			GenTime.emplace_back(0);
+			BarState.emplace_back(0);
 			fLowerDiff = fPrice - fLower;
 		}
 	}
@@ -596,7 +603,7 @@ void BrickPic::CalcPendant(int nID)
 {
 	if (m_PendantDataVec[nID].empty())
 	{
-		m_PendantDataVec[nID].resize(3);
+		m_PendantDataVec[nID].resize(5, 0);
 		if (m_bPendantState != m_bPrePendantState)
 		{
 			m_bPrePendantState = m_bPendantState;
@@ -604,6 +611,7 @@ void BrickPic::CalcPendant(int nID)
 		}
 		else
 			m_bPendantStateChange = false;
+		m_bPrePassTurn = m_bPassTurn;
 
 	}
 	double fUpperStart = 0;
@@ -618,6 +626,7 @@ void BrickPic::CalcPendant(int nID)
 		fUpperStart = fLowerStart = Open.back();
 	double fUpperStep = GetBrickStep(fUpperStart);
 	double fLowerStep = GetBrickStep(fLowerStart);
+	bool bBarComplete = BarState[nID] == 1;
 
 
 	if (nID > 0)
@@ -635,30 +644,55 @@ void BrickPic::CalcPendant(int nID)
 		{
 			m_PendantDataVec[nID][0] = max(High[nID] - fUpperStep * m_fPendantPara[0], m_PendantDataVec[nID - 1][0]);
 			m_PendantDataVec[nID][2] = m_PendantDataVec[nID][0];
-			if (Close[nID] >= m_PendantDataVec[nID][0]) //没触及转折
+			if (Close[nID] < Open[nID] && bBarComplete)
+				m_bPassTurn = true;
+			bool bNeedStop = false;
+			if (Low[nID] < m_PendantDataVec[nID][2])
+			{
+				if (m_bPrePassTurn || bBarComplete)
+					bNeedStop = true;
+			}
+			if (!bNeedStop) //没触及转折
 			{
 				m_PendantDataVec[nID][1] = min(Low[nID] + fLowerStep * m_fPendantPara[0], m_PendantDataVec[nID - 1][1]);
-				m_bPendantState = true;
+				//m_bPendantState = true;
 			}
 			else
 			{
 				m_bPendantState = false;
+				m_bPassTurn = false;
 				m_PendantDataVec[nID][1] = Low[nID] + fLowerStep * m_fPendantPara[0];
+				m_PendantDataVec[nID][3] = 1;
+				if (m_PendantDataVec[nID][4] == 0)
+					m_PendantDataVec[nID][4] = m_PendantDataVec[nID][0];
 			}
 		}
 		else
 		{
 			m_PendantDataVec[nID][1] = min(Low[nID] + fLowerStep * m_fPendantPara[0], m_PendantDataVec[nID - 1][1]);
 			m_PendantDataVec[nID][2] = m_PendantDataVec[nID][1];
-			if (Close[nID] <= m_PendantDataVec[nID][1]) //没触及转折
+			if (Close[nID] > Open[nID] && bBarComplete)
+				m_bPassTurn = true;
+			bool bNeedStop = false;
+			if (High[nID] > m_PendantDataVec[nID][2])
+			{
+				if (m_bPrePassTurn || bBarComplete)
+					bNeedStop = true;
+			}
+
+			if (!bNeedStop) //没触及转折
 			{
 				m_PendantDataVec[nID][0] = max(High[nID] - fUpperStep * m_fPendantPara[0], m_PendantDataVec[nID - 1][0]);
-				m_bPendantState = false;
+				//m_bPendantState = false;
 			}
 			else
 			{
 				m_bPendantState = true;
+				m_bPassTurn = false;
 				m_PendantDataVec[nID][0] = High[nID] - fUpperStep * m_fPendantPara[0];
+				m_PendantDataVec[nID][3] = -1;
+				if (m_PendantDataVec[nID][4] == 0)
+					m_PendantDataVec[nID][4] = m_PendantDataVec[nID][1];
 			}
 
 		}
@@ -679,6 +713,7 @@ void BrickPic::CalcPendant(int nID)
 			m_PendantDataVec[nID][2] = m_PendantDataVec[nID][1];
 			m_bPrePendantState = m_bPendantState = false;
 		}
+		m_bPrePassTurn = m_bPassTurn = false;
 
 	}
 
@@ -1866,7 +1901,7 @@ void SOUI::BrickPic::DrawUpperMarket(IRenderTarget* pRT, int nX)
 		m_fBrickSetting, strBrickType.at(m_nBrickType),
 		nDate / 10000, nDate % 10000 / 100, nDate % 100,
 		nTime / 10000, nTime / 100 % 100, nTime % 100,
-		Open[nX], High[nX], Low[nX], Close[nX],FormatTime(GenTime[nX]).c_str());
+		Open[nX], High[nX], Low[nX], Close[nX], FormatTime(GenTime[nX]).c_str());
 	DrawTextonPic(pRT, CRect(m_rcImage.left + 5, m_rcImage.top - INFOHEIGHT, m_rcImage.right, m_rcImage.top), strMarket);
 }
 
@@ -1879,7 +1914,7 @@ void SOUI::BrickPic::DrawMainUpperPendant(IRenderTarget* pRT, int nX, const vect
 	size.cx = 0; size.cy = 0;
 	int left = 5;
 	DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket,
-		RGBA(255,255,255,255));
+		RGBA(255, 255, 255, 255));
 	GetTextExtentPoint32(hdc, strMarket, strMarket.GetLength(), &size);
 	left += size.cx;
 
@@ -1901,7 +1936,7 @@ void SOUI::BrickPic::DrawMainUpperPendant(IRenderTarget* pRT, int nX, const vect
 			}
 		}
 		else
-			strMarket.Format (L"止损(%g砖):-", m_fPendantPara[0]);
+			strMarket.Format(L"止损(%g砖):-", m_fPendantPara[0]);
 		DrawTextonPic(pRT, CRect(m_rcImage.left + left, m_rcImage.top + 5, m_rcImage.right - 1, m_rcImage.top + 19), strMarket,
 			dwColor);
 	}
@@ -1994,7 +2029,7 @@ void SOUI::BrickPic::SetMainLineSize(std::vector<std::vector<CPoint>>& MainLine,
 {
 	if (m_nMainTarget == eBMT_Pendant)
 	{
-		MainLine.resize(2);
+		MainLine.resize(3);
 		for (auto& lineVec : MainLine)
 			lineVec.resize(nDataCount);
 	}
@@ -2017,6 +2052,14 @@ void SOUI::BrickPic::AddDataToMainTargetLine(std::vector<std::vector<CPoint>>& M
 			{
 				MainLine[1][nPos] = { int(nX + ZOOMWIDTH * 0.5), GetYPos(pendant[2]) };
 
+			}
+			if (pendant[3] == 1)
+			{
+				MainLine[2][nPos] = { int(nX + ZOOMWIDTH * 0.5), GetYPos(Low[nOffset]) };
+			}
+			else if (pendant[3] == -1)
+			{
+				MainLine[2][nPos] = { -int(nX + ZOOMWIDTH * 0.5), GetYPos(High[nOffset]) };
 			}
 
 		}
@@ -2043,7 +2086,7 @@ void SOUI::BrickPic::DrawBarChartData(IRenderTarget* pRT, const CRect& rc, doubl
 			rcBar.right = nX + ZOOMWIDTH;
 			rcBar.bottom = nMinY;
 
-			if (Close[nDataOffset] >Open[nDataOffset])
+			if (Close[nDataOffset] > Open[nDataOffset])
 				pRT->FillSolidRect(rcBar, RGBA(255, 0, 0, 255));
 			else if (Close[nDataOffset] == Open[nDataOffset] && nDataOffset > 0)
 			{
@@ -2064,7 +2107,7 @@ void SOUI::BrickPic::DrawBarChartData(IRenderTarget* pRT, const CRect& rc, doubl
 		{
 			CPoint pts[2];
 			pts[0].SetPoint(nX + ZOOMWIDTH / 2, nMaxY);
-			pts[1].SetPoint(nX + ZOOMWIDTH / 2,nMinY);
+			pts[1].SetPoint(nX + ZOOMWIDTH / 2, nMinY);
 			if (Close[nDataOffset] > Open[nDataOffset])
 				pRT->SelectObject(m_penRed);
 			else if (Close[nDataOffset] < Open[nDataOffset])
@@ -2088,11 +2131,13 @@ void SOUI::BrickPic::DrawBarChartData(IRenderTarget* pRT, const CRect& rc, doubl
 	}
 }
 
-void SOUI::BrickPic::DrawPendant(IRenderTarget* pRT, 
+void SOUI::BrickPic::DrawPendant(IRenderTarget* pRT,
 	std::vector<std::vector<CPoint>>& MaLine)
 {
-	DWORD dwLong =RGBA(255,255,255,255);
+	DWORD dwLong = RGBA(255, 255, 255, 255);
 	DWORD dwShort = RGBA(0xFF, 0xFF, 000, 0xFF);
+	DWORD dwGreen = RGBA(0, 255, 255, 255);
+	DWORD dwRed = RGBA(255, 0, 0, 255);;
 
 	int nR = ZOOMWIDTH >= 2 ? min(max(ZOOMWIDTH / 2 - 1, 2), 3) : 1;
 	//int nWidth = min(nR * 2,nR*1.5+1);
@@ -2151,6 +2196,34 @@ void SOUI::BrickPic::DrawPendant(IRenderTarget* pRT,
 
 		}
 
+	}
+	for (int i = 0; i < m_nEnd - m_nFirst; ++i)
+	{
+		if (MaLine[2][i].x > 0)
+		{
+			DrawTextonPic(pRT, CRect(MaLine[2][i].x - 5, MaLine[2][i].y + 5, MaLine[2][i].x + 5,
+				MaLine[2][i].y + 15), L"▲", dwGreen, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+			SStringW strPrice;
+			strPrice.Format(strPrice.Format(L"%%.0%df", m_nDecimal), m_PendantDataVec[m_nFirst + i][4]);
+			SIZE sz = { 0 };
+			pRT->MeasureText(strPrice, strPrice.GetLength(), &sz);
+			int nWidth = sz.cx / 2 + 1;
+			DrawTextonPic(pRT, CRect(MaLine[2][i].x - nWidth, MaLine[2][i].y + 15, MaLine[2][i].x + nWidth,
+				MaLine[2][i].y + 15 + sz.cy), strPrice, dwGreen, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+		}
+		else if (MaLine[2][i].x < 0)
+		{
+
+			DrawTextonPic(pRT, CRect(-MaLine[2][i].x - 5, MaLine[2][i].y - 15, -MaLine[2][i].x + 5,
+				MaLine[2][i].y - 5), L"▼", dwRed, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+			SStringW strPrice;
+			strPrice.Format(strPrice.Format(L"%%.0%df", m_nDecimal), m_PendantDataVec[m_nFirst + i][4]);
+			SIZE sz = { 0 };
+			pRT->MeasureText(strPrice, strPrice.GetLength(), &sz);
+			int nWidth = sz.cx / 2 + 1;
+			DrawTextonPic(pRT, CRect(-MaLine[2][i].x - nWidth, MaLine[2][i].y - 15 - sz.cy, -MaLine[2][i].x + nWidth,
+				MaLine[2][i].y - 15), strPrice, dwRed, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+		}
 	}
 }
 

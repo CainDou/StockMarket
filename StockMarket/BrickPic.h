@@ -194,6 +194,8 @@ namespace SOUI
 		bool m_bPrePendantState;
 		bool m_bPendantState;
 		bool m_bPendantStateChange;
+		bool m_bPassTurn;
+		bool m_bPrePassTurn;
 
 	protected:
 
@@ -206,6 +208,7 @@ namespace SOUI
 		OperVec Low;
 		OperVec Close;
 		OperVec GenTime;
+		OperVec BarState;
 
 		std::vector<std::vector<double>> m_PendantDataVec;
 
